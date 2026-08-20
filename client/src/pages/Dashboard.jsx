@@ -4,7 +4,7 @@ import api from '../api';
 import Donut from '../components/Donut.jsx';
 import { IconStudents, IconClass, IconTeacher, IconGrades } from '../components/Icons.jsx';
 
-const PALETTE = ['#7c3aed', '#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#f43f5e', '#14b8a6', '#a855f7'];
+const PALETTE = ['#2563eb', '#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#f43f5e', '#14b8a6', '#0ea5e9'];
 
 function initials(name = '') {
   const p = name.trim().split(/\s+/);
@@ -133,7 +133,7 @@ export default function Dashboard() {
 
           {/* Thẻ hành động nhanh */}
           <div className="panel" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ background: 'linear-gradient(160deg, #7c3aed, #a855f7)', color: '#fff', padding: 22 }}>
+            <div style={{ background: 'linear-gradient(160deg, #2563eb, #3b82f6)', color: '#fff', padding: 22 }}>
               <div style={{ fontSize: 30 }}>🎲</div>
               <div style={{ fontWeight: 600, margin: '10px 0 4px' }}>Chọn ngẫu nhiên trả bài</div>
               <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 14 }}>
