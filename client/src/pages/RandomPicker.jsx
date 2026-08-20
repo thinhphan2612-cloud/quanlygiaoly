@@ -10,6 +10,7 @@ export default function RandomPicker() {
   const [spinning, setSpinning] = useState(false);
   const [noRepeat, setNoRepeat] = useState(true);
   const [pickedIds, setPickedIds] = useState([]);
+  const [note, setNote] = useState('');
   const timer = useRef(null);
 
   useEffect(() => { api.get('/classes').then((r) => setClasses(r.data)); }, []);
@@ -31,6 +32,7 @@ export default function RandomPicker() {
     }
     setSpinning(true);
     setPicked(null);
+    setNote('');
     let ticks = 0;
     const total = 20 + Math.floor(Math.random() * 10);
     clearInterval(timer.current);
@@ -54,7 +56,16 @@ export default function RandomPicker() {
   function reset() {
     setPickedIds([]);
     setPicked(null);
+    setNote('');
     setDisplay('Nhấn "Chọn ngẫu nhiên"');
+  }
+
+  // Chưa thuộc bài: không tính qua lượt → giữ lại trong danh sách chọn lần sau
+  function notLearned() {
+    if (!picked) return;
+    setPickedIds((ids) => ids.filter((id) => id !== picked.id));
+    setNote(`${picked.full_name} chưa thuộc bài — vẫn nằm trong danh sách chọn lần sau.`);
+    setPicked(null);
   }
 
   return (
@@ -65,8 +76,8 @@ export default function RandomPicker() {
           <option value="">-- Chọn lớp --</option>
           {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, margin: 0, width: 'auto' }}>
-          <input type="checkbox" checked={noRepeat} onChange={(e) => setNoRepeat(e.target.checked)} style={{ width: 'auto' }} />
+        <label className="picker-check">
+          <input type="checkbox" checked={noRepeat} onChange={(e) => setNoRepeat(e.target.checked)} />
           Không lặp lại người đã chọn
         </label>
       </div>
@@ -74,12 +85,16 @@ export default function RandomPicker() {
       {classId && (
         <div className="panel">
           <div className="picker-result">{display}</div>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button className="btn" onClick={spin} disabled={spinning || students.length === 0}>
               {spinning ? 'Đang chọn...' : '🎲 Chọn ngẫu nhiên'}
             </button>
+            {picked && !spinning && (
+              <button className="btn warning" onClick={notLearned}>✗ Chưa thuộc bài</button>
+            )}
             <button className="btn ghost" onClick={reset} disabled={spinning}>Đặt lại</button>
           </div>
+          {note && <p className="picker-note">{note}</p>}
           <p className="muted" style={{ textAlign: 'center', marginTop: 14 }}>
             Còn lại {pool.length}/{students.length} học viên
           </p>

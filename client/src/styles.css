@@ -544,3 +544,13 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .cell-input.saving { border-color: var(--success); }
 .rank-chip { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 20px; background: var(--primary-soft); color: var(--primary); font-weight: 700; font-size: 12px; }
 .modal.wide { max-width: 860px; width: 94vw; }
+
+/* ---------- RandomPicker: rõ chữ + nút chưa thuộc bài ---------- */
+.picker-check {
+  display: flex; align-items: center; gap: 8px; margin: 0; width: auto;
+  font-size: 15px; font-weight: 600; color: var(--text); cursor: pointer;
+}
+.picker-check input { width: 18px; height: 18px; accent-color: var(--primary); }
+.btn.warning { background: var(--warning); color: #fff; }
+.btn.warning:hover { filter: brightness(0.95); }
+.picker-note { text-align: center; margin-top: 12px; color: var(--warning); font-weight: 600; font-size: 14px; }

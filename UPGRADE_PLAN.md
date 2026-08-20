@@ -50,9 +50,9 @@
 - [x] G4. Checkbox **"Sắp xếp theo thứ hạng"** vs tên ABC; cột Hạng hiển thị vị thứ.
 - API: /grade-columns (CRUD), /grades-class (ma trận điểm), /grade-cell (upsert/xóa 1 ô).
 
-## H. Chọn trả bài (RandomPicker)
-- [ ] H1. Nút **"Chưa thuộc bài"**: bấm → học viên không qua lượt nhưng vẫn nằm trong danh sách chọn lần sau.
-- [ ] H2. Chữ "Không lặp lại người đã chọn" cho **rõ/đậm hơn**.
+## H. Chọn trả bài (RandomPicker) ✅
+- [x] H1. Nút **"Chưa thuộc bài"** (hiện sau khi bốc): bỏ khỏi danh sách đã chọn → vẫn được chọn lần sau.
+- [x] H2. Chữ "Không lặp lại người đã chọn" đậm/rõ hơn (.picker-check).
 
 ## I. Trang Admin — Quản lý giáo viên (mở rộng)
 - [ ] I1. Tab **"Quản lý giáo viên"**: thêm **thông tin cá nhân GLV** (ngày sinh, địa chỉ, khu vực, cấp GLV [cấp 1/2, để trống cha tự điền], nghề nghiệp, đồng hành lớp nào, SĐT).
