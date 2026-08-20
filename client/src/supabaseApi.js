@@ -171,6 +171,37 @@ async function handle(method, rawUrl, body = {}) {
       return ok({ ok: true });
     }
 
+    // ---------------- student-stats (cho bộ lọc) ----------------
+    if (path === '/student-stats' && method === 'get') {
+      const [{ data: students }, { data: grades }, { data: att }, { data: cols }] = await Promise.all([
+        supabase.from('students').select('id, class_id').eq('graduated', false),
+        supabase.from('grades').select('student_id, score'),
+        supabase.from('attendance').select('student_id, status'),
+        supabase.from('grade_columns').select('id, class_id'),
+      ]);
+      const colCountByClass = {};
+      (cols || []).forEach((c) => { colCountByClass[c.class_id] = (colCountByClass[c.class_id] || 0) + 1; });
+      const gByStu = {}, aByStu = {};
+      (grades || []).forEach((g) => { (gByStu[g.student_id] = gByStu[g.student_id] || []).push(Number(g.score)); });
+      (att || []).forEach((a) => { (aByStu[a.student_id] = aByStu[a.student_id] || []).push(a.status); });
+      const stats = {};
+      (students || []).forEach((s) => {
+        const gs = gByStu[s.id] || [];
+        const as = aByStu[s.id] || [];
+        const colCount = colCountByClass[s.class_id] || 0;
+        stats[s.id] = {
+          avg: gs.length ? round1(gs.reduce((a, b) => a + b, 0) / gs.length) : null,
+          grade_count: gs.length,
+          columns: colCount,
+          missing: Math.max(colCount - gs.length, 0),
+          present: as.filter((x) => x === 'present').length,
+          late: as.filter((x) => x === 'late').length,
+          absent: as.filter((x) => x === 'absent').length,
+        };
+      });
+      return ok(stats);
+    }
+
     // ---------------- attendance (giáo lý) ----------------
     if (path === '/attendance' && method === 'get') {
       if (!q.class_id || !q.date) return fail(400, 'Cần class_id và date');

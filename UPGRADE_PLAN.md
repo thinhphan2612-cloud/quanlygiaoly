@@ -23,13 +23,12 @@
 - [ ] C3. Thay donut/thẻ bằng **biểu đồ tăng/giảm điểm danh theo từng tuần** của **tổng tất cả học viên**.
 - [ ] C4. **Chuông thông báo** hoạt động thật: tự động báo khi có học viên **vắng 3 buổi liên tiếp**; nhận thông báo từ admin.
 
-## D. Học viên (Students)
-- [ ] D1. Nút **Sort/Lọc** trên thanh công cụ (bấm ra popup) với các bộ lọc:
-  - lọc nhiều lớp cùng lúc (tích chọn 2–3 lớp)
-  - lọc bí tích (rước lễ / thêm sức / chưa có)
-  - lọc điểm; lọc vắng nhiều nhất; lọc chuyên cần nhất; lọc thiếu cột điểm
-  - lọc điểm trên/dưới ngưỡng (nhập số để lọc)
-- [ ] D2. Thêm trường **Chức vụ** (tự nhập tay: lớp trưởng, lớp phó...).
+## D. Học viên (Students) ✅
+- [x] D1. Nút **Lọc / Sắp xếp** (popup) với: lọc nhiều lớp (tích), lọc bí tích (rước lễ/thêm sức/chưa),
+  lọc điểm ≥/≤ ngưỡng nhập tay, chỉ hiện thiếu cột điểm, sắp xếp vắng nhiều nhất / chuyên cần nhất.
+  (Endpoint `/student-stats` tính avg, cột điểm thiếu, present/absent/late.)
+- [x] D2. Trường **Chức vụ** (tự nhập: lớp trưởng, lớp phó) — hiện dạng chip ở bảng.
+- Bí tích đổi 'vo_long' → **'ruoc_le' (Rước lễ)** cho khớp feedback (none | ruoc_le | them_suc).
 
 ## E. Lớp học (Classes) ✅
 - [x] E1. **Nhiều giáo lý viên/lớp** (chọn nhiều + đánh dấu 1 người chính).

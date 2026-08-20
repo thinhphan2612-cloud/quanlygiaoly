@@ -496,3 +496,22 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .tp-check { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
 .tp-primary { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 12px; color: var(--primary); font-weight: 600; }
 .tp-check input, .tp-primary input { width: 16px; height: 16px; accent-color: var(--primary); }
+
+/* ---------- Students: filter panel + chips ---------- */
+.filter-panel {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);
+  padding: 16px; margin-bottom: 16px;
+}
+.fp-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 20px; }
+@media (max-width: 800px) { .fp-grid { grid-template-columns: 1fr; } }
+.fp-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .02em; }
+.fp-classes { display: flex; flex-wrap: wrap; gap: 6px 14px; max-height: 130px; overflow-y: auto; }
+.fp-chk { display: flex; align-items: center; gap: 7px; font-size: 14px; cursor: pointer; }
+.fp-chk input { width: 16px; height: 16px; accent-color: var(--primary); }
+.fp-inline { display: flex; gap: 8px; align-items: center; }
+.btn.has-badge { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+.role-chip {
+  display: inline-block; font-size: 11px; font-weight: 600; color: var(--primary);
+  background: var(--primary-soft); padding: 2px 8px; border-radius: 20px;
+}

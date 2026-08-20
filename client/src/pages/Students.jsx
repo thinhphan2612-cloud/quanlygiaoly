@@ -7,13 +7,14 @@ import { exportXlsx, exportPdf, STT_COL, fileSlug } from '../lib/exportUtils';
 const empty = {
   full_name: '', saint_name: '', birth_date: '', gender: '',
   parent_name: '', parent_phone: '', student_phone: '', address: '', class_id: '', notes: '',
-  sacrament: 'none',
+  sacrament: 'none', position: '',
 };
 
 const studentColumns = [
   STT_COL,
   { label: 'Tên thánh', get: (s) => s.saint_name || '', width: 14 },
   { label: 'Họ và tên', get: (s) => s.full_name, width: 22 },
+  { label: 'Chức vụ', get: (s) => s.position || '', width: 12 },
   { label: 'Ngày sinh', get: (s) => s.birth_date || '', width: 12 },
   { label: 'Giới tính', get: (s) => s.gender || '', width: 9 },
   { label: 'Lớp', get: (s) => s.class_name || '', width: 14 },
@@ -24,21 +25,24 @@ const studentColumns = [
   { label: 'Ghi chú', get: (s) => s.notes || '', width: 20 },
 ];
 
+const defaultFilter = { classes: [], sacrament: '', scoreOp: '', scoreVal: '', missingOnly: false, sortBy: 'name' };
+
 export default function Students() {
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
-  const [filterClass, setFilterClass] = useState('');
+  const [stats, setStats] = useState({});
   const [search, setSearch] = useState('');
-  const [modal, setModal] = useState(null); // null | {form}
+  const [modal, setModal] = useState(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [error, setError] = useState('');
+  const [showFilter, setShowFilter] = useState(false);
+  const [f, setF] = useState(defaultFilter);
 
   function load() {
-    const q = filterClass ? `?class_id=${filterClass}` : '';
-    api.get(`/students${q}`).then((r) => setStudents(r.data));
+    api.get('/students').then((r) => setStudents(r.data));
+    api.get('/student-stats').then((r) => setStats(r.data)).catch(() => {});
   }
-
-  useEffect(() => { load(); }, [filterClass]);
+  useEffect(() => { load(); }, []);
   useEffect(() => { api.get('/classes').then((r) => setClasses(r.data)); }, []);
 
   function openCreate() { setError(''); setModal({ ...empty }); }
@@ -62,70 +66,127 @@ export default function Students() {
     load();
   }
 
-  const filtered = students.filter((s) =>
-    s.full_name.toLowerCase().includes(search.toLowerCase())
-  );
+  // ----- áp dụng bộ lọc -----
+  const st = (id) => stats[id] || {};
+  let filtered = students.filter((s) => {
+    if (search && !s.full_name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (f.classes.length && !f.classes.includes(s.class_id)) return false;
+    if (f.sacrament && (s.sacrament || 'none') !== f.sacrament) return false;
+    if (f.scoreOp && f.scoreVal !== '') {
+      const avg = st(s.id).avg;
+      if (avg == null) return false;
+      if (f.scoreOp === 'gte' && !(avg >= Number(f.scoreVal))) return false;
+      if (f.scoreOp === 'lte' && !(avg <= Number(f.scoreVal))) return false;
+    }
+    if (f.missingOnly && !(st(s.id).missing > 0)) return false;
+    return true;
+  });
+  const rate = (id) => { const s = st(id); const tot = (s.present || 0) + (s.absent || 0) + (s.late || 0); return tot ? (s.present || 0) / tot : -1; };
+  filtered = [...filtered].sort((a, b) => {
+    if (f.sortBy === 'absent') return (st(b.id).absent || 0) - (st(a.id).absent || 0);
+    if (f.sortBy === 'diligent') return rate(b.id) - rate(a.id);
+    return a.full_name.localeCompare(b.full_name, 'vi');
+  });
 
-  const clsName = filterClass
-    ? classes.find((c) => String(c.id) === String(filterClass))?.name
-    : null;
+  const activeCount = (f.classes.length ? 1 : 0) + (f.sacrament ? 1 : 0) + (f.scoreOp && f.scoreVal !== '' ? 1 : 0)
+    + (f.missingOnly ? 1 : 0) + (f.sortBy !== 'name' ? 1 : 0);
+
   const exportMeta = {
     title: 'Danh sách học viên',
-    subtitle: clsName ? `Lớp: ${clsName}` : 'Tất cả các lớp',
+    subtitle: f.classes.length === 1 ? `Lớp: ${classes.find((c) => c.id === f.classes[0])?.name || ''}` : 'Tất cả các lớp',
     columns: studentColumns,
     rows: filtered,
   };
-  const exportName = `danh-sach-hoc-vien${clsName ? '-' + fileSlug(clsName) : ''}`;
+  const exportName = 'danh-sach-hoc-vien';
+
+  const toggleClass = (id) => setF((p) => ({ ...p, classes: p.classes.includes(id) ? p.classes.filter((x) => x !== id) : [...p.classes, id] }));
 
   return (
     <div>
       <h1>Quản lý học viên</h1>
       <div className="toolbar">
-        <input
-          className="grow"
-          placeholder="Tìm theo tên..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <select value={filterClass} onChange={(e) => setFilterClass(e.target.value)} style={{ width: 200 }}>
-          <option value="">Tất cả lớp</option>
-          {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <input className="grow" placeholder="Tìm theo tên..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <button className={`btn ghost ${activeCount ? 'has-badge' : ''}`} onClick={() => setShowFilter((v) => !v)}>
+          🔽 Lọc / Sắp xếp{activeCount ? ` (${activeCount})` : ''}
+        </button>
         <button className="btn ghost" onClick={() => setBulkOpen(true)}>⬆ Nhập hàng loạt</button>
-        <button
-          className="btn ghost"
-          disabled={filtered.length === 0}
-          onClick={() => exportXlsx({ filename: `${exportName}.xlsx`, sheetName: 'Học viên', ...exportMeta })}
-        >
-          ⬇ Excel
-        </button>
-        <button className="btn ghost" disabled={filtered.length === 0} onClick={() => exportPdf(exportMeta)}>
-          🖨 PDF
-        </button>
+        <button className="btn ghost" disabled={filtered.length === 0}
+          onClick={() => exportXlsx({ filename: `${exportName}.xlsx`, sheetName: 'Học viên', ...exportMeta })}>⬇ Excel</button>
+        <button className="btn ghost" disabled={filtered.length === 0} onClick={() => exportPdf(exportMeta)}>🖨 PDF</button>
         <button className="btn" onClick={openCreate}>+ Thêm học viên</button>
       </div>
+
+      {showFilter && (
+        <div className="filter-panel">
+          <div className="fp-grid">
+            <div className="fp-col">
+              <div className="fp-label">Lọc theo lớp (tích nhiều lớp)</div>
+              <div className="fp-classes">
+                {classes.map((c) => (
+                  <label key={c.id} className="fp-chk">
+                    <input type="checkbox" checked={f.classes.includes(c.id)} onChange={() => toggleClass(c.id)} />
+                    <span>{c.name}</span>
+                  </label>
+                ))}
+                {classes.length === 0 && <span className="muted">Chưa có lớp</span>}
+              </div>
+            </div>
+            <div className="fp-col">
+              <div className="fp-label">Bí tích</div>
+              <select value={f.sacrament} onChange={(e) => setF({ ...f, sacrament: e.target.value })}>
+                <option value="">Tất cả</option>
+                <option value="ruoc_le">Đã Rước lễ</option>
+                <option value="them_suc">Đã Thêm sức</option>
+                <option value="none">Chưa có bí tích</option>
+              </select>
+
+              <div className="fp-label" style={{ marginTop: 12 }}>Lọc điểm trung bình</div>
+              <div className="fp-inline">
+                <select value={f.scoreOp} onChange={(e) => setF({ ...f, scoreOp: e.target.value })}>
+                  <option value="">Không lọc</option>
+                  <option value="gte">≥</option>
+                  <option value="lte">≤</option>
+                </select>
+                <input type="number" step="0.1" min="0" max="10" placeholder="VD: 5" value={f.scoreVal}
+                  onChange={(e) => setF({ ...f, scoreVal: e.target.value })} disabled={!f.scoreOp} style={{ width: 90 }} />
+              </div>
+              <label className="fp-chk" style={{ marginTop: 10 }}>
+                <input type="checkbox" checked={f.missingOnly} onChange={(e) => setF({ ...f, missingOnly: e.target.checked })} />
+                <span>Chỉ hiện học viên thiếu cột điểm</span>
+              </label>
+            </div>
+            <div className="fp-col">
+              <div className="fp-label">Sắp xếp</div>
+              <select value={f.sortBy} onChange={(e) => setF({ ...f, sortBy: e.target.value })}>
+                <option value="name">Tên A-Z</option>
+                <option value="absent">Vắng nhiều nhất</option>
+                <option value="diligent">Chuyên cần nhất</option>
+              </select>
+              <button className="btn ghost sm" style={{ marginTop: 16 }} onClick={() => setF(defaultFilter)}>Xóa bộ lọc</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="panel">
         <div className="sac-legend">
           <span>Bí tích:</span>
-          <span className="it"><SacramentBadge value="vo_long" /> Vỡ Lòng</span>
+          <span className="it"><SacramentBadge value="ruoc_le" /> Rước lễ</span>
           <span className="it"><SacramentBadge value="them_suc" /> Thêm Sức</span>
           <span className="it">(không icon = chưa nhận)</span>
         </div>
         <table>
           <thead>
             <tr>
-              <th>Tên thánh</th><th>Họ tên</th><th>Ngày sinh</th><th>Lớp</th><th>SĐT phụ huynh</th><th></th>
+              <th>Tên thánh</th><th>Họ tên</th><th>Chức vụ</th><th>Ngày sinh</th><th>Lớp</th><th>SĐT phụ huynh</th><th></th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((s) => (
               <tr key={s.id}>
                 <td>{s.saint_name || '—'}</td>
-                <td>
-                  {s.full_name}
-                  <SacramentBadge value={s.sacrament} />
-                </td>
+                <td>{s.full_name}<SacramentBadge value={s.sacrament} /></td>
+                <td>{s.position ? <span className="role-chip">{s.position}</span> : <span className="muted">—</span>}</td>
                 <td>{s.birth_date || '—'}</td>
                 <td>{s.class_name || <span className="muted">Chưa xếp lớp</span>}</td>
                 <td>{s.parent_phone || '—'}</td>
@@ -135,7 +196,7 @@ export default function Students() {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && <tr><td colSpan={6} className="muted">Không có học viên</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={7} className="muted">Không có học viên</td></tr>}
           </tbody>
         </table>
       </div>
@@ -170,9 +231,7 @@ export default function Students() {
               <div className="field">
                 <label>Bí tích đã nhận</label>
                 <select value={modal.sacrament || 'none'} onChange={(e) => setModal({ ...modal, sacrament: e.target.value })}>
-                  {SACRAMENT_OPTIONS.map((k) => (
-                    <option key={k} value={k}>{SACRAMENTS[k].label}</option>
-                  ))}
+                  {SACRAMENT_OPTIONS.map((k) => <option key={k} value={k}>{SACRAMENTS[k].label}</option>)}
                 </select>
               </div>
             </div>
@@ -185,23 +244,29 @@ export default function Students() {
                 </select>
               </div>
               <div className="field">
-                <label>Tên phụ huynh</label>
-                <input value={modal.parent_name || ''} onChange={(e) => setModal({ ...modal, parent_name: e.target.value })} placeholder="VD: Nguyễn Văn Bố / Trần Thị Mẹ" />
+                <label>Chức vụ</label>
+                <input value={modal.position || ''} onChange={(e) => setModal({ ...modal, position: e.target.value })} placeholder="VD: Lớp trưởng, Lớp phó" />
               </div>
             </div>
             <div className="row">
               <div className="field">
+                <label>Tên phụ huynh</label>
+                <input value={modal.parent_name || ''} onChange={(e) => setModal({ ...modal, parent_name: e.target.value })} placeholder="VD: Nguyễn Văn Bố / Trần Thị Mẹ" />
+              </div>
+              <div className="field">
                 <label>SĐT phụ huynh</label>
                 <input value={modal.parent_phone || ''} onChange={(e) => setModal({ ...modal, parent_phone: e.target.value })} />
               </div>
+            </div>
+            <div className="row">
               <div className="field">
                 <label>SĐT học sinh</label>
                 <input value={modal.student_phone || ''} onChange={(e) => setModal({ ...modal, student_phone: e.target.value })} />
               </div>
-            </div>
-            <div className="field">
-              <label>Địa chỉ</label>
-              <input value={modal.address || ''} onChange={(e) => setModal({ ...modal, address: e.target.value })} />
+              <div className="field">
+                <label>Địa chỉ</label>
+                <input value={modal.address || ''} onChange={(e) => setModal({ ...modal, address: e.target.value })} />
+              </div>
             </div>
             <div className="field">
               <label>Ghi chú</label>
