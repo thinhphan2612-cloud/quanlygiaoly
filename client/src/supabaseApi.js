@@ -493,12 +493,24 @@ async function handle(method, rawUrl, body = {}) {
 
     // ---------------- dashboard ----------------
     if (path === '/dashboard' && method === 'get') {
-      const [{ data: students }, { data: classes }, { data: profiles }, { data: grades }] = await Promise.all([
+      const [{ data: students }, { data: classes }, { data: profiles }, { data: grades }, { data: attend }] = await Promise.all([
         supabase.from('students').select('id, full_name, saint_name, class_id').eq('graduated', false),
         supabase.from('classes').select('id, name').eq('graduated', false),
         supabase.from('profiles').select('id, role'),
         supabase.from('grades').select('student_id, score'),
+        supabase.from('attendance').select('date, status'),
       ]);
+      // Điểm danh theo tuần (CN đầu tuần) — tỷ lệ có mặt của tổng tất cả học viên
+      const weekMap = {};
+      (attend || []).forEach((a) => {
+        const d = new Date(a.date + 'T00:00:00');
+        const sun = new Date(d); sun.setDate(d.getDate() - d.getDay());
+        const key = sun.toISOString().slice(0, 10);
+        const w = weekMap[key] || (weekMap[key] = { present: 0, total: 0 });
+        w.total += 1; if (a.status === 'present') w.present += 1;
+      });
+      const attendanceByWeek = Object.entries(weekMap).sort((a, b) => a[0].localeCompare(b[0])).slice(-8)
+        .map(([wk, v]) => ({ label: wk.slice(8, 10) + '/' + wk.slice(5, 7), rate: v.total ? Math.round((v.present / v.total) * 100) : 0, present: v.present, total: v.total }));
       const S = students || [], C = classes || [], G = grades || [];
       const counts = {
         students: S.length,
@@ -519,7 +531,7 @@ async function handle(method, rawUrl, body = {}) {
         const scores = G.filter((g) => ids.includes(g.student_id)).map((g) => Number(g.score));
         return scores.length ? { name: c.name, avg: round1(scores.reduce((a, b) => a + b, 0) / scores.length) } : null;
       }).filter(Boolean).sort((a, b) => b.avg - a.avg);
-      return ok({ counts, studentsPerClass, topStudents, classAverages });
+      return ok({ counts, studentsPerClass, topStudents, classAverages, attendanceByWeek });
     }
 
     return fail(404, 'Không tìm thấy: ' + method.toUpperCase() + ' ' + path);

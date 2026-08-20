@@ -11,6 +11,36 @@ function initials(name = '') {
   return ((p[p.length - 2]?.[0] || '') + (p[p.length - 1]?.[0] || '')).toUpperCase() || '?';
 }
 
+// Biểu đồ cột tỷ lệ điểm danh theo tuần
+function WeeklyChart({ data }) {
+  if (!data.length) return <p className="muted" style={{ margin: 0 }}>Chưa có dữ liệu điểm danh.</p>;
+  const W = 640, H = 180, pad = 28, bw = (W - pad * 2) / data.length;
+  const x = (i) => pad + i * bw + bw / 2;
+  const y = (r) => H - pad - (r / 100) * (H - pad * 2);
+  const pts = data.map((d, i) => `${x(i)},${y(d.rate)}`).join(' ');
+  return (
+    <div className="table-scroll">
+      <svg viewBox={`0 0 ${W} ${H}`} className="week-chart" style={{ width: '100%', minWidth: 480 }}>
+        {[0, 25, 50, 75, 100].map((g) => (
+          <g key={g}>
+            <line x1={pad} x2={W - pad} y1={y(g)} y2={y(g)} stroke="var(--border)" strokeWidth="1" />
+            <text x={4} y={y(g) + 4} fontSize="10" fill="var(--muted)">{g}</text>
+          </g>
+        ))}
+        {data.map((d, i) => (
+          <g key={i}>
+            <rect x={x(i) - bw * 0.28} y={y(d.rate)} width={bw * 0.56} height={H - pad - y(d.rate)} rx="4" fill="var(--primary)" opacity="0.18" />
+            <text x={x(i)} y={y(d.rate) - 6} fontSize="11" fill="var(--primary)" textAnchor="middle" fontWeight="600">{d.rate}%</text>
+            <text x={x(i)} y={H - pad + 15} fontSize="10" fill="var(--muted)" textAnchor="middle">{d.label}</text>
+          </g>
+        ))}
+        <polyline points={pts} fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinejoin="round" />
+        {data.map((d, i) => <circle key={i} cx={x(i)} cy={y(d.rate)} r="3.5" fill="var(--primary)" />)}
+      </svg>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
@@ -21,7 +51,7 @@ export default function Dashboard() {
 
   if (!data) return <div className="muted">Đang tải...</div>;
 
-  const { counts, studentsPerClass, topStudents, classAverages } = data;
+  const { counts, studentsPerClass, topStudents, classAverages, attendanceByWeek = [] } = data;
   const donutSegments = studentsPerClass
     .filter((c) => c.count > 0)
     .map((c, i) => ({ label: c.name, value: c.count, color: PALETTE[i % PALETTE.length] }));
@@ -47,6 +77,12 @@ export default function Dashboard() {
           <div><div className="lbl">Lớp học</div><div className="num">{counts.classes}</div></div>
           <div className="ic"><IconClass /></div>
         </div>
+      </div>
+
+      {/* Biểu đồ điểm danh theo tuần */}
+      <div className="panel" style={{ marginBottom: 18 }}>
+        <div className="card-head"><h2>Tỷ lệ điểm danh theo tuần</h2></div>
+        <WeeklyChart data={attendanceByWeek} />
       </div>
 
       <div className="dash-grid">
