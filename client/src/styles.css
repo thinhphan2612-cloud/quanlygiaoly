@@ -483,3 +483,16 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
   background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .18s ease;
 }
 .switch.on .knob { transform: translateX(18px); }
+
+/* ---------- Class form: grid + teacher picker ---------- */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+@media (max-width: 560px) { .grid-2 { grid-template-columns: 1fr; } }
+.teacher-picker {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 6px; max-height: 190px; overflow-y: auto;
+}
+.tp-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 8px; border-radius: 8px; }
+.tp-row:hover { background: var(--primary-soft); }
+.tp-check { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+.tp-primary { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 12px; color: var(--primary); font-weight: 600; }
+.tp-check input, .tp-primary input { width: 16px; height: 16px; accent-color: var(--primary); }

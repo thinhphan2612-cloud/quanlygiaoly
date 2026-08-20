@@ -31,10 +31,10 @@
   - lọc điểm trên/dưới ngưỡng (nhập số để lọc)
 - [ ] D2. Thêm trường **Chức vụ** (tự nhập tay: lớp trưởng, lớp phó...).
 
-## E. Lớp học (Classes)
-- [ ] E1. Cho phép **nhiều giáo lý viên/lớp** (chính + phụ).
-- [ ] E2. Thêm trường **Phòng học** (tự nhập, vd A102) — hiển thị ở bảng chính.
-- [ ] E3. Thêm trường **Thời gian học** (sáng/chiều/tối) — hiển thị ở bảng chính.
+## E. Lớp học (Classes) ✅
+- [x] E1. **Nhiều giáo lý viên/lớp** (chọn nhiều + đánh dấu 1 người chính).
+- [x] E2. Trường **Phòng học** (vd A102) — hiển thị bảng chính.
+- [x] E3. Trường **Thời gian học** (Sáng/Chiều/Tối) — hiển thị bảng chính.
 
 ## F. Điểm danh (Attendance) — tách 2 trang
 - [ ] F1. **Tách 2 tab: "Giáo lý"** và **"Việc Thiêng liêng"**.

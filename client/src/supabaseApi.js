@@ -28,6 +28,17 @@ function cleanStudent(body) {
   return out;
 }
 
+// Ghi danh sách giáo lý viên của lớp (chính + phụ). Chấp nhận body.teachers
+// = [{teacher_id, is_primary}] hoặc fallback body.teacher_id (1 GV).
+async function saveClassTeachers(classId, body) {
+  let list = Array.isArray(body.teachers) ? body.teachers.filter((t) => t.teacher_id) : [];
+  if (!list.length && body.teacher_id) list = [{ teacher_id: body.teacher_id, is_primary: true }];
+  if (!list.length) return;
+  if (!list.some((t) => t.is_primary)) list[0].is_primary = true; // đảm bảo có 1 GV chính
+  const rows = list.map((t) => ({ class_id: classId, teacher_id: t.teacher_id, is_primary: !!t.is_primary }));
+  await supabase.from('class_teachers').insert(rows);
+}
+
 async function handle(method, rawUrl, body = {}) {
   const pid = parishId();
   const [path, qs] = rawUrl.split('?');
@@ -45,42 +56,52 @@ async function handle(method, rawUrl, body = {}) {
       if (e1) return fail(400, e1.message);
       const countByClass = {};
       (studs || []).forEach((s) => { if (s.class_id) countByClass[s.class_id] = (countByClass[s.class_id] || 0) + 1; });
-      const teacherByClass = {};
+      const teachersByClass = {};
       (cts || []).forEach((ct) => {
-        if (!teacherByClass[ct.class_id] || ct.is_primary) {
-          teacherByClass[ct.class_id] = { id: ct.teacher_id, name: ct.profiles?.full_name || null };
-        }
+        (teachersByClass[ct.class_id] = teachersByClass[ct.class_id] || []).push({
+          id: ct.teacher_id, name: ct.profiles?.full_name || null, is_primary: ct.is_primary,
+        });
       });
-      return ok((classes || []).map((c) => ({
-        ...c,
-        year: c.school_year,
-        teacher_id: teacherByClass[c.id]?.id || null,
-        teacher_name: teacherByClass[c.id]?.name || null,
-        student_count: countByClass[c.id] || 0,
-      })));
+      return ok((classes || []).map((c) => {
+        const ts = (teachersByClass[c.id] || []).sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0));
+        const primary = ts.find((t) => t.is_primary) || ts[0];
+        return {
+          ...c,
+          year: c.school_year,
+          teachers: ts,
+          teacher_ids: ts.map((t) => t.id),
+          primary_teacher_id: primary?.id || null,
+          teacher_id: primary?.id || null, // tương thích cũ
+          teacher_name: ts.length
+            ? ts.map((t) => t.name + (t.is_primary ? ' (chính)' : '')).join(', ')
+            : null,
+          student_count: countByClass[c.id] || 0,
+        };
+      }));
     }
     if (path === '/classes' && method === 'post') {
       if (!body.name) return fail(400, 'Thiếu tên lớp');
       const { data: cls, error } = await supabase
         .from('classes')
-        .insert({ parish_id: pid, name: body.name, school_year: nn(body.year), order_index: Number(body.order_index) || 0 })
+        .insert({
+          parish_id: pid, name: body.name, school_year: nn(body.year),
+          order_index: Number(body.order_index) || 0, room: nn(body.room), schedule: nn(body.schedule),
+        })
         .select().single();
       if (error) return fail(400, error.message);
-      if (body.teacher_id) {
-        await supabase.from('class_teachers').insert({ class_id: cls.id, teacher_id: body.teacher_id, is_primary: true });
-      }
+      await saveClassTeachers(cls.id, body);
       return ok(cls);
     }
     if (seg[0] === 'classes' && seg[1] && method === 'put') {
       const { error } = await supabase.from('classes')
-        .update({ name: body.name, school_year: nn(body.year), order_index: Number(body.order_index) || 0 })
+        .update({
+          name: body.name, school_year: nn(body.year), order_index: Number(body.order_index) || 0,
+          room: nn(body.room), schedule: nn(body.schedule),
+        })
         .eq('id', seg[1]);
       if (error) return fail(400, error.message);
-      // Cập nhật giáo viên chính
-      await supabase.from('class_teachers').delete().eq('class_id', seg[1]).eq('is_primary', true);
-      if (body.teacher_id) {
-        await supabase.from('class_teachers').insert({ class_id: seg[1], teacher_id: body.teacher_id, is_primary: true });
-      }
+      await supabase.from('class_teachers').delete().eq('class_id', seg[1]);
+      await saveClassTeachers(seg[1], body);
       return ok({ ok: true });
     }
     if (seg[0] === 'classes' && seg[1] && method === 'delete') {
