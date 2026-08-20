@@ -12,7 +12,8 @@ import RandomPicker from './pages/RandomPicker.jsx';
 import Games from './pages/Games.jsx';
 
 function Protected({ children }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  if (loading) return <div className="app-loading">Đang tải...</div>;
   if (!user) return <Navigate to="/login" replace />;
   return <Layout>{children}</Layout>;
 }

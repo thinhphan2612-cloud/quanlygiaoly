@@ -432,3 +432,12 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
   border: 1px solid rgba(255, 255, 255, 0.6);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
 }
+
+/* ---------- Auth / misc ---------- */
+.info-box {
+  background: #e8f5ee; color: #1a7f45; border: 1px solid #b7e3c8;
+  padding: 10px 12px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 10px;
+}
+.app-loading {
+  display: grid; place-items: center; min-height: 100vh; color: var(--muted); font-size: 15px;
+}
