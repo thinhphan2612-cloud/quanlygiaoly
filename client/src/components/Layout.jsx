@@ -3,6 +3,8 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
 import api from '../api';
 import { applyTheme, loadTheme } from '../theme.js';
+import { planName } from '../lib/plans';
+import PricingModal from './PricingModal.jsx';
 import {
   IconHome, IconStudents, IconClass, IconCheck, IconGrades,
   IconDice, IconGame, IconTeacher, IconLogout, IconBell,
@@ -32,6 +34,9 @@ export default function Layout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [parish, setParish] = useState(null);
   const [dark, setDark] = useState(loadTheme().mode === 'dark');
+  const [pricing, setPricing] = useState(false);
+  const [feedback, setFeedback] = useState(false);
+  const plan = parish?.plan || 'free';
 
   useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
 
@@ -72,11 +77,20 @@ export default function Layout({ children }) {
               </NavLink>
             ))}
         </nav>
-        <div className="side-card">
-          <div className="emoji">📖</div>
-          <div className="t">Đồng hành cùng các em thiếu nhi trong hành trình đức tin.</div>
-          <button className="btn-w" onClick={() => navigate('/students')}>Quản lý học viên</button>
-        </div>
+        {plan === 'free' ? (
+          <div className="upgrade-card" onClick={() => setPricing(true)}>
+            <div className="emoji">🚀</div>
+            <div className="t">Bạn đang dùng gói Basic. Nâng lên Pro để mở khóa toàn bộ.</div>
+            <button className="btn-w">Nâng cấp Pro</button>
+          </div>
+        ) : (
+          <div className="side-card">
+            <div className="emoji">📖</div>
+            <div className="t">Đồng hành cùng các em thiếu nhi trong hành trình đức tin.</div>
+            <button className="btn-w" onClick={() => setPricing(true)}>Gói {planName(plan)}</button>
+          </div>
+        )}
+        <button className="feedback-link" onClick={() => setFeedback(true)}>💬 Góp ý / liên hệ tác giả</button>
       </aside>
       {navOpen && <div className="nav-backdrop" onClick={() => setNavOpen(false)} />}
 
@@ -121,6 +135,21 @@ export default function Layout({ children }) {
         </header>
         <main className="content">{children}</main>
       </div>
+
+      {pricing && <PricingModal current={plan} onClose={() => setPricing(false)} />}
+      {feedback && (
+        <div className="modal-backdrop" onClick={() => setFeedback(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Góp ý / liên hệ tác giả</h2>
+            <p className="muted" style={{ marginTop: 0 }}>Mọi góp ý giúp ứng dụng tốt hơn. Rất mong nhận phản hồi từ quý cha và anh chị giáo lý viên.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <a className="btn" href="mailto:phanngocthinh2612@gmail.com?subject=Góp ý Quản lý Giáo lý">✉ Gửi email góp ý</a>
+              <a className="btn ghost" href="https://wecatholic.com" target="_blank" rel="noopener noreferrer">🌐 Khám phá WeCatholic</a>
+            </div>
+            <div className="modal-actions"><button className="btn ghost" onClick={() => setFeedback(false)}>Đóng</button></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -427,7 +427,7 @@ async function handle(method, rawUrl, body = {}) {
     }
     if (path === '/parish' && method === 'put') {
       const patch = {};
-      for (const k of ['name', 'diocese', 'logo_url', 'settings']) if (body[k] !== undefined) patch[k] = body[k];
+      for (const k of ['name', 'diocese', 'logo_url', 'settings', 'plan']) if (body[k] !== undefined) patch[k] = body[k];
       const { data, error } = await supabase.from('parishes').update(patch).eq('id', pid).select().single();
       if (error) return fail(400, error.message);
       return ok(data);

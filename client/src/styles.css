@@ -587,3 +587,32 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .swatch.on { border-color: var(--text); box-shadow: 0 0 0 2px var(--panel) inset; }
 .logo-upload { display: flex; align-items: center; gap: 14px; }
 .logo-preview { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; border: 1px solid var(--border); background: var(--primary-soft); display: grid; place-items: center; font-size: 26px; }
+
+/* ---------- Games grid ---------- */
+.game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+.game-card { cursor: pointer; text-align: center; transition: transform .12s ease; }
+.game-card:hover { transform: translateY(-3px); }
+.game-card.locked { opacity: 0.75; }
+.game-thumb { height: 96px; border-radius: var(--radius); display: grid; place-items: center; font-size: 40px; box-shadow: var(--shadow-sm); }
+.game-name { margin-top: 8px; font-weight: 600; font-size: 14px; }
+
+/* ---------- Pricing ---------- */
+.pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 720px) { .pricing-grid { grid-template-columns: 1fr; } }
+.price-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; position: relative; background: var(--panel); }
+.price-card.featured { border-color: var(--primary); box-shadow: 0 8px 24px rgba(37,99,235,.12); }
+.price-card.current { background: var(--primary-soft); }
+.price-tag { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 20px; }
+.price-name { font-size: 15px; font-weight: 700; color: var(--heading); }
+.price-amount { font-size: 24px; font-weight: 800; margin: 6px 0 12px; color: var(--primary); }
+.price-period { font-size: 13px; font-weight: 500; color: var(--muted); }
+.price-feats { list-style: none; padding: 0; margin: 0 0 16px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.price-current-badge { text-align: center; padding: 9px; border-radius: 10px; background: var(--primary-soft); color: var(--primary); font-weight: 600; font-size: 13px; }
+
+/* ---------- Upgrade card + feedback link (sidebar) ---------- */
+.upgrade-card { margin-top: 14px; padding: 16px; border-radius: var(--radius); cursor: pointer; color: #fff; background: linear-gradient(160deg, var(--primary), var(--primary-dark)); text-align: center; }
+.upgrade-card .emoji { font-size: 28px; }
+.upgrade-card .t { font-size: 12.5px; margin: 8px 0 12px; opacity: .95; }
+.upgrade-card .btn-w { background: #fff; color: var(--primary); border: none; padding: 8px 14px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%; }
+.feedback-link { margin-top: 12px; width: 100%; background: none; border: none; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; padding: 8px; border-radius: 10px; text-align: center; }
+.feedback-link:hover { background: var(--primary-soft); color: var(--primary); }

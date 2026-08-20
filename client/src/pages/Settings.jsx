@@ -162,6 +162,20 @@ export default function Settings() {
         <ToggleRow label="Hiển thị mục học viên đã ra trường" on={flag('show_graduated')} onClick={() => toggle('show_graduated')} />
       </div>
 
+      {/* Gói dịch vụ */}
+      <div className="panel">
+        <div className="card-head"><h2>Gói dịch vụ</h2></div>
+        <div className="field" style={{ maxWidth: 280 }}>
+          <label>Gói hiện tại (thanh toán bổ sung sau)</label>
+          <select value={parish.plan || 'free'} onChange={(e) => saveParish({ plan: e.target.value })}>
+            <option value="free">Basic (miễn phí)</option>
+            <option value="standard">Standard</option>
+            <option value="pro">Pro</option>
+          </select>
+        </div>
+        <p className="muted" style={{ fontSize: 12 }}>Gói quyết định việc mở khóa Game học và các tính năng nâng cao.</p>
+      </div>
+
       {/* Năm học */}
       {flag('manage_by_school_year') && (
         <div className="panel">

@@ -7,8 +7,8 @@
 - [x] A1. Đổi **toàn bộ màu tím → xanh dương** trên toàn UI. (biến --primary + hardcode → tông #2563eb)
 - [x] A2. **Edit logo + tên giáo phận + tên giáo xứ** (Settings) — hiển thị ở sidebar & topbar. Logo lưu data-URL (không cần Storage).
 - [x] A3. **Theme Day/Night** (menu avatar + Settings) + **màu theo năm phụng vụ** (6 màu: xanh, tím Vọng/Chay, xanh lá Thường niên, đỏ, hồng, vàng).
-- [ ] A4. Nút **"Góp ý / liên hệ tác giả"** (kèm quảng cáo wecatholic) đặt dưới sidebar.
-- [ ] A5. Cụm **gói/nâng cấp Pro**: nút "Upgrade to go Pro"; bấm vào hiện **bảng các gói + lợi ích từng gói** (Basic / Standard / Pro). Tài khoản Free bị khóa các tính năng Pro.
+- [x] A4. Nút **"Góp ý / liên hệ tác giả"** dưới sidebar (modal: email góp ý + link WeCatholic).
+- [x] A5. Cụm **gói/nâng cấp Pro**: thẻ Upgrade ở sidebar → **PricingModal** (Basic/Standard/Pro + lợi ích). Gói lưu ở parishes.plan (admin đặt tay ở Settings; thanh toán bổ sung sau).
 
 ## B. Cài đặt tài khoản Admin (bấm vào avatar) — YÊU CẦU BỔ SUNG, ưu tiên ✅
 - [x] B1. Bấm avatar → menu: **họ tên admin** + email + **Cài đặt quản lý** (trang `/settings`).
@@ -64,9 +64,10 @@
 - [ ] J1. GLV chỉ **quản lý MỘT lớp duy nhất**, không can thiệp nội dung chung.
 - [ ] J2. GLV có 3 mục: quản lý giáo viên (xem thông tin cá nhân của mình), thông báo đến GV (**chỉ nhận, không trả lời**), kiểm toán (nhập thu chi lớp mình).
 
-## K. Game học
-- [ ] K1. Trang game chỉ hiện **thumbnail + tên game**; bấm → **popup mô tả** + nút Play điều hướng sang tên miền khác (vd wecatholic).
-- [ ] K2. Tài khoản **Free**: các game **xám hết, không truy cập được** (Pro mới mở).
+## K. Game học ✅ (giao diện + khóa gói; nội dung game mẫu, link WeCatholic)
+- [x] K1. Trang game hiện **thumbnail + tên**; bấm → **popup mô tả** + nút "Chơi ngay" mở tab mới (WeCatholic).
+- [x] K2. Gói **Free**: game **xám + khóa 🔒**, bấm → mở bảng nâng cấp. Standard/Pro mở khóa.
+- Ghi chú: danh sách game hiện là mẫu tĩnh (6 game) — có thể cho admin tự quản lý sau.
 
 ---
 ## ⚠ Ghi chú kiến trúc quan trọng
