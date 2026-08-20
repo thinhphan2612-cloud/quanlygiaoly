@@ -55,8 +55,8 @@
 - [x] H2. Chữ "Không lặp lại người đã chọn" đậm/rõ hơn (.picker-check).
 
 ## I. Trang Admin — Quản lý giáo viên (mở rộng)
-- [ ] I1. Tab **"Quản lý giáo viên"**: thêm **thông tin cá nhân GLV** (ngày sinh, địa chỉ, khu vực, cấp GLV [cấp 1/2, để trống cha tự điền], nghề nghiệp, đồng hành lớp nào, SĐT).
-- [ ] I2. Sắp xếp thứ tự cột: quản lý lớp nào.
+- [~] I1. **Quản lý giáo viên**: tạo tài khoản GLV (Edge Function), **hồ sơ cá nhân** (tên thánh, ngày sinh, địa chỉ, khu vực, cấp GLV, nghề nghiệp, SĐT). Code xong — **chờ chạy migration_teacher_accounts.sql + deploy Edge Function create-teacher**.
+- [~] I2. Cột **"Lớp phụ trách"** trong danh sách GLV (phân công ở trang Lớp học). Code xong.
 - [ ] I3. Tab **"Thông báo đến GV"**: ô nội dung + tích chọn người nhận + gửi + **lịch sử tin nhắn đã gửi**.
 - [x] I4. Trang **"Kiểm toán"** (/audit, admin): nhập thu/chi (nội dung, loại, số tiền, ngày, lớp) + **thống kê cân đối** (tổng thu/chi, âm/dương) + lọc theo lớp + xuất Excel/PDF. ✅ đã chạy migration + verify.
 

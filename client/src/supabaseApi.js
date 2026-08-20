@@ -112,15 +112,42 @@ async function handle(method, rawUrl, body = {}) {
 
     // ---------------- profiles (auth/users) ----------------
     if (path === '/auth/users' && method === 'get') {
-      const { data, error } = await supabase.from('profiles')
-        .select('id, full_name, role').order('full_name');
+      const [{ data, error }, { data: cts }] = await Promise.all([
+        supabase.from('profiles')
+          .select('id, full_name, role, email, saint_name, birth_date, address, area, glv_level, occupation, phone')
+          .order('full_name'),
+        supabase.from('class_teachers').select('teacher_id, is_primary, classes(name)'),
+      ]);
       if (error) return fail(400, error.message);
-      return ok((data || []).map((u) => ({ ...u, username: '' })));
+      const classesByTeacher = {};
+      (cts || []).forEach((ct) => {
+        if (ct.classes?.name) (classesByTeacher[ct.teacher_id] = classesByTeacher[ct.teacher_id] || [])
+          .push(ct.classes.name + (ct.is_primary ? ' (chính)' : ''));
+      });
+      return ok((data || []).map((u) => ({ ...u, username: u.email || '', classes: classesByTeacher[u.id] || [] })));
     }
     if (path === '/auth/users' && method === 'post') {
-      return fail(501, 'Thêm tài khoản giáo lý viên sẽ có ở bản sau (cần Supabase Edge Function để tạo user an toàn).');
+      const { email, password, full_name } = body;
+      if (!email || !password) return fail(400, 'Cần email và mật khẩu');
+      const { data, error } = await supabase.functions.invoke('create-teacher', { body: { email, password, full_name } });
+      if (error) {
+        let msg = 'Tạo tài khoản thất bại (đã deploy Edge Function create-teacher chưa?)';
+        try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch { /* noop */ }
+        return fail(400, msg);
+      }
+      if (data?.error) return fail(400, data.error);
+      return ok(data);
+    }
+    if (seg[0] === 'auth' && seg[1] === 'users' && seg[2] && method === 'put') {
+      const patch = {};
+      for (const k of ['full_name', 'saint_name', 'birth_date', 'address', 'area', 'glv_level', 'occupation', 'phone'])
+        if (body[k] !== undefined) patch[k] = nn(body[k]);
+      const { data, error } = await supabase.from('profiles').update(patch).eq('id', seg[2]).select().single();
+      if (error) return fail(400, error.message);
+      return ok(data);
     }
     if (seg[0] === 'auth' && seg[1] === 'users' && seg[2] && method === 'delete') {
+      // Xóa profile -> vô hiệu hóa truy cập (tài khoản auth vẫn còn, sẽ dọn sau)
       const { error } = await supabase.from('profiles').delete().eq('id', seg[2]);
       if (error) return fail(400, error.message);
       return ok({ ok: true });
