@@ -43,11 +43,12 @@
 - [x] F5. **Việc Thiêng liêng**: tạo nhiều việc (⚙ Quản lý việc), ô check theo học viên/ngày; thống kê tuần/tháng đếm số lần.
 - API: /attendance-range, /spiritual-tasks (CRUD), /spiritual (get/post), /spiritual-range.
 
-## G. Điểm số (Grades) — redesign (UX hiện tại khó dùng)
-- [ ] G1. **Bảng điểm cả lớp** (hiện chỉ xem từng người). Nút **"Tổng quát"** → xem bảng gồm mọi cột + điểm TB (giống bản PDF nhưng chỉ xem).
-- [ ] G2. Nút **Setting (⚙)**: quản lý **các cột điểm** đã tạo + **hệ số** (sửa được). VD: KT15' hs1, KT1 tiết hs1, HK1 hs2, HK2 hs2, điểm cộng hs1.
-- [ ] G3. Nhập điểm **inline** trong bảng: bấm Sửa → thành Lưu, hoặc auto-lưu khi click ra ngoài.
-- [ ] G4. Nút **checkbox "Sắp xếp theo thứ hạng"**: check → xếp theo hạng; bỏ check → tên ABC.
+## G. Điểm số (Grades) — redesign ✅
+- [x] G1. **Bảng điểm cả lớp** (học viên × cột điểm) + nút **"Tổng quát"** (modal xem toàn bảng + TB + hạng).
+- [x] G2. Nút **⚙ Cột điểm**: quản lý cột điểm + **hệ số** (sửa inline, thêm/xóa). TB tính **có trọng số**.
+- [x] G3. Nhập điểm **inline** trong bảng, **auto-lưu khi bấm ra ngoài** (viền xanh báo lưu).
+- [x] G4. Checkbox **"Sắp xếp theo thứ hạng"** vs tên ABC; cột Hạng hiển thị vị thứ.
+- API: /grade-columns (CRUD), /grades-class (ma trận điểm), /grade-cell (upsert/xóa 1 ô).
 
 ## H. Chọn trả bài (RandomPicker)
 - [ ] H1. Nút **"Chưa thuộc bài"**: bấm → học viên không qua lượt nhưng vẫn nằm trong danh sách chọn lần sau.

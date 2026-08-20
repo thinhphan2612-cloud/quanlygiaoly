@@ -360,6 +360,65 @@ async function handle(method, rawUrl, body = {}) {
       return ok({ ok: true });
     }
 
+    // ---------------- grade columns (cột điểm + hệ số) ----------------
+    if (path === '/grade-columns' && method === 'get') {
+      if (!q.class_id) return fail(400, 'Cần class_id');
+      const { data, error } = await supabase.from('grade_columns').select('*')
+        .eq('class_id', q.class_id).order('order_index').order('created_at');
+      if (error) return fail(400, error.message);
+      return ok(data || []);
+    }
+    if (path === '/grade-columns' && method === 'post') {
+      if (!body.name || !body.class_id) return fail(400, 'Cần tên cột và class_id');
+      const { data, error } = await supabase.from('grade_columns')
+        .insert({ parish_id: pid, class_id: body.class_id, name: body.name, weight: Number(body.weight) || 1, order_index: Number(body.order_index) || 0 })
+        .select().single();
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
+    if (seg[0] === 'grade-columns' && seg[1] && method === 'put') {
+      const patch = {};
+      if (body.name !== undefined) patch.name = body.name;
+      if (body.weight !== undefined) patch.weight = Number(body.weight) || 1;
+      if (body.order_index !== undefined) patch.order_index = Number(body.order_index) || 0;
+      const { data, error } = await supabase.from('grade_columns').update(patch).eq('id', seg[1]).select().single();
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
+    if (seg[0] === 'grade-columns' && seg[1] && method === 'delete') {
+      const { error } = await supabase.from('grade_columns').delete().eq('id', seg[1]);
+      if (error) return fail(400, error.message);
+      return ok({ ok: true });
+    }
+
+    // ---------------- bảng điểm cả lớp ----------------
+    if (path === '/grades-class' && method === 'get') {
+      if (!q.class_id) return fail(400, 'Cần class_id');
+      const [{ data: students }, { data: columns }, { data: grades }] = await Promise.all([
+        supabase.from('students').select('id, full_name, saint_name').eq('class_id', q.class_id).eq('graduated', false).order('full_name'),
+        supabase.from('grade_columns').select('*').eq('class_id', q.class_id).order('order_index').order('created_at'),
+        supabase.from('grades').select('student_id, column_id, score')
+          .in('column_id', (await supabase.from('grade_columns').select('id').eq('class_id', q.class_id)).data?.map((c) => c.id) || ['00000000-0000-0000-0000-000000000000']),
+      ]);
+      const scores = {};
+      (grades || []).forEach((g) => { (scores[g.student_id] = scores[g.student_id] || {})[g.column_id] = Number(g.score); });
+      return ok({ students: students || [], columns: columns || [], scores });
+    }
+    // đặt/sửa/xóa 1 ô điểm
+    if (path === '/grade-cell' && method === 'post') {
+      const { student_id, column_id, score } = body;
+      if (!student_id || !column_id) return fail(400, 'Cần student_id và column_id');
+      if (score === '' || score === null || score === undefined) {
+        await supabase.from('grades').delete().eq('student_id', student_id).eq('column_id', column_id);
+        return ok({ ok: true, cleared: true });
+      }
+      const { error } = await supabase.from('grades').upsert(
+        { parish_id: pid, student_id, column_id, score: Number(score) }, { onConflict: 'student_id,column_id' }
+      );
+      if (error) return fail(400, error.message);
+      return ok({ ok: true });
+    }
+
     // ---------------- parish (giáo xứ + cài đặt) ----------------
     if (path === '/parish' && method === 'get') {
       const { data, error } = await supabase.from('parishes').select('*').eq('id', pid).maybeSingle();
