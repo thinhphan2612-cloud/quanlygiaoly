@@ -10,16 +10,16 @@
 - [ ] A4. Nút **"Góp ý / liên hệ tác giả"** (kèm quảng cáo wecatholic) đặt dưới sidebar.
 - [ ] A5. Cụm **gói/nâng cấp Pro**: nút "Upgrade to go Pro"; bấm vào hiện **bảng các gói + lợi ích từng gói** (Basic / Standard / Pro). Tài khoản Free bị khóa các tính năng Pro.
 
-## B. Cài đặt tài khoản Admin (bấm vào avatar) — YÊU CẦU BỔ SUNG, ưu tiên
-- [ ] B1. Bấm avatar → menu: **họ tên admin** + **Cài đặt thông tin quản lý**.
-- [ ] B2. **Quản lý theo năm học giáo lý.**
-- [ ] B3. **Auto nhảy lớp sau mỗi năm học**: nhập **thứ tự lớp** để hệ thống tự cho học viên lên lớp kế tiếp.
-- [ ] B4. Lớp cuối cùng (ra trường) → chuyển vào mục **"Đã ra trường"** (lưu trữ, tìm nhanh sau này).
-- [ ] B5. Các trường quản lý này cho **bật/tắt (on/off)**, **mặc định ON**.
+## B. Cài đặt tài khoản Admin (bấm vào avatar) — YÊU CẦU BỔ SUNG, ưu tiên ✅
+- [x] B1. Bấm avatar → menu: **họ tên admin** + email + **Cài đặt quản lý** (trang `/settings`).
+- [x] B2. **Quản lý theo năm học giáo lý** (thêm/xóa năm học, đặt năm hiện tại).
+- [x] B3. **Auto nhảy lớp sau mỗi năm học**: ô **thứ tự lớp** ở form lớp; nút "Lên lớp" chuyển học viên lên lớp kế (đã kiểm chứng: không nhảy dồn).
+- [x] B4. Lớp cao nhất (ra trường) → mục **"Đã ra trường"** trong Settings (có tìm kiếm).
+- [x] B5. 3 cờ **bật/tắt (on/off)**, **mặc định ON** (lưu vào parishes.settings).
 
 ## C. Dashboard (Tổng quan)
-- [ ] C1. **Bỏ cột "Mã học viên" (Mã HV)**.
-- [ ] C2. **Bỏ ô "Điểm trung bình"** ở hàng thẻ thống kê.
+- [x] C1. **Bỏ cột "Mã học viên" (Mã HV)**.
+- [x] C2. **Bỏ ô "Điểm trung bình"** ở hàng thẻ thống kê.
 - [ ] C3. Thay donut/thẻ bằng **biểu đồ tăng/giảm điểm danh theo từng tuần** của **tổng tất cả học viên**.
 - [ ] C4. **Chuông thông báo** hoạt động thật: tự động báo khi có học viên **vắng 3 buổi liên tiếp**; nhận thông báo từ admin.
 

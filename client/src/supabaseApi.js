@@ -63,7 +63,7 @@ async function handle(method, rawUrl, body = {}) {
       if (!body.name) return fail(400, 'Thiếu tên lớp');
       const { data: cls, error } = await supabase
         .from('classes')
-        .insert({ parish_id: pid, name: body.name, school_year: nn(body.year) })
+        .insert({ parish_id: pid, name: body.name, school_year: nn(body.year), order_index: Number(body.order_index) || 0 })
         .select().single();
       if (error) return fail(400, error.message);
       if (body.teacher_id) {
@@ -73,7 +73,7 @@ async function handle(method, rawUrl, body = {}) {
     }
     if (seg[0] === 'classes' && seg[1] && method === 'put') {
       const { error } = await supabase.from('classes')
-        .update({ name: body.name, school_year: nn(body.year) })
+        .update({ name: body.name, school_year: nn(body.year), order_index: Number(body.order_index) || 0 })
         .eq('id', seg[1]);
       if (error) return fail(400, error.message);
       // Cập nhật giáo viên chính
@@ -107,8 +107,8 @@ async function handle(method, rawUrl, body = {}) {
 
     // ---------------- students ----------------
     if (path === '/students' && method === 'get') {
-      let query = supabase.from('students').select('*, classes(name)')
-        .eq('graduated', false).order('full_name');
+      let query = supabase.from('students').select('*, classes(name)').order('full_name');
+      query = query.eq('graduated', q.graduated === '1');
       if (q.class_id) query = query.eq('class_id', q.class_id);
       const { data, error } = await query;
       if (error) return fail(400, error.message);
@@ -211,6 +211,78 @@ async function handle(method, rawUrl, body = {}) {
       const { error } = await supabase.from('grades').delete().eq('id', seg[1]);
       if (error) return fail(400, error.message);
       return ok({ ok: true });
+    }
+
+    // ---------------- parish (giáo xứ + cài đặt) ----------------
+    if (path === '/parish' && method === 'get') {
+      const { data, error } = await supabase.from('parishes').select('*').eq('id', pid).maybeSingle();
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
+    if (path === '/parish' && method === 'put') {
+      const patch = {};
+      for (const k of ['name', 'diocese', 'logo_url', 'settings']) if (body[k] !== undefined) patch[k] = body[k];
+      const { data, error } = await supabase.from('parishes').update(patch).eq('id', pid).select().single();
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
+
+    // ---------------- school_years (năm học) ----------------
+    if (path === '/school-years' && method === 'get') {
+      const { data, error } = await supabase.from('school_years').select('*').order('name', { ascending: false });
+      if (error) return fail(400, error.message);
+      return ok(data || []);
+    }
+    if (path === '/school-years' && method === 'post') {
+      if (!body.name) return fail(400, 'Thiếu tên năm học');
+      const { data, error } = await supabase.from('school_years')
+        .insert({ parish_id: pid, name: body.name }).select().single();
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
+    if (seg[0] === 'school-years' && seg[1] && seg[2] === 'current' && method === 'post') {
+      await supabase.from('school_years').update({ is_current: false }).eq('parish_id', pid);
+      const { data, error } = await supabase.from('school_years')
+        .update({ is_current: true }).eq('id', seg[1]).select().single();
+      if (error) return fail(400, error.message);
+      // lưu tên năm hiện tại vào settings để tiện dùng
+      const { data: p } = await supabase.from('parishes').select('settings').eq('id', pid).maybeSingle();
+      await supabase.from('parishes').update({ settings: { ...(p?.settings || {}), current_school_year: data.name } }).eq('id', pid);
+      return ok(data);
+    }
+    if (seg[0] === 'school-years' && seg[1] && method === 'delete') {
+      const { error } = await supabase.from('school_years').delete().eq('id', seg[1]);
+      if (error) return fail(400, error.message);
+      return ok({ ok: true });
+    }
+
+    // ---------------- promote (lên lớp cuối năm) ----------------
+    if (path === '/promote' && method === 'post') {
+      const { data: classes, error } = await supabase.from('classes')
+        .select('id, order_index').eq('graduated', false).order('order_index');
+      if (error) return fail(400, error.message);
+      if (!classes || classes.length === 0) return fail(400, 'Chưa có lớp nào để lên lớp');
+      // lớp kế tiếp theo order_index
+      const sorted = [...classes].sort((a, b) => a.order_index - b.order_index);
+      const nextOf = {};
+      sorted.forEach((c, i) => { nextOf[c.id] = sorted[i + 1]?.id || null; });
+      const highestIds = sorted.filter((c) => !nextOf[c.id]).map((c) => c.id);
+
+      let graduated = 0, promoted = 0;
+      // 1) Lớp cao nhất -> ra trường (làm trước để không bị nhảy dồn)
+      if (highestIds.length) {
+        const { data: g } = await supabase.from('students').update({ graduated: true })
+          .in('class_id', highestIds).eq('graduated', false).select('id');
+        graduated = g?.length || 0;
+      }
+      // 2) Chuyển từ lớp cao -> thấp để tránh cascade
+      const withNext = sorted.filter((c) => nextOf[c.id]).reverse();
+      for (const c of withNext) {
+        const { data: mv } = await supabase.from('students').update({ class_id: nextOf[c.id] })
+          .eq('class_id', c.id).eq('graduated', false).select('id');
+        promoted += mv?.length || 0;
+      }
+      return ok({ promoted, graduated });
     }
 
     // ---------------- dashboard ----------------

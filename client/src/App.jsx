@@ -10,6 +10,7 @@ import Attendance from './pages/Attendance.jsx';
 import Grades from './pages/Grades.jsx';
 import RandomPicker from './pages/RandomPicker.jsx';
 import Games from './pages/Games.jsx';
+import Settings from './pages/Settings.jsx';
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -30,6 +31,7 @@ export default function App() {
       <Route path="/grades" element={<Protected><Grades /></Protected>} />
       <Route path="/random" element={<Protected><RandomPicker /></Protected>} />
       <Route path="/games" element={<Protected><Games /></Protected>} />
+      <Route path="/settings" element={<Protected><Settings /></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

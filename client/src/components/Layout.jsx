@@ -27,9 +27,10 @@ export default function Layout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [navOpen, setNavOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  // Đóng menu mobile khi chuyển trang
-  useEffect(() => { setNavOpen(false); }, [location.pathname]);
+  // Đóng menu mobile / dropdown khi chuyển trang
+  useEffect(() => { setNavOpen(false); setMenuOpen(false); }, [location.pathname]);
 
   function handleLogout() {
     logout();
@@ -71,13 +72,30 @@ export default function Layout({ children }) {
           </div>
           <div className="spacer" />
           <button className="icon-btn" title="Thông báo"><IconBell /></button>
-          <div className="user-box">
+          <div className="user-box" onClick={() => setMenuOpen((v) => !v)} style={{ cursor: 'pointer', position: 'relative' }}>
             <div className="avatar">{initials(user?.full_name)}</div>
             <div className="user-meta">
               <div className="name">{user?.full_name}</div>
               <div className="role">{user?.role === 'admin' ? 'Quản trị viên' : 'Giáo lý viên'}</div>
             </div>
-            <button className="icon-btn" title="Đăng xuất" onClick={handleLogout}><IconLogout /></button>
+            {menuOpen && (
+              <>
+                <div className="menu-backdrop" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }} />
+                <div className="user-menu" onClick={(e) => e.stopPropagation()}>
+                  <div className="user-menu-head">
+                    <div className="name">{user?.full_name || 'Tài khoản'}</div>
+                    <div className="email">{user?.email}</div>
+                    <div className="role-tag">{user?.role === 'admin' ? 'Quản trị viên' : 'Giáo lý viên'}</div>
+                  </div>
+                  {user?.role === 'admin' && (
+                    <button className="user-menu-item" onClick={() => navigate('/settings')}>⚙ Cài đặt quản lý</button>
+                  )}
+                  <button className="user-menu-item danger" onClick={handleLogout}>
+                    <IconLogout /> Đăng xuất
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </header>
         <main className="content">{children}</main>

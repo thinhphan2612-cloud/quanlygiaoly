@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
 
-const empty = { name: '', year: '', teacher_id: '' };
+const empty = { name: '', year: '', teacher_id: '', order_index: '' };
 
 export default function Classes() {
   const { user } = useAuth();
@@ -19,7 +19,7 @@ export default function Classes() {
   }, [isAdmin]);
 
   function openCreate() { setError(''); setModal({ ...empty }); }
-  function openEdit(c) { setError(''); setModal({ ...c, year: c.year || '', teacher_id: c.teacher_id || '' }); }
+  function openEdit(c) { setError(''); setModal({ ...c, year: c.year || '', teacher_id: c.teacher_id || '', order_index: c.order_index ?? '' }); }
 
   async function save() {
     setError('');
@@ -85,6 +85,10 @@ export default function Classes() {
             <div className="field">
               <label>Niên khóa</label>
               <input value={modal.year || ''} onChange={(e) => setModal({ ...modal, year: e.target.value })} placeholder="VD: 2025-2026" />
+            </div>
+            <div className="field">
+              <label>Thứ tự lớp (để tự lên lớp cuối năm)</label>
+              <input type="number" min="0" value={modal.order_index ?? ''} onChange={(e) => setModal({ ...modal, order_index: e.target.value })} placeholder="VD: 1 = lớp nhỏ nhất, tăng dần" />
             </div>
             <div className="field">
               <label>Giáo lý viên phụ trách</label>
