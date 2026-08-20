@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
+import api from '../api';
+import { applyTheme, loadTheme } from '../theme.js';
 import {
   IconHome, IconStudents, IconClass, IconCheck, IconGrades,
   IconDice, IconGame, IconTeacher, IconLogout, IconBell,
@@ -28,6 +30,19 @@ export default function Layout({ children }) {
   const location = useLocation();
   const [navOpen, setNavOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [parish, setParish] = useState(null);
+  const [dark, setDark] = useState(loadTheme().mode === 'dark');
+
+  useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
+
+  function toggleDark() {
+    const t = loadTheme();
+    const mode = t.mode === 'dark' ? 'light' : 'dark';
+    applyTheme({ ...t, mode });
+    setDark(mode === 'dark');
+  }
+
+  const parishName = parish?.name || 'Quản lý Giáo lý';
 
   // Đóng menu mobile / dropdown khi chuyển trang
   useEffect(() => { setNavOpen(false); setMenuOpen(false); }, [location.pathname]);
@@ -41,8 +56,11 @@ export default function Layout({ children }) {
     <div className="app">
       <aside className={`sidebar ${navOpen ? 'open' : ''}`}>
         <div className="brand">
-          <div className="logo">✝</div>
-          <span>Quản lý Giáo lý</span>
+          {parish?.logo_url ? <img className="logo-img" src={parish.logo_url} alt="logo" /> : <div className="logo">✝</div>}
+          <div>
+            <div>{parishName}</div>
+            {parish?.diocese && <div className="brand-sub">{parish.diocese}</div>}
+          </div>
         </div>
         <nav>
           {nav
@@ -65,7 +83,9 @@ export default function Layout({ children }) {
       <div className="main">
         <header className="topbar">
           <button className="hamburger" aria-label="Menu" onClick={() => setNavOpen(true)}>☰</button>
-          <div className="topbar-brand"><span className="logo">✝</span> Quản lý Giáo lý</div>
+          <div className="topbar-brand">
+            {parish?.logo_url ? <img className="logo-img" src={parish.logo_url} alt="logo" /> : <span className="logo">✝</span>} {parishName}
+          </div>
           <div className="greeting">
             <div className="hi">Xin chào, {user?.full_name} 👋</div>
             <div className="sub">Chúc bạn một buổi dạy giáo lý tốt lành</div>
@@ -87,6 +107,7 @@ export default function Layout({ children }) {
                     <div className="email">{user?.email}</div>
                     <div className="role-tag">{user?.role === 'admin' ? 'Quản trị viên' : 'Giáo lý viên'}</div>
                   </div>
+                  <button className="user-menu-item" onClick={toggleDark}>{dark ? '☀️ Chế độ sáng' : '🌙 Chế độ tối'}</button>
                   {user?.role === 'admin' && (
                     <button className="user-menu-item" onClick={() => navigate('/settings')}>⚙ Cài đặt quản lý</button>
                   )}

@@ -554,3 +554,36 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .btn.warning { background: var(--warning); color: #fff; }
 .btn.warning:hover { filter: brightness(0.95); }
 .picker-note { text-align: center; margin-top: 12px; color: var(--warning); font-weight: 600; font-size: 14px; }
+
+/* ============ Chế độ tối (Day/Night) ============ */
+:root[data-theme="dark"] {
+  --bg: #0f1115; --panel: #1a1d23; --text: #e6e7ea; --heading: #ffffff;
+  --muted: #9aa0ab; --border: #2b2f38;
+}
+:root[data-theme="dark"] body { background: #0f1115; }
+:root[data-theme="dark"] body::after { background: rgba(8, 10, 14, 0.62); }
+:root[data-theme="dark"] .panel { background: rgba(26, 29, 35, 0.72); border-color: rgba(255,255,255,0.06); }
+:root[data-theme="dark"] .sidebar { background: rgba(20, 22, 27, 0.8); border-right-color: rgba(255,255,255,0.06); }
+:root[data-theme="dark"] .topbar { background: rgba(20, 22, 27, 0.7); border-bottom-color: rgba(255,255,255,0.06); }
+:root[data-theme="dark"] .modal { background: rgba(26, 29, 35, 0.92); border-color: rgba(255,255,255,0.08); }
+:root[data-theme="dark"] .dash-stat { border-color: rgba(255,255,255,0.06); }
+:root[data-theme="dark"] .st-purple, :root[data-theme="dark"] .st-blue,
+:root[data-theme="dark"] .st-peach, :root[data-theme="dark"] .st-green { background: rgba(255,255,255,0.04); }
+:root[data-theme="dark"] input, :root[data-theme="dark"] select, :root[data-theme="dark"] textarea,
+:root[data-theme="dark"] .cell-input {
+  background: #22262e; color: var(--text); border-color: #2b2f38;
+}
+:root[data-theme="dark"] .sticky-col { background: #1a1d23; }
+:root[data-theme="dark"] .user-menu { background: #1a1d23; }
+:root[data-theme="dark"] .btn.ghost { background: rgba(255,255,255,0.05); }
+
+/* ============ Brand: logo + tên giáo xứ ============ */
+.brand .logo-img, .topbar-brand .logo-img { width: 34px; height: 34px; border-radius: 10px; object-fit: cover; }
+.brand-sub { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+/* ============ Giao diện: swatch màu ============ */
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+.swatch { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; position: relative; }
+.swatch.on { border-color: var(--text); box-shadow: 0 0 0 2px var(--panel) inset; }
+.logo-upload { display: flex; align-items: center; gap: 14px; }
+.logo-preview { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; border: 1px solid var(--border); background: var(--primary-soft); display: grid; place-items: center; font-size: 26px; }

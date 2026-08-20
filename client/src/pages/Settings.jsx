@@ -1,6 +1,24 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
+import { ACCENTS, applyTheme, loadTheme } from '../theme.js';
+
+// Thu nhỏ ảnh logo về data URL (tránh phải dựng Supabase Storage)
+function fileToLogo(file, size = 160) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      const s = Math.min(img.width, img.height);
+      c.width = c.height = size;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+      resolve(c.toDataURL('image/png'));
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
 
 // Trang cài đặt quản lý của admin: giáo xứ, năm học, lên lớp cuối năm,
 // tùy chọn bật/tắt, danh sách học viên đã ra trường.
@@ -13,6 +31,7 @@ export default function Settings() {
   const [newYear, setNewYear] = useState('');
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
+  const [theme, setTheme] = useState(loadTheme());
 
   const settings = parish?.settings || {};
   const flag = (k) => settings[k] !== false; // mặc định ON
@@ -40,6 +59,14 @@ export default function Settings() {
 
   async function toggle(k) {
     await saveParish({ settings: { ...settings, [k]: !flag(k) } });
+  }
+
+  function setAccent(a) { const t = { ...theme, accent: a }; applyTheme(t); setTheme(t); }
+  function setMode(m) { const t = { ...theme, mode: m }; applyTheme(t); setTheme(t); }
+  async function uploadLogo(e) {
+    const file = e.target.files?.[0]; if (!file) return;
+    try { const url = await fileToLogo(file); await saveParish({ logo_url: url }); }
+    catch { fail('Không đọc được ảnh'); }
   }
 
   async function addYear() {
@@ -99,7 +126,32 @@ export default function Settings() {
             <input defaultValue={parish.diocese || ''} onBlur={(e) => e.target.value !== parish.diocese && saveParish({ diocese: e.target.value })} />
           </div>
         </div>
-        <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>Logo & giao diện theo năm phụng vụ sẽ bổ sung sau. Thông tin tự lưu khi rời khỏi ô.</p>
+        <div className="field" style={{ marginTop: 4 }}>
+          <label>Logo giáo xứ</label>
+          <div className="logo-upload">
+            {parish.logo_url ? <img className="logo-preview" src={parish.logo_url} alt="logo" /> : <div className="logo-preview">✝</div>}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <label className="btn ghost sm" style={{ cursor: 'pointer' }}>
+                Tải ảnh lên<input type="file" accept="image/*" onChange={uploadLogo} style={{ display: 'none' }} />
+              </label>
+              {parish.logo_url && <button className="btn ghost sm" onClick={() => saveParish({ logo_url: null })}>Xóa logo</button>}
+            </div>
+          </div>
+        </div>
+        <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>Thông tin tự lưu khi rời khỏi ô.</p>
+      </div>
+
+      {/* Giao diện */}
+      <div className="panel">
+        <div className="card-head"><h2>Giao diện</h2></div>
+        <ToggleRow label="Chế độ tối (Night)" on={theme.mode === 'dark'} onClick={() => setMode(theme.mode === 'dark' ? 'light' : 'dark')} />
+        <div className="fp-label" style={{ marginTop: 14 }}>Màu chủ đề (theo năm phụng vụ)</div>
+        <div className="swatches">
+          {Object.entries(ACCENTS).map(([k, a]) => (
+            <button key={k} className={`swatch ${theme.accent === k ? 'on' : ''}`} title={a.label}
+              style={{ background: a.p }} onClick={() => setAccent(k)} />
+          ))}
+        </div>
       </div>
 
       {/* Tùy chọn quản lý (on/off) */}

@@ -5,8 +5,8 @@
 
 ## A. Nền tảng & giao diện chung
 - [x] A1. Đổi **toàn bộ màu tím → xanh dương** trên toàn UI. (biến --primary + hardcode → tông #2563eb)
-- [ ] A2. **Edit được logo, tên giáo phận, tên giáo xứ** (hiển thị ở góc trái topbar thay cho "Quản lý Giáo lý").
-- [ ] A3. Nút **Theme**: đổi Day/Night và đổi màu theo **năm phụng vụ**.
+- [x] A2. **Edit logo + tên giáo phận + tên giáo xứ** (Settings) — hiển thị ở sidebar & topbar. Logo lưu data-URL (không cần Storage).
+- [x] A3. **Theme Day/Night** (menu avatar + Settings) + **màu theo năm phụng vụ** (6 màu: xanh, tím Vọng/Chay, xanh lá Thường niên, đỏ, hồng, vàng).
 - [ ] A4. Nút **"Góp ý / liên hệ tác giả"** (kèm quảng cáo wecatholic) đặt dưới sidebar.
 - [ ] A5. Cụm **gói/nâng cấp Pro**: nút "Upgrade to go Pro"; bấm vào hiện **bảng các gói + lợi ích từng gói** (Basic / Standard / Pro). Tài khoản Free bị khóa các tính năng Pro.
 
