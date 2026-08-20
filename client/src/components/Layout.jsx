@@ -7,7 +7,7 @@ import { planName } from '../lib/plans';
 import PricingModal from './PricingModal.jsx';
 import {
   IconHome, IconStudents, IconClass, IconCheck, IconGrades,
-  IconDice, IconGame, IconTeacher, IconLogout, IconBell,
+  IconDice, IconGame, IconTeacher, IconLogout, IconBell, IconMoney,
 } from './Icons.jsx';
 
 const nav = [
@@ -19,6 +19,7 @@ const nav = [
   { to: '/random', label: 'Chọn trả bài', Icon: IconDice },
   { to: '/games', label: 'Game học', Icon: IconGame },
   { to: '/teachers', label: 'Giáo lý viên', Icon: IconTeacher, adminOnly: true },
+  { to: '/audit', label: 'Kiểm toán', Icon: IconMoney, adminOnly: true },
 ];
 
 function initials(name = '') {

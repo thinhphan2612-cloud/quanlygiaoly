@@ -491,6 +491,30 @@ async function handle(method, rawUrl, body = {}) {
       return ok({ promoted, graduated });
     }
 
+    // ---------------- kiểm toán thu chi ----------------
+    if (path === '/transactions' && method === 'get') {
+      let query = supabase.from('transactions').select('*, classes(name)').order('date', { ascending: false }).order('created_at', { ascending: false });
+      if (q.class_id) query = query.eq('class_id', q.class_id);
+      const { data, error } = await query;
+      if (error) return fail(400, error.message);
+      return ok((data || []).map((t) => ({ ...t, class_name: t.classes?.name || null })));
+    }
+    if (path === '/transactions' && method === 'post') {
+      if (!body.content || body.amount === undefined || body.amount === '') return fail(400, 'Cần nội dung và số tiền');
+      const { data, error } = await supabase.from('transactions').insert({
+        parish_id: pid, class_id: nn(body.class_id), content: body.content,
+        type: body.type === 'chi' ? 'chi' : 'thu', amount: Number(body.amount) || 0,
+        date: body.date || new Date().toISOString().slice(0, 10), note: nn(body.note),
+      }).select().single();
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
+    if (seg[0] === 'transactions' && seg[1] && method === 'delete') {
+      const { error } = await supabase.from('transactions').delete().eq('id', seg[1]);
+      if (error) return fail(400, error.message);
+      return ok({ ok: true });
+    }
+
     // ---------------- dashboard ----------------
     if (path === '/dashboard' && method === 'get') {
       const [{ data: students }, { data: classes }, { data: profiles }, { data: grades }, { data: attend }] = await Promise.all([

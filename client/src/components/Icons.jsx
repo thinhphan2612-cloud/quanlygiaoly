@@ -43,3 +43,6 @@ export const IconBell = (p) => (
 export const IconSearch = (p) => (
   <svg {...base} {...p}><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
 );
+export const IconMoney = (p) => (
+  <svg {...base} {...p}><rect x="2.5" y="6" width="19" height="12" rx="2.5" /><circle cx="12" cy="12" r="2.6" /><path d="M6 9v0M18 15v0" /></svg>
+);

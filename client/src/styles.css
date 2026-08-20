@@ -616,3 +616,15 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .upgrade-card .btn-w { background: #fff; color: var(--primary); border: none; padding: 8px 14px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%; }
 .feedback-link { margin-top: 12px; width: 100%; background: none; border: none; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; padding: 8px; border-radius: 10px; text-align: center; }
 .feedback-link:hover { background: var(--primary-soft); color: var(--primary); }
+
+/* ---------- Kiểm toán thu chi ---------- */
+.audit-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
+@media (max-width: 640px) { .audit-summary { grid-template-columns: 1fr; } }
+.audit-card { padding: 18px; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--border); }
+.audit-card .lbl { font-size: 13px; color: var(--muted); }
+.audit-card .num { font-size: 24px; font-weight: 800; margin-top: 4px; }
+.audit-card.thu .num { color: var(--success); }
+.audit-card.chi .num { color: var(--danger); }
+.audit-card.duong .num { color: var(--success); }
+.audit-card.am .num { color: var(--danger); }
+.audit-card .tag { font-size: 12px; font-weight: 600; margin-top: 4px; color: var(--muted); }
