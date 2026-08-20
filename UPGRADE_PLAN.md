@@ -58,7 +58,7 @@
 - [ ] I1. Tab **"Quản lý giáo viên"**: thêm **thông tin cá nhân GLV** (ngày sinh, địa chỉ, khu vực, cấp GLV [cấp 1/2, để trống cha tự điền], nghề nghiệp, đồng hành lớp nào, SĐT).
 - [ ] I2. Sắp xếp thứ tự cột: quản lý lớp nào.
 - [ ] I3. Tab **"Thông báo đến GV"**: ô nội dung + tích chọn người nhận + gửi + **lịch sử tin nhắn đã gửi**.
-- [~] I4. Trang **"Kiểm toán"** (/audit, admin): nhập thu/chi (nội dung, loại, số tiền, ngày, lớp) + **thống kê cân đối** (tổng thu/chi, âm/dương) + xuất Excel/PDF. Code xong, **chờ chạy `supabase/migration_transactions.sql`** rồi verify.
+- [x] I4. Trang **"Kiểm toán"** (/audit, admin): nhập thu/chi (nội dung, loại, số tiền, ngày, lớp) + **thống kê cân đối** (tổng thu/chi, âm/dương) + lọc theo lớp + xuất Excel/PDF. ✅ đã chạy migration + verify.
 
 ## J. Trang Giáo lý viên (member) — quyền hạn
 - [ ] J1. GLV chỉ **quản lý MỘT lớp duy nhất**, không can thiệp nội dung chung.
