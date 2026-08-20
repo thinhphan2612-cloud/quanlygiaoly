@@ -35,12 +35,13 @@
 - [x] E2. Trường **Phòng học** (vd A102) — hiển thị bảng chính.
 - [x] E3. Trường **Thời gian học** (Sáng/Chiều/Tối) — hiển thị bảng chính.
 
-## F. Điểm danh (Attendance) — tách 2 trang
-- [ ] F1. **Tách 2 tab: "Giáo lý"** và **"Việc Thiêng liêng"**.
-- [ ] F2. Trang Giáo lý: chỉ thống kê ngày **đã chọn ngày điểm danh** (thường là Chúa Nhật).
-- [ ] F3. Thêm nút **Tuần / Tháng** + cột **Thống kê** (có mặt / tổng số buổi, vd 5/7) chỉ hiện ở chế độ tuần/tháng. Hiển thị lưới ngày S-M-T-W-T-F-S.
-- [ ] F4. Nút **checkbox "Sắp xếp chuyên cần"**: check → xếp theo độ siêng năng; bỏ check → xếp tên ABC.
-- [ ] F5. Trang **Việc Thiêng liêng**: tạo nhiều "việc" (Đi lễ, Đọc kinh...) thành các **ô check**; nút **Setting (⚙)** để thêm/bớt cột việc. Hiển thị đủ ngày theo tuần/tháng.
+## F. Điểm danh (Attendance) — tách 2 trang ✅
+- [x] F1. **2 tab: "Giáo lý"** và **"Việc Thiêng liêng"**.
+- [x] F2. Giáo lý: thống kê chỉ tính các ngày đã điểm danh.
+- [x] F3. Nút **Ngày / Tuần / Tháng** + cột **Thống kê** (present/tổng buổi) + lưới ngày ở chế độ tuần/tháng.
+- [x] F4. Checkbox **"Sắp xếp chuyên cần"** (có mặt nhiều → đầu) vs tên ABC.
+- [x] F5. **Việc Thiêng liêng**: tạo nhiều việc (⚙ Quản lý việc), ô check theo học viên/ngày; thống kê tuần/tháng đếm số lần.
+- API: /attendance-range, /spiritual-tasks (CRUD), /spiritual (get/post), /spiritual-range.
 
 ## G. Điểm số (Grades) — redesign (UX hiện tại khó dùng)
 - [ ] G1. **Bảng điểm cả lớp** (hiện chỉ xem từng người). Nút **"Tổng quát"** → xem bảng gồm mọi cột + điểm TB (giống bản PDF nhưng chỉ xem).

@@ -228,6 +228,101 @@ async function handle(method, rawUrl, body = {}) {
       return ok({ ok: true, count: records.length });
     }
 
+    // ---------------- attendance theo khoảng (tuần/tháng) ----------------
+    if (path === '/attendance-range' && method === 'get') {
+      if (!q.class_id || !q.from || !q.to) return fail(400, 'Cần class_id, from, to');
+      const { data: students } = await supabase.from('students')
+        .select('id, full_name, saint_name').eq('class_id', q.class_id).eq('graduated', false).order('full_name');
+      const ids = (students || []).map((s) => s.id);
+      let recs = [];
+      if (ids.length) {
+        const { data } = await supabase.from('attendance').select('student_id, date, status')
+          .gte('date', q.from).lte('date', q.to).in('student_id', ids);
+        recs = data || [];
+      }
+      const dates = [...new Set(recs.map((r) => r.date))].sort();
+      const rows = (students || []).map((s) => {
+        const byDate = {};
+        recs.filter((r) => r.student_id === s.id).forEach((r) => { byDate[r.date] = r.status; });
+        const vals = Object.values(byDate);
+        return {
+          id: s.id, full_name: s.full_name, saint_name: s.saint_name, byDate,
+          present: vals.filter((x) => x === 'present').length,
+          late: vals.filter((x) => x === 'late').length,
+          absent: vals.filter((x) => x === 'absent').length,
+        };
+      });
+      return ok({ dates, students: rows });
+    }
+
+    // ---------------- việc thiêng liêng: danh mục ----------------
+    if (path === '/spiritual-tasks' && method === 'get') {
+      const { data, error } = await supabase.from('spiritual_tasks').select('*').order('order_index').order('name');
+      if (error) return fail(400, error.message);
+      return ok(data || []);
+    }
+    if (path === '/spiritual-tasks' && method === 'post') {
+      if (!body.name) return fail(400, 'Thiếu tên việc thiêng liêng');
+      const { data, error } = await supabase.from('spiritual_tasks')
+        .insert({ parish_id: pid, name: body.name, order_index: Number(body.order_index) || 0 }).select().single();
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
+    if (seg[0] === 'spiritual-tasks' && seg[1] && method === 'delete') {
+      const { error } = await supabase.from('spiritual_tasks').delete().eq('id', seg[1]);
+      if (error) return fail(400, error.message);
+      return ok({ ok: true });
+    }
+
+    // ---------------- việc thiêng liêng: điểm danh theo ngày ----------------
+    if (path === '/spiritual' && method === 'get') {
+      if (!q.class_id || !q.date) return fail(400, 'Cần class_id và date');
+      const { data: students } = await supabase.from('students')
+        .select('id, full_name, saint_name').eq('class_id', q.class_id).eq('graduated', false).order('full_name');
+      const ids = (students || []).map((s) => s.id);
+      let recs = [];
+      if (ids.length) {
+        const { data } = await supabase.from('spiritual_records').select('student_id, task_id, done')
+          .eq('date', q.date).in('student_id', ids);
+        recs = data || [];
+      }
+      return ok((students || []).map((s) => {
+        const done = {};
+        recs.filter((r) => r.student_id === s.id).forEach((r) => { done[r.task_id] = r.done; });
+        return { id: s.id, full_name: s.full_name, saint_name: s.saint_name, done };
+      }));
+    }
+    if (path === '/spiritual' && method === 'post') {
+      const { date, records } = body;
+      if (!date || !Array.isArray(records)) return fail(400, 'Cần date và records');
+      const rows = records.map((r) => ({ parish_id: pid, student_id: r.student_id, task_id: r.task_id, date, done: !!r.done }));
+      if (rows.length) {
+        const { error } = await supabase.from('spiritual_records').upsert(rows, { onConflict: 'student_id,task_id,date' });
+        if (error) return fail(400, error.message);
+      }
+      return ok({ ok: true });
+    }
+    // việc thiêng liêng theo khoảng: đếm số lần hoàn thành mỗi việc
+    if (path === '/spiritual-range' && method === 'get') {
+      if (!q.class_id || !q.from || !q.to) return fail(400, 'Cần class_id, from, to');
+      const { data: students } = await supabase.from('students')
+        .select('id, full_name, saint_name').eq('class_id', q.class_id).eq('graduated', false).order('full_name');
+      const ids = (students || []).map((s) => s.id);
+      let recs = [];
+      if (ids.length) {
+        const { data } = await supabase.from('spiritual_records').select('student_id, task_id, date, done')
+          .gte('date', q.from).lte('date', q.to).in('student_id', ids);
+        recs = data || [];
+      }
+      const dates = [...new Set(recs.map((r) => r.date))].sort();
+      const rows = (students || []).map((s) => {
+        const counts = {};
+        recs.filter((r) => r.student_id === s.id && r.done).forEach((r) => { counts[r.task_id] = (counts[r.task_id] || 0) + 1; });
+        return { id: s.id, full_name: s.full_name, saint_name: s.saint_name, counts };
+      });
+      return ok({ dates, students: rows });
+    }
+
     // ---------------- grades ----------------
     if (path === '/grades' && method === 'get') {
       if (!q.student_id) return fail(400, 'Cần student_id');
