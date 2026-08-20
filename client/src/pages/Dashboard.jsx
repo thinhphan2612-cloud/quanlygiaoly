@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import Donut from '../components/Donut.jsx';
-import { IconStudents, IconClass, IconTeacher, IconGrades } from '../components/Icons.jsx';
+import { IconStudents, IconClass, IconTeacher } from '../components/Icons.jsx';
 
 const PALETTE = ['#2563eb', '#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#f43f5e', '#14b8a6', '#0ea5e9'];
 
@@ -47,10 +47,6 @@ export default function Dashboard() {
           <div><div className="lbl">Lớp học</div><div className="num">{counts.classes}</div></div>
           <div className="ic"><IconClass /></div>
         </div>
-        <div className="dash-stat st-green">
-          <div><div className="lbl">Điểm trung bình</div><div className="num">{counts.avgScore}</div></div>
-          <div className="ic"><IconGrades /></div>
-        </div>
       </div>
 
       <div className="dash-grid">
@@ -64,7 +60,7 @@ export default function Dashboard() {
             </div>
             <table className="rank-table">
               <thead>
-                <tr><th>Họ tên</th><th>Mã HV</th><th>Điểm TB</th><th>Tỷ lệ</th></tr>
+                <tr><th>Họ tên</th><th>Điểm TB</th><th>Tỷ lệ</th></tr>
               </thead>
               <tbody>
                 {topStudents.map((s) => (
@@ -75,13 +71,12 @@ export default function Dashboard() {
                         <div>{s.saint_name ? s.saint_name + ' ' : ''}{s.full_name}</div>
                       </div>
                     </td>
-                    <td className="muted">HV{String(s.id).padStart(4, '0')}</td>
                     <td style={{ fontWeight: 600 }}>{s.avg}</td>
                     <td><span className="pct">{Math.round((s.avg / 10) * 100)}%</span></td>
                   </tr>
                 ))}
                 {topStudents.length === 0 && (
-                  <tr><td colSpan={4} className="muted" style={{ textAlign: 'center', padding: 24 }}>Chưa có điểm để xếp hạng</td></tr>
+                  <tr><td colSpan={3} className="muted" style={{ textAlign: 'center', padding: 24 }}>Chưa có điểm để xếp hạng</td></tr>
                 )}
               </tbody>
             </table>
