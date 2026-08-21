@@ -128,6 +128,12 @@ async function handle(method, rawUrl, body = {}) {
     }
     if (path === '/classes' && method === 'post') {
       if (!body.name) return fail(400, 'Thiếu tên lớp');
+      // Giới hạn gói Khởi động: tối đa 1 lớp
+      const { data: par } = await supabase.from('parishes').select('plan').eq('id', pid).maybeSingle();
+      if ((par?.plan || 'free') === 'free') {
+        const { count } = await supabase.from('classes').select('id', { count: 'exact', head: true }).eq('parish_id', pid);
+        if ((count || 0) >= 1) return fail(402, 'Gói Khởi động chỉ quản lý 1 lớp. Nâng lên Pro để thêm lớp không giới hạn.');
+      }
       const { data: cls, error } = await supabase
         .from('classes')
         .insert({

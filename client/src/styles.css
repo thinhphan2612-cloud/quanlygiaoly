@@ -647,3 +647,11 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 /* ---------- Games: khóa gói + quản lý ---------- */
 .game-lock { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .game-emoji-dot { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; font-size: 16px; }
+
+/* ---------- Pricing 2 tầng + bậc giá Pro ---------- */
+.pricing-grid.two { grid-template-columns: 1fr 1fr; max-width: 640px; margin: 0 auto; }
+@media (max-width: 640px) { .pricing-grid.two { grid-template-columns: 1fr; } }
+.pro-tiers { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 14px; }
+.pro-tier { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12.5px; border-bottom: 1px solid var(--border); }
+.pro-tier:last-child { border-bottom: none; }
+.pro-tier b { color: var(--primary); white-space: nowrap; }

@@ -1,20 +1,45 @@
-// Các gói dịch vụ (giao diện — chưa tích hợp thanh toán)
+// Mô hình gói: theo GIÁO XỨ, 2 tầng (Khởi động / Pro), Pro phân bậc theo số lớp,
+// tính theo NIÊN KHÓA. Bản Khởi động giới hạn 1 lớp.
+
+// Chuẩn hóa: mọi giá trị khác 'free' đều coi là 'pro' (gộp 'standard' cũ nếu còn)
+const norm = (p) => (p === 'free' ? 'free' : 'pro');
+export const PLAN_RANK = { free: 0, pro: 1 };
+export const rank = (p) => PLAN_RANK[norm(p)] ?? 0;
+export const isPro = (p) => norm(p) === 'pro';
+export const planName = (p) => (norm(p) === 'free' ? 'Khởi động' : 'Pro');
+
+// Bản Khởi động chỉ quản lý 1 lớp
+export const FREE_MAX_CLASSES = 1;
+
 export const PLANS = [
   {
-    key: 'free', name: 'Basic', price: 'Miễn phí', tag: '',
-    features: ['Quản lý học viên, lớp, giáo lý viên', 'Điểm danh & điểm số', 'Xuất Excel / PDF', 'Bốc thăm trả bài'],
+    key: 'free', name: 'Khởi động', price: 'Miễn phí', period: '', tag: '',
+    features: [
+      'Quản lý 1 lớp giáo lý',
+      'Học viên, điểm danh, điểm số',
+      'Xuất Excel / PDF, bốc thăm trả bài',
+    ],
   },
   {
-    key: 'standard', name: 'Standard', price: '110.000đ', period: '/tháng', tag: '',
-    features: ['Mọi tính năng Basic', 'Điểm danh việc thiêng liêng', 'Thống kê nâng cao', 'Nhiều giáo lý viên / lớp'],
-  },
-  {
-    key: 'pro', name: 'Pro', price: '165.000đ', period: '/tháng', tag: 'Khuyên dùng',
-    features: ['Mọi tính năng Standard', 'Mở khóa Game học giáo lý', 'Thông báo tự động (vắng, admin→GLV)', 'Kiểm toán thu chi', 'Ưu tiên hỗ trợ'],
+    key: 'pro', name: 'Pro (trọn gói)', price: 'Theo quy mô', period: '/niên khóa', tag: 'Khuyên dùng',
+    features: [
+      'Không giới hạn số lớp',
+      'Nhiều giáo lý viên / lớp',
+      'Điểm danh việc thiêng liêng + thống kê tuần/tháng',
+      'Thông báo & chuông báo vắng tự động',
+      'Kiểm toán thu chi',
+      'Game học giáo lý',
+      'Ưu tiên hỗ trợ',
+    ],
   },
 ];
 
-export const PLAN_RANK = { free: 0, standard: 1, pro: 2 };
-export const planName = (key) => (PLANS.find((p) => p.key === key)?.name || 'Basic');
-// Game mở khóa từ gói Standard trở lên
-export const gamesUnlocked = (plan) => (PLAN_RANK[plan] || 0) >= 1;
+// Bậc giá Pro theo quy mô giáo xứ (SỐ TIỀN LÀ TẠM — Felix chốt sau khi khảo sát)
+export const PRO_TIERS = [
+  { label: 'Giáo xứ nhỏ — tối đa 5 lớp', price: '1.500.000đ', period: '/niên khóa' },
+  { label: 'Giáo xứ vừa — 6 đến 12 lớp', price: '2.900.000đ', period: '/niên khóa' },
+  { label: 'Giáo xứ lớn — từ 13 lớp', price: 'Liên hệ', period: '' },
+];
+
+// Game mở khóa khi gói của giáo xứ đạt gói tối thiểu của game
+export const gamesUnlocked = (plan, minPlan = 'pro') => rank(plan) >= rank(minPlan);

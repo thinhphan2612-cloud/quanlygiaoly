@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
-import { PLAN_RANK, planName } from '../lib/plans';
+import { rank } from '../lib/plans';
 import PricingModal from '../components/PricingModal.jsx';
 
 const PALETTE = ['#2563eb', '#f59e0b', '#15803d', '#db2777', '#7c3aed', '#0891b2', '#dc2626', '#0ea5e9'];
-const emptyGame = { name: '', description: '', url: '', emoji: '🎮', color: '#2563eb', min_plan: 'standard', order_index: 0 };
+const emptyGame = { name: '', description: '', url: '', emoji: '🎮', color: '#2563eb', min_plan: 'pro', order_index: 0 };
 
 export default function Games() {
   const { user } = useAuth();
@@ -19,7 +19,7 @@ export default function Games() {
   function load() { api.get('/games').then((r) => setGames(r.data)); }
   useEffect(() => { api.get('/parish').then((r) => setPlan(r.data?.plan || 'free')).catch(() => {}); load(); }, []);
 
-  const unlocked = (g) => (PLAN_RANK[plan] || 0) >= (PLAN_RANK[g.min_plan] || 0);
+  const unlocked = (g) => rank(plan) >= rank(g.min_plan);
 
   return (
     <div>
@@ -42,7 +42,7 @@ export default function Games() {
                   <span>{ok ? g.emoji : '🔒'}</span>
                 </div>
                 <div className="game-name">{g.name}</div>
-                {!ok && <div className="game-lock">Cần gói {planName(g.min_plan)}</div>}
+                {!ok && <div className="game-lock">Cần gói Pro</div>}
               </div>
             );
           })}
@@ -100,10 +100,10 @@ function GameManager({ games, onChange, onClose }) {
                 <tr key={g.id}>
                   <td><span className="game-emoji-dot" style={{ background: g.color }}>{g.emoji}</span></td>
                   <td>{g.name}</td>
-                  <td>{planName(g.min_plan)}</td>
+                  <td>{g.min_plan === 'free' ? 'Miễn phí' : 'Pro'}</td>
                   <td className="muted" style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.url || '—'}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
-                    <button className="btn ghost sm" onClick={() => setEditing({ ...g })}>Sửa</button>{' '}
+                    <button className="btn ghost sm" onClick={() => setEditing({ ...g, min_plan: g.min_plan === 'free' ? 'free' : 'pro' })}>Sửa</button>{' '}
                     <button className="btn danger sm" onClick={() => del(g)}>Xóa</button>
                   </td>
                 </tr>
@@ -123,9 +123,8 @@ function GameManager({ games, onChange, onClose }) {
               <div className="field">
                 <label>Gói tối thiểu để mở khóa</label>
                 <select value={editing.min_plan} onChange={(e) => setEditing({ ...editing, min_plan: e.target.value })}>
-                  <option value="free">Basic (miễn phí — ai cũng chơi)</option>
-                  <option value="standard">Standard</option>
-                  <option value="pro">Pro</option>
+                  <option value="free">Miễn phí (ai cũng chơi)</option>
+                  <option value="pro">Pro (cần nâng cấp)</option>
                 </select>
               </div>
               <div className="field">

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { ACCENTS, applyTheme, loadTheme } from '../theme.js';
+import { isPro } from '../lib/plans';
 
 // Thu nhỏ ảnh logo về data URL (tránh phải dựng Supabase Storage)
 function fileToLogo(file, size = 160) {
@@ -167,13 +168,12 @@ export default function Settings() {
         <div className="card-head"><h2>Gói dịch vụ</h2></div>
         <div className="field" style={{ maxWidth: 280 }}>
           <label>Gói hiện tại (thanh toán bổ sung sau)</label>
-          <select value={parish.plan || 'free'} onChange={(e) => saveParish({ plan: e.target.value })}>
-            <option value="free">Basic (miễn phí)</option>
-            <option value="standard">Standard</option>
-            <option value="pro">Pro</option>
+          <select value={isPro(parish.plan) ? 'pro' : 'free'} onChange={(e) => saveParish({ plan: e.target.value })}>
+            <option value="free">Khởi động (miễn phí — 1 lớp)</option>
+            <option value="pro">Pro (trọn gói, không giới hạn lớp)</option>
           </select>
         </div>
-        <p className="muted" style={{ fontSize: 12 }}>Gói quyết định việc mở khóa Game học và các tính năng nâng cao.</p>
+        <p className="muted" style={{ fontSize: 12 }}>Gói Khởi động chỉ quản lý 1 lớp. Gói Pro mở khóa không giới hạn lớp + toàn bộ tính năng.</p>
       </div>
 
       {/* Năm học */}
