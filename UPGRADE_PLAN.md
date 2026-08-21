@@ -21,7 +21,7 @@
 - [x] C1. **Bỏ cột "Mã học viên" (Mã HV)**.
 - [x] C2. **Bỏ ô "Điểm trung bình"** ở hàng thẻ thống kê.
 - [ ] C3. Thay donut/thẻ bằng **biểu đồ tăng/giảm điểm danh theo từng tuần** của **tổng tất cả học viên**.
-- [~] C4. **Chuông thông báo** thật: tự động báo khi học viên **vắng 3 buổi liên tiếp** (khi lưu điểm danh) + nhận thông báo admin. Code xong — **chờ chạy migration_notifications.sql**.
+- [x] C4. **Chuông thông báo** thật: tự động báo khi học viên **vắng 3 buổi liên tiếp** (khi lưu điểm danh) + nhận thông báo admin. ✅ verified.
 
 ## D. Học viên (Students) ✅
 - [x] D1. Nút **Lọc / Sắp xếp** (popup) với: lọc nhiều lớp (tích), lọc bí tích (rước lễ/thêm sức/chưa),
@@ -57,7 +57,7 @@
 ## I. Trang Admin — Quản lý giáo viên (mở rộng)
 - [x] I1. **Quản lý giáo viên**: tạo tài khoản GLV (Edge Function create-teacher — đã deploy + verify: tạo đúng giáo xứ, GLV đăng nhập được), **hồ sơ cá nhân** (tên thánh, ngày sinh, địa chỉ, khu vực, cấp GLV, nghề nghiệp, SĐT).
 - [x] I2. Cột **"Lớp phụ trách"** trong danh sách GLV.
-- [~] I3. Trang **"Thông báo"** (/notify, admin): nội dung + tích chọn người nhận (có "Tất cả") + gửi + **lịch sử đã gửi**. GV nhận qua chuông (không trả lời). Code xong — chờ SQL.
+- [x] I3. Trang **"Thông báo"** (/notify, admin): nội dung + tích chọn người nhận (có "Tất cả") + gửi + **lịch sử đã gửi**. GV nhận qua chuông (không trả lời). ✅ verified.
 - [x] I4. Trang **"Kiểm toán"** (/audit, admin): nhập thu/chi (nội dung, loại, số tiền, ngày, lớp) + **thống kê cân đối** (tổng thu/chi, âm/dương) + lọc theo lớp + xuất Excel/PDF. ✅ đã chạy migration + verify.
 
 ## J. Trang Giáo lý viên (member) — quyền hạn
