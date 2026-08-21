@@ -1,11 +1,15 @@
 import * as XLSX from 'xlsx';
 
 // columns: [{ label, get: (row) => value, width? }]
+// subtitle: chuỗi 1 dòng HOẶC mảng nhiều dòng
+function subLines(subtitle) {
+  return Array.isArray(subtitle) ? subtitle.filter(Boolean) : (subtitle ? [subtitle] : []);
+}
 function headerRows(title, subtitle) {
   const rows = [];
   if (title) rows.push([title]);
-  if (subtitle) rows.push([subtitle]);
-  if (title || subtitle) rows.push([]);
+  subLines(subtitle).forEach((s) => rows.push([s]));
+  if (title || subLines(subtitle).length) rows.push([]);
   return rows;
 }
 
@@ -48,7 +52,7 @@ export function exportPdf({ title, subtitle, columns, rows }) {
       @media print { body { padding: 0; } }
     </style></head><body>
       <h1>${esc(title)}</h1>
-      ${subtitle ? `<div class="sub">${esc(subtitle)}</div>` : ''}
+      ${subLines(subtitle).length ? `<div class="sub">${subLines(subtitle).map(esc).join('<br>')}</div>` : ''}
       <table><thead>${thead}</thead><tbody>${tbody}</tbody></table>
       <div class="foot">Xuất ngày ${now} · Quản lý Giáo lý</div>
     </body></html>`;

@@ -12,8 +12,10 @@ export default function Grades() {
   const [gear, setGear] = useState(false);
   const [overview, setOverview] = useState(false);
   const [savingCell, setSavingCell] = useState('');
+  const [parish, setParish] = useState(null);
 
   useEffect(() => { api.get('/classes').then((r) => setClasses(r.data)); }, []);
+  useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
   function load() {
     if (!classId) { setData({ students: [], columns: [], scores: {} }); return; }
     api.get(`/grades-class?class_id=${classId}`).then((r) => setData(r.data));
@@ -21,7 +23,14 @@ export default function Grades() {
   useEffect(() => { load(); }, [classId]);
 
   const { students, columns, scores } = data;
-  const className = classes.find((c) => c.id === classId)?.name || '';
+  const cls = classes.find((c) => c.id === classId) || {};
+  const className = cls.name || '';
+  // Thông tin đầu bảng điểm khi xuất: giáo xứ, lớp, năm học, GV phụ trách
+  const exportSubtitle = [
+    parish?.name ? `Giáo xứ: ${parish.name}${parish.diocese ? ' — ' + parish.diocese : ''}` : null,
+    `Lớp: ${className}${cls.year ? '     Năm học: ' + cls.year : ''}`,
+    cls.teacher_name ? `Giáo lý viên phụ trách: ${cls.teacher_name}` : null,
+  ].filter(Boolean);
 
   function cellVal(sid, cid) { const v = scores[sid]?.[cid]; return v == null ? '' : v; }
   function setCell(sid, cid, val) {
@@ -59,7 +68,7 @@ export default function Grades() {
       { label: 'TB', get: (s) => weightedAvg(s.id) ?? '', width: 8 },
       { label: 'Hạng', get: (s) => rankOf[s.id] ?? '', width: 7 },
     ];
-    const meta = { title: 'Bảng điểm', subtitle: `Lớp: ${className}`, columns: cols, rows: display };
+    const meta = { title: 'Bảng điểm', subtitle: exportSubtitle, columns: cols, rows: display };
     if (mode === 'excel') exportXlsx({ filename: `bang-diem-${fileSlug(className)}.xlsx`, sheetName: 'Bảng điểm', ...meta });
     else exportPdf(meta);
   }
