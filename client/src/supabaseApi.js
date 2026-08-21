@@ -17,6 +17,14 @@ function parishId() {
 function meId() {
   try { return JSON.parse(localStorage.getItem('user') || '{}').id || null; } catch { return null; }
 }
+function meRole() {
+  try { return JSON.parse(localStorage.getItem('user') || '{}').role || null; } catch { return null; }
+}
+// J: các lớp mà giáo lý viên đang đăng nhập phụ trách
+async function myClassIds() {
+  const { data } = await supabase.from('class_teachers').select('class_id').eq('teacher_id', meId());
+  return (data || []).map((x) => x.class_id);
+}
 
 // C4: sau khi lưu điểm danh, phát hiện học viên vắng 3 buổi LIÊN TIẾP -> tạo thông
 // báo cho giáo lý viên phụ trách lớp + admin (bỏ qua nếu đã có cảnh báo chưa đọc).
@@ -95,7 +103,7 @@ async function handle(method, rawUrl, body = {}) {
           id: ct.teacher_id, name: ct.profiles?.full_name || null, is_primary: ct.is_primary,
         });
       });
-      return ok((classes || []).map((c) => {
+      let result = (classes || []).map((c) => {
         const ts = (teachersByClass[c.id] || []).sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0));
         const primary = ts.find((t) => t.is_primary) || ts[0];
         return {
@@ -110,7 +118,13 @@ async function handle(method, rawUrl, body = {}) {
             : null,
           student_count: countByClass[c.id] || 0,
         };
-      }));
+      });
+      // J: giáo lý viên chỉ thấy lớp mình phụ trách
+      if (meRole() === 'teacher') {
+        const mid = meId();
+        result = result.filter((c) => (c.teacher_ids || []).includes(mid));
+      }
+      return ok(result);
     }
     if (path === '/classes' && method === 'post') {
       if (!body.name) return fail(400, 'Thiếu tên lớp');
@@ -191,6 +205,11 @@ async function handle(method, rawUrl, body = {}) {
       let query = supabase.from('students').select('*, classes(name)').order('full_name');
       query = query.eq('graduated', q.graduated === '1');
       if (q.class_id) query = query.eq('class_id', q.class_id);
+      // J: giáo lý viên chỉ thấy học viên lớp mình phụ trách
+      if (meRole() === 'teacher') {
+        const ids = await myClassIds();
+        query = query.in('class_id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000']);
+      }
       const { data, error } = await query;
       if (error) return fail(400, error.message);
       return ok((data || []).map((s) => ({ ...s, class_name: s.classes?.name || null })));

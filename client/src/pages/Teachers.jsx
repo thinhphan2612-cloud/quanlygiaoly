@@ -1,16 +1,20 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
+import { useAuth } from '../auth.jsx';
 
 const emptyCreate = { email: '', password: '', full_name: '' };
 
 export default function Teachers() {
+  const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [modal, setModal] = useState(null); // {mode:'create'} | {mode:'edit', ...profile}
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
   function load() { api.get('/auth/users').then((r) => setUsers(r.data)); }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (user?.role === 'admin') load(); }, [user]);
+
+  if (user?.role !== 'admin') return <div className="muted">Chỉ quản trị viên được quản lý tài khoản.</div>;
 
   function openCreate() { setError(''); setModal({ mode: 'create', ...emptyCreate }); }
   function openEdit(u) { setError(''); setModal({ mode: 'edit', ...u }); }
