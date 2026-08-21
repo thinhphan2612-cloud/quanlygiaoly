@@ -632,14 +632,26 @@ async function handle(method, rawUrl, body = {}) {
 
     // ---------------- dashboard ----------------
     if (path === '/dashboard' && method === 'get') {
-      const [{ data: students }, { data: classes }, { data: profiles }, { data: grades }, { data: attend }] = await Promise.all([
+      let [{ data: students }, { data: classes }, { data: profiles }, { data: grades }, { data: attend }] = await Promise.all([
         supabase.from('students').select('id, full_name, saint_name, class_id').eq('graduated', false),
         supabase.from('classes').select('id, name').eq('graduated', false),
         supabase.from('profiles').select('id, role'),
         supabase.from('grades').select('student_id, score'),
-        supabase.from('attendance').select('date, status'),
+        supabase.from('attendance').select('student_id, date, status'),
       ]);
-      // Điểm danh theo tuần (CN đầu tuần) — tỷ lệ có mặt của tổng tất cả học viên
+      // J: giáo lý viên chỉ xem số liệu lớp mình phụ trách
+      let teacherCount = (profiles || []).filter((u) => u.role === 'teacher').length;
+      if (meRole() === 'teacher') {
+        const myIds = await myClassIds();
+        classes = (classes || []).filter((c) => myIds.includes(c.id));
+        students = (students || []).filter((s) => myIds.includes(s.class_id));
+        const sIds = new Set(students.map((s) => s.id));
+        grades = (grades || []).filter((g) => sIds.has(g.student_id));
+        attend = (attend || []).filter((a) => sIds.has(a.student_id));
+        const { data: cts } = await supabase.from('class_teachers').select('teacher_id').in('class_id', myIds.length ? myIds : ['00000000-0000-0000-0000-000000000000']);
+        teacherCount = new Set((cts || []).map((c) => c.teacher_id)).size;
+      }
+      // Điểm danh theo tuần (CN đầu tuần) — tỷ lệ có mặt
       const weekMap = {};
       (attend || []).forEach((a) => {
         const d = new Date(a.date + 'T00:00:00');
@@ -654,7 +666,7 @@ async function handle(method, rawUrl, body = {}) {
       const counts = {
         students: S.length,
         classes: C.length,
-        teachers: (profiles || []).filter((u) => u.role === 'teacher').length,
+        teachers: teacherCount,
         avgScore: G.length ? round1(G.reduce((a, g) => a + Number(g.score), 0) / G.length) : 0,
       };
       const studentsPerClass = C.map((c) => ({ name: c.name, count: S.filter((s) => s.class_id === c.id).length }))
