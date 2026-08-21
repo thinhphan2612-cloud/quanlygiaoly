@@ -61,7 +61,7 @@
 - [x] I4. Trang **"Kiểm toán"** (/audit, admin): nhập thu/chi (nội dung, loại, số tiền, ngày, lớp) + **thống kê cân đối** (tổng thu/chi, âm/dương) + lọc theo lớp + xuất Excel/PDF. ✅ đã chạy migration + verify.
 
 ## J. Trang Giáo lý viên (member) — quyền hạn ✅ (phần chính)
-- [x] J1. GLV **chỉ thấy lớp mình phụ trách + học viên lớp đó** (scope ở tầng API /classes, /students). Các trang admin (GV, thông báo, kiểm toán, cài đặt) ẩn khỏi menu + chặn truy cập trực tiếp. ✅ verified.
+- [x] J1. GLV **chỉ truy cập lớp mình phụ trách** — khóa 3 tầng: UI (menu ẩn), API scope (/classes,/students,/dashboard), và **RLS database** (migration_rls_teacher_scope.sql: teaches_class/teaches_student; đọc+ghi lớp khác đều bị chặn kể cả gọi API thô; transactions chỉ admin). ✅ verified read+write.
 - [x] J2 (nhận thông báo): GLV nhận thông báo admin qua **chuông, không trả lời**. (Kiểm toán/thu chi theo lớp cho GLV có thể mở thêm sau nếu cần.)
 
 ## K. Game học ✅ (giao diện + khóa gói; nội dung game mẫu, link WeCatholic)
