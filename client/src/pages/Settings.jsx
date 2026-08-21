@@ -3,6 +3,7 @@ import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { ACCENTS, applyTheme, loadTheme } from '../theme.js';
 import { isPro } from '../lib/plans';
+import { useEntitlements } from '../entitlements.jsx';
 
 // Thu nhỏ ảnh logo về data URL (tránh phải dựng Supabase Storage)
 function fileToLogo(file, size = 160) {
@@ -33,6 +34,8 @@ export default function Settings() {
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
   const [theme, setTheme] = useState(loadTheme());
+  const [features, setFeatures] = useState([]);
+  const ent = useEntitlements();
 
   const settings = parish?.settings || {};
   const flag = (k) => settings[k] !== false; // mặc định ON
@@ -41,6 +44,7 @@ export default function Settings() {
     api.get('/parish').then((r) => setParish(r.data));
     api.get('/school-years').then((r) => setYears(r.data));
     api.get('/students?graduated=1').then((r) => setGraduated(r.data));
+    api.get('/features').then((r) => setFeatures(r.data)).catch(() => {});
   }
   useEffect(() => { loadAll(); }, []);
 
@@ -174,6 +178,28 @@ export default function Settings() {
           </select>
         </div>
         <p className="muted" style={{ fontSize: 12 }}>Gói Khởi động chỉ quản lý 1 lớp. Gói Pro mở khóa không giới hạn lớp + toàn bộ tính năng.</p>
+      </div>
+
+      {/* Tiện ích mở rộng (kho tính năng) */}
+      <div className="panel">
+        <div className="card-head"><h2>Tiện ích mở rộng</h2></div>
+        <p className="muted" style={{ marginTop: 0, fontSize: 13 }}>Các tính năng có thể mua thêm tại WeCatholic. Khi giáo xứ sở hữu, tính năng sẽ hiện cho giáo lý viên dùng.</p>
+        <div className="ext-grid">
+          {features.map((ft) => {
+            const owned = ent.has(ft.key);
+            return (
+              <div key={ft.key} className={`ext-card ${owned ? 'owned' : ''}`}>
+                <div className="ext-head">
+                  <span className="ext-name">{ft.name}</span>
+                  {owned ? <span className="ext-badge on">Đã có</span> : <span className="ext-badge">Chưa có</span>}
+                </div>
+                <div className="ext-desc">{ft.description}</div>
+                <div className="ext-meta"><span className="muted">{ft.category}</span>{!owned && <a href="https://wecatholic.com" target="_blank" rel="noopener noreferrer">Mua tại WeCatholic →</a>}</div>
+              </div>
+            );
+          })}
+          {features.length === 0 && <div className="muted">Chưa có tiện ích nào trong kho.</div>}
+        </div>
       </div>
 
       {/* Năm học */}

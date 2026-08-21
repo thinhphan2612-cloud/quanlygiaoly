@@ -655,3 +655,15 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .pro-tier { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12.5px; border-bottom: 1px solid var(--border); }
 .pro-tier:last-child { border-bottom: none; }
 .pro-tier b { color: var(--primary); white-space: nowrap; }
+
+/* ---------- Tiện ích mở rộng (entitlement) ---------- */
+.ext-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.ext-card { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; }
+.ext-card.owned { border-color: var(--primary); background: var(--primary-soft); }
+.ext-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.ext-name { font-weight: 600; color: var(--heading); }
+.ext-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: var(--border); color: var(--muted); }
+.ext-badge.on { background: var(--primary); color: #fff; }
+.ext-desc { font-size: 13px; color: var(--text); margin-bottom: 8px; }
+.ext-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+.ext-meta a { color: var(--primary); font-weight: 600; }

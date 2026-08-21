@@ -577,6 +577,21 @@ async function handle(method, rawUrl, body = {}) {
       return ok({ promoted, graduated });
     }
 
+    // ---------------- entitlement (kho tính năng) ----------------
+    if (path === '/features' && method === 'get') {
+      const { data, error } = await supabase.from('features').select('*').eq('active', true).order('order_index');
+      if (error) return fail(400, error.message);
+      return ok(data || []);
+    }
+    if (path === '/entitlements' && method === 'get') {
+      const nowIso = new Date().toISOString();
+      const { data, error } = await supabase.from('parish_features')
+        .select('feature_key, status, source, expires_at').eq('status', 'active');
+      if (error) return fail(400, error.message);
+      const keys = (data || []).filter((r) => !r.expires_at || r.expires_at > nowIso).map((r) => r.feature_key);
+      return ok({ keys, rows: data || [] });
+    }
+
     // ---------------- game học ----------------
     if (path === '/games' && method === 'get') {
       const { data, error } = await supabase.from('games').select('*').order('order_index').order('created_at');
