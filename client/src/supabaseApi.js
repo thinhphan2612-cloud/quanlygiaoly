@@ -14,6 +14,39 @@ function parishId() {
     return null;
   }
 }
+function meId() {
+  try { return JSON.parse(localStorage.getItem('user') || '{}').id || null; } catch { return null; }
+}
+
+// C4: sau khi lưu điểm danh, phát hiện học viên vắng 3 buổi LIÊN TIẾP -> tạo thông
+// báo cho giáo lý viên phụ trách lớp + admin (bỏ qua nếu đã có cảnh báo chưa đọc).
+async function checkAbsences(pid, studentIds, date) {
+  const { data: studs } = await supabase.from('students').select('id, class_id, full_name').in('id', studentIds);
+  const classId = studs?.[0]?.class_id;
+  if (!classId) return;
+  const classStuds = (studs || []).filter((s) => s.class_id === classId);
+  const ids = classStuds.map((s) => s.id);
+  const { data: recs } = await supabase.from('attendance').select('student_id, date, status').in('student_id', ids).lte('date', date);
+  const dates = [...new Set((recs || []).map((r) => r.date))].sort();
+  const last3 = dates.slice(-3);
+  if (last3.length < 3 || last3[last3.length - 1] !== date) return; // chỉ báo khi buổi mới nhất vừa lưu
+  const { data: cts } = await supabase.from('class_teachers').select('teacher_id').eq('class_id', classId);
+  const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
+  const recipients = [...new Set([...(cts || []).map((c) => c.teacher_id), ...(admins || []).map((a) => a.id)])];
+  if (!recipients.length) return;
+  for (const s of classStuds) {
+    const byDate = {};
+    (recs || []).filter((r) => r.student_id === s.id).forEach((r) => { byDate[r.date] = r.status; });
+    if (!last3.every((d) => byDate[d] === 'absent')) continue;
+    const { data: existing } = await supabase.from('notifications').select('id')
+      .eq('student_id', s.id).eq('type', 'absence').eq('read', false).limit(1);
+    if (existing && existing.length) continue;
+    await supabase.from('notifications').insert(recipients.map((rid) => ({
+      parish_id: pid, recipient_id: rid, type: 'absence', student_id: s.id,
+      title: 'Cảnh báo vắng học', content: `${s.full_name} đã vắng 3 buổi liên tiếp.`,
+    })));
+  }
+}
 
 // '' → null cho các cột uuid/date để tránh lỗi kiểu dữ liệu
 const nn = (v) => (v === '' || v === undefined ? null : v);
@@ -252,6 +285,7 @@ async function handle(method, rawUrl, body = {}) {
       const rows = records.map((r) => ({ parish_id: pid, student_id: r.student_id, date, status: r.status }));
       const { error } = await supabase.from('attendance').upsert(rows, { onConflict: 'student_id,date' });
       if (error) return fail(400, error.message);
+      await checkAbsences(pid, records.map((r) => r.student_id), date).catch(() => { /* không chặn lưu điểm danh */ });
       return ok({ ok: true, count: records.length });
     }
 
@@ -516,6 +550,41 @@ async function handle(method, rawUrl, body = {}) {
         promoted += mv?.length || 0;
       }
       return ok({ promoted, graduated });
+    }
+
+    // ---------------- thông báo ----------------
+    if (path === '/notifications' && method === 'get') {
+      const { data, error } = await supabase.from('notifications')
+        .select('*').eq('recipient_id', meId()).order('created_at', { ascending: false }).limit(50);
+      if (error) return fail(400, error.message);
+      return ok(data || []);
+    }
+    if (path === '/notifications/read' && method === 'post') {
+      let query = supabase.from('notifications').update({ read: true }).eq('recipient_id', meId());
+      if (body.id) query = query.eq('id', body.id); else query = query.eq('read', false);
+      const { error } = await query;
+      if (error) return fail(400, error.message);
+      return ok({ ok: true });
+    }
+    // admin gửi thông báo đến các GLV
+    if (path === '/notifications' && method === 'post') {
+      const { recipient_ids, title, content } = body;
+      if (!Array.isArray(recipient_ids) || !recipient_ids.length) return fail(400, 'Chọn ít nhất 1 người nhận');
+      if (!content) return fail(400, 'Nhập nội dung thông báo');
+      const rows = recipient_ids.map((rid) => ({
+        parish_id: pid, recipient_id: rid, sender_id: meId(), type: 'admin', title: title || 'Thông báo', content,
+      }));
+      const { error } = await supabase.from('notifications').insert(rows);
+      if (error) return fail(400, error.message);
+      return ok({ ok: true, count: rows.length });
+    }
+    // admin xem lịch sử đã gửi
+    if (path === '/notifications/sent' && method === 'get') {
+      const { data, error } = await supabase.from('notifications')
+        .select('id, title, content, created_at, read, profiles!notifications_recipient_id_fkey(full_name)')
+        .eq('type', 'admin').order('created_at', { ascending: false }).limit(100);
+      if (error) return fail(400, error.message);
+      return ok((data || []).map((n) => ({ ...n, recipient_name: n.profiles?.full_name || '' })));
     }
 
     // ---------------- kiểm toán thu chi ----------------

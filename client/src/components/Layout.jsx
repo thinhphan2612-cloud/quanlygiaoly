@@ -19,6 +19,7 @@ const nav = [
   { to: '/random', label: 'Chọn trả bài', Icon: IconDice },
   { to: '/games', label: 'Game học', Icon: IconGame },
   { to: '/teachers', label: 'Giáo lý viên', Icon: IconTeacher, adminOnly: true },
+  { to: '/notify', label: 'Thông báo', Icon: IconBell, adminOnly: true },
   { to: '/audit', label: 'Kiểm toán', Icon: IconMoney, adminOnly: true },
 ];
 
@@ -37,9 +38,23 @@ export default function Layout({ children }) {
   const [dark, setDark] = useState(loadTheme().mode === 'dark');
   const [pricing, setPricing] = useState(false);
   const [feedback, setFeedback] = useState(false);
+  const [notifs, setNotifs] = useState([]);
+  const [bellOpen, setBellOpen] = useState(false);
   const plan = parish?.plan || 'free';
+  const unread = notifs.filter((n) => !n.read).length;
 
   useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
+  function loadNotifs() { api.get('/notifications').then((r) => setNotifs(r.data)).catch(() => {}); }
+  useEffect(() => { loadNotifs(); const t = setInterval(loadNotifs, 60000); return () => clearInterval(t); }, []);
+
+  async function openBell() {
+    setBellOpen((v) => !v);
+    if (!bellOpen && unread) {
+      await api.post('/notifications/read', {}).catch(() => {});
+      setNotifs((ns) => ns.map((n) => ({ ...n, read: true })));
+    }
+  }
+  const timeVi = (s) => new Date(s).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
 
   function toggleDark() {
     const t = loadTheme();
@@ -106,7 +121,28 @@ export default function Layout({ children }) {
             <div className="sub">Chúc bạn một buổi dạy giáo lý tốt lành</div>
           </div>
           <div className="spacer" />
-          <button className="icon-btn" title="Thông báo"><IconBell /></button>
+          <div style={{ position: 'relative' }}>
+            <button className="icon-btn" title="Thông báo" onClick={openBell}>
+              <IconBell />
+              {unread > 0 && <span className="bell-badge">{unread > 9 ? '9+' : unread}</span>}
+            </button>
+            {bellOpen && (
+              <>
+                <div className="menu-backdrop" onClick={() => setBellOpen(false)} />
+                <div className="user-menu notif-menu">
+                  <div className="user-menu-head"><div className="name">Thông báo</div></div>
+                  {notifs.length === 0 && <div className="notif-empty">Chưa có thông báo</div>}
+                  {notifs.map((n) => (
+                    <div key={n.id} className={`notif-item ${n.type === 'absence' ? 'absence' : ''}`}>
+                      <div className="nt">{n.type === 'absence' ? '⚠ ' : ''}{n.title}</div>
+                      <div className="nc">{n.content}</div>
+                      <div className="nd">{timeVi(n.created_at)}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           <div className="user-box" onClick={() => setMenuOpen((v) => !v)} style={{ cursor: 'pointer', position: 'relative' }}>
             <div className="avatar">{initials(user?.full_name)}</div>
             <div className="user-meta">

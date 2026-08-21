@@ -628,3 +628,18 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .audit-card.duong .num { color: var(--success); }
 .audit-card.am .num { color: var(--danger); }
 .audit-card .tag { font-size: 12px; font-weight: 600; margin-top: 4px; color: var(--muted); }
+
+/* ---------- Chuông thông báo ---------- */
+.bell-badge { position: absolute; top: 2px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 10px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; }
+.notif-menu { min-width: 300px; max-width: 340px; max-height: 420px; overflow-y: auto; }
+.notif-empty { padding: 20px 12px; text-align: center; color: var(--muted); font-size: 13px; }
+.notif-item { padding: 10px 12px; border-radius: 10px; }
+.notif-item:hover { background: var(--primary-soft); }
+.notif-item.absence { border-left: 3px solid var(--warning); }
+.notif-item .nt { font-weight: 600; font-size: 13.5px; color: var(--heading); }
+.notif-item .nc { font-size: 13px; color: var(--text); margin-top: 2px; }
+.notif-item .nd { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+/* ---------- Trang gửi thông báo ---------- */
+.notify-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+@media (max-width: 860px) { .notify-layout { grid-template-columns: 1fr; } }

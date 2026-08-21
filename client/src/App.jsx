@@ -12,6 +12,7 @@ import RandomPicker from './pages/RandomPicker.jsx';
 import Games from './pages/Games.jsx';
 import Settings from './pages/Settings.jsx';
 import Audit from './pages/Audit.jsx';
+import Notify from './pages/Notify.jsx';
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -34,6 +35,7 @@ export default function App() {
       <Route path="/games" element={<Protected><Games /></Protected>} />
       <Route path="/settings" element={<Protected><Settings /></Protected>} />
       <Route path="/audit" element={<Protected><Audit /></Protected>} />
+      <Route path="/notify" element={<Protected><Notify /></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
