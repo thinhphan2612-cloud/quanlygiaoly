@@ -64,10 +64,10 @@
 - [x] J1. GLV **chỉ truy cập lớp mình phụ trách** — khóa 3 tầng: UI (menu ẩn), API scope (/classes,/students,/dashboard), và **RLS database** (migration_rls_teacher_scope.sql: teaches_class/teaches_student; đọc+ghi lớp khác đều bị chặn kể cả gọi API thô; transactions chỉ admin). ✅ verified read+write.
 - [x] J2 (nhận thông báo): GLV nhận thông báo admin qua **chuông, không trả lời**. (Kiểm toán/thu chi theo lớp cho GLV có thể mở thêm sau nếu cần.)
 
-## K. Game học ✅ (giao diện + khóa gói; nội dung game mẫu, link WeCatholic)
-- [x] K1. Trang game hiện **thumbnail + tên**; bấm → **popup mô tả** + nút "Chơi ngay" mở tab mới (WeCatholic).
-- [x] K2. Gói **Free**: game **xám + khóa 🔒**, bấm → mở bảng nâng cấp. Standard/Pro mở khóa.
-- Ghi chú: danh sách game hiện là mẫu tĩnh (6 game) — có thể cho admin tự quản lý sau.
+## K. Game học ✅ (admin quản lý danh sách, lưu DB, khóa theo gói)
+- [x] K1. Trang game hiện **thumbnail + tên**; bấm → **popup mô tả** + nút "Chơi ngay" mở tab mới (link ngoài, vd WeCatholic).
+- [x] K2. Mỗi game có **gói tối thiểu** (free/standard/pro); gói chưa đủ → game **xám + khóa 🔒** + mở bảng nâng cấp.
+- [x] K3. **Admin quản lý game** (⚙ Quản lý game): thêm/sửa/xóa — tên, icon, mô tả, link, gói, màu. Lưu bảng `games` (migration_games.sql), RLS: thành viên đọc, admin ghi. GLV chỉ xem/chơi. ✅ verified.
 
 ---
 ## ⚠ Ghi chú kiến trúc quan trọng
