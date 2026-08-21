@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
-import { exportXlsx, exportPdf, STT_COL, ATT_LABEL, fileSlug } from '../lib/exportUtils';
+import { exportXlsx, exportPdf, STT_COL, ATT_LABEL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const STATUSES = [
@@ -33,9 +33,12 @@ export default function Attendance() {
   const [classId, setClassId] = useState('');
   const [date, setDate] = useState(today());
   const [mode, setMode] = useState('day'); // day | week | month
+  const [parish, setParish] = useState(null);
 
   useEffect(() => { api.get('/classes').then((r) => setClasses(r.data)); }, []);
-  const className = classes.find((c) => c.id === classId)?.name || '';
+  useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
+  const cls = classes.find((c) => c.id === classId) || {};
+  const className = cls.name || '';
   const range = mode === 'week' ? weekRange(date) : mode === 'month' ? monthRange(date) : null;
 
   return (
@@ -65,7 +68,7 @@ export default function Attendance() {
         <div className="panel"><p className="muted">Hãy chọn lớp để điểm danh.</p></div>
       ) : tab === 'giaoly' ? (
         mode === 'day'
-          ? <GiaoLyDay classId={classId} date={date} className={className} />
+          ? <GiaoLyDay classId={classId} date={date} cls={cls} parish={parish} />
           : <GiaoLyStats classId={classId} range={range} mode={mode} />
       ) : (
         mode === 'day'
@@ -77,7 +80,8 @@ export default function Attendance() {
 }
 
 /* ---------------- GIÁO LÝ: điểm danh theo ngày ---------------- */
-function GiaoLyDay({ classId, date, className }) {
+function GiaoLyDay({ classId, date, cls, parish }) {
+  const className = cls?.name || '';
   const [rows, setRows] = useState([]);
   const [saved, setSaved] = useState(false);
   useEffect(() => {
@@ -97,7 +101,7 @@ function GiaoLyDay({ classId, date, className }) {
     { label: 'Họ và tên', get: (r) => r.full_name, width: 24 },
     { label: 'Trạng thái', get: (r) => ATT_LABEL[r.status] || 'Chưa điểm danh', width: 16 },
   ];
-  const meta = { title: 'Phiếu điểm danh', subtitle: `Lớp: ${className}  ·  Ngày: ${date.split('-').reverse().join('/')}`, columns: attColumns, rows };
+  const meta = { title: 'Phiếu điểm danh', subtitle: exportSubtitle({ parish, cls, extra: [`Ngày: ${date.split('-').reverse().join('/')}`] }), columns: attColumns, rows };
 
   if (rows.length === 0) return <div className="panel"><p className="muted">Lớp chưa có học viên.</p></div>;
   return (

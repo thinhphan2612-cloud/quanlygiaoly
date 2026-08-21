@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api';
 import BulkImport from '../components/BulkImport.jsx';
 import SacramentBadge, { SACRAMENTS, SACRAMENT_OPTIONS } from '../components/SacramentBadge.jsx';
-import { exportXlsx, exportPdf, STT_COL, fileSlug } from '../lib/exportUtils';
+import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 
 const empty = {
   full_name: '', saint_name: '', birth_date: '', gender: '',
@@ -37,6 +37,7 @@ export default function Students() {
   const [error, setError] = useState('');
   const [showFilter, setShowFilter] = useState(false);
   const [f, setF] = useState(defaultFilter);
+  const [parish, setParish] = useState(null);
 
   function load() {
     api.get('/students').then((r) => setStudents(r.data));
@@ -44,6 +45,7 @@ export default function Students() {
   }
   useEffect(() => { load(); }, []);
   useEffect(() => { api.get('/classes').then((r) => setClasses(r.data)); }, []);
+  useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
 
   function openCreate() { setError(''); setModal({ ...empty }); }
   function openEdit(s) { setError(''); setModal({ ...s, class_id: s.class_id || '' }); }
@@ -91,9 +93,10 @@ export default function Students() {
   const activeCount = (f.classes.length ? 1 : 0) + (f.sacrament ? 1 : 0) + (f.scoreOp && f.scoreVal !== '' ? 1 : 0)
     + (f.missingOnly ? 1 : 0) + (f.sortBy !== 'name' ? 1 : 0);
 
+  const singleCls = f.classes.length === 1 ? classes.find((c) => c.id === f.classes[0]) : null;
   const exportMeta = {
     title: 'Danh sách học viên',
-    subtitle: f.classes.length === 1 ? `Lớp: ${classes.find((c) => c.id === f.classes[0])?.name || ''}` : 'Tất cả các lớp',
+    subtitle: exportSubtitle({ parish, cls: singleCls, extra: singleCls ? [] : ['Tất cả các lớp'] }),
     columns: studentColumns,
     rows: filtered,
   };

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
-import { exportXlsx, exportPdf, STT_COL, fileSlug } from '../lib/exportUtils';
+import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 
 const round1 = (n) => Math.round(n * 10) / 10;
 
@@ -26,11 +26,7 @@ export default function Grades() {
   const cls = classes.find((c) => c.id === classId) || {};
   const className = cls.name || '';
   // Thông tin đầu bảng điểm khi xuất: giáo xứ, lớp, năm học, GV phụ trách
-  const exportSubtitle = [
-    parish?.name ? `Giáo xứ: ${parish.name}${parish.diocese ? ' — ' + parish.diocese : ''}` : null,
-    `Lớp: ${className}${cls.year ? '     Năm học: ' + cls.year : ''}`,
-    cls.teacher_name ? `Giáo lý viên phụ trách: ${cls.teacher_name}` : null,
-  ].filter(Boolean);
+  const expSub = exportSubtitle({ parish, cls });
 
   function cellVal(sid, cid) { const v = scores[sid]?.[cid]; return v == null ? '' : v; }
   function setCell(sid, cid, val) {
@@ -68,7 +64,7 @@ export default function Grades() {
       { label: 'TB', get: (s) => weightedAvg(s.id) ?? '', width: 8 },
       { label: 'Hạng', get: (s) => rankOf[s.id] ?? '', width: 7 },
     ];
-    const meta = { title: 'Bảng điểm', subtitle: exportSubtitle, columns: cols, rows: display };
+    const meta = { title: 'Bảng điểm', subtitle: expSub, columns: cols, rows: display };
     if (mode === 'excel') exportXlsx({ filename: `bang-diem-${fileSlug(className)}.xlsx`, sheetName: 'Bảng điểm', ...meta });
     else exportPdf(meta);
   }
