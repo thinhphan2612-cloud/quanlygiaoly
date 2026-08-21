@@ -571,6 +571,36 @@ async function handle(method, rawUrl, body = {}) {
       return ok({ promoted, graduated });
     }
 
+    // ---------------- game học ----------------
+    if (path === '/games' && method === 'get') {
+      const { data, error } = await supabase.from('games').select('*').order('order_index').order('created_at');
+      if (error) return fail(400, error.message);
+      return ok(data || []);
+    }
+    if (path === '/games' && method === 'post') {
+      if (!body.name) return fail(400, 'Thiếu tên game');
+      const { data, error } = await supabase.from('games').insert({
+        parish_id: pid, name: body.name, description: nn(body.description), url: nn(body.url),
+        emoji: body.emoji || '🎮', color: body.color || '#3b82f6',
+        min_plan: ['free', 'standard', 'pro'].includes(body.min_plan) ? body.min_plan : 'standard',
+        order_index: Number(body.order_index) || 0,
+      }).select().single();
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
+    if (seg[0] === 'games' && seg[1] && method === 'put') {
+      const patch = {};
+      for (const k of ['name', 'description', 'url', 'emoji', 'color', 'min_plan', 'order_index']) if (body[k] !== undefined) patch[k] = body[k];
+      const { data, error } = await supabase.from('games').update(patch).eq('id', seg[1]).select().single();
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
+    if (seg[0] === 'games' && seg[1] && method === 'delete') {
+      const { error } = await supabase.from('games').delete().eq('id', seg[1]);
+      if (error) return fail(400, error.message);
+      return ok({ ok: true });
+    }
+
     // ---------------- thông báo ----------------
     if (path === '/notifications' && method === 'get') {
       const { data, error } = await supabase.from('notifications')

@@ -643,3 +643,7 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 /* ---------- Trang gửi thông báo ---------- */
 .notify-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
 @media (max-width: 860px) { .notify-layout { grid-template-columns: 1fr; } }
+
+/* ---------- Games: khóa gói + quản lý ---------- */
+.game-lock { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.game-emoji-dot { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; font-size: 16px; }
