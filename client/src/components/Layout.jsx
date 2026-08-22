@@ -8,7 +8,7 @@ import { fileToDataUrl } from '../lib/img';
 import PricingModal from './PricingModal.jsx';
 import {
   IconHome, IconStudents, IconClass, IconCheck, IconGrades,
-  IconDice, IconGame, IconTeacher, IconLogout, IconBell, IconMoney,
+  IconDice, IconGame, IconTeacher, IconLogout, IconBell, IconMoney, IconEditImage,
 } from './Icons.jsx';
 
 const nav = [
@@ -162,7 +162,7 @@ export default function Layout({ children }) {
                     <AvatarImg size={92} />
                     {pro && <span className="pro-badge lg">PRO</span>}
                     <button className="ava-edit" title="Đổi ảnh đại diện" onClick={() => fileRef.current?.click()} disabled={uploading}>
-                      {uploading ? '…' : '📷'}
+                      {uploading ? '…' : <IconEditImage width="15" height="15" />}
                     </button>
                     <input ref={fileRef} type="file" accept="image/*" onChange={onPickAvatar} style={{ display: 'none' }} />
                   </div>
