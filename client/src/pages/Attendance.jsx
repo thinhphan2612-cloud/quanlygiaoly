@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import { exportXlsx, exportPdf, STT_COL, ATT_LABEL, fileSlug, exportSubtitle } from '../lib/exportUtils';
+import Leaderboard from '../components/Leaderboard.jsx';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const STATUSES = [
@@ -86,11 +87,11 @@ export default function Attendance() {
       ) : tab === 'giaoly' ? (
         mode === 'day'
           ? <GiaoLyDay classId={classId} date={date} cls={cls} parish={parish} />
-          : <GiaoLyStats classId={classId} range={range} mode={mode} />
+          : <GiaoLyStats classId={classId} range={range} mode={mode} className={className} />
       ) : (
         mode === 'day'
           ? <ThiengDay classId={classId} date={date} />
-          : <ThiengStats classId={classId} range={range} />
+          : <ThiengStats classId={classId} range={range} className={className} />
       )}
     </div>
   );
@@ -156,9 +157,10 @@ function GiaoLyDay({ classId, date, cls, parish }) {
 }
 
 /* ---------------- GIÁO LÝ: thống kê tuần/tháng ---------------- */
-function GiaoLyStats({ classId, range, mode }) {
+function GiaoLyStats({ classId, range, mode, className }) {
   const [data, setData] = useState({ dates: [], students: [] });
   const [byDiligence, setByDiligence] = useState(false);
+  const [lbOpen, setLbOpen] = useState(false);
   useEffect(() => {
     api.get(`/attendance-range?class_id=${classId}&from=${range.from}&to=${range.to}`).then((r) => setData(r.data));
   }, [classId, range.from, range.to]);
@@ -181,8 +183,12 @@ function GiaoLyStats({ classId, range, mode }) {
     <div className="panel">
       <div className="stats-bar">
         <span className="muted">{mode === 'week' ? 'Tuần' : 'Tháng'}: {ddmm(range.from)} – {ddmm(range.to)} · {total} buổi đã điểm danh</span>
-        <label className="fp-chk"><input type="checkbox" checked={byDiligence} onChange={(e) => setByDiligence(e.target.checked)} /><span>Sắp xếp chuyên cần</span></label>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button className="btn ghost sm" onClick={() => setLbOpen(true)}>🏆 Bảng xếp hạng</button>
+          <label className="fp-chk"><input type="checkbox" checked={byDiligence} onChange={(e) => setByDiligence(e.target.checked)} /><span>Sắp xếp chuyên cần</span></label>
+        </div>
       </div>
+      {lbOpen && <Leaderboard classId={classId} range={range} className={className} onClose={() => setLbOpen(false)} />}
       {total > 0 && (
         <>
           <div className="stat-cards">
@@ -328,9 +334,10 @@ function ThiengDay({ classId, date }) {
 }
 
 /* ---------------- VIỆC THIÊNG LIÊNG: thống kê tuần/tháng ---------------- */
-function ThiengStats({ classId, range }) {
+function ThiengStats({ classId, range, className }) {
   const [tasks, setTasks] = useState([]);
   const [data, setData] = useState({ dates: [], students: [] });
+  const [lbOpen, setLbOpen] = useState(false);
   useEffect(() => { api.get('/spiritual-tasks').then((r) => setTasks(r.data)); }, []);
   useEffect(() => {
     api.get(`/spiritual-range?class_id=${classId}&from=${range.from}&to=${range.to}`).then((r) => setData(r.data));
@@ -349,7 +356,11 @@ function ThiengStats({ classId, range }) {
 
   return (
     <div className="panel">
-      <div className="stats-bar"><span className="muted">{ddmm(range.from)} – {ddmm(range.to)} · {total} ngày có ghi nhận</span></div>
+      <div className="stats-bar">
+        <span className="muted">{ddmm(range.from)} – {ddmm(range.to)} · {total} ngày có ghi nhận</span>
+        <button className="btn ghost sm" onClick={() => setLbOpen(true)}>🏆 Bảng xếp hạng</button>
+      </div>
+      {lbOpen && <Leaderboard classId={classId} range={range} className={className} onClose={() => setLbOpen(false)} />}
       {tasks.length > 0 && total > 0 && (
         <div className="rank-grid">
           <RankList title="🌟 Siêng năng (làm ≥ 80%)" tone="good" rows={siengNang} emptyText="Chưa có bạn nào đạt ≥ 80%" />

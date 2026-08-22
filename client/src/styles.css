@@ -717,3 +717,18 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
   background: var(--panel); border: 1px solid var(--border); font-size: 11px; font-weight: 700; }
 .rank-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank-detail { font-weight: 700; font-size: 13px; color: var(--muted); white-space: nowrap; }
+
+/* ---------- Bảng xếp hạng (league table) ---------- */
+.lb-table { width: 100%; }
+.lb-table th, .lb-table td { text-align: center; padding: 8px 10px; white-space: nowrap; }
+.lb-th { cursor: pointer; user-select: none; }
+.lb-th.l, .lb-name { text-align: left; }
+.lb-th:hover { color: var(--primary); }
+.lb-th.on { color: var(--primary); }
+.lb-rank { font-weight: 800; color: var(--muted); width: 34px; }
+.lb-top-1 .lb-rank { color: #d4a017; }
+.lb-top-2 .lb-rank { color: #8a8f98; }
+.lb-top-3 .lb-rank { color: #b06b34; }
+.lb-top { background: var(--primary-soft); }
+.lb-top-1 { background: rgba(246,201,85,.16); }
+.lb-bad { color: var(--danger); font-weight: 700; }
