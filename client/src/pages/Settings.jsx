@@ -169,7 +169,7 @@ export default function Settings() {
       {/* Tiện ích mở rộng (kho tính năng) */}
       <div className="panel">
         <div className="card-head"><h2>Tiện ích mở rộng</h2></div>
-        <p className="muted" style={{ marginTop: 0, fontSize: 13 }}>Các tính năng có thể mua thêm tại Ethata Store. Khi giáo xứ sở hữu, tính năng sẽ hiện cho giáo lý viên dùng.</p>
+        <p className="muted" style={{ marginTop: 0, fontSize: 13 }}>Các tính năng có thể mua thêm tại Ephata Store. Khi giáo xứ sở hữu, tính năng sẽ hiện cho giáo lý viên dùng.</p>
         <div className="ext-grid">
           {features.map((ft) => {
             const owned = ent.has(ft.key);
@@ -180,7 +180,7 @@ export default function Settings() {
                   {owned ? <span className="ext-badge on">Đã có</span> : <span className="ext-badge">Chưa có</span>}
                 </div>
                 <div className="ext-desc">{ft.description}</div>
-                <div className="ext-meta"><span className="muted">{ft.category}</span>{!owned && <a href="https://ethatastore.com" target="_blank" rel="noopener noreferrer">Mua tại Ethata Store →</a>}</div>
+                <div className="ext-meta"><span className="muted">{ft.category}</span>{!owned && <a href="https://ephatastore.com" target="_blank" rel="noopener noreferrer">Mua tại Ephata Store →</a>}</div>
               </div>
             );
           })}

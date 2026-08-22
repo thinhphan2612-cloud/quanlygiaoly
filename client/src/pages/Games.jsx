@@ -118,7 +118,7 @@ function GameManager({ games, onChange, onClose }) {
               <div className="field" style={{ flex: '0 0 90px' }}><label>Icon</label><input value={editing.emoji} onChange={(e) => setEditing({ ...editing, emoji: e.target.value })} placeholder="🎮" /></div>
             </div>
             <div className="field"><label>Mô tả</label><textarea rows={2} value={editing.description || ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></div>
-            <div className="field"><label>Link chơi (URL)</label><input value={editing.url || ''} onChange={(e) => setEditing({ ...editing, url: e.target.value })} placeholder="https://ethatastore.com/..." /></div>
+            <div className="field"><label>Link chơi (URL)</label><input value={editing.url || ''} onChange={(e) => setEditing({ ...editing, url: e.target.value })} placeholder="https://ephatastore.com/..." /></div>
             <div className="row">
               <div className="field">
                 <label>Gói tối thiểu để mở khóa</label>

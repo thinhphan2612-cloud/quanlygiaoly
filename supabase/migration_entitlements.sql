@@ -1,6 +1,6 @@
 -- =====================================================================
 --  NỀN ENTITLEMENT — kho tính năng (features) + quyền theo giáo xứ
---  (parish_features). Sau này store Ethata Store ghi parish_features để
+--  (parish_features). Sau này store Ephata Store ghi parish_features để
 --  bật tính năng cho giáo xứ. Chạy 1 lần trong SQL Editor.
 -- =====================================================================
 
@@ -45,7 +45,7 @@ create index if not exists idx_pf_parish on public.parish_features(parish_id);
 insert into public.features (key, name, description, category, kind, price, order_index) values
   ('exam',        'Tạo đề thi & thi online', 'Soạn đề, cho học viên thi online, tự chấm và lưu điểm.', 'Kiểm tra', 'hosted',  'Liên hệ', 1),
   ('certificate', 'Làm giấy khen',           'Sinh giấy khen / chứng nhận từ dữ liệu học viên, xuất PDF.', 'Văn bản',  'builtin', 'Liên hệ', 2),
-  ('game_pack',   'Bộ game giáo lý mở rộng', 'Thêm nhiều game học giáo lý từ Ethata Store.',                 'Trò chơi', 'hosted',  'Liên hệ', 3)
+  ('game_pack',   'Bộ game giáo lý mở rộng', 'Thêm nhiều game học giáo lý từ Ephata Store.',                 'Trò chơi', 'hosted',  'Liên hệ', 3)
 on conflict (key) do nothing;
 
 -- DEMO: cấp thử tính năng 'certificate' cho mọi giáo xứ hiện có (để test hasFeature).

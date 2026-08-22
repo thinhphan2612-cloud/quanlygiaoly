@@ -7,7 +7,7 @@
 - [x] A1. Đổi **toàn bộ màu tím → xanh dương** trên toàn UI. (biến --primary + hardcode → tông #2563eb)
 - [x] A2. **Edit logo + tên giáo phận + tên giáo xứ** (Settings) — hiển thị ở sidebar & topbar. Logo lưu data-URL (không cần Storage).
 - [x] A3. **Theme Day/Night** (menu avatar + Settings) + **màu theo năm phụng vụ** (6 màu: xanh, tím Vọng/Chay, xanh lá Thường niên, đỏ, hồng, vàng).
-- [x] A4. Nút **"Góp ý / liên hệ tác giả"** dưới sidebar (modal: email góp ý + link Ethata Store).
+- [x] A4. Nút **"Góp ý / liên hệ tác giả"** dưới sidebar (modal: email góp ý + link Ephata Store).
 - [x] A5. Cụm **gói/nâng cấp Pro**: thẻ Upgrade ở sidebar → **PricingModal** (Basic/Standard/Pro + lợi ích). Gói lưu ở parishes.plan (admin đặt tay ở Settings; thanh toán bổ sung sau).
 
 ## B. Cài đặt tài khoản Admin (bấm vào avatar) — YÊU CẦU BỔ SUNG, ưu tiên ✅
@@ -65,7 +65,7 @@
 - [x] J2 (nhận thông báo): GLV nhận thông báo admin qua **chuông, không trả lời**. (Kiểm toán/thu chi theo lớp cho GLV có thể mở thêm sau nếu cần.)
 
 ## K. Game học ✅ (admin quản lý danh sách, lưu DB, khóa theo gói)
-- [x] K1. Trang game hiện **thumbnail + tên**; bấm → **popup mô tả** + nút "Chơi ngay" mở tab mới (link ngoài, vd Ethata Store).
+- [x] K1. Trang game hiện **thumbnail + tên**; bấm → **popup mô tả** + nút "Chơi ngay" mở tab mới (link ngoài, vd Ephata Store).
 - [x] K2. Mỗi game có **gói tối thiểu** (free/standard/pro); gói chưa đủ → game **xám + khóa 🔒** + mở bảng nâng cấp.
 - [x] K3. **Admin quản lý game** (⚙ Quản lý game): thêm/sửa/xóa — tên, icon, mô tả, link, gói, màu. Lưu bảng `games` (migration_games.sql), RLS: thành viên đọc, admin ghi. GLV chỉ xem/chơi. ✅ verified.
 
