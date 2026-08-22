@@ -28,11 +28,11 @@ function monthRange(dateStr) {
 }
 
 // Danh sách xếp hạng (chuyên cần nhất / cần nhắc nhở)
-function RankList({ title, tone, rows }) {
+function RankList({ title, tone, rows, emptyText = 'Chưa có dữ liệu' }) {
   return (
     <div className={`rank-block ${tone}`}>
       <div className="rank-title">{title}</div>
-      {rows.length === 0 ? <div className="muted" style={{ fontSize: 13, padding: '6px 2px' }}>Chưa có dữ liệu</div>
+      {rows.length === 0 ? <div className="muted" style={{ fontSize: 13, padding: '6px 2px' }}>{emptyText}</div>
         : rows.map((r, i) => (
           <div className="rank-row" key={i}>
             <span className="rank-no">{i + 1}</span>
@@ -171,10 +171,11 @@ function GiaoLyStats({ classId, range, mode }) {
   const nameOf = (s) => (s.saint_name ? s.saint_name + ' ' : '') + s.full_name;
   const avgRate = data.students.length && total
     ? Math.round((100 * data.students.reduce((a, s) => a + s.present / total, 0)) / data.students.length) : 0;
-  const diligent = [...data.students].sort((a, b) => b.present - a.present)
+  const rateA = (s) => (total ? s.present / total : 0);
+  const diligent = [...data.students].filter((s) => rateA(s) >= 0.8).sort((a, b) => b.present - a.present)
     .slice(0, 5).map((s) => ({ name: nameOf(s), detail: `${s.present}/${total}` }));
-  const remind = [...data.students].filter((s) => s.absent > 0).sort((a, b) => b.absent - a.absent)
-    .slice(0, 5).map((s) => ({ name: nameOf(s), detail: `vắng ${s.absent}` }));
+  const remind = [...data.students].filter((s) => rateA(s) < 0.5).sort((a, b) => b.absent - a.absent)
+    .slice(0, 5).map((s) => ({ name: nameOf(s), detail: `vắng ${s.absent}/${total}` }));
 
   return (
     <div className="panel">
@@ -190,8 +191,8 @@ function GiaoLyStats({ classId, range, mode }) {
             <div className="stat-mini"><div className="lbl">Sĩ số</div><div className="num">{data.students.length}</div></div>
           </div>
           <div className="rank-grid">
-            <RankList title="🌟 Chuyên cần nhất" tone="good" rows={diligent} />
-            <RankList title="⚠ Cần nhắc nhở (vắng nhiều)" tone="warn" rows={remind} />
+            <RankList title="🌟 Chuyên cần (đi học ≥ 80%)" tone="good" rows={diligent} emptyText="Chưa có bạn nào đạt ≥ 80%" />
+            <RankList title="⚠ Cần nhắc nhở (đi học < 50%)" tone="warn" rows={remind} emptyText="Không có bạn nào cần nhắc 👍" />
           </div>
         </>
       )}
@@ -340,9 +341,10 @@ function ThiengStats({ classId, range }) {
   const nameOf = (s) => (s.saint_name ? s.saint_name + ' ' : '') + s.full_name;
   const totalPossible = total * tasks.length;
   const doneOf = (s) => tasks.reduce((a, t) => a + (s.counts[t.id] || 0), 0);
-  const siengNang = [...data.students].sort((a, b) => doneOf(b) - doneOf(a))
+  const rateT = (s) => (totalPossible ? doneOf(s) / totalPossible : 0);
+  const siengNang = [...data.students].filter((s) => rateT(s) >= 0.8).sort((a, b) => doneOf(b) - doneOf(a))
     .slice(0, 5).map((s) => ({ name: nameOf(s), detail: `${doneOf(s)}/${totalPossible}` }));
-  const canNhac = [...data.students].sort((a, b) => doneOf(a) - doneOf(b))
+  const canNhac = [...data.students].filter((s) => rateT(s) < 0.5).sort((a, b) => doneOf(a) - doneOf(b))
     .slice(0, 5).map((s) => ({ name: nameOf(s), detail: `${doneOf(s)}/${totalPossible}` }));
 
   return (
@@ -350,8 +352,8 @@ function ThiengStats({ classId, range }) {
       <div className="stats-bar"><span className="muted">{ddmm(range.from)} – {ddmm(range.to)} · {total} ngày có ghi nhận</span></div>
       {tasks.length > 0 && total > 0 && (
         <div className="rank-grid">
-          <RankList title="🌟 Siêng năng nhất" tone="good" rows={siengNang} />
-          <RankList title="⚠ Cần nhắc nhở (ít nhất)" tone="warn" rows={canNhac} />
+          <RankList title="🌟 Siêng năng (làm ≥ 80%)" tone="good" rows={siengNang} emptyText="Chưa có bạn nào đạt ≥ 80%" />
+          <RankList title="⚠ Cần nhắc nhở (làm < 50%)" tone="warn" rows={canNhac} emptyText="Không có bạn nào cần nhắc 👍" />
         </div>
       )}
       {tasks.length === 0 ? <p className="muted">Chưa có việc thiêng liêng nào.</p> : (
