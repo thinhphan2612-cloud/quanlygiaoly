@@ -732,3 +732,41 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .lb-top { background: var(--primary-soft); }
 .lb-top-1 { background: rgba(246,201,85,.16); }
 .lb-bad { color: var(--danger); font-weight: 700; }
+
+/* ---------- Bảng xếp hạng thi đua (podium + league) ---------- */
+.lb-hero { text-align: center; background: linear-gradient(135deg, var(--primary), #3b82f6); color: #fff; border-radius: 16px; padding: 16px; margin-bottom: 18px; }
+.lb-hero-title { font-size: 20px; font-weight: 800; }
+.lb-hero-sub { font-size: 13px; opacity: .92; margin-top: 2px; }
+
+.podium { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; align-items: end; max-width: 540px; margin: 0 auto 20px; }
+.podium-slot { text-align: center; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 12px 8px 0; overflow: hidden; }
+.podium-slot.p1 { border-color: #e0a800; box-shadow: 0 10px 26px rgba(224,168,0,.28); }
+.podium-slot.p2 { transform: translateY(16px); }
+.podium-slot.p3 { transform: translateY(26px); }
+.podium-medal { font-size: 26px; line-height: 1; }
+.podium-ava { width: 48px; height: 48px; border-radius: 50%; margin: 6px auto; display: grid; place-items: center; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--primary), #3b82f6); }
+.podium-slot.p1 .podium-ava { width: 58px; height: 58px; background: linear-gradient(135deg, #f6c955, #e0a800); color: #7a4d00; }
+.podium-name { font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.podium-points { font-size: 20px; font-weight: 800; color: var(--primary); margin: 2px 0 8px; }
+.podium-points span { font-size: 12px; color: var(--muted); }
+.podium-base { border-radius: 10px 10px 0 0; font-weight: 800; color: #fff; display: grid; place-items: center; }
+.podium-slot.p1 .podium-base { background: linear-gradient(#f6c955, #e0a800); height: 46px; font-size: 20px; }
+.podium-slot.p2 .podium-base { background: linear-gradient(#cfd3da, #b9bec7); height: 34px; }
+.podium-slot.p3 .podium-base { background: linear-gradient(#db9a68, #cd8a54); height: 26px; }
+
+.lb-table { width: 100%; }
+.lb-table th, .lb-table td { text-align: center; padding: 8px 10px; white-space: nowrap; }
+.lb-th { cursor: pointer; user-select: none; }
+.lb-th.l, .lb-name { text-align: left; }
+.lb-th:hover, .lb-th.on { color: var(--primary); }
+.lb-rank { font-weight: 800; color: var(--muted); width: 40px; font-size: 15px; }
+.lb-top { background: var(--primary-soft); }
+.lb-top-1 { background: rgba(246,201,85,.18); }
+.lb-top-2 { background: rgba(185,190,199,.18); }
+.lb-top-3 { background: rgba(205,138,84,.15); }
+.lb-bad { color: var(--danger); font-weight: 700; }
+.lb-points { display: inline-block; min-width: 36px; padding: 3px 9px; border-radius: 20px; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--primary), #3b82f6); font-size: 13px; }
+.lb-top-1 .lb-points { background: linear-gradient(135deg, #f6c955, #e0a800); color: #7a4d00; }
+.lb-bar { display: inline-block; width: 50px; height: 6px; border-radius: 6px; background: var(--border); overflow: hidden; vertical-align: middle; margin-right: 6px; }
+.lb-bar span { display: block; height: 100%; background: var(--primary); border-radius: 6px; }
+.lb-bar-val { font-size: 12px; color: var(--muted); }
