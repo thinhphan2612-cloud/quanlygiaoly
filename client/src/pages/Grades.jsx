@@ -101,7 +101,7 @@ export default function Grades() {
             <button className="btn ghost" onClick={() => exportSheet('pdf')} disabled={columns.length === 0}>🖨 PDF</button>
             <div className="fp-inline" style={{ marginLeft: 'auto' }}>
               <span className="muted" style={{ fontSize: 13 }}>Lọc TB:</span>
-              <select value={gf.op} onChange={(e) => setGf({ ...gf, op: e.target.value })} style={{ width: 110 }}>
+              <select value={gf.op} onChange={(e) => setGf({ ...gf, op: e.target.value })} style={{ minWidth: 130 }}>
                 <option value="">Không lọc</option>
                 <option value="gte">≥</option>
                 <option value="lte">≤</option>
