@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
 import SacramentBadge, { SACRAMENTS, SACRAMENT_OPTIONS } from '../components/SacramentBadge.jsx';
+import { IconEditImage } from '../components/Icons.jsx';
+import { fileToDataUrl } from '../lib/img';
 import { ATT_LABEL } from '../lib/exportUtils';
 
 const initials = (name = '') => { const p = name.trim().split(/\s+/); return ((p[p.length - 2]?.[0] || '') + (p[p.length - 1]?.[0] || '')).toUpperCase() || '?'; };
@@ -16,6 +18,15 @@ export default function StudentProfile() {
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');
   const [edit, setEdit] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
+
+  async function onPickAvatar(e) {
+    const file = e.target.files?.[0]; if (!file) return;
+    setUploading(true);
+    try { const url = await fileToDataUrl(file, 240); await api.put(`/students/${id}`, { avatar_url: url }); load(); }
+    catch { /* noop */ } finally { setUploading(false); }
+  }
 
   function load() {
     api.get(`/student-profile?id=${id}`).then((r) => setData(r.data)).catch((e) => setErr(e.response?.data?.error || 'Không tải được hồ sơ'));
@@ -47,7 +58,17 @@ export default function StudentProfile() {
 
       {/* Thẻ đầu hồ sơ */}
       <div className="panel profile-head">
-        <div className="profile-ava">{initials(s.full_name)}</div>
+        <div className="profile-ava-wrap">
+          {s.avatar_url ? <img className="profile-ava-img" src={s.avatar_url} alt="avatar" /> : <div className="profile-ava">{initials(s.full_name)}</div>}
+          {canEdit && (
+            <>
+              <button className="ava-edit" title="Đổi ảnh học viên" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                {uploading ? '…' : <IconEditImage width="14" height="14" />}
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" onChange={onPickAvatar} style={{ display: 'none' }} />
+            </>
+          )}
+        </div>
         <div className="profile-id">
           <div className="profile-name">{s.saint_name ? s.saint_name + ' ' : ''}{s.full_name} <SacramentBadge value={s.sacrament} /></div>
           <div className="profile-tags">

@@ -824,3 +824,8 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .race-winner { text-align: center; font-size: 18px; font-weight: 700; padding: 12px; margin-bottom: 12px;
   background: linear-gradient(135deg, rgba(246,201,85,.2), rgba(224,168,0,.12)); border-radius: var(--radius-sm); }
 @media (max-width: 560px) { .lane { grid-template-columns: 90px 1fr 22px; } }
+
+/* ---------- Ảnh học viên trong hồ sơ ---------- */
+.profile-ava-wrap { position: relative; flex-shrink: 0; }
+.profile-ava-img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; display: block; border: 2px solid var(--border); }
+.profile-ava-wrap .ava-edit { right: -4px; bottom: -4px; }

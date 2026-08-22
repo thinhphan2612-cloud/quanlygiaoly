@@ -61,7 +61,7 @@ const nn = (v) => (v === '' || v === undefined ? null : v);
 
 const STUDENT_FIELDS = [
   'full_name', 'saint_name', 'birth_date', 'gender', 'parent_name', 'parent_phone',
-  'student_phone', 'address', 'class_id', 'notes', 'position', 'sacrament',
+  'student_phone', 'address', 'class_id', 'notes', 'position', 'sacrament', 'avatar_url',
 ];
 function cleanStudent(body) {
   const out = {};
