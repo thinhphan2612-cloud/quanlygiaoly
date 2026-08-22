@@ -14,6 +14,7 @@ export default function RandomPicker() {
   const [pickedIds, setPickedIds] = useState([]);
   const [note, setNote] = useState('');
   const [progress, setProgress] = useState({});
+  const [runners, setRunners] = useState([]); // snapshot lần đua hiện tại (giữ trên màn hình)
   const timer = useRef(null);
   const progRef = useRef({});
 
@@ -21,7 +22,7 @@ export default function RandomPicker() {
   useEffect(() => {
     if (!classId) { setStudents([]); return; }
     api.get(`/students?class_id=${classId}`).then((r) => setStudents(r.data));
-    setPickedIds([]); setPicked(null); setNote(''); setProgress({});
+    setPickedIds([]); setPicked(null); setNote(''); setProgress({}); setRunners([]);
   }, [classId]);
   useEffect(() => () => clearInterval(timer.current), []);
 
@@ -31,8 +32,9 @@ export default function RandomPicker() {
     if (racing) return;
     if (pool.length === 0) { setNote(noRepeat ? 'Đã chọn hết học viên trong lớp!' : 'Lớp chưa có học viên'); return; }
     setPicked(null); setNote('');
-    const runners = pool.slice();
-    progRef.current = Object.fromEntries(runners.map((s) => [s.id, 0]));
+    const rs = pool.slice();
+    setRunners(rs);
+    progRef.current = Object.fromEntries(rs.map((s) => [s.id, 0]));
     setProgress({ ...progRef.current });
     setRacing(true);
     clearInterval(timer.current);
@@ -40,8 +42,8 @@ export default function RandomPicker() {
     // kéo kẻ bám đuổi (rubber-band) → đổi ngôi liên tục, về đích sát nút, khó đoán.
     timer.current = setInterval(() => {
       const p = progRef.current;
-      const maxP = Math.max(...runners.map((s) => p[s.id]));
-      runners.forEach((s) => {
+      const maxP = Math.max(...rs.map((s) => p[s.id]));
+      rs.forEach((s) => {
         let step = 0.7 + Math.random() * 1.5;                 // tốc độ nền
         if (Math.random() < 0.10) step += 3 + Math.random() * 5; // tăng tốc bứt phá
         if (Math.random() < 0.08) step *= 0.12;                  // khựng lại / vấp
@@ -49,7 +51,7 @@ export default function RandomPicker() {
         if (p[s.id] >= maxP - 0.001 && maxP > 0) step *= 0.7;    // kẻ dẫn đầu bị ghì lại
         p[s.id] = Math.min(100, p[s.id] + Math.max(step, 0));
       });
-      const finishers = runners.filter((s) => p[s.id] >= 100);
+      const finishers = rs.filter((s) => p[s.id] >= 100);
       setProgress({ ...p });
       if (finishers.length) {
         clearInterval(timer.current);
@@ -63,7 +65,7 @@ export default function RandomPicker() {
 
   function reset() {
     clearInterval(timer.current);
-    setRacing(false); setPickedIds([]); setPicked(null); setNote(''); setProgress({});
+    setRacing(false); setPickedIds([]); setPicked(null); setNote(''); setProgress({}); setRunners([]);
   }
   function notLearned() {
     if (!picked) return;
@@ -92,11 +94,13 @@ export default function RandomPicker() {
             <div className="race-winner">🏆 Về đích đầu tiên: <b>{picked.saint_name ? picked.saint_name + ' ' : ''}{picked.full_name}</b></div>
           )}
 
-          {pool.length === 0 ? (
-            <p className="muted" style={{ textAlign: 'center', padding: 20 }}>Đã gọi hết học viên trong lớp. Bấm "Đặt lại" để chạy lại từ đầu.</p>
+          {runners.length === 0 ? (
+            <p className="muted" style={{ textAlign: 'center', padding: 20 }}>
+              {pool.length === 0 ? 'Đã gọi hết học viên trong lớp. Bấm "Đặt lại" để chạy lại từ đầu.' : 'Bấm "🏁 Bắt đầu đua" để bắt đầu.'}
+            </p>
           ) : (
             <div className="race">
-              {pool.map((s, i) => {
+              {runners.map((s, i) => {
                 const pr = progress[s.id] || 0;
                 const win = picked && picked.id === s.id;
                 return (
