@@ -4,29 +4,15 @@ import { useAuth } from '../auth.jsx';
 import { ACCENTS, applyTheme, loadTheme } from '../theme.js';
 import { isPro } from '../lib/plans';
 import { useEntitlements } from '../entitlements.jsx';
-
-// Thu nhỏ ảnh logo về data URL (tránh phải dựng Supabase Storage)
-function fileToLogo(file, size = 160) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const c = document.createElement('canvas');
-      const s = Math.min(img.width, img.height);
-      c.width = c.height = size;
-      const ctx = c.getContext('2d');
-      ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
-      resolve(c.toDataURL('image/png'));
-    };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
-  });
-}
+import { useParish } from '../parish.jsx';
+import { fileToDataUrl } from '../lib/img';
 
 // Trang cài đặt quản lý của admin: giáo xứ, năm học, lên lớp cuối năm,
 // tùy chọn bật/tắt, danh sách học viên đã ra trường.
 export default function Settings() {
   const { user } = useAuth();
-  const [parish, setParish] = useState(null);
+  const { parish, saveParish: ctxSave, reload: reloadParish } = useParish();
+  const [pInfo, setPInfo] = useState({ name: '', diocese: '' });
   const [years, setYears] = useState([]);
   const [graduated, setGraduated] = useState([]);
   const [gSearch, setGSearch] = useState('');
@@ -41,12 +27,13 @@ export default function Settings() {
   const flag = (k) => settings[k] !== false; // mặc định ON
 
   function loadAll() {
-    api.get('/parish').then((r) => setParish(r.data));
     api.get('/school-years').then((r) => setYears(r.data));
     api.get('/students?graduated=1').then((r) => setGraduated(r.data));
     api.get('/features').then((r) => setFeatures(r.data)).catch(() => {});
   }
   useEffect(() => { loadAll(); }, []);
+  // Đồng bộ ô nhập tên/giáo phận khi tải xong thông tin giáo xứ
+  useEffect(() => { if (parish) setPInfo({ name: parish.name || '', diocese: parish.diocese || '' }); }, [parish?.id]);
 
   if (user?.role !== 'admin') return <div className="muted">Chỉ quản trị viên được truy cập cài đặt.</div>;
   if (!parish) return <div className="muted">Đang tải...</div>;
@@ -55,11 +42,8 @@ export default function Settings() {
   function fail(e) { setErr(e); setMsg(''); }
 
   async function saveParish(patch) {
-    try {
-      const r = await api.put('/parish', patch);
-      setParish(r.data);
-      flash('Đã lưu');
-    } catch (e) { fail(e.response?.data?.error || 'Lưu thất bại'); }
+    try { await ctxSave(patch); flash('Đã lưu'); }
+    catch (e) { fail(e.response?.data?.error || 'Lưu thất bại'); }
   }
 
   async function toggle(k) {
@@ -70,7 +54,7 @@ export default function Settings() {
   function setMode(m) { const t = { ...theme, mode: m }; applyTheme(t); setTheme(t); }
   async function uploadLogo(e) {
     const file = e.target.files?.[0]; if (!file) return;
-    try { const url = await fileToLogo(file); await saveParish({ logo_url: url }); }
+    try { const url = await fileToDataUrl(file); await saveParish({ logo_url: url }); }
     catch { fail('Không đọc được ảnh'); }
   }
 
@@ -86,7 +70,7 @@ export default function Settings() {
   async function setCurrent(id) {
     await api.post(`/school-years/${id}/current`, {});
     api.get('/school-years').then((r) => setYears(r.data));
-    api.get('/parish').then((r) => setParish(r.data));
+    reloadParish();
     flash('Đã đặt năm học hiện tại');
   }
   async function delYear(id) {
@@ -124,11 +108,11 @@ export default function Settings() {
         <div className="settings-grid">
           <div className="field">
             <label>Tên giáo xứ</label>
-            <input defaultValue={parish.name || ''} onBlur={(e) => e.target.value !== parish.name && saveParish({ name: e.target.value })} />
+            <input value={pInfo.name} onChange={(e) => setPInfo({ ...pInfo, name: e.target.value })} />
           </div>
           <div className="field">
             <label>Giáo phận</label>
-            <input defaultValue={parish.diocese || ''} onBlur={(e) => e.target.value !== parish.diocese && saveParish({ diocese: e.target.value })} />
+            <input value={pInfo.diocese} onChange={(e) => setPInfo({ ...pInfo, diocese: e.target.value })} />
           </div>
         </div>
         <div className="field" style={{ marginTop: 4 }}>
@@ -143,7 +127,9 @@ export default function Settings() {
             </div>
           </div>
         </div>
-        <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>Thông tin tự lưu khi rời khỏi ô.</p>
+        <div style={{ marginTop: 8 }}>
+          <button className="btn" onClick={() => saveParish({ name: pInfo.name, diocese: pInfo.diocese })}>Lưu thông tin giáo xứ</button>
+        </div>
       </div>
 
       {/* Giao diện */}

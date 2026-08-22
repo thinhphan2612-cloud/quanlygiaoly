@@ -667,3 +667,34 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .ext-desc { font-size: 13px; color: var(--text); margin-bottom: 8px; }
 .ext-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
 .ext-meta a { color: var(--primary); font-weight: 600; }
+
+/* ---------- Avatar + nhãn PRO + thẻ tài khoản ---------- */
+.ava-wrap { position: relative; display: inline-grid; place-items: center; border-radius: 50%; flex-shrink: 0; }
+.ava-wrap.pro { padding: 3px; background: linear-gradient(135deg, #f6c955, #e0a800); }
+.ava-img { border-radius: 50%; object-fit: cover; display: block; }
+.ava-init { border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700;
+  background: linear-gradient(135deg, var(--primary), #3b82f6); }
+.pro-badge { position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, #f6c955, #e0a800); color: #7a4d00; font-weight: 800;
+  font-size: 9px; letter-spacing: .04em; padding: 1px 7px; border-radius: 20px; border: 2px solid var(--panel); }
+.ava-wrap.sm .pro-badge { font-size: 8px; padding: 0 5px; bottom: -7px; }
+.pro-badge.lg { font-size: 12px; padding: 2px 12px; bottom: -10px; }
+
+.account-card {
+  position: absolute; top: calc(100% + 12px); right: 0; z-index: 50;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.18); width: 270px; padding: 22px 18px 14px; text-align: center;
+}
+.account-card .ava-wrap { margin: 6px auto 16px; }
+.ava-edit {
+  position: absolute; right: -2px; bottom: -2px; width: 30px; height: 30px; border-radius: 50%;
+  border: 2px solid var(--panel); background: var(--primary); color: #fff; cursor: pointer;
+  display: grid; place-items: center; font-size: 13px; box-shadow: var(--shadow-sm);
+}
+.ac-name { font-size: 18px; font-weight: 800; color: var(--heading); }
+.ac-role { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 600; color: var(--primary);
+  background: var(--primary-soft); padding: 3px 12px; border-radius: 20px; }
+.ac-email { font-size: 12px; color: var(--muted); margin-top: 8px; }
+.ac-actions { display: flex; flex-direction: column; gap: 2px; margin: 16px 0 10px; text-align: left; }
+.ac-actions .user-menu-item { justify-content: flex-start; }
+.ac-foot { font-size: 12px; color: var(--muted); font-style: italic; border-top: 1px solid var(--border); padding-top: 10px; }

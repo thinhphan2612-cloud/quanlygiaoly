@@ -163,6 +163,15 @@ async function handle(method, rawUrl, body = {}) {
       return ok({ ok: true });
     }
 
+    // ---------------- hồ sơ của chính mình ----------------
+    if (path === '/me' && method === 'put') {
+      const patch = {};
+      for (const k of ['avatar_url', 'full_name', 'saint_name', 'phone']) if (body[k] !== undefined) patch[k] = body[k];
+      const { data, error } = await supabase.from('profiles').update(patch).eq('id', meId()).select().single();
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
+
     // ---------------- profiles (auth/users) ----------------
     if (path === '/auth/users' && method === 'get') {
       const [{ data, error }, { data: cts }] = await Promise.all([

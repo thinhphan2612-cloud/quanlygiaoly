@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabase';
+import api from './api';
 
 const AuthContext = createContext(null);
 
@@ -9,7 +10,7 @@ async function loadProfile(authUser, tries = 5) {
   for (let i = 0; i < tries; i++) {
     const { data } = await supabase
       .from('profiles')
-      .select('id, parish_id, role, full_name')
+      .select('*')
       .eq('id', authUser.id)
       .maybeSingle();
     if (data) {
@@ -19,6 +20,7 @@ async function loadProfile(authUser, tries = 5) {
         full_name: data.full_name,
         role: data.role,
         parish_id: data.parish_id,
+        avatar_url: data.avatar_url || null,
       };
     }
     await new Promise((r) => setTimeout(r, 400));
@@ -92,8 +94,17 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
+  // Cập nhật hồ sơ cá nhân của chính mình (vd ảnh đại diện) + đồng bộ ngay
+  async function updateProfile(patch) {
+    await api.put('/me', patch);
+    const u = { ...user, ...patch };
+    persist(u);
+    setUser(u);
+    return u;
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
