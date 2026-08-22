@@ -44,11 +44,11 @@ export default function RandomPicker() {
       const p = progRef.current;
       const maxP = Math.max(...rs.map((s) => p[s.id]));
       rs.forEach((s) => {
-        let step = 0.7 + Math.random() * 1.5;                 // tốc độ nền
-        if (Math.random() < 0.10) step += 3 + Math.random() * 5; // tăng tốc bứt phá
+        let step = 0.32 + Math.random() * 0.7;                  // tốc độ nền (chậm hơn)
+        if (Math.random() < 0.09) step += 1.4 + Math.random() * 2.6; // tăng tốc bứt phá
         if (Math.random() < 0.08) step *= 0.12;                  // khựng lại / vấp
-        step += (maxP - p[s.id]) * 0.07;                         // kẻ sau bám sát
-        if (p[s.id] >= maxP - 0.001 && maxP > 0) step *= 0.7;    // kẻ dẫn đầu bị ghì lại
+        step += (maxP - p[s.id]) * 0.05;                         // kẻ sau bám sát
+        if (p[s.id] >= maxP - 0.001 && maxP > 0) step *= 0.72;   // kẻ dẫn đầu bị ghì lại
         p[s.id] = Math.min(100, p[s.id] + Math.max(step, 0));
       });
       const finishers = rs.filter((s) => p[s.id] >= 100);
