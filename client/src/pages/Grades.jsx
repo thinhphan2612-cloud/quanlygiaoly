@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api';
 import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 
@@ -15,8 +16,10 @@ export default function Grades() {
   const [savingCell, setSavingCell] = useState('');
   const [parish, setParish] = useState(null);
 
+  const [searchParams] = useSearchParams();
   useEffect(() => { api.get('/classes').then((r) => setClasses(r.data)); }, []);
   useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
+  useEffect(() => { const c = searchParams.get('class'); if (c) setClassId(c); }, [searchParams]);
   function load() {
     if (!classId) { setData({ students: [], columns: [], scores: {} }); return; }
     api.get(`/grades-class?class_id=${classId}`).then((r) => setData(r.data));

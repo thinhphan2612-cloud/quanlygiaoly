@@ -731,17 +731,25 @@ async function handle(method, rawUrl, body = {}) {
       };
       const studentsPerClass = C.map((c) => ({ name: c.name, count: S.filter((s) => s.class_id === c.id).length }))
         .sort((a, b) => b.count - a.count);
+      // Tỷ lệ chuyên cần theo học viên
+      const attByStu = {};
+      (attend || []).forEach((a) => { const x = attByStu[a.student_id] || (attByStu[a.student_id] = { present: 0, total: 0 }); x.total += 1; if (a.status === 'present') x.present += 1; });
+      const rateOf = (id) => { const x = attByStu[id]; return x && x.total ? Math.round((x.present / x.total) * 100) : null; };
+      const classNameOf = (cid) => C.find((c) => c.id === cid)?.name || null;
+
       const byStudent = {};
       G.forEach((g) => { (byStudent[g.student_id] = byStudent[g.student_id] || []).push(Number(g.score)); });
       const topStudents = Object.entries(byStudent).map(([id, arr]) => {
         const s = S.find((x) => x.id === id) || {};
-        return { id, saint_name: s.saint_name, full_name: s.full_name, avg: round1(arr.reduce((a, b) => a + b, 0) / arr.length), grade_count: arr.length };
+        return { id, class_id: s.class_id, class_name: classNameOf(s.class_id), saint_name: s.saint_name, full_name: s.full_name, avg: round1(arr.reduce((a, b) => a + b, 0) / arr.length), grade_count: arr.length, rate: rateOf(id) };
       }).sort((a, b) => b.avg - a.avg).slice(0, 5);
+
       const classAverages = C.map((c) => {
         const ids = S.filter((s) => s.class_id === c.id).map((s) => s.id);
         const scores = G.filter((g) => ids.includes(g.student_id)).map((g) => Number(g.score));
-        return scores.length ? { name: c.name, avg: round1(scores.reduce((a, b) => a + b, 0) / scores.length) } : null;
-      }).filter(Boolean).sort((a, b) => b.avg - a.avg);
+        let p = 0, t = 0; ids.forEach((id) => { const x = attByStu[id]; if (x) { p += x.present; t += x.total; } });
+        return { id: c.id, name: c.name, count: ids.length, avg: scores.length ? round1(scores.reduce((a, b) => a + b, 0) / scores.length) : null, rate: t ? Math.round((p / t) * 100) : null };
+      }).sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1));
       return ok({ counts, studentsPerClass, topStudents, classAverages, attendanceByWeek });
     }
 

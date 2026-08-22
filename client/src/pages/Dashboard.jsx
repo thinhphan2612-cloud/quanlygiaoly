@@ -123,23 +123,24 @@ export default function Dashboard() {
             </div>
             <table className="rank-table">
               <thead>
-                <tr><th>Họ tên</th><th>Điểm TB</th><th>Tỷ lệ</th></tr>
+                <tr><th>Họ tên</th><th>Lớp</th><th>Điểm TB</th><th>Chuyên cần</th></tr>
               </thead>
               <tbody>
                 {topStudents.map((s) => (
-                  <tr key={s.id}>
+                  <tr key={s.id} className="click-row" onClick={() => navigate(`/grades?class=${s.class_id || ''}`)}>
                     <td>
                       <div className="stu-cell">
                         <div className="stu-avatar">{initials(s.full_name)}</div>
                         <div>{s.saint_name ? s.saint_name + ' ' : ''}{s.full_name}</div>
                       </div>
                     </td>
+                    <td className="muted">{s.class_name || '—'}</td>
                     <td style={{ fontWeight: 600 }}>{s.avg}</td>
-                    <td><span className="pct">{Math.round((s.avg / 10) * 100)}%</span></td>
+                    <td>{s.rate != null ? <span className="pct">{s.rate}%</span> : <span className="muted">—</span>}</td>
                   </tr>
                 ))}
                 {topStudents.length === 0 && (
-                  <tr><td colSpan={3} className="muted" style={{ textAlign: 'center', padding: 24 }}>Chưa có điểm để xếp hạng</td></tr>
+                  <tr><td colSpan={4} className="muted" style={{ textAlign: 'center', padding: 24 }}>Chưa có điểm để xếp hạng</td></tr>
                 )}
               </tbody>
             </table>
@@ -150,20 +151,20 @@ export default function Dashboard() {
             <div className="card-head"><h2>Kết quả theo lớp</h2></div>
             <div className="perf">
               {classAverages.map((c, i) => {
-                const pct = Math.min((c.avg / 10) * 100, 100);
+                const pct = c.avg != null ? Math.min((c.avg / 10) * 100, 100) : 0;
                 const color = PALETTE[i % PALETTE.length];
                 return (
-                  <div className="item" key={c.name}>
-                    <div className="cls">{c.name}</div>
+                  <div className="item click-row" key={c.id} onClick={() => navigate(`/grades?class=${c.id}`)}>
+                    <div className="cls">{c.name}<span className="cls-sub">{c.count} HV</span></div>
                     <div className="track">
-                      <div className="fill" style={{ width: `${pct}%`, background: color }}>{c.avg}</div>
+                      <div className="fill" style={{ width: `${pct}%`, background: color }}>{c.avg ?? '—'}</div>
                     </div>
-                    <div className="score">{Math.round(pct)}%</div>
+                    <div className="score">{c.rate != null ? <span className="cc-chip">CC {c.rate}%</span> : <span className="muted">—</span>}</div>
                   </div>
                 );
               })}
               {classAverages.length === 0 && (
-                <div className="muted" style={{ textAlign: 'center', padding: 12 }}>Chưa có dữ liệu điểm theo lớp</div>
+                <div className="muted" style={{ textAlign: 'center', padding: 12 }}>Chưa có lớp nào</div>
               )}
             </div>
           </div>

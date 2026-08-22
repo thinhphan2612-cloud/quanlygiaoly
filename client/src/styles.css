@@ -779,3 +779,10 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 }
 .lb-tabs button:hover { border-color: var(--primary); color: var(--primary); }
 .lb-tabs button.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+/* ---------- Dashboard: hàng bấm được + chỉ số phụ ---------- */
+.click-row { cursor: pointer; transition: background .12s ease; }
+.rank-table tbody tr.click-row:hover { background: var(--primary-soft); }
+.perf .item.click-row:hover { background: var(--primary-soft); border-radius: 10px; }
+.cls-sub { font-size: 11px; color: var(--muted); margin-left: 6px; font-weight: 500; }
+.cc-chip { display: inline-block; font-size: 11px; font-weight: 700; color: #1a7f45; background: #e4f7ea; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
