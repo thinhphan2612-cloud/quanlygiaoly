@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import api from '../api';
 
 const round1 = (n) => Math.round(n * 10) / 10;
-const initials = (name = '') => { const p = name.trim().split(/\s+/); return ((p[p.length - 2]?.[0] || '') + (p[p.length - 1]?.[0] || '')).toUpperCase() || '?'; };
 const MEDAL = ['🥇', '🥈', '🥉'];
 
 // Bảng xếp hạng THI ĐUA — podium top 3 + điểm thi đua tổng hợp + bảng sortable.
@@ -45,7 +44,6 @@ export default function Leaderboard({ classId, range, className, onClose }) {
   // Xếp hạng chính thức theo điểm thi đua (podium + huy chương cố định)
   const ranking = rows ? [...rows].sort((a, b) => b.points - a.points) : [];
   const medalRank = {}; ranking.forEach((r, i) => { if (i < 3) medalRank[r.id] = i; });
-  const podium = ranking.slice(0, 3);
 
   function sortBy(key) { setSort((s) => ({ key, dir: s.key === key && s.dir === 'desc' ? 'asc' : 'desc' })); }
   const sorted = rows ? [...rows].sort((a, b) => {
@@ -64,7 +62,6 @@ export default function Leaderboard({ classId, range, className, onClose }) {
     { key: 'sp', label: 'Việc TL' },
   ];
   const arrow = (k) => (sort.key === k ? (sort.dir === 'desc' ? ' ▾' : ' ▴') : '');
-  const order = [1, 0, 2]; // hiển thị podium: bạc - vàng - đồng
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -76,24 +73,6 @@ export default function Leaderboard({ classId, range, className, onClose }) {
 
         {!rows ? <p className="muted" style={{ padding: 20 }}>Đang tải...</p> : (
           <>
-            {/* Podium top 3 */}
-            {podium.length > 0 && (
-              <div className="podium">
-                {order.map((pi) => {
-                  const p = podium[pi]; if (!p) return <div key={pi} className="podium-slot empty" />;
-                  return (
-                    <div key={p.id} className={`podium-slot p${pi + 1}`}>
-                      <div className="podium-medal">{MEDAL[pi]}</div>
-                      <div className="podium-ava">{initials(p.name)}</div>
-                      <div className="podium-name" title={p.name}>{p.name}</div>
-                      <div className="podium-points">{p.points}<span>đ</span></div>
-                      <div className="podium-base">{pi + 1}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
             <div className="table-scroll">
               <table className="lb-table">
                 <thead>
