@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import BulkImport from '../components/BulkImport.jsx';
 import SacramentBadge, { SACRAMENTS, SACRAMENT_OPTIONS } from '../components/SacramentBadge.jsx';
+import Avatar from '../components/Avatar.jsx';
 import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 
 const empty = {
@@ -168,7 +169,7 @@ export default function Students() {
             {filtered.map((s) => (
               <tr key={s.id}>
                 <td>{s.saint_name || '—'}</td>
-                <td><span className="link-name" onClick={() => navigate(`/students/${s.id}`)}>{s.full_name}</span><SacramentBadge value={s.sacrament} /></td>
+                <td><div className="stu-cell"><Avatar url={s.avatar_url} name={s.full_name} size={30} /><span className="link-name" onClick={() => navigate(`/students/${s.id}`)}>{s.full_name}</span><SacramentBadge value={s.sacrament} /></div></td>
                 <td>{s.position ? <span className="role-chip">{s.position}</span> : <span className="muted">—</span>}</td>
                 <td>{s.birth_date || '—'}</td>
                 <td>{s.class_name || <span className="muted">Chưa xếp lớp</span>}</td>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import Donut from '../components/Donut.jsx';
 import { LeaderboardTable } from '../components/Leaderboard.jsx';
+import Avatar from '../components/Avatar.jsx';
 import { IconStudents, IconClass, IconTeacher } from '../components/Icons.jsx';
 
 const PALETTE = ['#2563eb', '#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#f43f5e', '#14b8a6', '#0ea5e9'];
@@ -130,7 +131,7 @@ export default function Dashboard() {
                   <tr key={s.id} className="click-row" onClick={() => navigate(`/students/${s.id}`)}>
                     <td>
                       <div className="stu-cell">
-                        <div className="stu-avatar">{initials(s.full_name)}</div>
+                        <Avatar url={s.avatar_url} name={s.full_name} size={36} />
                         <div>{s.saint_name ? s.saint_name + ' ' : ''}{s.full_name}</div>
                       </div>
                     </td>

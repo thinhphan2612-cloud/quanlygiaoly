@@ -101,7 +101,9 @@ export default function RandomPicker() {
                     <div className="lane-name">{s.full_name}</div>
                     <div className="lane-track">
                       <div className="lane-line" />
-                      <div className="runner" style={{ left: `${pr}%`, background: COLORS[i % COLORS.length] }}>{initials(s.full_name)}</div>
+                      <div className="runner" style={{ left: `${pr}%`, background: s.avatar_url ? '#fff' : COLORS[i % COLORS.length] }}>
+                        {s.avatar_url ? <img className="runner-img" src={s.avatar_url} alt="" /> : initials(s.full_name)}
+                      </div>
                     </div>
                     <div className="lane-flag">🏁</div>
                   </div>

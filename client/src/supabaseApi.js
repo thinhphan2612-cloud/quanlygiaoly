@@ -521,7 +521,7 @@ async function handle(method, rawUrl, body = {}) {
     if (path === '/grades-class' && method === 'get') {
       if (!q.class_id) return fail(400, 'Cần class_id');
       const [{ data: students }, { data: columns }, { data: grades }] = await Promise.all([
-        supabase.from('students').select('id, full_name, saint_name').eq('class_id', q.class_id).eq('graduated', false).order('full_name'),
+        supabase.from('students').select('id, full_name, saint_name, avatar_url').eq('class_id', q.class_id).eq('graduated', false).order('full_name'),
         supabase.from('grade_columns').select('*').eq('class_id', q.class_id).order('order_index').order('created_at'),
         supabase.from('grades').select('student_id, column_id, score')
           .in('column_id', (await supabase.from('grade_columns').select('id').eq('class_id', q.class_id)).data?.map((c) => c.id) || ['00000000-0000-0000-0000-000000000000']),
@@ -724,7 +724,7 @@ async function handle(method, rawUrl, body = {}) {
     // ---------------- dashboard ----------------
     if (path === '/dashboard' && method === 'get') {
       let [{ data: students }, { data: classes }, { data: profiles }, { data: grades }, { data: attend }] = await Promise.all([
-        supabase.from('students').select('id, full_name, saint_name, class_id').eq('graduated', false),
+        supabase.from('students').select('id, full_name, saint_name, class_id, avatar_url').eq('graduated', false),
         supabase.from('classes').select('id, name').eq('graduated', false),
         supabase.from('profiles').select('id, role'),
         supabase.from('grades').select('student_id, score'),
@@ -772,7 +772,7 @@ async function handle(method, rawUrl, body = {}) {
       G.forEach((g) => { (byStudent[g.student_id] = byStudent[g.student_id] || []).push(Number(g.score)); });
       const topStudents = Object.entries(byStudent).map(([id, arr]) => {
         const s = S.find((x) => x.id === id) || {};
-        return { id, class_id: s.class_id, class_name: classNameOf(s.class_id), saint_name: s.saint_name, full_name: s.full_name, avg: round1(arr.reduce((a, b) => a + b, 0) / arr.length), grade_count: arr.length, rate: rateOf(id) };
+        return { id, class_id: s.class_id, class_name: classNameOf(s.class_id), saint_name: s.saint_name, full_name: s.full_name, avatar_url: s.avatar_url, avg: round1(arr.reduce((a, b) => a + b, 0) / arr.length), grade_count: arr.length, rate: rateOf(id) };
       }).sort((a, b) => b.avg - a.avg).slice(0, 5);
 
       const classAverages = C.map((c) => {

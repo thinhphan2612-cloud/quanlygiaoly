@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import Avatar from './Avatar.jsx';
 
 const round1 = (n) => Math.round(n * 10) / 10;
 const MEDAL = ['🥇', '🥈', '🥉'];
@@ -35,7 +36,7 @@ export function LeaderboardTable({ classId, range }) {
         const rate = sessions ? Math.round((a.present / sessions) * 100) : 0;
         const tl = spPossible ? (spDone / spPossible) * 100 : 0;
         const points = Math.round((tb != null ? (tb / 10) * 100 : 0) * 0.5 + rate * 0.3 + tl * 0.2);
-        return { id: s.id, name: (s.saint_name ? s.saint_name + ' ' : '') + s.full_name, tb, present: a.present, absent: a.absent, late: a.late, rate, sp: spDone, spPossible, points };
+        return { id: s.id, name: (s.saint_name ? s.saint_name + ' ' : '') + s.full_name, avatar_url: s.avatar_url, tb, present: a.present, absent: a.absent, late: a.late, rate, sp: spDone, spPossible, points };
       });
       setRows(merged);
     })();
@@ -84,7 +85,7 @@ export function LeaderboardTable({ classId, range }) {
               return (
                 <tr key={r.id} className={m != null ? `lb-top lb-top-${m + 1}` : ''}>
                   <td className="lb-rank">{m != null ? MEDAL[m] : i + 1}</td>
-                  <td className="lb-name"><span className="link-name" onClick={() => navigate(`/students/${r.id}`)}>{r.name}</span></td>
+                  <td className="lb-name"><div className="stu-cell"><Avatar url={r.avatar_url} name={r.name} size={26} /><span className="link-name" onClick={() => navigate(`/students/${r.id}`)}>{r.name}</span></div></td>
                   <td><span className="lb-points">{r.points}</span></td>
                   <td><b>{r.tb ?? '—'}</b></td>
                   <td>{r.present}</td>
