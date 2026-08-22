@@ -202,6 +202,11 @@ function ThiengDay({ classId, date }) {
     setRows((rs) => rs.map((r) => (r.id === sid ? { ...r, done: { ...r.done, [tid]: !r.done[tid] } } : r)));
     setSaved(false);
   };
+  const allChecked = rows.length > 0 && tasks.length > 0 && rows.every((r) => tasks.every((t) => r.done[t.id]));
+  function markAll(val) {
+    setRows((rs) => rs.map((r) => ({ ...r, done: Object.fromEntries(tasks.map((t) => [t.id, val])) })));
+    setSaved(false);
+  }
   async function save() {
     const records = [];
     rows.forEach((r) => tasks.forEach((t) => records.push({ student_id: r.id, task_id: t.id, done: !!r.done[t.id] })));
@@ -222,7 +227,12 @@ function ThiengDay({ classId, date }) {
     <div className="panel">
       <div className="toolbar" style={{ marginTop: 0, justifyContent: 'space-between' }}>
         <span className="muted">Đánh dấu việc thiêng liêng ngày {date.split('-').reverse().join('/')}</span>
-        <button className="btn ghost" onClick={() => setGear(true)}>⚙ Quản lý việc</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {tasks.length > 0 && rows.length > 0 && (
+            <button className="btn ghost" onClick={() => markAll(!allChecked)}>{allChecked ? '↩ Bỏ chọn tất cả' : '✓ Chọn tất cả'}</button>
+          )}
+          <button className="btn ghost" onClick={() => setGear(true)}>⚙ Quản lý việc</button>
+        </div>
       </div>
       {tasks.length === 0 ? (
         <p className="muted">Chưa có việc thiêng liêng nào. Bấm "⚙ Quản lý việc" để thêm (Đi lễ, Đọc kinh...).</p>
