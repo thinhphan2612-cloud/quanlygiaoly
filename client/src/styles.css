@@ -805,3 +805,22 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .info-v { font-weight: 600; text-align: right; }
 .att-recent { display: flex; flex-wrap: wrap; gap: 8px; }
 .att-recent-row { display: flex; align-items: center; gap: 6px; background: var(--primary-soft); border-radius: 20px; padding: 4px 6px 4px 12px; font-size: 13px; }
+
+/* ---------- Chọn trả bài: đường đua ---------- */
+.race { display: flex; flex-direction: column; gap: 10px; max-height: 460px; overflow-y: auto; padding: 6px 2px; }
+.lane { display: grid; grid-template-columns: 130px 1fr 26px; align-items: center; gap: 10px; }
+.lane-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lane-track { position: relative; height: 30px; background: var(--primary-soft); border-radius: 20px; }
+.lane-line { position: absolute; top: 50%; left: 10px; right: 10px; height: 2px; background: repeating-linear-gradient(90deg, var(--border) 0 8px, transparent 8px 16px); transform: translateY(-50%); }
+.runner {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  color: #fff; font-size: 11px; font-weight: 800; box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  transition: left .09s linear; z-index: 2;
+}
+.lane.win .lane-track { background: rgba(246,201,85,.28); box-shadow: 0 0 0 2px #e0a800 inset; }
+.lane.win .lane-name { color: #d4a017; font-weight: 800; }
+.lane-flag { font-size: 18px; text-align: center; }
+.race-winner { text-align: center; font-size: 18px; font-weight: 700; padding: 12px; margin-bottom: 12px;
+  background: linear-gradient(135deg, rgba(246,201,85,.2), rgba(224,168,0,.12)); border-radius: var(--radius-sm); }
+@media (max-width: 560px) { .lane { grid-template-columns: 90px 1fr 22px; } }
