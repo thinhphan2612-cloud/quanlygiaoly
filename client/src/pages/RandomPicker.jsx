@@ -32,29 +32,32 @@ export default function RandomPicker() {
     if (pool.length === 0) { setNote(noRepeat ? 'Đã chọn hết học viên trong lớp!' : 'Lớp chưa có học viên'); return; }
     setPicked(null); setNote('');
     const runners = pool.slice();
-    const winner = runners[Math.floor(Math.random() * runners.length)];
     progRef.current = Object.fromEntries(runners.map((s) => [s.id, 0]));
     setProgress({ ...progRef.current });
     setRacing(true);
     clearInterval(timer.current);
+    // Đua thật sự ngẫu nhiên + kịch tính: tăng tốc/khựng bất ngờ, ghì kẻ dẫn đầu,
+    // kéo kẻ bám đuổi (rubber-band) → đổi ngôi liên tục, về đích sát nút, khó đoán.
     timer.current = setInterval(() => {
       const p = progRef.current;
+      const maxP = Math.max(...runners.map((s) => p[s.id]));
       runners.forEach((s) => {
-        const step = Math.random() * 3.2 + (s.id === winner.id ? 1.1 : 0);
-        p[s.id] = Math.min(100, p[s.id] + step);
+        let step = 0.7 + Math.random() * 1.5;                 // tốc độ nền
+        if (Math.random() < 0.10) step += 3 + Math.random() * 5; // tăng tốc bứt phá
+        if (Math.random() < 0.08) step *= 0.12;                  // khựng lại / vấp
+        step += (maxP - p[s.id]) * 0.07;                         // kẻ sau bám sát
+        if (p[s.id] >= maxP - 0.001 && maxP > 0) step *= 0.7;    // kẻ dẫn đầu bị ghì lại
+        p[s.id] = Math.min(100, p[s.id] + Math.max(step, 0));
       });
-      if (p[winner.id] < 100) {
-        // giữ các bạn khác chưa về đích để người thắng cán đích trước
-        runners.forEach((s) => { if (s.id !== winner.id) p[s.id] = Math.min(p[s.id], 94); });
-      } else {
+      const finishers = runners.filter((s) => p[s.id] >= 100);
+      setProgress({ ...p });
+      if (finishers.length) {
         clearInterval(timer.current);
-        setProgress({ ...p });
+        const winner = finishers.sort((a, b) => p[b.id] - p[a.id])[0]; // sát nút: ai nhỉnh hơn thắng
         setRacing(false);
         setPicked(winner);
         setPickedIds((ids) => [...ids, winner.id]);
-        return;
       }
-      setProgress({ ...p });
     }, 90);
   }
 
