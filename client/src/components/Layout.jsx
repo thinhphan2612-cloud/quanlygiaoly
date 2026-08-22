@@ -171,7 +171,6 @@ export default function Layout({ children }) {
                   <div className="ac-email">{user?.email}</div>
 
                   <div className="ac-actions">
-                    <button className="user-menu-item" onClick={() => fileRef.current?.click()}>🖼️ Đổi ảnh đại diện</button>
                     {user?.role === 'admin' && (
                       <button className="user-menu-item" onClick={() => navigate('/settings')}>⚙ Cài đặt quản lý</button>
                     )}
