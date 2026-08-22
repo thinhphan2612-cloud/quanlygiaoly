@@ -193,7 +193,7 @@ export default function Layout({ children }) {
             <p className="muted" style={{ marginTop: 0 }}>Mọi góp ý giúp ứng dụng tốt hơn. Rất mong nhận phản hồi từ quý cha và anh chị giáo lý viên.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <a className="btn" href="mailto:phanngocthinh2612@gmail.com?subject=Góp ý Quản lý Giáo lý">✉ Gửi email góp ý</a>
-              <a className="btn ghost" href="https://wecatholic.com" target="_blank" rel="noopener noreferrer">🌐 Khám phá WeCatholic</a>
+              <a className="btn ghost" href="https://ethatastore.com" target="_blank" rel="noopener noreferrer">🌐 Khám phá Ethata Store</a>
             </div>
             <div className="modal-actions"><button className="btn ghost" onClick={() => setFeedback(false)}>Đóng</button></div>
           </div>

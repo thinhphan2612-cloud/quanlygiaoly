@@ -7,7 +7,7 @@ create table if not exists public.games (
   parish_id   uuid not null references public.parishes(id) on delete cascade,
   name        text not null,
   description text,
-  url         text,                              -- link chơi (tên miền ngoài, vd WeCatholic)
+  url         text,                              -- link chơi (tên miền ngoài, vd Ethata Store)
   emoji       text default '🎮',
   color       text default '#3b82f6',
   min_plan    text not null default 'standard',  -- free | standard | pro (gói tối thiểu để mở khóa)

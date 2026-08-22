@@ -3,7 +3,7 @@ import api from './api';
 import { useAuth } from './auth.jsx';
 
 // Nền entitlement: nạp danh sách tính năng giáo xứ đang có quyền dùng.
-// hasFeature('exam') -> true/false. Store WeCatholic sẽ ghi quyền vào DB;
+// hasFeature('exam') -> true/false. Store Ethata Store sẽ ghi quyền vào DB;
 // app chỉ đọc và mở module tương ứng.
 const EntitlementsContext = createContext(null);
 
