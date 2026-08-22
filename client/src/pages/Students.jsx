@@ -25,7 +25,7 @@ const studentColumns = [
   { label: 'Ghi chú', get: (s) => s.notes || '', width: 20 },
 ];
 
-const defaultFilter = { classes: [], sacrament: '', scoreOp: '', scoreVal: '', missingOnly: false, sortBy: 'name' };
+const defaultFilter = { classes: [], sacrament: '', sortBy: 'name' };
 
 export default function Students() {
   const [students, setStudents] = useState([]);
@@ -74,13 +74,6 @@ export default function Students() {
     if (search && !s.full_name.toLowerCase().includes(search.toLowerCase())) return false;
     if (f.classes.length && !f.classes.includes(s.class_id)) return false;
     if (f.sacrament && (s.sacrament || 'none') !== f.sacrament) return false;
-    if (f.scoreOp && f.scoreVal !== '') {
-      const avg = st(s.id).avg;
-      if (avg == null) return false;
-      if (f.scoreOp === 'gte' && !(avg >= Number(f.scoreVal))) return false;
-      if (f.scoreOp === 'lte' && !(avg <= Number(f.scoreVal))) return false;
-    }
-    if (f.missingOnly && !(st(s.id).missing > 0)) return false;
     return true;
   });
   const rate = (id) => { const s = st(id); const tot = (s.present || 0) + (s.absent || 0) + (s.late || 0); return tot ? (s.present || 0) / tot : -1; };
@@ -90,8 +83,7 @@ export default function Students() {
     return a.full_name.localeCompare(b.full_name, 'vi');
   });
 
-  const activeCount = (f.classes.length ? 1 : 0) + (f.sacrament ? 1 : 0) + (f.scoreOp && f.scoreVal !== '' ? 1 : 0)
-    + (f.missingOnly ? 1 : 0) + (f.sortBy !== 'name' ? 1 : 0);
+  const activeCount = (f.classes.length ? 1 : 0) + (f.sacrament ? 1 : 0) + (f.sortBy !== 'name' ? 1 : 0);
 
   const singleCls = f.classes.length === 1 ? classes.find((c) => c.id === f.classes[0]) : null;
   const exportMeta = {
@@ -142,21 +134,7 @@ export default function Students() {
                 <option value="them_suc">Đã Thêm sức</option>
                 <option value="none">Chưa có bí tích</option>
               </select>
-
-              <div className="fp-label" style={{ marginTop: 12 }}>Lọc điểm trung bình</div>
-              <div className="fp-inline">
-                <select value={f.scoreOp} onChange={(e) => setF({ ...f, scoreOp: e.target.value })}>
-                  <option value="">Không lọc</option>
-                  <option value="gte">≥</option>
-                  <option value="lte">≤</option>
-                </select>
-                <input type="number" step="0.1" min="0" max="10" placeholder="VD: 5" value={f.scoreVal}
-                  onChange={(e) => setF({ ...f, scoreVal: e.target.value })} disabled={!f.scoreOp} style={{ width: 90 }} />
-              </div>
-              <label className="fp-chk" style={{ marginTop: 10 }}>
-                <input type="checkbox" checked={f.missingOnly} onChange={(e) => setF({ ...f, missingOnly: e.target.checked })} />
-                <span>Chỉ hiện học viên thiếu cột điểm</span>
-              </label>
+              <p className="muted" style={{ fontSize: 12, marginTop: 12 }}>Lọc theo điểm đã chuyển sang tab <b>Điểm số</b>.</p>
             </div>
             <div className="fp-col">
               <div className="fp-label">Sắp xếp</div>

@@ -91,6 +91,7 @@ function GiaoLyDay({ classId, date, cls, parish }) {
 
   const setStatus = (id, status) => { setRows((rs) => rs.map((r) => (r.id === id ? { ...r, status } : r))); setSaved(false); };
   const markAll = (status) => { setRows((rs) => rs.map((r) => ({ ...r, status }))); setSaved(false); };
+  const allPresent = rows.length > 0 && rows.every((r) => r.status === 'present');
   async function save() {
     await api.post('/attendance', { date, records: rows.map((r) => ({ student_id: r.id, status: r.status || 'present' })) });
     setSaved(true);
@@ -107,7 +108,7 @@ function GiaoLyDay({ classId, date, cls, parish }) {
   return (
     <div className="panel">
       <div className="toolbar" style={{ marginTop: 0 }}>
-        <button className="btn ghost" onClick={() => markAll('present')}>Đánh dấu tất cả có mặt</button>
+        <button className="btn ghost" onClick={() => markAll(allPresent ? null : 'present')}>{allPresent ? '↩ Bỏ đánh dấu tất cả' : 'Đánh dấu tất cả có mặt'}</button>
         <button className="btn ghost" onClick={() => exportXlsx({ filename: `diem-danh-${fileSlug(className)}-${date}.xlsx`, sheetName: 'Điểm danh', ...meta })}>⬇ Excel</button>
         <button className="btn ghost" onClick={() => exportPdf(meta)}>🖨 PDF</button>
       </div>

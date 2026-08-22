@@ -9,6 +9,7 @@ export default function Grades() {
   const [classId, setClassId] = useState('');
   const [data, setData] = useState({ students: [], columns: [], scores: {} });
   const [sortByRank, setSortByRank] = useState(false);
+  const [gf, setGf] = useState({ op: '', val: '', missingOnly: false });
   const [gear, setGear] = useState(false);
   const [overview, setOverview] = useState(false);
   const [savingCell, setSavingCell] = useState('');
@@ -52,7 +53,19 @@ export default function Grades() {
     .sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1));
   const rankOf = {}; ranked.forEach((s, i) => { rankOf[s.id] = s.avg == null ? null : i + 1; });
 
-  const display = sortByRank ? ranked : [...students].sort((a, b) => a.full_name.localeCompare(b.full_name, 'vi'));
+  const ordered = sortByRank ? ranked : [...students].sort((a, b) => a.full_name.localeCompare(b.full_name, 'vi'));
+  // Lọc theo điểm TB / thiếu cột điểm (chuyển từ tab Học viên sang đây)
+  const scoreCount = (id) => columns.filter((c) => scores[id]?.[c.id] != null).length;
+  const display = ordered.filter((s) => {
+    if (gf.op && gf.val !== '') {
+      const a = weightedAvg(s.id);
+      if (a == null) return false;
+      if (gf.op === 'gte' && !(a >= Number(gf.val))) return false;
+      if (gf.op === 'lte' && !(a <= Number(gf.val))) return false;
+    }
+    if (gf.missingOnly && !(scoreCount(s.id) < columns.length)) return false;
+    return true;
+  });
 
   // export
   function exportSheet(mode) {
@@ -83,7 +96,20 @@ export default function Grades() {
             <button className="btn ghost" onClick={() => setOverview(true)} disabled={columns.length === 0}>📋 Tổng quát</button>
             <button className="btn ghost" onClick={() => exportSheet('excel')} disabled={columns.length === 0}>⬇ Excel</button>
             <button className="btn ghost" onClick={() => exportSheet('pdf')} disabled={columns.length === 0}>🖨 PDF</button>
-            <label className="fp-chk" style={{ marginLeft: 'auto' }}>
+            <div className="fp-inline" style={{ marginLeft: 'auto' }}>
+              <span className="muted" style={{ fontSize: 13 }}>Lọc TB:</span>
+              <select value={gf.op} onChange={(e) => setGf({ ...gf, op: e.target.value })} style={{ width: 110 }}>
+                <option value="">Không lọc</option>
+                <option value="gte">≥</option>
+                <option value="lte">≤</option>
+              </select>
+              <input type="number" step="0.1" min="0" max="10" placeholder="VD: 5" value={gf.val}
+                onChange={(e) => setGf({ ...gf, val: e.target.value })} disabled={!gf.op} style={{ width: 80 }} />
+            </div>
+            <label className="fp-chk">
+              <input type="checkbox" checked={gf.missingOnly} onChange={(e) => setGf({ ...gf, missingOnly: e.target.checked })} /><span>Thiếu cột điểm</span>
+            </label>
+            <label className="fp-chk">
               <input type="checkbox" checked={sortByRank} onChange={(e) => setSortByRank(e.target.checked)} /><span>Sắp xếp theo thứ hạng</span>
             </label>
           </>

@@ -50,7 +50,13 @@ export default function Audit() {
     { label: 'Thu', get: (r) => (r.type === 'thu' ? fmt(r.amount) : ''), width: 12 },
     { label: 'Chi', get: (r) => (r.type === 'chi' ? fmt(r.amount) : ''), width: 12 },
   ];
-  const meta = { title: 'Bảng thu chi', subtitle: filterClass ? `Lớp: ${classes.find((c) => c.id === filterClass)?.name || ''}` : 'Toàn giáo xứ', columns: cols, rows };
+  const totalsRow = ['', '', 'TỔNG CỘNG', '', fmt(thu), fmt(chi)];
+  const summary = `Cân đối: ${balance >= 0 ? '+' : ''}${fmt(balance)}đ  (${balance >= 0 ? 'Dư' : 'Thiếu'})`;
+  const meta = {
+    title: 'Bảng thu chi',
+    subtitle: filterClass ? `Lớp: ${classes.find((c) => c.id === filterClass)?.name || ''}` : 'Toàn giáo xứ',
+    columns: cols, rows, totalsRow, summary, align: 'center',
+  };
 
   return (
     <div>
