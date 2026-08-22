@@ -698,3 +698,22 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .ac-actions { display: flex; flex-direction: column; gap: 2px; margin: 16px 0 10px; text-align: left; }
 .ac-actions .user-menu-item { justify-content: flex-start; }
 .ac-foot { font-size: 12px; color: var(--muted); font-style: italic; border-top: 1px solid var(--border); padding-top: 10px; }
+
+/* ---------- Thống kê + xếp hạng điểm danh ---------- */
+.stat-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+@media (max-width: 640px) { .stat-cards { grid-template-columns: 1fr; } }
+.stat-mini { background: var(--primary-soft); border-radius: var(--radius-sm); padding: 12px 14px; }
+.stat-mini .lbl { font-size: 12px; color: var(--muted); }
+.stat-mini .num { font-size: 22px; font-weight: 800; color: var(--primary); margin-top: 2px; }
+.rank-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+@media (max-width: 640px) { .rank-grid { grid-template-columns: 1fr; } }
+.rank-block { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; }
+.rank-block.good { background: rgba(52,199,89,.06); border-color: rgba(52,199,89,.3); }
+.rank-block.warn { background: rgba(255,149,0,.07); border-color: rgba(255,149,0,.3); }
+.rank-title { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+.rank-row { display: flex; align-items: center; gap: 10px; padding: 6px 2px; border-bottom: 1px dashed var(--border); font-size: 14px; }
+.rank-row:last-child { border-bottom: none; }
+.rank-no { width: 20px; height: 20px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%;
+  background: var(--panel); border: 1px solid var(--border); font-size: 11px; font-weight: 700; }
+.rank-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-detail { font-weight: 700; font-size: 13px; color: var(--muted); white-space: nowrap; }

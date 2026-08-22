@@ -27,6 +27,23 @@ function monthRange(dateStr) {
   return { from, to: last.toISOString().slice(0, 10) };
 }
 
+// Danh sách xếp hạng (chuyên cần nhất / cần nhắc nhở)
+function RankList({ title, tone, rows }) {
+  return (
+    <div className={`rank-block ${tone}`}>
+      <div className="rank-title">{title}</div>
+      {rows.length === 0 ? <div className="muted" style={{ fontSize: 13, padding: '6px 2px' }}>Chưa có dữ liệu</div>
+        : rows.map((r, i) => (
+          <div className="rank-row" key={i}>
+            <span className="rank-no">{i + 1}</span>
+            <span className="rank-name">{r.name}</span>
+            <span className="rank-detail">{r.detail}</span>
+          </div>
+        ))}
+    </div>
+  );
+}
+
 export default function Attendance() {
   const [tab, setTab] = useState('giaoly'); // giaoly | thieng
   const [classes, setClasses] = useState([]);
@@ -151,12 +168,33 @@ function GiaoLyStats({ classId, range, mode }) {
   if (byDiligence) students.sort((a, b) => b.present - a.present);
   else students.sort((a, b) => a.full_name.localeCompare(b.full_name, 'vi'));
 
+  const nameOf = (s) => (s.saint_name ? s.saint_name + ' ' : '') + s.full_name;
+  const avgRate = data.students.length && total
+    ? Math.round((100 * data.students.reduce((a, s) => a + s.present / total, 0)) / data.students.length) : 0;
+  const diligent = [...data.students].sort((a, b) => b.present - a.present)
+    .slice(0, 5).map((s) => ({ name: nameOf(s), detail: `${s.present}/${total}` }));
+  const remind = [...data.students].filter((s) => s.absent > 0).sort((a, b) => b.absent - a.absent)
+    .slice(0, 5).map((s) => ({ name: nameOf(s), detail: `vắng ${s.absent}` }));
+
   return (
     <div className="panel">
       <div className="stats-bar">
         <span className="muted">{mode === 'week' ? 'Tuần' : 'Tháng'}: {ddmm(range.from)} – {ddmm(range.to)} · {total} buổi đã điểm danh</span>
         <label className="fp-chk"><input type="checkbox" checked={byDiligence} onChange={(e) => setByDiligence(e.target.checked)} /><span>Sắp xếp chuyên cần</span></label>
       </div>
+      {total > 0 && (
+        <>
+          <div className="stat-cards">
+            <div className="stat-mini"><div className="lbl">Buổi đã điểm danh</div><div className="num">{total}</div></div>
+            <div className="stat-mini"><div className="lbl">Tỷ lệ đi học TB lớp</div><div className="num">{avgRate}%</div></div>
+            <div className="stat-mini"><div className="lbl">Sĩ số</div><div className="num">{data.students.length}</div></div>
+          </div>
+          <div className="rank-grid">
+            <RankList title="🌟 Chuyên cần nhất" tone="good" rows={diligent} />
+            <RankList title="⚠ Cần nhắc nhở (vắng nhiều)" tone="warn" rows={remind} />
+          </div>
+        </>
+      )}
       {total === 0 ? <p className="muted">Chưa có buổi điểm danh nào trong khoảng này.</p> : (
         <div className="table-scroll">
           <table className="grid-att">
@@ -299,9 +337,23 @@ function ThiengStats({ classId, range }) {
 
   const total = data.dates.length;
   const students = [...data.students].sort((a, b) => a.full_name.localeCompare(b.full_name, 'vi'));
+  const nameOf = (s) => (s.saint_name ? s.saint_name + ' ' : '') + s.full_name;
+  const totalPossible = total * tasks.length;
+  const doneOf = (s) => tasks.reduce((a, t) => a + (s.counts[t.id] || 0), 0);
+  const siengNang = [...data.students].sort((a, b) => doneOf(b) - doneOf(a))
+    .slice(0, 5).map((s) => ({ name: nameOf(s), detail: `${doneOf(s)}/${totalPossible}` }));
+  const canNhac = [...data.students].sort((a, b) => doneOf(a) - doneOf(b))
+    .slice(0, 5).map((s) => ({ name: nameOf(s), detail: `${doneOf(s)}/${totalPossible}` }));
+
   return (
     <div className="panel">
       <div className="stats-bar"><span className="muted">{ddmm(range.from)} – {ddmm(range.to)} · {total} ngày có ghi nhận</span></div>
+      {tasks.length > 0 && total > 0 && (
+        <div className="rank-grid">
+          <RankList title="🌟 Siêng năng nhất" tone="good" rows={siengNang} />
+          <RankList title="⚠ Cần nhắc nhở (ít nhất)" tone="warn" rows={canNhac} />
+        </div>
+      )}
       {tasks.length === 0 ? <p className="muted">Chưa có việc thiêng liêng nào.</p> : (
         <div className="table-scroll">
           <table>
