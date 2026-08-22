@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import Donut from '../components/Donut.jsx';
+import { LeaderboardTable } from '../components/Leaderboard.jsx';
 import { IconStudents, IconClass, IconTeacher } from '../components/Icons.jsx';
 
 const PALETTE = ['#2563eb', '#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#f43f5e', '#14b8a6', '#0ea5e9'];
@@ -44,10 +45,17 @@ function WeeklyChart({ data }) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
+  const [lbClasses, setLbClasses] = useState([]);
+  const [lbClass, setLbClass] = useState('');
+  const [lbPeriod, setLbPeriod] = useState('all');
 
   useEffect(() => {
     api.get('/dashboard').then((r) => setData(r.data));
+    api.get('/classes').then((r) => { setLbClasses(r.data); if (r.data[0]) setLbClass(r.data[0].id); });
   }, []);
+
+  const _today = new Date().toISOString().slice(0, 10);
+  const lbRange = lbPeriod === 'month' ? { from: _today.slice(0, 8) + '01', to: _today } : { from: '2000-01-01', to: _today };
 
   if (!data) return <div className="muted">Đang tải...</div>;
 
@@ -83,6 +91,25 @@ export default function Dashboard() {
       <div className="panel" style={{ marginBottom: 18 }}>
         <div className="card-head"><h2>Tỷ lệ điểm danh theo tuần</h2></div>
         <WeeklyChart data={attendanceByWeek} />
+      </div>
+
+      {/* Bảng xếp hạng thi đua */}
+      <div className="panel" style={{ marginBottom: 18 }}>
+        <div className="card-head">
+          <h2>🏆 Bảng xếp hạng thi đua</h2>
+          <select value={lbPeriod} onChange={(e) => setLbPeriod(e.target.value)} style={{ width: 150 }}>
+            <option value="all">Toàn bộ</option>
+            <option value="month">Tháng này</option>
+          </select>
+        </div>
+        {lbClasses.length > 1 && (
+          <div className="lb-tabs">
+            {lbClasses.map((c) => (
+              <button key={c.id} className={lbClass === c.id ? 'on' : ''} onClick={() => setLbClass(c.id)}>{c.name}</button>
+            ))}
+          </div>
+        )}
+        {lbClass ? <LeaderboardTable classId={lbClass} range={lbRange} /> : <p className="muted">Chưa có lớp nào.</p>}
       </div>
 
       <div className="dash-grid">

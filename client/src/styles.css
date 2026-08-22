@@ -770,3 +770,12 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .lb-bar { display: inline-block; width: 50px; height: 6px; border-radius: 6px; background: var(--border); overflow: hidden; vertical-align: middle; margin-right: 6px; }
 .lb-bar span { display: block; height: 100%; background: var(--primary); border-radius: 6px; }
 .lb-bar-val { font-size: 12px; color: var(--muted); }
+
+/* ---------- Tab lớp cho bảng xếp hạng ở Tổng quan ---------- */
+.lb-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.lb-tabs button {
+  border: 1px solid var(--border); background: var(--panel); color: var(--muted);
+  padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.lb-tabs button:hover { border-color: var(--primary); color: var(--primary); }
+.lb-tabs button.on { background: var(--primary); border-color: var(--primary); color: #fff; }
