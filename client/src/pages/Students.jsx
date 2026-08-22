@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import BulkImport from '../components/BulkImport.jsx';
 import SacramentBadge, { SACRAMENTS, SACRAMENT_OPTIONS } from '../components/SacramentBadge.jsx';
@@ -28,6 +29,7 @@ const studentColumns = [
 const defaultFilter = { classes: [], sacrament: '', sortBy: 'name' };
 
 export default function Students() {
+  const navigate = useNavigate();
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [stats, setStats] = useState({});
@@ -166,7 +168,7 @@ export default function Students() {
             {filtered.map((s) => (
               <tr key={s.id}>
                 <td>{s.saint_name || '—'}</td>
-                <td>{s.full_name}<SacramentBadge value={s.sacrament} /></td>
+                <td><span className="link-name" onClick={() => navigate(`/students/${s.id}`)}>{s.full_name}</span><SacramentBadge value={s.sacrament} /></td>
                 <td>{s.position ? <span className="role-chip">{s.position}</span> : <span className="muted">—</span>}</td>
                 <td>{s.birth_date || '—'}</td>
                 <td>{s.class_name || <span className="muted">Chưa xếp lớp</span>}</td>

@@ -127,7 +127,7 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {topStudents.map((s) => (
-                  <tr key={s.id} className="click-row" onClick={() => navigate(`/grades?class=${s.class_id || ''}`)}>
+                  <tr key={s.id} className="click-row" onClick={() => navigate(`/students/${s.id}`)}>
                     <td>
                       <div className="stu-cell">
                         <div className="stu-avatar">{initials(s.full_name)}</div>

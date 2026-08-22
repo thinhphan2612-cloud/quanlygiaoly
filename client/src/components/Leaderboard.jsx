@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
 const round1 = (n) => Math.round(n * 10) / 10;
@@ -6,6 +7,7 @@ const MEDAL = ['🥇', '🥈', '🥉'];
 
 // Nội dung bảng xếp hạng (tái dùng: nhúng ở Tổng quan hoặc trong modal).
 export function LeaderboardTable({ classId, range }) {
+  const navigate = useNavigate();
   const [rows, setRows] = useState(null);
   const [sort, setSort] = useState({ key: 'points', dir: 'desc' });
 
@@ -82,7 +84,7 @@ export function LeaderboardTable({ classId, range }) {
               return (
                 <tr key={r.id} className={m != null ? `lb-top lb-top-${m + 1}` : ''}>
                   <td className="lb-rank">{m != null ? MEDAL[m] : i + 1}</td>
-                  <td className="lb-name">{r.name}</td>
+                  <td className="lb-name"><span className="link-name" onClick={() => navigate(`/students/${r.id}`)}>{r.name}</span></td>
                   <td><span className="lb-points">{r.points}</span></td>
                   <td><b>{r.tb ?? '—'}</b></td>
                   <td>{r.present}</td>

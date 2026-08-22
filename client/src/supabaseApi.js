@@ -215,6 +215,37 @@ async function handle(method, rawUrl, body = {}) {
       return ok({ ok: true });
     }
 
+    // ---------------- hồ sơ học viên (gộp) ----------------
+    if (path === '/student-profile' && method === 'get') {
+      if (!q.id) return fail(400, 'Cần id');
+      const sid = q.id;
+      const [{ data: student, error: e1 }, { data: grades }, { data: att }, { data: sp }] = await Promise.all([
+        supabase.from('students').select('*, classes(name)').eq('id', sid).maybeSingle(),
+        supabase.from('grades').select('score, grade_columns(name, weight, order_index)').eq('student_id', sid),
+        supabase.from('attendance').select('date, status').eq('student_id', sid).order('date', { ascending: false }),
+        supabase.from('spiritual_records').select('done, spiritual_tasks(name)').eq('student_id', sid),
+      ]);
+      if (e1) return fail(400, e1.message);
+      if (!student) return fail(404, 'Không tìm thấy học viên');
+      const gRows = (grades || []).map((g) => ({ name: g.grade_columns?.name || '', weight: g.grade_columns?.weight || 1, order_index: g.grade_columns?.order_index || 0, score: Number(g.score) }))
+        .sort((a, b) => a.order_index - b.order_index);
+      let s = 0, w = 0; gRows.forEach((g) => { s += g.score * g.weight; w += g.weight; });
+      const tb = w ? Math.round((s / w) * 10) / 10 : null;
+      const A = att || [];
+      const present = A.filter((x) => x.status === 'present').length;
+      const late = A.filter((x) => x.status === 'late').length;
+      const absent = A.filter((x) => x.status === 'absent').length;
+      const rate = A.length ? Math.round((present / A.length) * 100) : null;
+      const spMap = {};
+      (sp || []).forEach((r) => { const n = r.spiritual_tasks?.name || '—'; const m = spMap[n] || (spMap[n] = { task: n, done: 0, total: 0 }); m.total += 1; if (r.done) m.done += 1; });
+      return ok({
+        student: { ...student, class_name: student.classes?.name || null },
+        grades: gRows, tb,
+        attendance: { present, absent, late, total: A.length, rate, recent: A.slice(0, 12) },
+        spiritual: Object.values(spMap),
+      });
+    }
+
     // ---------------- students ----------------
     if (path === '/students' && method === 'get') {
       let query = supabase.from('students').select('*, classes(name)').order('full_name');

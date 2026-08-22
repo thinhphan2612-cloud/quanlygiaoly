@@ -4,6 +4,7 @@ import Layout from './components/Layout.jsx';
 import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Students from './pages/Students.jsx';
+import StudentProfile from './pages/StudentProfile.jsx';
 import Classes from './pages/Classes.jsx';
 import Teachers from './pages/Teachers.jsx';
 import Attendance from './pages/Attendance.jsx';
@@ -27,6 +28,7 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Protected><Dashboard /></Protected>} />
       <Route path="/students" element={<Protected><Students /></Protected>} />
+      <Route path="/students/:id" element={<Protected><StudentProfile /></Protected>} />
       <Route path="/classes" element={<Protected><Classes /></Protected>} />
       <Route path="/teachers" element={<Protected><Teachers /></Protected>} />
       <Route path="/attendance" element={<Protected><Attendance /></Protected>} />
