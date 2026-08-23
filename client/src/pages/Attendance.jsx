@@ -6,10 +6,10 @@ const today = () => new Date().toISOString().slice(0, 10);
 const STATUSES = [
   { key: 'present', label: 'Có mặt' },
   { key: 'late', label: 'Trễ' },
-  { key: 'absent', label: 'Vắng KP' },
-  { key: 'excused', label: 'Vắng CP' },
+  { key: 'absent', label: 'Vắng không phép' },
+  { key: 'excused', label: 'Vắng có phép' },
 ];
-const ICON = { present: '✓', absent: '✗', late: '⏱', excused: 'P' };
+const ICON = { present: '✓', absent: '✗', late: '⏱', excused: '✚' };
 const ICON_CLASS = { present: 'ic-present', absent: 'ic-absent', late: 'ic-late', excused: 'ic-excused' };
 const ddmm = (d) => d.slice(8, 10) + '/' + d.slice(5, 7);
 
