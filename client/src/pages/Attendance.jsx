@@ -5,11 +5,12 @@ import { exportXlsx, exportPdf, STT_COL, ATT_LABEL, fileSlug, exportSubtitle } f
 const today = () => new Date().toISOString().slice(0, 10);
 const STATUSES = [
   { key: 'present', label: 'Có mặt' },
-  { key: 'absent', label: 'Vắng' },
   { key: 'late', label: 'Trễ' },
+  { key: 'absent', label: 'Vắng KP' },
+  { key: 'excused', label: 'Vắng CP' },
 ];
-const ICON = { present: '✓', absent: '✗', late: '⏱' };
-const ICON_CLASS = { present: 'ic-present', absent: 'ic-absent', late: 'ic-late' };
+const ICON = { present: '✓', absent: '✗', late: '⏱', excused: 'P' };
+const ICON_CLASS = { present: 'ic-present', absent: 'ic-absent', late: 'ic-late', excused: 'ic-excused' };
 const ddmm = (d) => d.slice(8, 10) + '/' + d.slice(5, 7);
 
 // Khoảng tuần (CN -> T7) và tháng của một ngày
@@ -107,10 +108,11 @@ function GiaoLyDay({ classId, date, cls, parish }) {
   }, [classId, date]);
 
   const setStatus = (id, status) => { setRows((rs) => rs.map((r) => (r.id === id ? { ...r, status } : r))); setSaved(false); };
+  const setRowNote = (id, note) => { setRows((rs) => rs.map((r) => (r.id === id ? { ...r, note } : r))); setSaved(false); };
   const markAll = (status) => { setRows((rs) => rs.map((r) => ({ ...r, status }))); setSaved(false); };
   const allPresent = rows.length > 0 && rows.every((r) => r.status === 'present');
   async function save() {
-    await api.post('/attendance', { date, records: rows.map((r) => ({ student_id: r.id, status: r.status || 'present' })) });
+    await api.post('/attendance', { date, records: rows.map((r) => ({ student_id: r.id, status: r.status || 'present', note: r.note || '' })) });
     setSaved(true);
   }
   const attColumns = [
@@ -137,10 +139,13 @@ function GiaoLyDay({ classId, date, cls, parish }) {
               <td>{r.saint_name || '—'}</td>
               <td>{r.full_name}</td>
               <td>
-                <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                   {STATUSES.map((s) => (
                     <button key={s.key} className={`btn sm ${r.status === s.key ? '' : 'ghost'}`} onClick={() => setStatus(r.id, s.key)}>{s.label}</button>
                   ))}
+                  {r.status === 'excused' && (
+                    <input className="excuse-note" value={r.note || ''} onChange={(e) => setRowNote(r.id, e.target.value)} placeholder="Lý do nghỉ phép..." />
+                  )}
                 </div>
               </td>
             </tr>
@@ -169,9 +174,10 @@ function GiaoLyStats({ classId, range, mode }) {
   else students.sort((a, b) => a.full_name.localeCompare(b.full_name, 'vi'));
 
   const nameOf = (s) => (s.saint_name ? s.saint_name + ' ' : '') + s.full_name;
-  const avgRate = data.students.length && total
-    ? Math.round((100 * data.students.reduce((a, s) => a + s.present / total, 0)) / data.students.length) : 0;
-  const rateA = (s) => (total ? s.present / total : 0);
+  // Vắng có phép (excused) không tính vào tỷ lệ chuyên cần
+  const rateA = (s) => { const c = s.present + s.absent + s.late; return c ? s.present / c : 0; };
+  const avgRate = data.students.length
+    ? Math.round((100 * data.students.reduce((a, s) => a + rateA(s), 0)) / data.students.length) : 0;
   const diligent = [...data.students].filter((s) => rateA(s) >= 0.8).sort((a, b) => b.present - a.present)
     .slice(0, 5).map((s) => ({ name: nameOf(s), detail: `${s.present}/${total}` }));
   const remind = [...data.students].filter((s) => rateA(s) < 0.5).sort((a, b) => b.absent - a.absent)

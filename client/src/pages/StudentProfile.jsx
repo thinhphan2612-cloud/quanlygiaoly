@@ -8,7 +8,8 @@ import { fileToDataUrl } from '../lib/img';
 import { ATT_LABEL } from '../lib/exportUtils';
 
 const initials = (name = '') => { const p = name.trim().split(/\s+/); return ((p[p.length - 2]?.[0] || '') + (p[p.length - 1]?.[0] || '')).toUpperCase() || '?'; };
-const ATT_TONE = { present: 'ic-present', absent: 'ic-absent', late: 'ic-late' };
+const ATT_TONE = { present: 'ic-present', absent: 'ic-absent', late: 'ic-late', excused: 'ic-excused' };
+const ATT_CHAR = { present: '✓', absent: '✗', late: '⏱', excused: 'P' };
 
 export default function StudentProfile() {
   const { id } = useParams();
@@ -84,7 +85,7 @@ export default function StudentProfile() {
       <div className="stat-cards" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <div className="stat-mini"><div className="lbl">Điểm trung bình</div><div className="num">{data.tb ?? '—'}</div></div>
         <div className="stat-mini"><div className="lbl">Chuyên cần</div><div className="num">{data.attendance.rate != null ? data.attendance.rate + '%' : '—'}</div></div>
-        <div className="stat-mini"><div className="lbl">Có mặt / Vắng / Trễ</div><div className="num" style={{ fontSize: 18 }}>{data.attendance.present} / {data.attendance.absent} / {data.attendance.late}</div></div>
+        <div className="stat-mini"><div className="lbl">Có mặt / Vắng KP / Trễ / Phép</div><div className="num" style={{ fontSize: 16 }}>{data.attendance.present} / {data.attendance.absent} / {data.attendance.late} / {data.attendance.excused}</div></div>
         <div className="stat-mini"><div className="lbl">Buổi đã điểm danh</div><div className="num">{data.attendance.total}</div></div>
       </div>
 
@@ -129,9 +130,9 @@ export default function StudentProfile() {
             <div className="card-head"><h2>Điểm danh gần đây</h2></div>
             <div className="att-recent">
               {data.attendance.recent.map((a, i) => (
-                <div className="att-recent-row" key={i}>
+                <div className="att-recent-row" key={i} title={(ATT_LABEL[a.status] || '') + (a.note ? ' — ' + a.note : '')}>
                   <span>{a.date.split('-').reverse().join('/')}</span>
-                  <span className={`att-ic ${ATT_TONE[a.status]}`} title={ATT_LABEL[a.status]}>{a.status === 'present' ? '✓' : a.status === 'absent' ? '✗' : '⏱'}</span>
+                  <span className={`att-ic ${ATT_TONE[a.status]}`}>{ATT_CHAR[a.status] || '?'}</span>
                 </div>
               ))}
               {data.attendance.recent.length === 0 && <div className="muted">Chưa có buổi điểm danh</div>}

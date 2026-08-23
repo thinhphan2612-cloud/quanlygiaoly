@@ -33,10 +33,11 @@ export function LeaderboardTable({ classId, range }) {
         const a = att[s.id] || { present: 0, absent: 0, late: 0 };
         const spDone = Object.values(sp[s.id]?.counts || {}).reduce((x, y) => x + y, 0);
         const tb = wAvg(s.id);
-        const rate = sessions ? Math.round((a.present / sessions) * 100) : 0;
+        const counted = a.present + a.absent + a.late; // vắng có phép không tính
+        const rate = counted ? Math.round((a.present / counted) * 100) : 0;
         const tl = spPossible ? (spDone / spPossible) * 100 : 0;
         const points = Math.round((tb != null ? (tb / 10) * 100 : 0) * 0.5 + rate * 0.3 + tl * 0.2);
-        return { id: s.id, name: (s.saint_name ? s.saint_name + ' ' : '') + s.full_name, avatar_url: s.avatar_url, tb, present: a.present, absent: a.absent, late: a.late, rate, sp: spDone, spPossible, points };
+        return { id: s.id, name: (s.saint_name ? s.saint_name + ' ' : '') + s.full_name, avatar_url: s.avatar_url, tb, present: a.present, absent: a.absent, late: a.late, excused: a.excused || 0, rate, sp: spDone, spPossible, points };
       });
       setRows(merged);
     })();
@@ -57,7 +58,8 @@ export function LeaderboardTable({ classId, range }) {
     { key: 'points', label: 'Điểm thi đua' },
     { key: 'tb', label: 'Điểm TB' },
     { key: 'present', label: 'Có mặt' },
-    { key: 'absent', label: 'Vắng' },
+    { key: 'absent', label: 'Vắng KP' },
+    { key: 'excused', label: 'Vắng CP' },
     { key: 'late', label: 'Trễ' },
     { key: 'rate', label: 'Chuyên cần' },
     { key: 'sp', label: 'Việc TL' },
@@ -90,6 +92,7 @@ export function LeaderboardTable({ classId, range }) {
                   <td><b>{r.tb ?? '—'}</b></td>
                   <td>{r.present}</td>
                   <td className={r.absent > 0 ? 'lb-bad' : ''}>{r.absent}</td>
+                  <td>{r.excused}</td>
                   <td>{r.late}</td>
                   <td><div className="lb-bar"><span style={{ width: `${r.rate}%` }} /></div><span className="lb-bar-val">{r.rate}%</span></td>
                   <td>{r.spPossible ? `${r.sp}/${r.spPossible}` : '—'}</td>

@@ -222,7 +222,7 @@ async function handle(method, rawUrl, body = {}) {
       const [{ data: student, error: e1 }, { data: grades }, { data: att }, { data: sp }] = await Promise.all([
         supabase.from('students').select('*, classes(name)').eq('id', sid).maybeSingle(),
         supabase.from('grades').select('score, grade_columns(name, weight, order_index)').eq('student_id', sid),
-        supabase.from('attendance').select('date, status').eq('student_id', sid).order('date', { ascending: false }),
+        supabase.from('attendance').select('date, status, note').eq('student_id', sid).order('date', { ascending: false }),
         supabase.from('spiritual_records').select('done, spiritual_tasks(name)').eq('student_id', sid),
       ]);
       if (e1) return fail(400, e1.message);
@@ -235,13 +235,15 @@ async function handle(method, rawUrl, body = {}) {
       const present = A.filter((x) => x.status === 'present').length;
       const late = A.filter((x) => x.status === 'late').length;
       const absent = A.filter((x) => x.status === 'absent').length;
-      const rate = A.length ? Math.round((present / A.length) * 100) : null;
+      const excused = A.filter((x) => x.status === 'excused').length;
+      const counted = present + absent + late; // vắng có phép không tính vào tỷ lệ chuyên cần
+      const rate = counted ? Math.round((present / counted) * 100) : null;
       const spMap = {};
       (sp || []).forEach((r) => { const n = r.spiritual_tasks?.name || '—'; const m = spMap[n] || (spMap[n] = { task: n, done: 0, total: 0 }); m.total += 1; if (r.done) m.done += 1; });
       return ok({
         student: { ...student, class_name: student.classes?.name || null },
         grades: gRows, tb,
-        attendance: { present, absent, late, total: A.length, rate, recent: A.slice(0, 12) },
+        attendance: { present, absent, late, excused, total: A.length, rate, recent: A.slice(0, 12) },
         spiritual: Object.values(spMap),
       });
     }
@@ -336,18 +338,19 @@ async function handle(method, rawUrl, body = {}) {
       const ids = (students || []).map((s) => s.id);
       let recs = [];
       if (ids.length) {
-        const { data } = await supabase.from('attendance').select('student_id, status')
+        const { data } = await supabase.from('attendance').select('student_id, status, note')
           .eq('date', q.date).in('student_id', ids);
         recs = data || [];
       }
-      return ok((students || []).map((s) => ({
-        ...s, status: recs.find((r) => r.student_id === s.id)?.status || null,
-      })));
+      return ok((students || []).map((s) => {
+        const r = recs.find((x) => x.student_id === s.id);
+        return { ...s, status: r?.status || null, note: r?.note || '' };
+      }));
     }
     if (path === '/attendance' && method === 'post') {
       const { date, records } = body;
       if (!date || !Array.isArray(records)) return fail(400, 'Cần date và danh sách records');
-      const rows = records.map((r) => ({ parish_id: pid, student_id: r.student_id, date, status: r.status }));
+      const rows = records.map((r) => ({ parish_id: pid, student_id: r.student_id, date, status: r.status, note: r.status === 'excused' ? (r.note || null) : null }));
       const { error } = await supabase.from('attendance').upsert(rows, { onConflict: 'student_id,date' });
       if (error) return fail(400, error.message);
       await checkAbsences(pid, records.map((r) => r.student_id), date).catch(() => { /* không chặn lưu điểm danh */ });
@@ -376,6 +379,7 @@ async function handle(method, rawUrl, body = {}) {
           present: vals.filter((x) => x === 'present').length,
           late: vals.filter((x) => x === 'late').length,
           absent: vals.filter((x) => x === 'absent').length,
+          excused: vals.filter((x) => x === 'excused').length,
         };
       });
       return ok({ dates, students: rows });
@@ -764,8 +768,8 @@ async function handle(method, rawUrl, body = {}) {
         .sort((a, b) => b.count - a.count);
       // Tỷ lệ chuyên cần theo học viên
       const attByStu = {};
-      (attend || []).forEach((a) => { const x = attByStu[a.student_id] || (attByStu[a.student_id] = { present: 0, total: 0 }); x.total += 1; if (a.status === 'present') x.present += 1; });
-      const rateOf = (id) => { const x = attByStu[id]; return x && x.total ? Math.round((x.present / x.total) * 100) : null; };
+      (attend || []).forEach((a) => { const x = attByStu[a.student_id] || (attByStu[a.student_id] = { present: 0, counted: 0 }); if (a.status !== 'excused') x.counted += 1; if (a.status === 'present') x.present += 1; });
+      const rateOf = (id) => { const x = attByStu[id]; return x && x.counted ? Math.round((x.present / x.counted) * 100) : null; };
       const classNameOf = (cid) => C.find((c) => c.id === cid)?.name || null;
 
       const byStudent = {};
@@ -778,7 +782,7 @@ async function handle(method, rawUrl, body = {}) {
       const classAverages = C.map((c) => {
         const ids = S.filter((s) => s.class_id === c.id).map((s) => s.id);
         const scores = G.filter((g) => ids.includes(g.student_id)).map((g) => Number(g.score));
-        let p = 0, t = 0; ids.forEach((id) => { const x = attByStu[id]; if (x) { p += x.present; t += x.total; } });
+        let p = 0, t = 0; ids.forEach((id) => { const x = attByStu[id]; if (x) { p += x.present; t += x.counted; } });
         return { id: c.id, name: c.name, count: ids.length, avg: scores.length ? round1(scores.reduce((a, b) => a + b, 0) / scores.length) : null, rate: t ? Math.round((p / t) * 100) : null };
       }).sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1));
       return ok({ counts, studentsPerClass, topStudents, classAverages, attendanceByWeek });

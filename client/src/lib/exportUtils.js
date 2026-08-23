@@ -91,7 +91,7 @@ export function exportSubtitle({ parish, cls, extra = [] } = {}) {
 }
 
 // Map trạng thái điểm danh -> tiếng Việt (dùng chung)
-export const ATT_LABEL = { present: 'Có mặt', absent: 'Vắng', late: 'Trễ' };
+export const ATT_LABEL = { present: 'Có mặt', late: 'Trễ', absent: 'Vắng (không phép)', excused: 'Vắng (có phép)' };
 
 // Cột STT dùng chung
 export const STT_COL = { label: 'STT', get: (_r, i) => i + 1, width: 6 };
