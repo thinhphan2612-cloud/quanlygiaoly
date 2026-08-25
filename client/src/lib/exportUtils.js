@@ -29,6 +29,28 @@ export function exportXlsx({ filename, sheetName = 'Sheet1', title, subtitle, co
   XLSX.writeFile(wb, filename);
 }
 
+// Xuất Excel nhiều sheet: sheets = [{ name, title, subtitle, columns, rows }]
+export function exportXlsxMulti({ filename, sheets }) {
+  const wb = XLSX.utils.book_new();
+  const used = new Set();
+  sheets.forEach((sh, i) => {
+    const aoa = [
+      ...headerRows(sh.title, sh.subtitle),
+      sh.columns.map((c) => c.label),
+      ...sh.rows.map((r, ri) => sh.columns.map((c) => c.get(r, ri))),
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = sh.columns.map((c) => ({ wch: c.width || 18 }));
+    // tên sheet: bỏ ký tự cấm, tối đa 31 ký tự, không trùng
+    let name = (sh.name || `Sheet${i + 1}`).replace(/[:\\/?*[\]]/g, ' ').slice(0, 31).trim() || `Sheet${i + 1}`;
+    const base = name; let n = 2;
+    while (used.has(name.toLowerCase())) { name = (base.slice(0, 27) + ' ' + n).slice(0, 31); n++; }
+    used.add(name.toLowerCase());
+    XLSX.utils.book_append_sheet(wb, ws, name);
+  });
+  XLSX.writeFile(wb, filename);
+}
+
 const esc = (s) =>
   String(s ?? '')
     .replace(/&/g, '&amp;')

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
-import { exportXlsx, exportPdf, STT_COL, exportSubtitle, fileSlug } from '../lib/exportUtils';
+import { exportXlsx, exportXlsxMulti, exportPdf, STT_COL, exportSubtitle, fileSlug } from '../lib/exportUtils';
 
 // Tính điểm TB có trọng số cho 1 học viên từ cột điểm + điểm số
 function avgOf(columns, rowScores) {
@@ -42,43 +42,31 @@ export default function Archive() {
     setDetail(r.data);
   }
 
-  // Tải về cả năm: Excel danh sách học viên + điểm TB mọi lớp trong năm
+  // Tải về cả năm: Excel — mỗi lớp một sheet (bảng điểm lớp đó)
   async function downloadYear(y) {
     setMsg('Đang chuẩn bị file...');
     let cls = byYear[y];
     if (!cls) { const r = await api.get(`/archive-classes?year=${encodeURIComponent(y)}`); cls = r.data; setByYear((m) => ({ ...m, [y]: cls })); }
-    const rows = [];
+    const sheets = [];
     for (const c of cls) {
       const r = await api.get(`/archive-class?class_id=${c.id}`);
       const { students, columns, scores } = r.data;
-      students.forEach((s) => rows.push({
-        class_name: c.name, saint_name: s.saint_name || '', full_name: s.full_name,
-        birth_date: s.birth_date || '', tb: avgOf(columns, scores[s.id]) ?? '',
-      }));
+      sheets.push({
+        name: c.name,
+        title: `Bảng điểm — ${c.name}`,
+        subtitle: exportSubtitle({ parish, cls: { name: c.name, year: y } }),
+        columns: [
+          STT_COL,
+          { label: 'Tên thánh', get: (s) => s.saint_name || '', width: 14 },
+          { label: 'Họ và tên', get: (s) => s.full_name, width: 22 },
+          ...columns.map((col) => ({ label: col.name, get: (s) => scores[s.id]?.[col.id] ?? '', width: 10 })),
+          { label: 'TB', get: (s) => avgOf(columns, scores[s.id]) ?? '', width: 8 },
+        ],
+        rows: students,
+      });
     }
-    const columns = [
-      STT_COL,
-      { label: 'Lớp', get: (r) => r.class_name, width: 16 },
-      { label: 'Tên thánh', get: (r) => r.saint_name, width: 14 },
-      { label: 'Họ và tên', get: (r) => r.full_name, width: 22 },
-      { label: 'Ngày sinh', get: (r) => r.birth_date, width: 12 },
-      { label: 'Điểm TB', get: (r) => r.tb, width: 10 },
-    ];
-    exportXlsx({
-      filename: `luu-tru-${fileSlug(y)}.xlsx`, sheetName: 'Học viên',
-      title: `Dữ liệu năm học ${y}`, subtitle: exportSubtitle({ parish, extra: [`Tổng: ${rows.length} học viên`] }),
-      columns, rows,
-    });
+    if (sheets.length) exportXlsxMulti({ filename: `luu-tru-${fileSlug(y)}.xlsx`, sheets });
     setMsg('');
-  }
-
-  async function deleteYear(y) {
-    if (!confirm(`XÓA VĨNH VIỄN dữ liệu năm học ${y}?\n\nToàn bộ lớp, học viên, điểm số, điểm danh của năm này sẽ bị xóa và KHÔNG khôi phục được.\nNên bấm "Tải về" trước khi xóa.`)) return;
-    if (!confirm(`Xác nhận lần cuối: xóa hẳn năm học ${y}?`)) return;
-    await api.delete(`/archive-year?year=${encodeURIComponent(y)}`);
-    setByYear((m) => { const n = { ...m }; delete n[y]; return n; });
-    setOpen(null);
-    loadYears();
   }
 
   // ---- bảng điểm lớp trong modal ----
@@ -118,8 +106,7 @@ export default function Archive() {
                 <span className="muted" style={{ fontSize: 13 }}>· {y.classes} lớp · {y.students} học viên</span>
               </button>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn ghost sm" onClick={() => downloadYear(y.year)}>⬇ Tải về</button>
-                <button className="btn danger sm" onClick={() => deleteYear(y.year)}>🗑 Xóa</button>
+                <button className="btn ghost sm" onClick={() => downloadYear(y.year)}>⬇ Tải về (Excel)</button>
               </div>
             </div>
             {open === y.year && (

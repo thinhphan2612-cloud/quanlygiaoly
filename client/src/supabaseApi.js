@@ -733,28 +733,6 @@ async function handle(method, rawUrl, body = {}) {
         columns: columns || [], scores,
       });
     }
-    if (path === '/archive-year' && method === 'delete') {
-      if (!q.year) return fail(400, 'Cần year');
-      const { data: cls } = await supabase.from('classes').select('id')
-        .eq('parish_id', pid).eq('graduated', true).eq('school_year', q.year);
-      const classIds = (cls || []).map((c) => c.id);
-      if (!classIds.length) return ok({ ok: true, classes: 0 });
-      const { data: studs } = await supabase.from('students').select('id').in('class_id', classIds);
-      const stuIds = (studs || []).map((s) => s.id);
-      if (stuIds.length) {
-        await supabase.from('attendance').delete().in('student_id', stuIds);
-        await supabase.from('spiritual_records').delete().in('student_id', stuIds);
-        await supabase.from('grades').delete().in('student_id', stuIds);
-      }
-      await supabase.from('grade_columns').delete().in('class_id', classIds);
-      await supabase.from('class_teachers').delete().in('class_id', classIds);
-      await supabase.from('transactions').delete().in('class_id', classIds);
-      if (stuIds.length) await supabase.from('students').delete().in('id', stuIds);
-      const { error } = await supabase.from('classes').delete().in('id', classIds);
-      if (error) return fail(400, error.message);
-      return ok({ ok: true, classes: classIds.length, students: stuIds.length });
-    }
-
     // ---------------- entitlement (kho tính năng) ----------------
     if (path === '/features' && method === 'get') {
       const { data, error } = await supabase.from('features').select('*').eq('active', true).order('order_index');
