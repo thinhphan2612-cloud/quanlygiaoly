@@ -637,23 +637,17 @@ async function handle(method, rawUrl, body = {}) {
       const chain = active.filter((c) => c.promotes).sort((a, b) => a.order_index - b.order_index);
       if (!chain.length) return fail(400, 'Không có lớp nào bật "Tự động lên lớp".');
 
-      // GLV của mỗi lớp để chép sang lớp mới
-      const { data: cts } = await supabase.from('class_teachers')
-        .select('class_id, teacher_id, is_primary').in('class_id', chain.map((c) => c.id));
-      const ctByClass = {};
-      (cts || []).forEach((ct) => { (ctByClass[ct.class_id] = ctByClass[ct.class_id] || []).push(ct); });
-
-      // 1) Tạo bộ lớp mới cho năm mới (nhân bản khung), map lớp cũ -> lớp mới
+      // 1) Tạo bộ lớp mới cho năm mới: chỉ giữ TÊN + thứ tự lớp.
+      //    XÓA sạch giáo lý viên, phòng, lịch học -> tài khoản GLV KHÔNG thấy gì
+      //    cho tới khi Cha vào sửa lớp & phân công lại.
       const newIdByOld = {};
       for (const c of chain) {
         const { data: nc, error: ce } = await supabase.from('classes').insert({
           parish_id: pid, name: c.name, school_year: nextYear, order_index: c.order_index,
-          room: c.room, schedule: c.schedule, promotes: true, graduated: false,
+          room: null, schedule: null, promotes: true, graduated: false,
         }).select('id').single();
         if (ce) return fail(400, ce.message);
         newIdByOld[c.id] = nc.id;
-        const rows = (ctByClass[c.id] || []).map((ct) => ({ class_id: nc.id, teacher_id: ct.teacher_id, is_primary: ct.is_primary }));
-        if (rows.length) await supabase.from('class_teachers').insert(rows);
       }
 
       // 2) Copy học viên lên bậc kế tiếp (chép hồ sơ cá nhân + bí tích + chứng chỉ, KHÔNG chép điểm)
