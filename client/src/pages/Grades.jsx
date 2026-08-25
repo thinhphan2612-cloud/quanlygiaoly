@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../api';
+import { useAuth } from '../auth.jsx';
 import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 
 const round1 = (n) => Math.round(n * 10) / 10;
 
 export default function Grades() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [classes, setClasses] = useState([]);
   const [classId, setClassId] = useState('');
   const [data, setData] = useState({ students: [], columns: [], scores: {} });
@@ -23,6 +26,20 @@ export default function Grades() {
   function load() {
     if (!classId) { setData({ students: [], columns: [], scores: {} }); return; }
     api.get(`/grades-class?class_id=${classId}`).then((r) => setData(r.data));
+  }
+  async function endYear() {
+    if (!confirm(
+      'KẾT THÚC NĂM HỌC & LÊN LỚP\n\n' +
+      'Hệ thống sẽ tạo bộ lớp mới cho năm sau (sao chép các lớp bật "Tự động lên lớp"), ' +
+      'chuyển học viên lên bậc kế tiếp (điểm bắt đầu lại). Học viên lớp cao nhất ra trường.\n\n' +
+      'Dữ liệu năm hiện tại được đóng băng, tra cứu ở tab "Lưu trữ".\n\nBạn chắc chắn?'
+    )) return;
+    try {
+      const r = await api.post('/promote', {});
+      alert(`Đã lên lớp ${r.data.promoted} học viên, ${r.data.graduated} em ra trường.` + (r.data.new_year ? ` Năm học mới: ${r.data.new_year}.` : ''));
+      setClassId('');
+      api.get('/classes').then((res) => setClasses(res.data));
+    } catch (e) { alert(e.response?.data?.error || 'Lên lớp thất bại'); }
   }
   useEffect(() => { load(); }, [classId]);
 
@@ -93,6 +110,7 @@ export default function Grades() {
           <option value="">-- Chọn lớp --</option>
           {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
+        {isAdmin && <button className="btn ghost" onClick={endYear}>🏁 Kết thúc năm học</button>}
         {classId && (
           <>
             <button className="btn ghost" onClick={() => setGear(true)}>⚙ Cột điểm</button>

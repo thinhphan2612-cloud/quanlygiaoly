@@ -6,6 +6,15 @@ import { supabase } from './supabase';
 const ok = (data) => Promise.resolve({ data });
 const fail = (status, error) => Promise.reject({ response: { status, data: { error } } });
 const round1 = (n) => Math.round(n * 10) / 10;
+// "2025-2026" -> "2026-2027"; "2025" -> "2026"; không parse được -> null
+function bumpYear(y) {
+  if (!y) return null;
+  const m2 = String(y).match(/(\d{4})\s*-\s*(\d{4})/);
+  if (m2) return `${+m2[1] + 1}-${+m2[2] + 1}`;
+  const m1 = String(y).match(/(\d{4})/);
+  if (m1) return String(+m1[1] + 1);
+  return null;
+}
 
 function parishId() {
   try {
@@ -33,7 +42,7 @@ const STUDENT_FIELDS = [
   'full_name', 'saint_name', 'birth_date', 'gender', 'parent_name', 'parent_phone',
   'student_phone', 'address', 'class_id', 'notes', 'position', 'sacrament', 'avatar_url',
   'father_saint', 'father_name', 'father_phone', 'mother_saint', 'mother_name', 'mother_phone',
-  'godparent_name', 'baptism_date', 'first_communion_date', 'confirmation_date',
+  'godparent_name', 'baptism_date', 'first_communion_date', 'confirmation_date', 'certificates',
 ];
 function cleanStudent(body) {
   const out = {};
@@ -62,7 +71,7 @@ async function handle(method, rawUrl, body = {}) {
     // ---------------- classes ----------------
     if (path === '/classes' && method === 'get') {
       const [{ data: classes, error: e1 }, { data: cts }, { data: studs }] = await Promise.all([
-        supabase.from('classes').select('*').order('order_index').order('name'),
+        supabase.from('classes').select('*').eq('graduated', false).order('order_index').order('name'),
         supabase.from('class_teachers').select('class_id, teacher_id, is_primary, profiles(full_name)'),
         supabase.from('students').select('class_id').eq('graduated', false),
       ]);
@@ -111,6 +120,7 @@ async function handle(method, rawUrl, body = {}) {
         .insert({
           parish_id: pid, name: body.name, school_year: nn(body.year),
           order_index: Number(body.order_index) || 0, room: nn(body.room), schedule: nn(body.schedule),
+          promotes: body.promotes !== false,
         })
         .select().single();
       if (error) return fail(400, error.message);
@@ -118,12 +128,12 @@ async function handle(method, rawUrl, body = {}) {
       return ok(cls);
     }
     if (seg[0] === 'classes' && seg[1] && method === 'put') {
-      const { error } = await supabase.from('classes')
-        .update({
-          name: body.name, school_year: nn(body.year), order_index: Number(body.order_index) || 0,
-          room: nn(body.room), schedule: nn(body.schedule),
-        })
-        .eq('id', seg[1]);
+      const patch = {
+        name: body.name, school_year: nn(body.year), order_index: Number(body.order_index) || 0,
+        room: nn(body.room), schedule: nn(body.schedule),
+      };
+      if (body.promotes !== undefined) patch.promotes = body.promotes !== false;
+      const { error } = await supabase.from('classes').update(patch).eq('id', seg[1]);
       if (error) return fail(400, error.message);
       await supabase.from('class_teachers').delete().eq('class_id', seg[1]);
       await saveClassTeachers(seg[1], body);
@@ -132,6 +142,18 @@ async function handle(method, rawUrl, body = {}) {
     if (seg[0] === 'classes' && seg[1] && method === 'delete') {
       const { error } = await supabase.from('classes').delete().eq('id', seg[1]);
       if (error) return fail(400, error.message);
+      return ok({ ok: true });
+    }
+    // Sắp xếp thứ tự lớp: ids đi từ TRÊN xuống DƯỚI (lớp lớn nhất -> nhỏ nhất).
+    // order_index lớn = lớp cao (ra trường khi lên lớp), nên top nhận order_index lớn nhất.
+    if (path === '/classes/reorder' && method === 'post') {
+      const ids = Array.isArray(body.ids) ? body.ids : [];
+      const n = ids.length;
+      for (let i = 0; i < n; i++) {
+        const { error } = await supabase.from('classes')
+          .update({ order_index: n - 1 - i }).eq('id', ids[i]).eq('parish_id', pid);
+        if (error) return fail(400, error.message);
+      }
       return ok({ ok: true });
     }
 
@@ -268,6 +290,41 @@ async function handle(method, rawUrl, body = {}) {
       const { error } = await supabase.from('students').delete().eq('id', seg[1]);
       if (error) return fail(400, error.message);
       return ok({ ok: true });
+    }
+    // Chuyển nhiều học viên sang 1 lớp (dùng khi tạo lớp từ học viên có sẵn)
+    if (path === '/students/move' && method === 'post') {
+      const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : [];
+      if (!ids.length) return ok({ moved: 0 });
+      const { error } = await supabase.from('students').update({ class_id: nn(body.class_id) }).in('id', ids);
+      if (error) return fail(400, error.message);
+      return ok({ moved: ids.length });
+    }
+    // Ghi bí tích hàng loạt cho cả lớp: đặt trạng thái bí tích + ngày lãnh nhận tương ứng
+    if (path === '/students/sacrament' && method === 'post') {
+      const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : [];
+      if (!ids.length) return fail(400, 'Chưa chọn học viên');
+      if (body.sacrament !== 'ruoc_le' && body.sacrament !== 'them_suc') return fail(400, 'Bí tích không hợp lệ');
+      const patch = { sacrament: body.sacrament };
+      if (body.sacrament === 'them_suc') patch.confirmation_date = nn(body.date);
+      else patch.first_communion_date = nn(body.date);
+      const { error } = await supabase.from('students').update(patch).in('id', ids);
+      if (error) return fail(400, error.message);
+      return ok({ count: ids.length });
+    }
+    // Ghi chứng chỉ/khóa hoàn thành hàng loạt: thêm {name, date} vào từng học viên (không trùng tên)
+    if (path === '/students/certificate' && method === 'post') {
+      const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : [];
+      const name = (body.name || '').trim();
+      if (!ids.length || !name) return fail(400, 'Cần chọn học viên và tên chứng chỉ');
+      const { data: rows, error: e1 } = await supabase.from('students').select('id, certificates').in('id', ids);
+      if (e1) return fail(400, e1.message);
+      for (const r of rows || []) {
+        const list = Array.isArray(r.certificates) ? r.certificates : [];
+        const next = list.filter((c) => c.name !== name).concat([{ name, date: nn(body.date) }]);
+        const { error } = await supabase.from('students').update({ certificates: next }).eq('id', r.id);
+        if (error) return fail(400, error.message);
+      }
+      return ok({ count: (rows || []).length });
     }
 
     // ---------------- student-stats (cho bộ lọc) ----------------
@@ -563,33 +620,145 @@ async function handle(method, rawUrl, body = {}) {
       return ok({ ok: true });
     }
 
-    // ---------------- promote (lên lớp cuối năm) ----------------
+    // ---------------- promote (kết thúc năm học & lên lớp — mô hình COPY) ----------------
+    // Nhân bản các lớp promotes=true sang NĂM MỚI, học viên copy lên bậc kế tiếp
+    // (điểm reset). Lớp cao nhất -> ra trường. Toàn bộ năm cũ đóng băng (graduated=true)
+    // để tra cứu ở tab Lưu trữ.
     if (path === '/promote' && method === 'post') {
       const { data: classes, error } = await supabase.from('classes')
-        .select('id, order_index').eq('graduated', false).order('order_index');
+        .select('*').eq('parish_id', pid).eq('graduated', false).order('order_index');
       if (error) return fail(400, error.message);
-      if (!classes || classes.length === 0) return fail(400, 'Chưa có lớp nào để lên lớp');
-      // lớp kế tiếp theo order_index
-      const sorted = [...classes].sort((a, b) => a.order_index - b.order_index);
-      const nextOf = {};
-      sorted.forEach((c, i) => { nextOf[c.id] = sorted[i + 1]?.id || null; });
-      const highestIds = sorted.filter((c) => !nextOf[c.id]).map((c) => c.id);
+      const active = classes || [];
+      if (!active.length) return fail(400, 'Chưa có lớp nào để lên lớp');
 
-      let graduated = 0, promoted = 0;
-      // 1) Lớp cao nhất -> ra trường (làm trước để không bị nhảy dồn)
-      if (highestIds.length) {
-        const { data: g } = await supabase.from('students').update({ graduated: true })
-          .in('class_id', highestIds).eq('graduated', false).select('id');
-        graduated = g?.length || 0;
+      const curYear = active.map((c) => c.school_year).find(Boolean) || null;
+      const nextYear = bumpYear(curYear);
+      // Chuỗi lên lớp = lớp bật promotes, theo thứ tự bậc (nhỏ -> lớn)
+      const chain = active.filter((c) => c.promotes).sort((a, b) => a.order_index - b.order_index);
+      if (!chain.length) return fail(400, 'Không có lớp nào bật "Tự động lên lớp".');
+
+      // GLV của mỗi lớp để chép sang lớp mới
+      const { data: cts } = await supabase.from('class_teachers')
+        .select('class_id, teacher_id, is_primary').in('class_id', chain.map((c) => c.id));
+      const ctByClass = {};
+      (cts || []).forEach((ct) => { (ctByClass[ct.class_id] = ctByClass[ct.class_id] || []).push(ct); });
+
+      // 1) Tạo bộ lớp mới cho năm mới (nhân bản khung), map lớp cũ -> lớp mới
+      const newIdByOld = {};
+      for (const c of chain) {
+        const { data: nc, error: ce } = await supabase.from('classes').insert({
+          parish_id: pid, name: c.name, school_year: nextYear, order_index: c.order_index,
+          room: c.room, schedule: c.schedule, promotes: true, graduated: false,
+        }).select('id').single();
+        if (ce) return fail(400, ce.message);
+        newIdByOld[c.id] = nc.id;
+        const rows = (ctByClass[c.id] || []).map((ct) => ({ class_id: nc.id, teacher_id: ct.teacher_id, is_primary: ct.is_primary }));
+        if (rows.length) await supabase.from('class_teachers').insert(rows);
       }
-      // 2) Chuyển từ lớp cao -> thấp để tránh cascade
-      const withNext = sorted.filter((c) => nextOf[c.id]).reverse();
-      for (const c of withNext) {
-        const { data: mv } = await supabase.from('students').update({ class_id: nextOf[c.id] })
-          .eq('class_id', c.id).eq('graduated', false).select('id');
-        promoted += mv?.length || 0;
+
+      // 2) Copy học viên lên bậc kế tiếp (chép hồ sơ cá nhân + bí tích + chứng chỉ, KHÔNG chép điểm)
+      const copyFields = STUDENT_FIELDS.filter((f) => f !== 'class_id');
+      let promoted = 0, graduated = 0;
+      for (let i = 0; i < chain.length; i++) {
+        const destNewId = chain[i + 1] ? newIdByOld[chain[i + 1].id] : null; // bậc kế tiếp năm mới
+        const { data: studs } = await supabase.from('students').select('*').eq('class_id', chain[i].id).eq('graduated', false);
+        const list = studs || [];
+        if (!destNewId) { graduated += list.length; continue; } // lớp cao nhất -> ra trường
+        const copies = list.map((s) => {
+          const o = { parish_id: pid, class_id: destNewId, graduated: false };
+          for (const f of copyFields) if (s[f] !== undefined) o[f] = s[f];
+          return o;
+        });
+        if (copies.length) {
+          const { error: ie } = await supabase.from('students').insert(copies);
+          if (ie) return fail(400, ie.message);
+          promoted += copies.length;
+        }
       }
-      return ok({ promoted, graduated });
+
+      // 3) Đóng băng năm cũ: mọi lớp đang hoạt động (kể cả lớp không lên lớp) + học viên của chúng
+      const oldClassIds = active.map((c) => c.id);
+      await supabase.from('students').update({ graduated: true }).in('class_id', oldClassIds).eq('graduated', false);
+      await supabase.from('classes').update({ graduated: true }).in('id', oldClassIds);
+
+      // 4) Đặt năm học mới là hiện tại
+      if (nextYear && nextYear !== curYear) {
+        const { data: ex } = await supabase.from('school_years').select('id').eq('parish_id', pid).eq('name', nextYear).maybeSingle();
+        let syId = ex?.id;
+        if (!syId) { const { data: cr } = await supabase.from('school_years').insert({ parish_id: pid, name: nextYear }).select('id').single(); syId = cr?.id; }
+        if (syId) {
+          await supabase.from('school_years').update({ is_current: false }).eq('parish_id', pid);
+          await supabase.from('school_years').update({ is_current: true }).eq('id', syId);
+          const { data: p } = await supabase.from('parishes').select('settings').eq('id', pid).maybeSingle();
+          await supabase.from('parishes').update({ settings: { ...(p?.settings || {}), current_school_year: nextYear } }).eq('id', pid);
+        }
+      }
+      return ok({ promoted, graduated, new_year: nextYear });
+    }
+
+    // ---------------- lưu trữ (tra cứu năm cũ) ----------------
+    if (path === '/archive-years' && method === 'get') {
+      const [{ data: cls }, { data: studs }] = await Promise.all([
+        supabase.from('classes').select('id, school_year').eq('parish_id', pid).eq('graduated', true),
+        supabase.from('students').select('class_id').eq('graduated', true),
+      ]);
+      const yearByClass = {}; (cls || []).forEach((c) => { yearByClass[c.id] = c.school_year || 'Không rõ năm'; });
+      const agg = {};
+      (cls || []).forEach((c) => { const y = c.school_year || 'Không rõ năm'; (agg[y] = agg[y] || { classes: 0, students: 0 }).classes++; });
+      (studs || []).forEach((s) => { const y = yearByClass[s.class_id]; if (!y) return; (agg[y] = agg[y] || { classes: 0, students: 0 }).students++; });
+      return ok(Object.entries(agg).map(([year, v]) => ({ year, classes: v.classes, students: v.students }))
+        .sort((a, b) => b.year.localeCompare(a.year)));
+    }
+    if (path === '/archive-classes' && method === 'get') {
+      if (!q.year) return fail(400, 'Cần year');
+      const { data: cls } = await supabase.from('classes').select('*')
+        .eq('parish_id', pid).eq('graduated', true).eq('school_year', q.year).order('order_index', { ascending: false });
+      const ids = (cls || []).map((c) => c.id);
+      const counts = {};
+      if (ids.length) {
+        const { data: studs } = await supabase.from('students').select('class_id').eq('graduated', true).in('class_id', ids);
+        (studs || []).forEach((s) => { counts[s.class_id] = (counts[s.class_id] || 0) + 1; });
+      }
+      return ok((cls || []).map((c) => ({ ...c, year: c.school_year, student_count: counts[c.id] || 0 })));
+    }
+    if (path === '/archive-class' && method === 'get') {
+      if (!q.class_id) return fail(400, 'Cần class_id');
+      const [{ data: cls }, { data: students }, { data: columns }] = await Promise.all([
+        supabase.from('classes').select('*').eq('id', q.class_id).maybeSingle(),
+        supabase.from('students').select('*, classes(name)').eq('class_id', q.class_id).order('full_name'),
+        supabase.from('grade_columns').select('*').eq('class_id', q.class_id).order('order_index').order('created_at'),
+      ]);
+      const colIds = (columns || []).map((c) => c.id);
+      let grades = [];
+      if (colIds.length) { const { data } = await supabase.from('grades').select('student_id, column_id, score').in('column_id', colIds); grades = data || []; }
+      const scores = {};
+      grades.forEach((g) => { (scores[g.student_id] = scores[g.student_id] || {})[g.column_id] = Number(g.score); });
+      return ok({
+        class: cls ? { ...cls, year: cls.school_year } : null,
+        students: (students || []).map((s) => ({ ...s, class_name: s.classes?.name || null })),
+        columns: columns || [], scores,
+      });
+    }
+    if (path === '/archive-year' && method === 'delete') {
+      if (!q.year) return fail(400, 'Cần year');
+      const { data: cls } = await supabase.from('classes').select('id')
+        .eq('parish_id', pid).eq('graduated', true).eq('school_year', q.year);
+      const classIds = (cls || []).map((c) => c.id);
+      if (!classIds.length) return ok({ ok: true, classes: 0 });
+      const { data: studs } = await supabase.from('students').select('id').in('class_id', classIds);
+      const stuIds = (studs || []).map((s) => s.id);
+      if (stuIds.length) {
+        await supabase.from('attendance').delete().in('student_id', stuIds);
+        await supabase.from('spiritual_records').delete().in('student_id', stuIds);
+        await supabase.from('grades').delete().in('student_id', stuIds);
+      }
+      await supabase.from('grade_columns').delete().in('class_id', classIds);
+      await supabase.from('class_teachers').delete().in('class_id', classIds);
+      await supabase.from('transactions').delete().in('class_id', classIds);
+      if (stuIds.length) await supabase.from('students').delete().in('id', stuIds);
+      const { error } = await supabase.from('classes').delete().in('id', classIds);
+      if (error) return fail(400, error.message);
+      return ok({ ok: true, classes: classIds.length, students: stuIds.length });
     }
 
     // ---------------- entitlement (kho tính năng) ----------------

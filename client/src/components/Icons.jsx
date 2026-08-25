@@ -46,6 +46,10 @@ export const IconSearch = (p) => (
 export const IconMoney = (p) => (
   <svg {...base} {...p}><rect x="2.5" y="6" width="19" height="12" rx="2.5" /><circle cx="12" cy="12" r="2.6" /><path d="M6 9v0M18 15v0" /></svg>
 );
+// Icon "lưu trữ": thùng hồ sơ
+export const IconArchive = (p) => (
+  <svg {...base} {...p}><rect x="3" y="4" width="18" height="4" rx="1" /><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>
+);
 // Icon "sửa ảnh": khung ảnh + bút chì
 export const IconEditImage = (p) => (
   <svg {...base} {...p}>

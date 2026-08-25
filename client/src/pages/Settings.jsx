@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { ACCENTS, applyTheme, loadTheme } from '../theme.js';
@@ -11,11 +12,10 @@ import { fileToDataUrl } from '../lib/img';
 // tùy chọn bật/tắt, danh sách học viên đã ra trường.
 export default function Settings() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { parish, saveParish: ctxSave, reload: reloadParish } = useParish();
   const [pInfo, setPInfo] = useState({ name: '', diocese: '' });
   const [years, setYears] = useState([]);
-  const [graduated, setGraduated] = useState([]);
-  const [gSearch, setGSearch] = useState('');
   const [newYear, setNewYear] = useState('');
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
@@ -28,7 +28,6 @@ export default function Settings() {
 
   function loadAll() {
     api.get('/school-years').then((r) => setYears(r.data));
-    api.get('/students?graduated=1').then((r) => setGraduated(r.data));
     api.get('/features').then((r) => setFeatures(r.data)).catch(() => {});
   }
   useEffect(() => { loadAll(); }, []);
@@ -82,19 +81,18 @@ export default function Settings() {
   async function promote() {
     if (!confirm(
       'KẾT THÚC NĂM HỌC & LÊN LỚP\n\n' +
-      'Toàn bộ học viên sẽ được chuyển lên lớp kế tiếp (theo thứ tự lớp). ' +
-      'Học viên ở lớp cao nhất sẽ chuyển vào mục "Đã ra trường".\n\n' +
-      'Thao tác này ảnh hưởng hàng loạt. Bạn chắc chắn?'
+      'Hệ thống sẽ TẠO BỘ LỚP MỚI cho năm sau (sao chép các lớp bật "Tự động lên lớp"), ' +
+      'chuyển học viên lên bậc kế tiếp (điểm bắt đầu lại). Học viên lớp cao nhất sẽ ra trường.\n\n' +
+      'Dữ liệu năm hiện tại được ĐÓNG BĂNG và tra cứu ở tab "Lưu trữ" (không mất).\n\n' +
+      'Bạn chắc chắn?'
     )) return;
     try {
       const r = await api.post('/promote', {});
-      flash(`Đã lên lớp ${r.data.promoted} học viên, ${r.data.graduated} em ra trường.`);
+      flash(`Đã lên lớp ${r.data.promoted} học viên, ${r.data.graduated} em ra trường.` + (r.data.new_year ? ` Năm học mới: ${r.data.new_year}.` : ''));
       loadAll();
+      reloadParish();
     } catch (e) { fail(e.response?.data?.error || 'Lên lớp thất bại'); }
   }
-
-  const gFiltered = graduated.filter((s) =>
-    (s.full_name + ' ' + (s.saint_name || '')).toLowerCase().includes(gSearch.toLowerCase()));
 
   return (
     <div>
@@ -149,8 +147,7 @@ export default function Settings() {
       <div className="panel">
         <div className="card-head"><h2>Tùy chọn quản lý</h2></div>
         <ToggleRow label="Quản lý theo năm học giáo lý" on={flag('manage_by_school_year')} onClick={() => toggle('manage_by_school_year')} />
-        <ToggleRow label="Tự động lên lớp cuối mỗi năm học" on={flag('auto_promote')} onClick={() => toggle('auto_promote')} />
-        <ToggleRow label="Hiển thị mục học viên đã ra trường" on={flag('show_graduated')} onClick={() => toggle('show_graduated')} />
+        <ToggleRow label="Hiện nút kết thúc năm học & lên lớp" on={flag('auto_promote')} onClick={() => toggle('auto_promote')} />
       </div>
 
       {/* Gói dịch vụ */}
@@ -220,29 +217,20 @@ export default function Settings() {
         <div className="panel">
           <div className="card-head"><h2>Kết thúc năm học & lên lớp</h2></div>
           <p className="muted" style={{ marginTop: 0 }}>
-            Chuyển toàn bộ học viên lên lớp kế tiếp theo <b>thứ tự lớp</b> đã đặt ở trang Lớp học.
-            Học viên ở lớp cao nhất sẽ vào mục "Đã ra trường".
+            Tạo bộ lớp mới cho năm sau (sao chép các lớp bật <b>Tự động lên lớp</b>), chuyển học viên lên bậc kế tiếp
+            theo <b>thứ tự lớp</b> đã đặt ở trang Lớp học — điểm bắt đầu lại. Học viên lớp cao nhất ra trường.
+            Dữ liệu năm hiện tại được đóng băng, tra cứu ở tab <span className="link" onClick={() => navigate('/archive')}>Lưu trữ</span>.
           </p>
           <button className="btn" onClick={promote}>⬆ Lên lớp cho cả giáo xứ</button>
         </div>
       )}
 
-      {/* Đã ra trường */}
-      {flag('show_graduated') && (
-        <div className="panel">
-          <div className="card-head"><h2>Học viên đã ra trường ({graduated.length})</h2></div>
-          <input value={gSearch} onChange={(e) => setGSearch(e.target.value)} placeholder="Tìm theo tên..." style={{ marginBottom: 12, maxWidth: 280 }} />
-          <table>
-            <thead><tr><th>Tên thánh</th><th>Họ tên</th><th>Lớp cuối</th></tr></thead>
-            <tbody>
-              {gFiltered.map((s) => (
-                <tr key={s.id}><td>{s.saint_name || '—'}</td><td>{s.full_name}</td><td>{s.class_name || '—'}</td></tr>
-              ))}
-              {gFiltered.length === 0 && <tr><td colSpan={3} className="muted">Chưa có học viên ra trường</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* Lưu trữ */}
+      <div className="panel">
+        <div className="card-head"><h2>Dữ liệu năm cũ</h2></div>
+        <p className="muted" style={{ marginTop: 0 }}>Học viên đã ra trường và toàn bộ dữ liệu các năm đã kết thúc được lưu ở tab Lưu trữ (xem theo năm, tải về, xóa).</p>
+        <button className="btn ghost" onClick={() => navigate('/archive')}>📦 Mở tab Lưu trữ</button>
+      </div>
     </div>
   );
 }

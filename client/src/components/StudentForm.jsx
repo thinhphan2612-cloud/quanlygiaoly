@@ -1,10 +1,17 @@
-import { SACRAMENTS, SACRAMENT_OPTIONS } from './SacramentBadge.jsx';
+import { SACRAMENTS, SACRAMENT_OPTIONS, CERT_SUGGESTIONS } from './SacramentBadge.jsx';
 
 // Form thông tin học viên dùng chung (Thêm/Sửa ở trang Học viên và Hồ sơ).
 // classes: nếu truyền, hiện ô chọn lớp.
 export default function StudentForm({ form, setForm, classes }) {
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const F = (k) => form[k] || '';
+
+  // ----- chứng chỉ/khóa: danh sách dòng {name, date} -----
+  const certs = Array.isArray(form.certificates) ? form.certificates : [];
+  const setCerts = (list) => setForm({ ...form, certificates: list });
+  const addCert = () => setCerts([...certs, { name: '', date: '' }]);
+  const updCert = (i, k, v) => setCerts(certs.map((c, idx) => (idx === i ? { ...c, [k]: v } : c)));
+  const delCert = (i) => setCerts(certs.filter((_, idx) => idx !== i));
 
   return (
     <>
@@ -53,7 +60,20 @@ export default function StudentForm({ form, setForm, classes }) {
         <div className="field"><label>Ngày thêm sức</label><input type="date" value={F('confirmation_date')} onChange={set('confirmation_date')} /></div>
       </div>
 
-      <div className="field"><label>Địa chỉ</label><input value={F('address')} onChange={set('address')} /></div>
+      <div className="form-section">Chứng chỉ / khóa hoàn thành</div>
+      <datalist id="cert-suggest">{CERT_SUGGESTIONS.map((s) => <option key={s} value={s} />)}</datalist>
+      {certs.map((c, i) => (
+        <div className="row" key={i} style={{ alignItems: 'flex-end' }}>
+          <div className="field" style={{ flex: 2 }}><label>Tên chứng chỉ</label>
+            <input list="cert-suggest" value={c.name || ''} onChange={(e) => updCert(i, 'name', e.target.value)} placeholder="VD: Hoàn thành giáo lý hôn nhân" />
+          </div>
+          <div className="field"><label>Ngày</label><input type="date" value={c.date || ''} onChange={(e) => updCert(i, 'date', e.target.value)} /></div>
+          <button type="button" className="btn danger sm" style={{ marginBottom: 2 }} onClick={() => delCert(i)}>Xóa</button>
+        </div>
+      ))}
+      <button type="button" className="btn ghost sm" onClick={addCert}>+ Thêm chứng chỉ</button>
+
+      <div className="field" style={{ marginTop: 12 }}><label>Địa chỉ</label><input value={F('address')} onChange={set('address')} /></div>
       <div className="field"><label>Ghi chú</label><textarea rows={2} value={F('notes')} onChange={set('notes')} /></div>
     </>
   );

@@ -10,7 +10,7 @@ import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib
 const empty = {
   full_name: '', saint_name: '', birth_date: '', gender: '',
   parent_name: '', parent_phone: '', student_phone: '', address: '', class_id: '', notes: '',
-  sacrament: 'none', position: '',
+  sacrament: 'none', position: '', certificates: [],
 };
 
 const studentColumns = [
@@ -30,6 +30,7 @@ const studentColumns = [
   { label: 'Rửa tội', get: (s) => s.baptism_date || '', width: 12 },
   { label: 'Rước lễ', get: (s) => s.first_communion_date || '', width: 12 },
   { label: 'Thêm sức', get: (s) => s.confirmation_date || '', width: 12 },
+  { label: 'Chứng chỉ/khóa', get: (s) => (Array.isArray(s.certificates) ? s.certificates : []).map((c) => c.name + (c.date ? ` (${c.date})` : '')).join('; '), width: 30 },
   { label: 'Địa chỉ', get: (s) => s.address || '', width: 26 },
   { label: 'Ghi chú', get: (s) => s.notes || '', width: 18 },
 ];

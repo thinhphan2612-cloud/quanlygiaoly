@@ -8,6 +8,13 @@ export const SACRAMENTS = {
 // Thứ tự nhận bí tích
 export const SACRAMENT_OPTIONS = ['none', 'ruoc_le', 'them_suc'];
 
+// Chứng chỉ/khóa hoàn thành — gợi ý sẵn, cha có thể tự gõ thêm loại khác.
+export const CERT_SUGGESTIONS = [
+  'Hoàn thành giáo lý dự tòng',
+  'Hoàn thành giáo lý hôn nhân',
+  'Hoàn thành đào tạo giáo lý viên',
+];
+
 export default function SacramentBadge({ value }) {
   // Chưa nhận bí tích -> không hiển thị icon
   if (value !== 'ruoc_le' && value !== 'them_suc') return null;

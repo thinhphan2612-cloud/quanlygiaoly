@@ -106,6 +106,12 @@ export default function StudentProfile() {
             <div className="info-grid">
               {info.map(([k, v]) => (<div className="info-row" key={k}><span className="info-k">{k}</span><span className="info-v">{v}</span></div>))}
             </div>
+            {Array.isArray(s.certificates) && s.certificates.length > 0 && (
+              <div className="info-row" style={{ marginTop: 8 }}>
+                <span className="info-k">Chứng chỉ / khóa</span>
+                <span className="info-v">{s.certificates.map((c) => c.name + (c.date ? ` (${c.date})` : '')).join('; ')}</span>
+              </div>
+            )}
             {s.notes && <div className="info-row" style={{ marginTop: 8 }}><span className="info-k">Ghi chú</span><span className="info-v">{s.notes}</span></div>}
           </div>
 

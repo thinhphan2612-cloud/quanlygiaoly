@@ -8,7 +8,7 @@ import { fileToDataUrl } from '../lib/img';
 import PricingModal from './PricingModal.jsx';
 import {
   IconHome, IconStudents, IconClass, IconCheck, IconGrades,
-  IconDice, IconGame, IconTeacher, IconLogout, IconBell, IconMoney, IconEditImage,
+  IconDice, IconGame, IconTeacher, IconLogout, IconBell, IconMoney, IconEditImage, IconArchive,
 } from './Icons.jsx';
 
 const nav = [
@@ -21,6 +21,7 @@ const nav = [
   { to: '/games', label: 'Game học', Icon: IconGame },
   { to: '/audit', label: 'Thu chi', Icon: IconMoney },
   { to: '/teachers', label: 'Giáo lý viên', Icon: IconTeacher, adminOnly: true },
+  { to: '/archive', label: 'Lưu trữ', Icon: IconArchive, adminOnly: true },
   { to: '/notify', label: 'Thông báo', Icon: IconBell, adminOnly: true },
 ];
 
