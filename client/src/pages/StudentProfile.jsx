@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
-import SacramentBadge, { SACRAMENTS, SACRAMENT_OPTIONS } from '../components/SacramentBadge.jsx';
+import SacramentBadge, { SACRAMENTS } from '../components/SacramentBadge.jsx';
+import StudentForm from '../components/StudentForm.jsx';
 import { IconEditImage } from '../components/Icons.jsx';
 import { fileToDataUrl } from '../lib/img';
 import { ATT_LABEL } from '../lib/exportUtils';
@@ -38,20 +39,28 @@ export default function StudentProfile() {
   if (!data) return <div className="muted">Đang tải...</div>;
 
   const s = data.student;
+  const dash = (v) => v || '—';
+  const fatherFull = [s.father_saint, s.father_name].filter(Boolean).join(' ') || s.parent_name || '—';
+  const motherFull = [s.mother_saint, s.mother_name].filter(Boolean).join(' ') || '—';
   const info = [
-    ['Ngày sinh', s.birth_date || '—'],
-    ['Giới tính', s.gender || '—'],
-    ['Tên phụ huynh', s.parent_name || '—'],
-    ['SĐT phụ huynh', s.parent_phone || '—'],
-    ['SĐT học sinh', s.student_phone || '—'],
-    ['Địa chỉ', s.address || '—'],
+    ['Ngày sinh', dash(s.birth_date)],
+    ['Giới tính', dash(s.gender)],
+    ['Cha', fatherFull],
+    ['SĐT cha', dash(s.father_phone || s.parent_phone)],
+    ['Mẹ', motherFull],
+    ['SĐT mẹ', dash(s.mother_phone)],
+    ['Người đỡ đầu', dash(s.godparent_name)],
+    ['SĐT học sinh', dash(s.student_phone)],
+    ['Ngày rửa tội', dash(s.baptism_date)],
+    ['Ngày rước lễ', dash(s.first_communion_date)],
+    ['Ngày thêm sức', dash(s.confirmation_date)],
+    ['Địa chỉ', dash(s.address)],
   ];
 
   async function save() {
     try { await api.put(`/students/${id}`, edit); setEdit(null); load(); }
     catch (e) { alert(e.response?.data?.error || 'Lưu thất bại'); }
   }
-  const setF = (k) => (e) => setEdit({ ...edit, [k]: e.target.value });
 
   return (
     <div>
@@ -146,25 +155,7 @@ export default function StudentProfile() {
         <div className="modal-backdrop" onClick={() => setEdit(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Sửa thông tin học viên</h2>
-            <div className="row">
-              <div className="field"><label>Tên thánh</label><input value={edit.saint_name || ''} onChange={setF('saint_name')} /></div>
-              <div className="field"><label>Họ tên *</label><input value={edit.full_name || ''} onChange={setF('full_name')} /></div>
-            </div>
-            <div className="row">
-              <div className="field"><label>Ngày sinh</label><input type="date" value={edit.birth_date || ''} onChange={setF('birth_date')} /></div>
-              <div className="field"><label>Giới tính</label><select value={edit.gender || ''} onChange={setF('gender')}><option value="">—</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></div>
-              <div className="field"><label>Bí tích</label><select value={edit.sacrament || 'none'} onChange={setF('sacrament')}>{SACRAMENT_OPTIONS.map((k) => <option key={k} value={k}>{SACRAMENTS[k].label}</option>)}</select></div>
-            </div>
-            <div className="row">
-              <div className="field"><label>Chức vụ</label><input value={edit.position || ''} onChange={setF('position')} placeholder="VD: Lớp trưởng" /></div>
-              <div className="field"><label>Tên phụ huynh</label><input value={edit.parent_name || ''} onChange={setF('parent_name')} /></div>
-            </div>
-            <div className="row">
-              <div className="field"><label>SĐT phụ huynh</label><input value={edit.parent_phone || ''} onChange={setF('parent_phone')} /></div>
-              <div className="field"><label>SĐT học sinh</label><input value={edit.student_phone || ''} onChange={setF('student_phone')} /></div>
-            </div>
-            <div className="field"><label>Địa chỉ</label><input value={edit.address || ''} onChange={setF('address')} /></div>
-            <div className="field"><label>Ghi chú</label><textarea rows={2} value={edit.notes || ''} onChange={setF('notes')} /></div>
+            <StudentForm form={edit} setForm={setEdit} />
             <div className="modal-actions">
               <button className="btn ghost" onClick={() => setEdit(null)}>Hủy</button>
               <button className="btn" onClick={save}>Lưu</button>

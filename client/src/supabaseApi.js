@@ -32,6 +32,8 @@ const nn = (v) => (v === '' || v === undefined ? null : v);
 const STUDENT_FIELDS = [
   'full_name', 'saint_name', 'birth_date', 'gender', 'parent_name', 'parent_phone',
   'student_phone', 'address', 'class_id', 'notes', 'position', 'sacrament', 'avatar_url',
+  'father_saint', 'father_name', 'father_phone', 'mother_saint', 'mother_name', 'mother_phone',
+  'godparent_name', 'baptism_date', 'first_communion_date', 'confirmation_date',
 ];
 function cleanStudent(body) {
   const out = {};

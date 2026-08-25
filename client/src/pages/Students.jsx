@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import BulkImport from '../components/BulkImport.jsx';
-import SacramentBadge, { SACRAMENTS, SACRAMENT_OPTIONS } from '../components/SacramentBadge.jsx';
+import SacramentBadge from '../components/SacramentBadge.jsx';
 import Avatar from '../components/Avatar.jsx';
+import StudentForm from '../components/StudentForm.jsx';
 import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 
 const empty = {
@@ -20,11 +21,17 @@ const studentColumns = [
   { label: 'Ngày sinh', get: (s) => s.birth_date || '', width: 12 },
   { label: 'Giới tính', get: (s) => s.gender || '', width: 9 },
   { label: 'Lớp', get: (s) => s.class_name || '', width: 14 },
-  { label: 'Phụ huynh', get: (s) => s.parent_name || '', width: 22 },
-  { label: 'SĐT phụ huynh', get: (s) => s.parent_phone || '', width: 14 },
-  { label: 'SĐT học sinh', get: (s) => s.student_phone || '', width: 14 },
-  { label: 'Địa chỉ', get: (s) => s.address || '', width: 30 },
-  { label: 'Ghi chú', get: (s) => s.notes || '', width: 20 },
+  { label: 'Họ tên cha', get: (s) => [s.father_saint, s.father_name].filter(Boolean).join(' ') || s.parent_name || '', width: 20 },
+  { label: 'SĐT cha', get: (s) => s.father_phone || s.parent_phone || '', width: 13 },
+  { label: 'Họ tên mẹ', get: (s) => [s.mother_saint, s.mother_name].filter(Boolean).join(' '), width: 20 },
+  { label: 'SĐT mẹ', get: (s) => s.mother_phone || '', width: 13 },
+  { label: 'Người đỡ đầu', get: (s) => s.godparent_name || '', width: 18 },
+  { label: 'SĐT học sinh', get: (s) => s.student_phone || '', width: 13 },
+  { label: 'Rửa tội', get: (s) => s.baptism_date || '', width: 12 },
+  { label: 'Rước lễ', get: (s) => s.first_communion_date || '', width: 12 },
+  { label: 'Thêm sức', get: (s) => s.confirmation_date || '', width: 12 },
+  { label: 'Địa chỉ', get: (s) => s.address || '', width: 26 },
+  { label: 'Ghi chú', get: (s) => s.notes || '', width: 18 },
 ];
 
 const defaultFilter = { classes: [], sacrament: '', sortBy: 'name' };
@@ -173,7 +180,7 @@ export default function Students() {
                 <td>{s.position ? <span className="role-chip">{s.position}</span> : <span className="muted">—</span>}</td>
                 <td>{s.birth_date || '—'}</td>
                 <td>{s.class_name || <span className="muted">Chưa xếp lớp</span>}</td>
-                <td>{s.parent_phone || '—'}</td>
+                <td>{s.father_phone || s.mother_phone || s.parent_phone || '—'}</td>
                 <td style={{ whiteSpace: 'nowrap' }}>
                   <button className="btn ghost sm" onClick={() => openEdit(s)}>Sửa</button>{' '}
                   <button className="btn danger sm" onClick={() => remove(s)}>Xóa</button>
@@ -189,73 +196,7 @@ export default function Students() {
         <div className="modal-backdrop" onClick={() => setModal(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>{modal.id ? 'Sửa học viên' : 'Thêm học viên'}</h2>
-            <div className="row">
-              <div className="field">
-                <label>Tên thánh</label>
-                <input value={modal.saint_name || ''} onChange={(e) => setModal({ ...modal, saint_name: e.target.value })} />
-              </div>
-              <div className="field">
-                <label>Họ tên *</label>
-                <input value={modal.full_name} onChange={(e) => setModal({ ...modal, full_name: e.target.value })} />
-              </div>
-            </div>
-            <div className="row">
-              <div className="field">
-                <label>Ngày sinh</label>
-                <input type="date" value={modal.birth_date || ''} onChange={(e) => setModal({ ...modal, birth_date: e.target.value })} />
-              </div>
-              <div className="field">
-                <label>Giới tính</label>
-                <select value={modal.gender || ''} onChange={(e) => setModal({ ...modal, gender: e.target.value })}>
-                  <option value="">—</option>
-                  <option value="Nam">Nam</option>
-                  <option value="Nữ">Nữ</option>
-                </select>
-              </div>
-              <div className="field">
-                <label>Bí tích đã nhận</label>
-                <select value={modal.sacrament || 'none'} onChange={(e) => setModal({ ...modal, sacrament: e.target.value })}>
-                  {SACRAMENT_OPTIONS.map((k) => <option key={k} value={k}>{SACRAMENTS[k].label}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="row">
-              <div className="field">
-                <label>Lớp</label>
-                <select value={modal.class_id || ''} onChange={(e) => setModal({ ...modal, class_id: e.target.value })}>
-                  <option value="">Chưa xếp lớp</option>
-                  {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <div className="field">
-                <label>Chức vụ</label>
-                <input value={modal.position || ''} onChange={(e) => setModal({ ...modal, position: e.target.value })} placeholder="VD: Lớp trưởng, Lớp phó" />
-              </div>
-            </div>
-            <div className="row">
-              <div className="field">
-                <label>Tên phụ huynh</label>
-                <input value={modal.parent_name || ''} onChange={(e) => setModal({ ...modal, parent_name: e.target.value })} placeholder="VD: Nguyễn Văn Bố / Trần Thị Mẹ" />
-              </div>
-              <div className="field">
-                <label>SĐT phụ huynh</label>
-                <input value={modal.parent_phone || ''} onChange={(e) => setModal({ ...modal, parent_phone: e.target.value })} />
-              </div>
-            </div>
-            <div className="row">
-              <div className="field">
-                <label>SĐT học sinh</label>
-                <input value={modal.student_phone || ''} onChange={(e) => setModal({ ...modal, student_phone: e.target.value })} />
-              </div>
-              <div className="field">
-                <label>Địa chỉ</label>
-                <input value={modal.address || ''} onChange={(e) => setModal({ ...modal, address: e.target.value })} />
-              </div>
-            </div>
-            <div className="field">
-              <label>Ghi chú</label>
-              <textarea rows={2} value={modal.notes || ''} onChange={(e) => setModal({ ...modal, notes: e.target.value })} />
-            </div>
+            <StudentForm form={modal} setForm={setModal} classes={classes} />
             {error && <div className="error">{error}</div>}
             <div className="modal-actions">
               <button className="btn ghost" onClick={() => setModal(null)}>Hủy</button>
