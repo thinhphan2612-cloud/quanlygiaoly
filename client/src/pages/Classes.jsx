@@ -13,6 +13,7 @@ const empty = {
   srcClasses: [], picked: [],
 };
 const SCHEDULES = ['Sáng', 'Chiều', 'Tối'];
+const SAC_RANK = { none: 0, ruoc_le: 1, them_suc: 2 }; // thứ tự bí tích: Rước lễ trước, Thêm Sức sau
 
 export default function Classes() {
   const { user } = useAuth();
@@ -152,12 +153,21 @@ export default function Classes() {
   function sacTogglePick(id) { setSac({ ...sac, picked: sac.picked.includes(id) ? sac.picked.filter((x) => x !== id) : [...sac.picked, id] }); }
   async function saveSac() {
     if (!sac.picked.length) { setSac({ ...sac, err: 'Chưa chọn học viên' }); return; }
+    if (!sac.date) { setSac({ ...sac, err: 'Vui lòng chọn ngày lãnh nhận.' }); return; }
+    if (sac.kind === 'cert' && !sac.certName.trim()) { setSac({ ...sac, err: 'Nhập tên chứng chỉ.' }); return; }
+    if (sac.kind === 'sacrament') {
+      const newR = SAC_RANK[sac.sacrament] ?? 0;
+      const bad = (sac.students || []).filter((s) => sac.picked.includes(s.id) && (SAC_RANK[s.sacrament] || 0) > newR);
+      if (bad.length) {
+        setSac({ ...sac, err: `Sai thứ tự bí tích (Rước lễ trước, Thêm Sức sau). Các em đã ở bậc cao hơn: ${bad.map((s) => s.full_name).join(', ')}. Hãy bỏ chọn các em này.` });
+        return;
+      }
+    }
     try {
       if (sac.kind === 'sacrament') {
         const r = await api.post('/students/sacrament', { ids: sac.picked, sacrament: sac.sacrament, date: sac.date });
         setSac({ ...sac, msg: `Đã ghi bí tích cho ${r.data.count} em`, err: '' });
       } else {
-        if (!sac.certName.trim()) { setSac({ ...sac, err: 'Nhập tên chứng chỉ' }); return; }
         const r = await api.post('/students/certificate', { ids: sac.picked, name: sac.certName.trim(), date: sac.date });
         setSac({ ...sac, msg: `Đã ghi chứng chỉ cho ${r.data.count} em`, err: '' });
       }
@@ -520,7 +530,7 @@ export default function Classes() {
                   <datalist id="cert-suggest-bulk">{CERT_SUGGESTIONS.map((s) => <option key={s} value={s} />)}</datalist>
                 </div>
               )}
-              <div className="field"><label>Ngày lãnh nhận</label><input type="date" value={sac.date} onChange={(e) => setSac({ ...sac, date: e.target.value })} /></div>
+              <div className="field"><label>Ngày lãnh nhận *</label><input type="date" value={sac.date} onChange={(e) => setSac({ ...sac, date: e.target.value })} /></div>
             </div>
 
             <div className="fp-label" style={{ display: 'flex', justifyContent: 'space-between' }}>

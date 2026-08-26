@@ -363,6 +363,13 @@ async function handle(method, rawUrl, body = {}) {
       const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : [];
       if (!ids.length) return fail(400, 'Chưa chọn học viên');
       if (body.sacrament !== 'ruoc_le' && body.sacrament !== 'them_suc') return fail(400, 'Bí tích không hợp lệ');
+      if (!body.date) return fail(400, 'Thiếu ngày lãnh nhận');
+      // chặn ghi lùi bậc (Rước lễ trước, Thêm Sức sau)
+      const RANK = { none: 0, ruoc_le: 1, them_suc: 2 };
+      const newR = RANK[body.sacrament];
+      const { data: cur } = await supabase.from('students').select('id, full_name, sacrament').in('id', ids);
+      const bad = (cur || []).filter((s) => (RANK[s.sacrament] || 0) > newR);
+      if (bad.length) return fail(400, `Sai thứ tự bí tích cho: ${bad.map((s) => s.full_name).join(', ')}`);
       const patch = { sacrament: body.sacrament };
       if (body.sacrament === 'them_suc') patch.confirmation_date = nn(body.date);
       else patch.first_communion_date = nn(body.date);
