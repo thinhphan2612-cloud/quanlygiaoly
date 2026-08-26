@@ -146,7 +146,6 @@ export default function Students() {
                 <option value="them_suc">Đã Thêm sức</option>
                 <option value="none">Chưa có bí tích</option>
               </select>
-              <p className="muted" style={{ fontSize: 12, marginTop: 12 }}>Lọc theo điểm đã chuyển sang tab <b>Điểm số</b>.</p>
             </div>
             <div className="fp-col">
               <div className="fp-label">Sắp xếp</div>
