@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
+import { byViName } from '../lib/viName';
 import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 
 const round1 = (n) => Math.round(n * 10) / 10;
@@ -73,7 +74,7 @@ export default function Grades() {
     .sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1));
   const rankOf = {}; ranked.forEach((s, i) => { rankOf[s.id] = s.avg == null ? null : i + 1; });
 
-  const ordered = sortByRank ? ranked : [...students].sort((a, b) => a.full_name.localeCompare(b.full_name, 'vi'));
+  const ordered = sortByRank ? ranked : [...students].sort((a, b) => byViName(a, b));
   // Lọc theo điểm TB / thiếu cột điểm (chuyển từ tab Học viên sang đây)
   const scoreCount = (id) => columns.filter((c) => scores[id]?.[c.id] != null).length;
   const display = ordered.filter((s) => {

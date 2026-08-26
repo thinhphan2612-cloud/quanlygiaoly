@@ -2,6 +2,10 @@
 // mà các trang đang dùng, để không phải sửa nhiều ở tầng UI.
 // Mỗi giáo xứ là 1 tenant; RLS ở Supabase tự lọc theo parish_id.
 import { supabase } from './supabase';
+import { byViName } from './lib/viName';
+
+// sắp xếp danh sách học viên theo TÊN (từ cuối họ và tên)
+const sortStudents = (arr, f = 'full_name') => (arr || []).slice().sort((a, b) => byViName(a, b, f));
 
 const ok = (data) => Promise.resolve({ data });
 const fail = (status, error) => Promise.reject({ response: { status, data: { error } } });
@@ -120,7 +124,7 @@ async function handle(method, rawUrl, body = {}) {
         .insert({
           parish_id: pid, name: body.name, school_year: nn(body.year),
           order_index: Number(body.order_index) || 0, room: nn(body.room), schedule: nn(body.schedule),
-          promotes: body.promotes !== false,
+          promotes: body.promotes !== false, merged: !!body.merged,
         })
         .select().single();
       if (error) return fail(400, error.message);
@@ -254,7 +258,7 @@ async function handle(method, rawUrl, body = {}) {
       }
       const { data, error } = await query;
       if (error) return fail(400, error.message);
-      return ok((data || []).map((s) => ({ ...s, class_name: s.classes?.name || null })));
+      return ok(sortStudents((data || []).map((s) => ({ ...s, class_name: s.classes?.name || null }))));
     }
     if (path === '/students' && method === 'post') {
       if (!body.full_name) return fail(400, 'Thiếu họ tên học viên');
@@ -291,13 +295,36 @@ async function handle(method, rawUrl, body = {}) {
       if (error) return fail(400, error.message);
       return ok({ ok: true });
     }
-    // Chuyển nhiều học viên sang 1 lớp (dùng khi tạo lớp từ học viên có sẵn)
+    // Chuyển nhiều học viên sang 1 lớp. remember=true: ghi nhớ lớp cũ (để trả về sau — lớp gộp hè).
     if (path === '/students/move' && method === 'post') {
       const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : [];
       if (!ids.length) return ok({ moved: 0 });
-      const { error } = await supabase.from('students').update({ class_id: nn(body.class_id) }).in('id', ids);
-      if (error) return fail(400, error.message);
+      const dest = nn(body.class_id);
+      if (body.remember) {
+        const { data: rows } = await supabase.from('students').select('id, class_id').in('id', ids);
+        for (const r of rows || []) {
+          const { error } = await supabase.from('students').update({ class_id: dest, prev_class_id: r.class_id }).eq('id', r.id);
+          if (error) return fail(400, error.message);
+        }
+      } else {
+        const { error } = await supabase.from('students').update({ class_id: dest }).in('id', ids);
+        if (error) return fail(400, error.message);
+      }
       return ok({ moved: ids.length });
+    }
+    // Trả học viên về lớp cũ (lớp gộp hè): class_id <- prev_class_id, xóa prev
+    if (path === '/students/return' && method === 'post') {
+      const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : [];
+      if (!ids.length) return ok({ returned: 0 });
+      const { data: rows } = await supabase.from('students').select('id, prev_class_id').in('id', ids);
+      let n = 0;
+      for (const r of rows || []) {
+        if (!r.prev_class_id) continue;
+        const { error } = await supabase.from('students').update({ class_id: r.prev_class_id, prev_class_id: null }).eq('id', r.id);
+        if (error) return fail(400, error.message);
+        n++;
+      }
+      return ok({ returned: n });
     }
     // Ghi bí tích hàng loạt cho cả lớp: đặt trạng thái bí tích + ngày lãnh nhận tương ứng
     if (path === '/students/sacrament' && method === 'post') {
@@ -371,10 +398,10 @@ async function handle(method, rawUrl, body = {}) {
           .eq('date', q.date).in('student_id', ids);
         recs = data || [];
       }
-      return ok((students || []).map((s) => {
+      return ok(sortStudents((students || []).map((s) => {
         const r = recs.find((x) => x.student_id === s.id);
         return { ...s, status: r?.status || null, note: r?.note || '' };
-      }));
+      })));
     }
     if (path === '/attendance' && method === 'post') {
       const { date, records } = body;
@@ -398,7 +425,7 @@ async function handle(method, rawUrl, body = {}) {
         recs = data || [];
       }
       const dates = [...new Set(recs.map((r) => r.date))].sort();
-      const rows = (students || []).map((s) => {
+      const rows = sortStudents(students).map((s) => {
         const byDate = {};
         recs.filter((r) => r.student_id === s.id).forEach((r) => { byDate[r.date] = r.status; });
         const vals = Object.values(byDate);
@@ -444,11 +471,11 @@ async function handle(method, rawUrl, body = {}) {
           .eq('date', q.date).in('student_id', ids);
         recs = data || [];
       }
-      return ok((students || []).map((s) => {
+      return ok(sortStudents((students || []).map((s) => {
         const done = {};
         recs.filter((r) => r.student_id === s.id).forEach((r) => { done[r.task_id] = r.done; });
         return { id: s.id, full_name: s.full_name, saint_name: s.saint_name, done };
-      }));
+      })));
     }
     if (path === '/spiritual' && method === 'post') {
       const { date, records } = body;
@@ -473,7 +500,7 @@ async function handle(method, rawUrl, body = {}) {
         recs = data || [];
       }
       const dates = [...new Set(recs.map((r) => r.date))].sort();
-      const rows = (students || []).map((s) => {
+      const rows = sortStudents(students).map((s) => {
         const counts = {};
         recs.filter((r) => r.student_id === s.id && r.done).forEach((r) => { counts[r.task_id] = (counts[r.task_id] || 0) + 1; });
         return { id: s.id, full_name: s.full_name, saint_name: s.saint_name, counts };
@@ -560,7 +587,7 @@ async function handle(method, rawUrl, body = {}) {
       ]);
       const scores = {};
       (grades || []).forEach((g) => { (scores[g.student_id] = scores[g.student_id] || {})[g.column_id] = Number(g.score); });
-      return ok({ students: students || [], columns: columns || [], scores });
+      return ok({ students: sortStudents(students), columns: columns || [], scores });
     }
     // đặt/sửa/xóa 1 ô điểm
     if (path === '/grade-cell' && method === 'post') {
@@ -729,7 +756,7 @@ async function handle(method, rawUrl, body = {}) {
       grades.forEach((g) => { (scores[g.student_id] = scores[g.student_id] || {})[g.column_id] = Number(g.score); });
       return ok({
         class: cls ? { ...cls, year: cls.school_year } : null,
-        students: (students || []).map((s) => ({ ...s, class_name: s.classes?.name || null })),
+        students: sortStudents((students || []).map((s) => ({ ...s, class_name: s.classes?.name || null }))),
         columns: columns || [], scores,
       });
     }

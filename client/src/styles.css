@@ -569,6 +569,14 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .arch-class { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); cursor: pointer; font-weight: 600; color: var(--text); }
 .arch-class:hover { border-color: var(--primary); background: var(--primary-soft); }
 
+/* link chữ bấm được + chip lớp gộp + trạng thái bí tích */
+.link { color: var(--primary); cursor: pointer; font-weight: 600; }
+.link:hover { text-decoration: underline; }
+.tag-chip.merged { background: #fdecec; color: #dc2626; font-weight: 600; }
+:root[data-theme="dark"] .tag-chip.merged { background: rgba(220,38,38,0.18); color: #f87171; }
+.sac-row { justify-content: flex-start; }
+.sac-cur { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
+
 /* ---------- RandomPicker: rõ chữ + nút chưa thuộc bài ---------- */
 .picker-check {
   display: flex; align-items: center; gap: 8px; margin: 0; width: auto;

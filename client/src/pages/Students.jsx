@@ -5,6 +5,7 @@ import BulkImport from '../components/BulkImport.jsx';
 import SacramentBadge from '../components/SacramentBadge.jsx';
 import Avatar from '../components/Avatar.jsx';
 import StudentForm from '../components/StudentForm.jsx';
+import { byViName } from '../lib/viName';
 import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 
 const empty = {
@@ -91,7 +92,7 @@ export default function Students() {
   filtered = [...filtered].sort((a, b) => {
     if (f.sortBy === 'absent') return (st(b.id).absent || 0) - (st(a.id).absent || 0);
     if (f.sortBy === 'diligent') return rate(b.id) - rate(a.id);
-    return a.full_name.localeCompare(b.full_name, 'vi');
+    return byViName(a, b);
   });
 
   const activeCount = (f.classes.length ? 1 : 0) + (f.sacrament ? 1 : 0) + (f.sortBy !== 'name' ? 1 : 0);
