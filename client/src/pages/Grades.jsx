@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
+import { useRealtime } from '../realtime.jsx';
 import { byViName } from '../lib/viName';
 import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 
@@ -66,6 +67,11 @@ export default function Grades() {
     } catch (e) { alert(e.response?.data?.error || 'Lên lớp thất bại'); }
   }
   useEffect(() => { load(); }, [classId]);
+  const rev = useRealtime(['grades', 'grade_columns', 'students']);
+  useEffect(() => {
+    // không tải lại khi người dùng đang gõ điểm để tránh mất nội dung đang nhập
+    if (rev && isCurrent && !document.activeElement?.classList?.contains('cell-input')) load();
+  }, [rev]);
 
   const { students, columns, scores } = data;
   const cls = classes.find((c) => c.id === classId) || {};

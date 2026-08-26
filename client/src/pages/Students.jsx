@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { useRealtime } from '../realtime.jsx';
 import BulkImport from '../components/BulkImport.jsx';
 import SacramentBadge from '../components/SacramentBadge.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -58,6 +59,8 @@ export default function Students() {
   useEffect(() => { load(); }, []);
   useEffect(() => { api.get('/classes').then((r) => setClasses(r.data)); }, []);
   useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
+  const rev = useRealtime(['students', 'classes', 'grades', 'attendance']);
+  useEffect(() => { if (rev) { load(); api.get('/classes').then((r) => setClasses(r.data)); } }, [rev]);
 
   function openCreate() { setError(''); setModal({ ...empty }); }
   function openEdit(s) { setError(''); setModal({ ...s, class_id: s.class_id || '' }); }

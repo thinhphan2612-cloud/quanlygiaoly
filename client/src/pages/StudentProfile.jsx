@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
+import { useRealtime } from '../realtime.jsx';
 import SacramentBadge, { SACRAMENTS } from '../components/SacramentBadge.jsx';
 import StudentForm from '../components/StudentForm.jsx';
 import { IconEditImage } from '../components/Icons.jsx';
@@ -36,6 +37,8 @@ export default function StudentProfile() {
     api.get(`/student-history?id=${id}`).then((r) => setHistory(r.data)).catch(() => setHistory([]));
   }
   useEffect(() => { load(); }, [id]);
+  const rev = useRealtime(['grades', 'attendance', 'spiritual_records', 'students']);
+  useEffect(() => { if (rev) load(); }, [rev]);
 
   if (err) return <div><button className="btn ghost sm" onClick={() => navigate(-1)}>← Quay lại</button><p className="muted" style={{ marginTop: 12 }}>{err}</p></div>;
   if (!data) return <div className="muted">Đang tải...</div>;

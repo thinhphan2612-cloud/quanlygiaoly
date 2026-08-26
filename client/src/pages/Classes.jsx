@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
+import { useRealtime } from '../realtime.jsx';
 import { SACRAMENTS, CERT_SUGGESTIONS } from '../components/SacramentBadge.jsx';
 import StudentForm from '../components/StudentForm.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -38,6 +39,13 @@ export default function Classes() {
       api.get('/students').then((r) => setAllStudents(r.data)).catch(() => {});
     }
   }, [isAdmin]);
+  const rev = useRealtime(['classes', 'students', 'class_teachers']);
+  useEffect(() => {
+    if (!rev) return;
+    load();
+    if (isAdmin) api.get('/students').then((r) => setAllStudents(r.data)).catch(() => {});
+    setDetail((d) => { if (d) api.get(`/students?class_id=${d.cls.id}`).then((r) => setDetail((x) => (x && x.cls.id === d.cls.id ? { ...x, students: r.data } : x))); return d; });
+  }, [rev]);
 
   function openCreate() { setError(''); setModal({ ...empty, teachers: [] }); }
   function openEdit(c) {

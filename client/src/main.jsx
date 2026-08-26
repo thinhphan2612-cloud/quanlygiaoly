@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { AuthProvider } from './auth.jsx';
+import { RealtimeProvider } from './realtime.jsx';
 import { EntitlementsProvider } from './entitlements.jsx';
 import { ParishProvider } from './parish.jsx';
 import { applyTheme, loadTheme } from './theme.js';
@@ -14,11 +15,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <ParishProvider>
-          <EntitlementsProvider>
-            <App />
-          </EntitlementsProvider>
-        </ParishProvider>
+        <RealtimeProvider>
+          <ParishProvider>
+            <EntitlementsProvider>
+              <App />
+            </EntitlementsProvider>
+          </ParishProvider>
+        </RealtimeProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

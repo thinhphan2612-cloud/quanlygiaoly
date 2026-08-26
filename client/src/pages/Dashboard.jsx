@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { useRealtime } from '../realtime.jsx';
 import Donut from '../components/Donut.jsx';
 import { LeaderboardTable } from '../components/Leaderboard.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -58,6 +59,12 @@ export default function Dashboard() {
     loadDash();
     api.get('/classes').then((r) => { setLbClasses(r.data); if (r.data[0]) setLbClass(r.data[0].id); });
   }, []);
+  const rev = useRealtime(['grades', 'attendance', 'students', 'classes', 'class_teachers']);
+  useEffect(() => {
+    if (!rev) return;
+    loadDash(year);
+    api.get('/classes').then((r) => setLbClasses(r.data));
+  }, [rev]);
 
   const _today = new Date().toISOString().slice(0, 10);
   const lbRange = lbPeriod === 'month' ? { from: _today.slice(0, 8) + '01', to: _today } : { from: '2000-01-01', to: _today };

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
 import { useParish } from '../parish.jsx';
+import { useRealtime } from '../realtime.jsx';
 import api from '../api';
 import { isPro, planName } from '../lib/plans';
 import { fileToDataUrl } from '../lib/img';
@@ -50,6 +51,8 @@ export default function Layout({ children }) {
 
   function loadNotifs() { api.get('/notifications').then((r) => setNotifs(r.data)).catch(() => {}); }
   useEffect(() => { loadNotifs(); const t = setInterval(loadNotifs, 60000); return () => clearInterval(t); }, []);
+  const notifRev = useRealtime(['notifications']);
+  useEffect(() => { if (notifRev) loadNotifs(); }, [notifRev]);
   useEffect(() => { setNavOpen(false); setMenuOpen(false); setBellOpen(false); }, [location.pathname]);
 
   async function openBell() {
