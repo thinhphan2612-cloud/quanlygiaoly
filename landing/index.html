@@ -44,14 +44,14 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:24px 0
 .nav-cta{display:flex;gap:10px;align-items:center}
 .hero-main{flex:1;position:relative;display:flex;flex-direction:column;overflow:hidden}
 .hero-h{font-weight:900;text-transform:uppercase;letter-spacing:-.04em;line-height:.78;white-space:nowrap;width:100%;text-align:center;font-size:12vw;margin-top:1vh}
-.hero-portrait{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);z-index:10;aspect-ratio:4/5;height:min(62vh,580px)}
+.hero-portrait{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;aspect-ratio:4/5;height:min(62vh,580px)}
 .hero-portrait .mag{width:100%;height:100%;will-change:transform}
 .hero-video{width:100%;height:100%;object-fit:cover;border-radius:26px;background:#141414;box-shadow:0 40px 120px rgba(0,0,0,.6)}
 .hero-bottom{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding-bottom:34px;position:relative;z-index:15}
 .hero-copy{max-width:260px;text-transform:uppercase;letter-spacing:.04em;font-weight:300;line-height:1.32;color:var(--ink);font-size:clamp(.75rem,1.4vw,1.4rem)}
 @media(max-width:640px){
   .navlinks{display:none}
-  .hero-portrait{top:auto;bottom:0;height:min(52vh,420px)}
+  .hero-portrait{height:min(48vh,400px)}
   .hero-bottom{padding-bottom:26px}.hero-copy{max-width:180px}
 }
 
@@ -173,6 +173,7 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-s
 
 <!-- 1. HERO -->
 <section class="hero" id="top">
+ <div class="hero-portrait fade" data-y="30" style="transition-delay:.6s"><div class="mag" id="heroMagnet"><video class="hero-video" src="/heroimg.mp4" autoplay muted loop playsinline preload="auto"></video></div></div>
  <div class="container" style="display:flex;flex-direction:column;flex:1">
   <nav class="fade" data-y="-20">
    <a href="#top" class="brand"><span class="x">✝</span> GIÁO LÝ SỐ</a>
@@ -184,9 +185,6 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-s
   </nav>
   <div class="hero-main">
    <h1 class="hero-h hero-heading fade" data-y="40" style="transition-delay:.15s">GIÁO LÝ SỐ</h1>
-   <div class="hero-portrait fade" data-y="30" style="transition-delay:.6s">
-    <div class="mag" id="heroMagnet"><video class="hero-video" src="/heroimg.mp4" autoplay muted loop playsinline preload="auto"></video></div>
-   </div>
    <div class="hero-bottom">
     <p class="hero-copy fade" data-y="20" style="transition-delay:.35s">Nền tảng quản lý giáo lý cho giáo xứ, ban giáo lý và giáo lý viên.</p>
     <a class="btn-contact fade" data-y="20" style="transition-delay:.5s" id="ctaPrimary" href="https://app.giaoly.com.vn/register">Dùng thử</a>
