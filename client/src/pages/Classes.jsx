@@ -8,7 +8,7 @@ import Avatar from '../components/Avatar.jsx';
 
 const empty = {
   mode: 'new', name: '', year: '', room: '', schedule: '', promotes: true, teachers: [],
-  placement: 'top', srcClasses: [], picked: [],
+  srcClasses: [], picked: [],
 };
 const SCHEDULES = ['Sáng', 'Chiều', 'Tối'];
 
@@ -92,10 +92,13 @@ export default function Classes() {
         setModal(null); load();
         return;
       }
+      // lớp bật "tự động lên lớp" -> đưa lên trên cùng bảng thứ tự (order lớn nhất)
+      const maxOrder = classes.filter((c) => c.promotes).reduce((m, c) => Math.max(m, c.order_index || 0), 0);
       // tạo lớp mới (chế độ 'from' = lớp gộp)
       const r = await api.post('/classes', {
         name: modal.name, year: modal.year, room: modal.room, schedule: modal.schedule,
         promotes: modal.promotes, teachers: modal.teachers, merged: modal.mode === 'from',
+        order_index: modal.promotes ? maxOrder + 1 : 0,
       });
       const newId = r.data.id;
       // chuyển học viên (chế độ tạo từ có sẵn) — ghi nhớ lớp cũ để trả về sau
@@ -104,12 +107,6 @@ export default function Classes() {
         const ids = modal.picked.filter((x) => visible.has(x));
         if (ids.length) await api.post('/students/move', { ids, class_id: newId, remember: true });
       }
-      // đặt vị trí trong thứ tự lên lớp
-      const base = seniorToJunior.map((c) => c.id);
-      let ids;
-      if (modal.placement === 'top') ids = [newId, ...base];
-      else { const after = modal.placement.slice('after:'.length); const idx = base.indexOf(after); ids = [...base.slice(0, idx + 1), newId, ...base.slice(idx + 1)]; }
-      await api.post('/classes/reorder', { ids });
       setModal(null); load();
       if (isAdmin) api.get('/students').then((res) => setAllStudents(res.data)).catch(() => {});
     } catch (err) {
@@ -124,7 +121,7 @@ export default function Classes() {
   }
 
   // --- sắp xếp thứ tự lớp ---
-  function openOrder() { setOrderList(seniorToJunior.map((c) => ({ id: c.id, name: c.name }))); }
+  function openOrder() { setOrderList(seniorToJunior.filter((c) => c.promotes).map((c) => ({ id: c.id, name: c.name }))); }
   function moveOrder(i, dir) {
     const j = i + dir; if (j < 0 || j >= orderList.length) return;
     const list = [...orderList]; [list[i], list[j]] = [list[j], list[i]]; setOrderList(list);
@@ -352,19 +349,10 @@ export default function Classes() {
                       {SCHEDULES.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
-                  {modal.mode !== 'edit' && (
-                    <div className="field">
-                      <label>Vị trí lên lớp</label>
-                      <select value={modal.placement} onChange={(e) => setModal({ ...modal, placement: e.target.value })}>
-                        <option value="top">Trên cùng — lớp lớn nhất</option>
-                        {seniorToJunior.map((c) => <option key={c.id} value={`after:${c.id}`}>Ngay dưới {c.name}</option>)}
-                      </select>
-                    </div>
-                  )}
                 </div>
 
                 <div className="toggle-row" style={{ padding: '10px 0' }}>
-                  <span>Tự động lên lớp cho năm sau<br /><span className="muted" style={{ fontSize: 12 }}>Tắt cho lớp hè, dự tòng, hôn nhân, đào tạo GLV (học 1 lần)</span></span>
+                  <span>Tự động lên lớp cho năm sau<br /><span className="muted" style={{ fontSize: 12 }}>Bật: lớp nằm trong bảng thứ tự lên lớp. Tắt: lớp hè/dự tòng/hôn nhân/GLV (học 1 lần, không lên lớp)</span></span>
                   <button className={`switch ${modal.promotes ? 'on' : ''}`} onClick={() => setModal({ ...modal, promotes: !modal.promotes })} role="switch" aria-checked={modal.promotes}><span className="knob" /></button>
                 </div>
 
