@@ -229,7 +229,8 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 /* marquee tiles */
 const feats=[['Hồ sơ học viên','Cá nhân · gia đình · giáo họ'],['Bí tích','Rửa Tội · Rước Lễ · Thêm Sức'],['Điểm danh','Có mặt · vắng · xin phép'],['Điểm & thi đua','Xếp hạng theo lớp'],['Chứng chỉ','Xuất PDF từ hồ sơ'],['Lưu trữ theo năm','Tra cứu năm cũ'],['Đồng bộ real-time','Admin ↔ giáo lý viên'],['Báo cáo','Tổng hợp theo năm học']];
 function tile(it,i){let b=[38,66,50,80,58,88].map((h,j)=>`<i style="height:${(h+i*7+j*4)%70+26}%"></i>`).join('');return `<div class="tile"><h4>${it[0]}</h4><p>${it[1]}</p><div class="tile-ui"><div class="bars">${b}</div></div></div>`}
-const r1=[...feats,...feats,...feats],r2=[...feats].reverse();r2=[...r2,...r2,...r2];
+const r1=[...feats,...feats,...feats];
+let r2=[...feats].reverse();r2=[...r2,...r2,...r2];
 document.getElementById('track1').innerHTML=r1.map(tile).join('');
 document.getElementById('track2').innerHTML=r2.map(tile).join('');
 const mq=document.querySelector('.marquee'),t1=document.getElementById('track1'),t2=document.getElementById('track2');
