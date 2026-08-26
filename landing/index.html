@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Giáo Lý Số — Quản lý giáo lý Công giáo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&family=Cormorant+Garamond:ital,wght@1,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08111D; --bg2:#0E1B2B; --cream:#F6F2E8; --gold:#D7B46A;
+  --sky:#84B8DB; --text:#EAF0F5; --muted:#9DA9B5; --ink:#0A111A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;background:var(--bg)}
+body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+a{text-decoration:none;color:inherit}
+button{font:inherit}
+::selection{background:var(--gold);color:var(--ink)}
+.noise{position:fixed;inset:0;pointer-events:none;opacity:.035;z-index:999;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 140 140' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E")}
+.container{width:min(1440px,100%);margin:auto;padding:0 34px}
+.pill{border:1px solid rgba(234,240,245,.28);padding:13px 20px;border-radius:999px;display:inline-flex;gap:10px;align-items:center;transition:.25s;background:rgba(255,255,255,.02);backdrop-filter:blur(10px);cursor:pointer}
+.pill:hover{transform:translateY(-2px);background:rgba(255,255,255,.07)}
+.gold{background:linear-gradient(120deg,#b79048,#e7cf98);color:#111;border:none;font-weight:700}
+.nav-cta{display:flex;gap:10px;align-items:center}
+.section-title{font-size:clamp(52px,9.3vw,150px);font-weight:900;letter-spacing:-.065em;line-height:.84;text-transform:uppercase}
+.eyebrow{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:700}
+
+/* HERO */
+.hero{min-height:100vh;position:relative;display:flex;flex-direction:column;overflow:hidden}
+nav{height:84px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:30}
+.brand{font-weight:900;letter-spacing:-.04em;font-size:22px}.brand span{color:var(--gold)}
+.navlinks{display:flex;gap:28px;font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:#cdd6de}
+.navlinks a{opacity:.8;transition:.2s}.navlinks a:hover{opacity:1}
+.hero-main{flex:1;position:relative;padding-top:1vh;display:flex;flex-direction:column}
+.hero-title{font-size:clamp(70px,14.1vw,230px);font-weight:900;letter-spacing:-.075em;line-height:.72;text-transform:uppercase;white-space:nowrap;background:linear-gradient(180deg,#f7fafc 0%,#91a8ba 85%);-webkit-background-clip:text;color:transparent;position:relative;z-index:2}
+.hero-title:nth-child(2){text-align:right;margin-top:4vh}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(132,184,219,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(132,184,219,.055) 1px,transparent 1px);background-size:52px 52px;mask-image:linear-gradient(to bottom,transparent,black 18%,black 82%,transparent)}
+.hero-bottom{margin-top:auto;padding:0 0 36px;display:grid;grid-template-columns:1fr 1.5fr 1fr;align-items:end;position:relative;z-index:15}
+.hero-copy{font-size:14px;line-height:1.65;max-width:320px;color:#cbd6de;text-transform:uppercase;letter-spacing:.04em}
+.hero-cta{justify-self:end}
+.mock-wrap{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);z-index:10;width:min(54vw,760px);perspective:1200px}
+.dashboard{background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.035));border:1px solid rgba(255,255,255,.16);box-shadow:0 35px 100px rgba(0,0,0,.5);border-radius:30px;padding:14px;backdrop-filter:blur(18px);transform:rotateX(7deg)}
+.screen{background:#f2efe7;color:#18202a;border-radius:22px;overflow:hidden;min-height:420px;display:grid;grid-template-columns:150px 1fr}
+.side{background:#132438;color:#eaf0f5;padding:22px 15px}.mini-logo{font-weight:800;margin-bottom:30px}.side div{font-size:10px;padding:11px;border-radius:10px;margin:4px 0;opacity:.7}.side .active{background:#243f5a;opacity:1}
+.app{padding:24px;background:linear-gradient(135deg,#f6f2e8,#ece8dc)}
+.app-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.app-head h3{font-size:18px}.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,var(--gold),#705327)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.stat{background:white;border-radius:15px;padding:15px;box-shadow:0 8px 24px rgba(32,40,50,.06)}.stat small{font-size:9px;color:#71808c}.stat b{display:block;font-size:22px;margin-top:6px}
+.class-card{margin-top:12px;background:#0e1b2b;color:white;border-radius:17px;padding:18px;display:grid;grid-template-columns:1fr 180px;gap:18px}.rows{display:grid;gap:8px;margin-top:14px}.row{display:flex;justify-content:space-between;background:rgba(255,255,255,.07);padding:8px 10px;border-radius:9px;font-size:9px}.ring{width:120px;height:120px;border-radius:50%;margin:auto;background:conic-gradient(var(--gold) 0 89%,rgba(255,255,255,.12) 89%);display:grid;place-items:center}.ring:after{content:'89%';width:88px;height:88px;background:#0e1b2b;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:22px}
+.float-card{position:absolute;z-index:20;background:rgba(246,242,232,.94);color:#17202b;border:1px solid rgba(255,255,255,.7);box-shadow:0 22px 60px rgba(0,0,0,.28);border-radius:18px;padding:15px 17px;backdrop-filter:blur(12px);animation:float 5s ease-in-out infinite}.float-card b{display:block;font-size:13px}.float-card small{font-size:10px;color:#70808d}.f1{left:-65px;top:120px}.f2{right:-55px;top:80px;animation-delay:-2s}.f3{right:25px;bottom:30px;animation-delay:-1s}
+@keyframes float{50%{transform:translateY(-12px) rotate(1deg)}}
+
+/* MARQUEE */
+.marquee-sec{padding:130px 0 100px;overflow:hidden}.marquee-label{text-align:center;margin-bottom:36px}.track{display:flex;gap:14px;width:max-content;margin:14px 0;will-change:transform}.tile{width:330px;height:190px;border-radius:24px;overflow:hidden;flex:0 0 auto;background:#112236;border:1px solid rgba(255,255,255,.08);padding:14px}.tile.light{background:#f2efe7;color:#0e1b2b}.tile h4{font-size:15px;margin-bottom:8px}.tile p{font-size:10px;opacity:.65}.tile-ui{height:110px;margin-top:10px;border-radius:14px;background:linear-gradient(135deg,rgba(132,184,219,.24),rgba(215,180,106,.16));position:relative;overflow:hidden}.light .tile-ui{background:linear-gradient(135deg,#dce9ef,#efe5ce)}.bars{position:absolute;bottom:14px;left:16px;right:16px;display:flex;align-items:end;gap:7px;height:70px}.bars i{flex:1;background:rgba(132,184,219,.75);border-radius:7px 7px 2px 2px}.light .bars i{background:#2d6687}
+
+/* ABOUT */
+.about{min-height:100vh;display:grid;place-items:center;position:relative;padding:120px 0}.about-inner{text-align:center;max-width:900px;position:relative;z-index:2}.about p{font-size:clamp(18px,2vw,28px);line-height:1.65;color:#d3dde5;margin:55px auto 0;max-width:760px}.orb{position:absolute;border:1px solid rgba(215,180,106,.35);border-radius:50%;display:grid;place-items:center;color:var(--gold);font-size:46px;background:radial-gradient(circle at 35% 30%,rgba(215,180,106,.16),transparent 65%);box-shadow:inset 0 0 45px rgba(215,180,106,.05)}.o1{width:160px;height:160px;top:8%;left:7%}.o2{width:130px;height:130px;bottom:8%;right:9%}.o3{width:95px;height:95px;top:15%;right:18%}
+
+/* FEATURES */
+.features{background:var(--cream);color:var(--ink);border-radius:58px 58px 0 0;padding:125px 0}.features .eyebrow{color:#7c612d}.feature-list{margin-top:70px;border-top:1px solid rgba(10,17,26,.14)}.feature{display:grid;grid-template-columns:210px 1fr;gap:40px;padding:44px 0;border-bottom:1px solid rgba(10,17,26,.14)}.num{font-size:clamp(64px,8vw,120px);font-weight:900;letter-spacing:-.08em;line-height:.8}.feature h3{font-size:clamp(22px,2.3vw,36px);text-transform:uppercase;margin-bottom:10px}.feature p{color:#5e666d;line-height:1.7;max-width:760px}.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.tags span{padding:7px 11px;border-radius:999px;border:1px solid rgba(10,17,26,.14);font-size:11px}
+
+/* ROLES */
+.roles{background:var(--cream);color:var(--ink);padding:20px 0 130px}.roles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:55px}.role{min-height:440px;border-radius:30px;background:#0e1b2b;color:white;padding:28px;position:relative;overflow:hidden;transition:.3s}.role:hover{transform:translateY(-8px)}.role:nth-child(2){background:#d7b46a;color:#10161d}.role:nth-child(3){background:#dbe7ec;color:#10161d}.role h3{font-size:26px;margin-top:16px}.role p{opacity:.72;line-height:1.6;margin-top:10px}.role-screen{position:absolute;left:24px;right:24px;bottom:-60px;height:250px;border-radius:20px;background:rgba(255,255,255,.92);box-shadow:0 20px 50px rgba(0,0,0,.2);padding:17px;color:#1b2732}.fake-row{height:28px;border-radius:8px;background:#e9edf0;margin:8px 0}.fake-row:nth-child(2){width:76%}.fake-row:nth-child(3){width:88%}
+
+/* GAMES */
+.games{padding:130px 0;background:#09131f}.games-layout{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}.games p{font-size:18px;line-height:1.7;color:#b8c5cf;margin:28px 0}.leader{background:linear-gradient(145deg,#112236,#0d1928);border:1px solid rgba(255,255,255,.09);border-radius:30px;padding:24px;box-shadow:0 30px 70px rgba(0,0,0,.28)}.leader-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:25px 0}.podium div{background:rgba(255,255,255,.05);border-radius:16px;padding:18px;text-align:center}.podium div:nth-child(2){transform:translateY(-15px);background:rgba(215,180,106,.15)}.rank{display:flex;justify-content:space-between;padding:13px 5px;border-top:1px solid rgba(255,255,255,.08);font-size:13px}
+
+/* SACRAMENT */
+.sacrament{background:#f0ecdf;color:#0a111a;padding:130px 0}.timeline{margin-top:75px;position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:40px}.timeline:before{content:'';position:absolute;top:21px;left:8%;right:8%;height:2px;background:#c9b88f}.milestone{text-align:center;position:relative}.dot{width:44px;height:44px;border-radius:50%;background:#0e1b2b;color:#d7b46a;margin:auto;display:grid;place-items:center;position:relative;z-index:2;box-shadow:0 0 0 8px #f0ecdf}.milestone h3{margin-top:25px;font-size:21px}.milestone p{margin-top:8px;color:#6c6c64;font-size:13px}
+
+/* STICKY WORKFLOW */
+.workflow{padding:130px 0;background:#08111d}.stack{margin-top:70px}.sticky-card{height:78vh;position:sticky;top:70px;margin-bottom:90px;border:1px solid rgba(234,240,245,.15);border-radius:40px;background:linear-gradient(145deg,#0c1927,#0a1420);padding:32px;box-shadow:0 40px 90px rgba(0,0,0,.38);overflow:hidden}.sticky-card:nth-child(2){top:92px}.sticky-card:nth-child(3){top:114px}.card-head{display:flex;justify-content:space-between;align-items:flex-start}.card-head .big{font-size:90px;font-weight:900;letter-spacing:-.08em}.card-head h3{font-size:28px;margin-top:13px}.demo-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:14px;height:calc(100% - 140px);margin-top:22px}.demo-col{display:grid;grid-template-rows:1fr 1.2fr;gap:14px}.demo-shot{border-radius:24px;background:linear-gradient(135deg,#1b354c,#d7b46a22);border:1px solid rgba(255,255,255,.08);padding:20px;position:relative;overflow:hidden}.demo-shot.light{background:linear-gradient(135deg,#eae5d8,#d8e4e9);color:#17212b}.ui-lines i{display:block;height:10px;background:rgba(255,255,255,.12);border-radius:6px;margin:10px 0}.light .ui-lines i{background:rgba(10,17,26,.12)}.ui-lines i:nth-child(2){width:70%}.ui-lines i:nth-child(3){width:85%}
+
+/* WIKI */
+.wiki{background:#f7f4ec;color:#0a111a;border-radius:58px 58px 0 0;padding:130px 0}.searchbox{margin:50px auto 65px;max-width:920px;border:1px solid rgba(10,17,26,.16);border-radius:24px;padding:22px 25px;font-size:22px;color:#83827d;display:flex;justify-content:space-between;box-shadow:0 12px 30px rgba(10,17,26,.06);background:white}.kbd{font-size:11px;border:1px solid #d8d4ca;padding:6px 8px;border-radius:8px;background:#f5f2ea}.wiki-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.wiki-card{background:white;border:1px solid rgba(10,17,26,.09);border-radius:24px;padding:28px;min-height:260px}.wiki-card h3{font-size:18px;margin-bottom:20px}.wiki-card a{display:block;padding:10px 0;border-bottom:1px solid #eee9df;color:#5b6065;font-size:13px}.wiki-card a:hover{color:#111}
+
+/* CTA */
+.cta{min-height:84vh;display:grid;place-items:center;text-align:center;padding:100px 0}.cta h2{font-size:clamp(54px,9vw,140px);line-height:.85;letter-spacing:-.065em;text-transform:uppercase}.cta p{margin:28px auto;color:#aebbc6;max-width:600px;line-height:1.7}.cta .actions{display:flex;justify-content:center;gap:12px;margin-top:30px}
+footer{border-top:1px solid rgba(255,255,255,.08);padding:30px 0;color:#8795a1;font-size:12px}.foot{display:flex;justify-content:space-between}
+
+.reveal{opacity:0;transform:translateY(36px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}.reveal.in{opacity:1;transform:none}
+@media(max-width:900px){
+ .container{padding:0 18px}.navlinks{display:none}.hero-title{font-size:18vw}.hero-title:nth-child(2){margin-top:7vh}.mock-wrap{width:92vw;bottom:95px}.screen{min-height:330px;grid-template-columns:90px 1fr}.side{padding:16px 8px}.cards{grid-template-columns:1fr 1fr}.stat:nth-child(3){display:none}.class-card{grid-template-columns:1fr}.class-card .ring{display:none}.f1,.f2,.f3{display:none}.hero-bottom{grid-template-columns:1fr 1fr}.hero-bottom>div:nth-child(2){display:none}.feature{grid-template-columns:100px 1fr}.roles-grid,.wiki-grid,.games-layout{grid-template-columns:1fr}.roles-grid{gap:12px}.role{min-height:350px}.games-layout{gap:45px}.timeline{grid-template-columns:1fr}.timeline:before{top:0;bottom:0;left:22px;right:auto;width:2px;height:auto}.milestone{text-align:left;padding-left:70px}.dot{position:absolute;left:0;top:0}.sticky-card{height:70vh;padding:20px}.demo-grid{grid-template-columns:1fr}.demo-col{display:none}.card-head .big{font-size:60px}.nav-cta .pill{padding:10px 14px;font-size:13px}
+}
+</style>
+</head>
+<body>
+<div class="noise"></div>
+<section class="hero" id="top">
+  <div class="hero-grid"></div>
+  <div class="container">
+    <nav>
+      <a href="#top" class="brand">GIÁO LÝ <span>SỐ</span></a>
+      <div class="navlinks"><a href="#features">Tính năng</a><a href="#games">Trò chơi</a><a href="#workflow">Quy trình</a><a href="#wiki">Wiki</a></div>
+      <div class="nav-cta" id="navCta">
+        <a class="pill" id="btnLogin" href="https://app.giaoly.com.vn/login">Đăng nhập</a>
+        <a class="pill gold" id="btnRegister" href="https://app.giaoly.com.vn/register">Đăng ký</a>
+      </div>
+    </nav>
+    <div class="hero-main">
+      <h1 class="hero-title reveal">QUẢN LÝ</h1>
+      <h1 class="hero-title reveal">GIÁO LÝ</h1>
+      <div class="mock-wrap" id="magnet">
+        <div class="dashboard">
+          <div class="screen">
+            <aside class="side"><div class="mini-logo">GL<span style="color:var(--gold)">.</span></div><div class="active">Tổng quan</div><div>Học viên</div><div>Lớp học</div><div>Điểm danh</div><div>Bí tích</div><div>Quiz</div></aside>
+            <main class="app">
+              <div class="app-head"><div><small style="font-size:9px;color:#788590">NĂM HỌC 2026–2027</small><h3>Chào buổi chiều, Thầy An</h3></div><div class="avatar"></div></div>
+              <div class="cards"><div class="stat"><small>HỌC VIÊN</small><b>1.248</b></div><div class="stat"><small>LỚP GIÁO LÝ</small><b>38</b></div><div class="stat"><small>CHUYÊN CẦN</small><b>89%</b></div></div>
+              <div class="class-card"><div><small style="opacity:.6">LỚP ĐANG PHỤ TRÁCH</small><h3 style="margin-top:6px">Thêm Sức 2A</h3><div class="rows"><div class="row"><span>Maria Nguyễn An</span><span>✓ Có mặt</span></div><div class="row"><span>Phêrô Trần Minh</span><span>✓ Có mặt</span></div><div class="row"><span>Giuse Lê Nam</span><span style="color:#f0c974">• Xin phép</span></div></div></div><div class="ring"></div></div>
+            </main>
+          </div>
+        </div>
+        <div class="float-card f1"><b>✓ Điểm danh hoàn tất</b><small>31/34 học viên có mặt</small></div>
+        <div class="float-card f2"><b>✦ Bí tích</b><small>212 hồ sơ đã xác minh</small></div>
+        <div class="float-card f3"><b>🏆 Quiz hôm nay</b><small>Thêm Sức 2A · 92% hoàn thành</small></div>
+      </div>
+      <div class="hero-bottom"><p class="hero-copy">Một nền tảng thống nhất để giáo xứ, ban giáo lý và giáo lý viên quản lý học viên, bí tích, lớp học và tiến trình đào tạo.</p><div></div><a class="pill gold hero-cta" href="#features">Khám phá hệ thống →</a></div>
+    </div>
+  </div>
+</section>
+
+<section class="marquee-sec">
+  <div class="marquee-label reveal"><div class="eyebrow">Mọi thứ trong một hệ thống</div></div>
+  <div class="track" id="track1"></div>
+  <div class="track" id="track2"></div>
+</section>
+
+<section class="about">
+  <div class="orb o1">✞</div><div class="orb o2">◌</div><div class="orb o3">✦</div>
+  <div class="about-inner container">
+    <div class="eyebrow reveal">Giáo lý nhưng dễ quản lý hơn</div>
+    <h2 class="section-title reveal" style="margin-top:18px">MỘT NƠI.<br>MỌI DỮ LIỆU.</h2>
+    <p class="reveal">Từ một lớp giáo lý nhỏ đến toàn bộ giáo xứ, dữ liệu học viên được lưu trữ nhất quán. Giáo lý viên tập trung vào việc dạy; ban giáo lý nhìn thấy toàn cảnh; giáo xứ luôn có dữ liệu chính xác.</p>
+  </div>
+</section>
+
+<section class="features" id="features">
+ <div class="container">
+  <div class="eyebrow reveal">Nền tảng quản lý giáo lý</div>
+  <h2 class="section-title reveal" style="margin-top:20px">MỘT HỆ THỐNG.<br>MỌI CÔNG VIỆC.</h2>
+  <div class="feature-list">
+   <article class="feature reveal"><div class="num">01</div><div><h3>Hồ sơ học viên</h3><p>Lưu trữ hồ sơ giáo lý sinh xuyên suốt các năm học, gồm thông tin cá nhân, gia đình, giáo họ, liên hệ và lịch sử lớp.</p><div class="tags"><span>Hồ sơ</span><span>Gia đình</span><span>Giáo họ</span><span>Năm học</span></div></div></article>
+   <article class="feature reveal"><div class="num">02</div><div><h3>Bí tích</h3><p>Theo dõi Rửa Tội, Rước Lễ Lần Đầu và Thêm Sức với ngày lãnh nhận, nơi cử hành, người đỡ đầu và tình trạng hồ sơ.</p><div class="tags"><span>Rửa Tội</span><span>Rước Lễ</span><span>Thêm Sức</span></div></div></article>
+   <article class="feature reveal"><div class="num">03</div><div><h3>Lớp & điểm danh</h3><p>Phân công giáo lý viên theo năm học, lập danh sách lớp, điểm danh nhanh, ghi nhận xin phép, đi muộn và ghi chú.</p><div class="tags"><span>Có mặt</span><span>Vắng</span><span>Xin phép</span><span>Ghi chú</span></div></div></article>
+   <article class="feature reveal"><div class="num">04</div><div><h3>Học tập & đánh giá</h3><p>Quản lý điểm kiểm tra, chuyên cần, nhận xét và tiến trình của từng giáo lý sinh theo lớp, học kỳ và năm học.</p><div class="tags"><span>Điểm số</span><span>Nhận xét</span><span>Tiến trình</span></div></div></article>
+   <article class="feature reveal"><div class="num">05</div><div><h3>Quản trị giáo xứ</h3><p>Dashboard tổng hợp số lớp, học viên, giáo lý viên, chuyên cần, bí tích và các chỉ số cần thiết cho Ban Giáo lý.</p><div class="tags"><span>Dashboard</span><span>Phân quyền</span><span>Báo cáo</span></div></div></article>
+  </div>
+ </div>
+</section>
+
+<section class="roles">
+ <div class="container"><div class="eyebrow reveal">Đúng người · đúng dữ liệu</div><h2 class="section-title reveal" style="margin-top:18px">TỪ GIÁO XỨ<br>ĐẾN GIÁO LÝ VIÊN.</h2>
+ <div class="roles-grid">
+  <article class="role reveal"><div class="eyebrow">Ban giáo lý</div><h3>Nhìn toàn bộ hệ thống.</h3><p>Quản lý năm học, lớp, giáo lý viên, dữ liệu học viên và báo cáo từ một dashboard duy nhất.</p><div class="role-screen"><b>Tổng quan giáo xứ</b><div class="fake-row"></div><div class="fake-row"></div><div class="fake-row"></div></div></article>
+  <article class="role reveal"><div class="eyebrow" style="color:#4d3a18">Giáo lý viên</div><h3>Chỉ cần tập trung vào lớp.</h3><p>Điểm danh, nhập điểm, nhận xét, tạo quiz và theo dõi học viên mình phụ trách.</p><div class="role-screen"><b>Thêm Sức 2A</b><div class="fake-row"></div><div class="fake-row"></div><div class="fake-row"></div></div></article>
+  <article class="role reveal"><div class="eyebrow" style="color:#31546a">Học viên / phụ huynh</div><h3>Theo dõi hành trình học.</h3><p>Xem lịch học, kết quả, hoạt động và tham gia quiz trực tuyến ngay trên một giao diện đơn giản.</p><div class="role-screen"><b>Tiến trình của An</b><div class="fake-row"></div><div class="fake-row"></div><div class="fake-row"></div></div></article>
+ </div></div>
+</section>
+
+<section class="games" id="games"><div class="container games-layout"><div><div class="eyebrow reveal">Gamification</div><h2 class="section-title reveal" style="font-size:clamp(58px,8vw,120px);margin-top:16px">HỌC.<br>CHƠI.<br>GHI NHỚ.</h2><p class="reveal">Tạo quiz, câu hỏi nhanh, bảng xếp hạng và các trò chơi tương tác để giờ giáo lý sinh động hơn mà vẫn theo dõi được kết quả.</p><a class="pill gold reveal" href="#workflow">Xem cách hoạt động →</a></div>
+<div class="leader reveal"><div class="leader-top"><div><div class="eyebrow">Thử thách tuần này</div><h3 style="margin-top:6px">Các Bí tích</h3></div><div>🏆</div></div><div class="podium"><div><b>02</b><p>Phêrô Minh</p><small>1.180</small></div><div><b>01</b><p>Maria An</p><small>1.240</small></div><div><b>03</b><p>Giuse Nam</p><small>1.090</small></div></div><div class="rank"><span>04 · Anna Linh</span><b>1.030</b></div><div class="rank"><span>05 · Tôma Huy</span><b>990</b></div><div class="rank"><span>06 · Lucia Vy</span><b>960</b></div></div></div></section>
+
+<section class="sacrament"><div class="container"><div class="eyebrow reveal">Hồ sơ bí tích</div><h2 class="section-title reveal" style="margin-top:18px">MỘT HÀNH TRÌNH<br>ĐƯỢC LƯU GIỮ.</h2><div class="timeline"><div class="milestone reveal"><div class="dot">✦</div><h3>RỬA TỘI</h3><p>Nhà thờ Giáo xứ · 2017</p></div><div class="milestone reveal"><div class="dot">✞</div><h3>RƯỚC LỄ LẦN ĐẦU</h3><p>Chúa nhật · 2025</p></div><div class="milestone reveal"><div class="dot">◈</div><h3>THÊM SỨC</h3><p>Dự kiến · 2028</p></div></div></div></section>
+
+<section class="workflow" id="workflow"><div class="container"><div class="eyebrow reveal">Một ngày với phần mềm</div><h2 class="section-title reveal" style="margin-top:18px">TỪ TRƯỚC<br>ĐẾN SAU GIỜ HỌC.</h2><div class="stack">
+ <article class="sticky-card"><div class="card-head"><div><div class="eyebrow">Trước giờ học</div><h3>Chuẩn bị lớp trong vài giây.</h3></div><div class="big">01</div></div><div class="demo-grid"><div class="demo-col"><div class="demo-shot"><b>Danh sách lớp</b><div class="ui-lines"><i></i><i></i><i></i></div></div><div class="demo-shot light"><b>Thông báo mới</b><div class="ui-lines"><i></i><i></i><i></i></div></div></div><div class="demo-shot light"><b>Thêm Sức 2A · 34 học viên</b><div class="ui-lines" style="margin-top:30px"><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div></article>
+ <article class="sticky-card"><div class="card-head"><div><div class="eyebrow">Trong giờ học</div><h3>Điểm danh. Dạy. Chơi Quiz.</h3></div><div class="big">02</div></div><div class="demo-grid"><div class="demo-col"><div class="demo-shot light"><b>Điểm danh</b><div class="ui-lines"><i></i><i></i><i></i></div></div><div class="demo-shot"><b>Live Quiz</b><div class="ui-lines"><i></i><i></i><i></i></div></div></div><div class="demo-shot"><b>Ai trả lời nhanh nhất?</b><div style="font-size:90px;margin-top:55px;text-align:center">🏆</div></div></div></article>
+ <article class="sticky-card"><div class="card-head"><div><div class="eyebrow">Sau giờ học</div><h3>Điểm, nhận xét và báo cáo.</h3></div><div class="big">03</div></div><div class="demo-grid"><div class="demo-col"><div class="demo-shot"><b>Nhập điểm</b><div class="ui-lines"><i></i><i></i><i></i></div></div><div class="demo-shot light"><b>Nhận xét</b><div class="ui-lines"><i></i><i></i><i></i></div></div></div><div class="demo-shot light"><b>Chuyên cần tháng 8</b><div style="font-size:90px;font-weight:900;margin-top:60px">89%</div></div></div></article>
+</div></div></section>
+
+<section class="wiki" id="wiki"><div class="container"><div class="eyebrow reveal">Wiki sản phẩm</div><h2 class="section-title reveal" style="margin-top:18px">KHÔNG BIẾT DÙNG?<br>WIKI CÓ CÂU TRẢ LỜI.</h2><div class="searchbox reveal"><span>⌕ &nbsp; Tìm hướng dẫn sử dụng...</span><span class="kbd">Ctrl K</span></div><div class="wiki-grid">
+ <div class="wiki-card reveal"><h3>Bắt đầu</h3><a href="#">→ Tạo năm học</a><a href="#">→ Tạo lớp giáo lý</a><a href="#">→ Thêm giáo lý viên</a><a href="#">→ Import danh sách học viên</a></div>
+ <div class="wiki-card reveal"><h3>Dành cho Giáo lý viên</h3><a href="#">→ Điểm danh</a><a href="#">→ Nhập điểm</a><a href="#">→ Nhận xét học viên</a><a href="#">→ Tạo Quiz</a></div>
+ <div class="wiki-card reveal"><h3>Dành cho Quản trị</h3><a href="#">→ Phân quyền</a><a href="#">→ Quản lý bí tích</a><a href="#">→ Xuất dữ liệu</a><a href="#">→ Xem báo cáo</a></div>
+ </div></div></section>
+
+<section class="cta" id="cta"><div class="container"><div class="eyebrow reveal">Giáo Lý Số</div><h2 class="reveal" style="margin-top:18px">DÀNH NHIỀU THỜI GIAN HƠN<br>CHO VIỆC DẠY GIÁO LÝ.</h2><p class="reveal">Hãy để phần mềm xử lý danh sách, điểm danh, điểm số, bí tích và báo cáo. Giáo lý viên dành thời gian cho điều quan trọng hơn: đồng hành với các em.</p><div class="actions reveal"><a class="pill gold" id="ctaPrimary" href="https://app.giaoly.com.vn/register">Dùng thử miễn phí</a><a class="pill" href="#workflow">Xem demo →</a></div></div></section>
+<footer><div class="container foot"><span>© 2026 Giáo Lý Số</span><span>Quản lý giáo lý Công giáo · Việt Nam</span></div></footer>
+
+<script>
+const APP='https://app.giaoly.com.vn';
+const items=[
+ ['Hồ sơ giáo lý sinh','Thông tin cá nhân · gia đình · giáo họ'],['Điểm danh lớp học','Có mặt · vắng · xin phép'],['Điểm & nhận xét','Theo dõi tiến trình từng học viên'],['Bí tích','Rửa Tội · Rước Lễ · Thêm Sức'],['Quiz trực tuyến','Câu hỏi nhanh · bảng xếp hạng'],['Báo cáo','Tổng hợp theo lớp và năm học']
+];
+function tileHTML(it,i,light=false){let bars=[35,65,48,78,57,88].map((h,j)=>`<i style="height:${(h+(i*7+j*3))%70+25}%"></i>`).join('');return `<div class="tile ${light?'light':''}"><h4>${it[0]}</h4><p>${it[1]}</p><div class="tile-ui"><div class="bars">${bars}</div></div></div>`}
+const t1=document.querySelector('#track1'),t2=document.querySelector('#track2');
+t1.innerHTML=[...items,...items,...items].map((x,i)=>tileHTML(x,i,i%3===0)).join('');
+t2.innerHTML=[...items.slice().reverse(),...items.slice().reverse(),...items.slice().reverse()].map((x,i)=>tileHTML(x,i,i%3===1)).join('');
+function motion(){let y=window.scrollY; t1.style.transform=`translate3d(${(-340+y*.16)%2100}px,0,0)`; t2.style.transform=`translate3d(${(-1160-y*.14)%2100}px,0,0)`}
+window.addEventListener('scroll',motion,{passive:true});motion();
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')}),{threshold:.08,rootMargin:'0px 0px -40px 0px'});document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+const magnet=document.querySelector('#magnet');let rx=0,ry=0,cx=0,cy=0;function animate(){cx+=(rx-cx)*.08;cy+=(ry-cy)*.08;magnet.style.marginLeft=cx+'px';magnet.style.marginBottom=cy+'px';requestAnimationFrame(animate)}animate();
+window.addEventListener('mousemove',e=>{rx=(e.clientX-innerWidth/2)/55;ry=(innerHeight/2-e.clientY)/80});
+
+/* Smart UX: nếu đã đăng nhập ở app (cookie gl_signed_in) -> đổi nút sang "Vào ứng dụng" */
+(function(){
+  var signedIn=/(?:^|;\s*)gl_signed_in=1(?:;|$)/.test(document.cookie);
+  if(!signedIn) return;
+  var login=document.getElementById('btnLogin');
+  var reg=document.getElementById('btnRegister');
+  var cta=document.getElementById('ctaPrimary');
+  if(login){login.textContent='Vào ứng dụng ↗';login.href=APP+'/';}
+  if(reg){reg.style.display='none';}
+  if(cta){cta.textContent='Vào ứng dụng ↗';cta.href=APP+'/';}
+})();
+</script>
+</body>
+</html>
