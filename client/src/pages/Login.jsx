@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
 
-export default function Login() {
-  const { login, register } = useAuth();
+export default function Login({ initialMode = 'login' }) {
+  const { login, register, user } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const [mode, setMode] = useState(initialMode); // 'login' | 'register'
+  // đã đăng nhập mà vào /login hoặc /register -> đưa thẳng vào ứng dụng
+  useEffect(() => { if (user) navigate('/', { replace: true }); }, [user]);
   const [form, setForm] = useState({ email: '', password: '', full_name: '', parish_name: '', diocese: '' });
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');

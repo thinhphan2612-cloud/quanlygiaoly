@@ -28,9 +28,24 @@ async function loadProfile(authUser, tries = 5) {
   return { id: authUser.id, email: authUser.email, full_name: '', role: 'teacher', parish_id: null };
 }
 
+// Cookie cờ "đã đăng nhập" dùng chung cho landing page (giaoly.com.vn) & app (app.giaoly.com.vn).
+// KHÔNG chứa token — chỉ là dấu hiệu để landing đổi nút "Đăng nhập" thành "Vào ứng dụng".
+function setSignedInCookie(on) {
+  try {
+    if (!window.location.hostname.endsWith('giaoly.com.vn')) return; // chỉ áp dụng trên domain thật
+    if (on) {
+      const exp = new Date(Date.now() + 30 * 24 * 3600 * 1000).toUTCString();
+      document.cookie = `gl_signed_in=1; Domain=.giaoly.com.vn; Path=/; Expires=${exp}; SameSite=Lax; Secure`;
+    } else {
+      document.cookie = 'gl_signed_in=; Domain=.giaoly.com.vn; Path=/; Max-Age=0; SameSite=Lax; Secure';
+    }
+  } catch { /* noop */ }
+}
+
 function persist(user) {
   if (user) localStorage.setItem('user', JSON.stringify(user));
   else localStorage.removeItem('user');
+  setSignedInCookie(!!user);
 }
 
 export function AuthProvider({ children }) {

@@ -27,6 +27,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Login initialMode="register" />} />
       <Route path="/" element={<Protected><Dashboard /></Protected>} />
       <Route path="/students" element={<Protected><Students /></Protected>} />
       <Route path="/students/:id" element={<Protected><StudentProfile /></Protected>} />
