@@ -263,8 +263,8 @@ const APP='https://app.giaoly.com.vn';
 
 /* Fit hero heading to ~94% width (một dòng, không tràn) */
 const heroH=document.querySelector('.hero-h');
-function fitHero(){if(!heroH)return;heroH.style.fontSize='100px';const cw=heroH.clientWidth,tw=heroH.scrollWidth;if(!tw)return;const size=Math.min(100*cw*0.94/tw,300);heroH.style.fontSize=size+'px';}
-fitHero();addEventListener('resize',fitHero);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitHero);addEventListener('load',fitHero);
+function fitHero(){if(!heroH)return;const prev=heroH.style.fontSize;heroH.style.fontSize='100px';const cw=heroH.clientWidth,tw=heroH.scrollWidth;if(cw<80||tw<80){heroH.style.fontSize=prev;return;}heroH.style.fontSize=Math.min(100*cw*0.94/tw,300)+'px';}
+fitHero();addEventListener('resize',fitHero);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitHero);addEventListener('load',fitHero);setTimeout(fitHero,300);
 
 /* FadeIn (whileInView, once) with per-element y offset */
 document.querySelectorAll('.fade').forEach(el=>{const y=el.dataset.y||30;el.style.transform='translateY('+y+'px)';});
