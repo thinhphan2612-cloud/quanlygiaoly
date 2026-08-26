@@ -246,6 +246,14 @@ async function handle(method, rawUrl, body = {}) {
       });
     }
 
+    // ---------------- lịch sử cả lớp (điểm TB từng em qua các năm) ----------------
+    if (path === '/class-history' && method === 'get') {
+      if (!q.class_id) return fail(400, 'Cần class_id');
+      const { data, error } = await supabase.rpc('class_history', { p_class: q.class_id });
+      if (error) return fail(400, error.message);
+      return ok(data || []);
+    }
+
     // ---------------- lịch sử điểm qua các năm (theo origin_id) ----------------
     if (path === '/student-history' && method === 'get') {
       if (!q.id) return fail(400, 'Cần id');

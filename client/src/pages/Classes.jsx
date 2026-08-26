@@ -5,6 +5,7 @@ import { useAuth } from '../auth.jsx';
 import { SACRAMENTS, CERT_SUGGESTIONS } from '../components/SacramentBadge.jsx';
 import StudentForm from '../components/StudentForm.jsx';
 import Avatar from '../components/Avatar.jsx';
+import { byViName } from '../lib/viName';
 
 const empty = {
   mode: 'new', name: '', year: '', room: '', schedule: '', promotes: true, teachers: [],
@@ -26,6 +27,7 @@ export default function Classes() {
   const [detail, setDetail] = useState(null); // { cls, students, picked }
   const [stEdit, setStEdit] = useState(null); // sửa 1 học viên
   const [mv, setMv] = useState(null); // chuyển lớp: { ids, dest }
+  const [hist, setHist] = useState(null); // lịch sử lớp: { cls, rows }
   const [error, setError] = useState('');
 
   function load() { api.get('/classes').then((r) => setClasses(r.data)); }
@@ -185,6 +187,18 @@ export default function Classes() {
     setDetail((d) => (d ? { ...d, picked: [] } : d)); reloadDetail();
     if (!r.data.returned) alert('Các em này không có lớp cũ để trả về.');
   }
+  async function openHist(c) {
+    setHist({ cls: c, rows: null });
+    const r = await api.get(`/class-history?class_id=${c.id}`);
+    setHist((h) => (h && h.cls.id === c.id ? { ...h, rows: r.data } : h));
+  }
+  const histYears = hist?.rows ? [...new Set(hist.rows.map((r) => r.year).filter(Boolean))].sort().reverse() : [];
+  const histStudents = (() => {
+    if (!hist?.rows) return [];
+    const m = {};
+    hist.rows.forEach((r) => { const o = m[r.now_id] || (m[r.now_id] = { id: r.now_id, saint_name: r.saint_name, full_name: r.full_name, y: {} }); if (r.year) o.y[r.year] = r.avg; });
+    return Object.values(m).sort((a, b) => byViName(a, b));
+  })();
 
   const showActions = isAdmin || isTeacher;
   const colCount = 6 + (showActions ? 1 : 0);
@@ -239,7 +253,10 @@ export default function Classes() {
         <div className="panel">
           <div className="card-head">
             <h2>Danh sách lớp {detail.cls.name} {detail.cls.merged && <span className="tag-chip merged">● lớp gộp</span>}</h2>
-            <span className="link" onClick={() => setDetail(null)}>Đóng ✕</span>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <button className="btn ghost sm" onClick={() => openHist(detail.cls)}>📈 Lịch sử lớp</button>
+              <span className="link" onClick={() => setDetail(null)}>Đóng ✕</span>
+            </div>
           </div>
           {detail.cls.merged && <p className="muted" style={{ marginTop: -6, fontSize: 13 }}>Lớp gộp: chỉ dùng cho lớp giáo lý hè / ngoại khóa. Sau khi kết thúc, có thể trả từng em về lớp cũ.</p>}
           {detail.students === null ? <div className="muted">Đang tải...</div> : (
@@ -310,6 +327,34 @@ export default function Classes() {
               <button className="btn ghost" onClick={() => setStEdit(null)}>Hủy</button>
               <button className="btn" onClick={saveStudent}>Lưu</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal lịch sử lớp */}
+      {hist && (
+        <div className="modal-backdrop" onClick={() => setHist(null)}>
+          <div className="modal wide" onClick={(e) => e.stopPropagation()}>
+            <h2>Lịch sử lớp {hist.cls.name}</h2>
+            <p className="muted" style={{ marginTop: -6, fontSize: 13 }}>Điểm TB của từng em qua các năm (theo hồ sơ đã lên lớp).</p>
+            {hist.rows === null ? <div className="muted">Đang tải...</div> : histStudents.length === 0 ? (
+              <div className="muted">Chưa có dữ liệu lịch sử cho lớp này.</div>
+            ) : (
+              <div style={{ maxHeight: '60vh', overflow: 'auto' }}>
+                <table>
+                  <thead><tr><th>Học viên</th>{histYears.map((y) => <th key={y} style={{ textAlign: 'center' }}>{y}</th>)}</tr></thead>
+                  <tbody>
+                    {histStudents.map((s) => (
+                      <tr key={s.id}>
+                        <td>{s.saint_name ? s.saint_name + ' ' : ''}{s.full_name}</td>
+                        {histYears.map((y) => <td key={y} style={{ textAlign: 'center', fontWeight: s.y[y] != null ? 700 : 400 }}>{s.y[y] != null ? s.y[y] : '—'}</td>)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="modal-actions"><button className="btn ghost" onClick={() => setHist(null)}>Đóng</button></div>
           </div>
         </div>
       )}
