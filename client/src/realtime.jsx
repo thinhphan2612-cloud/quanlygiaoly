@@ -17,14 +17,26 @@ export function RealtimeProvider({ children }) {
 
   useEffect(() => {
     if (!user) { setRevs({}); return; }
-    const ch = supabase.channel('rt-main');
-    TABLES.forEach((t) => {
-      ch.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => {
-        setRevs((r) => ({ ...r, [t]: (r[t] || 0) + 1 }));
+    let ch;
+    let active = true;
+    (async () => {
+      // Gắn token cho socket realtime, nếu không RLS coi như anonymous và bỏ hết sự kiện
+      const { data } = await supabase.auth.getSession();
+      if (data?.session) supabase.realtime.setAuth(data.session.access_token);
+      if (!active) return;
+      ch = supabase.channel('rt-main');
+      TABLES.forEach((t) => {
+        ch.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => {
+          setRevs((r) => ({ ...r, [t]: (r[t] || 0) + 1 }));
+        });
       });
+      ch.subscribe();
+    })();
+    // cập nhật token khi Supabase làm mới phiên
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (session) supabase.realtime.setAuth(session.access_token);
     });
-    ch.subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { active = false; if (ch) supabase.removeChannel(ch); sub.subscription.unsubscribe(); };
   }, [user?.id]);
 
   return <RealtimeCtx.Provider value={revs}>{children}</RealtimeCtx.Provider>;
