@@ -43,7 +43,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:24px 0
 .navlinks a{opacity:.75;transition:.2s}.navlinks a:hover{opacity:1}
 .nav-cta{display:flex;gap:10px;align-items:center}
 .hero-main{flex:1;position:relative;display:flex;flex-direction:column;overflow:hidden}
-.hero-h{font-weight:900;text-transform:uppercase;letter-spacing:-.04em;line-height:.72;white-space:nowrap;width:100%;text-align:center;font-size:16vw;margin-top:.4vh}
+.hero-h{font-weight:900;text-transform:uppercase;letter-spacing:-.04em;line-height:.78;white-space:nowrap;width:100%;text-align:center;font-size:12vw;margin-top:1vh}
 .hero-portrait{position:absolute;left:50%;transform:translateX(-50%);z-index:10;bottom:0;width:clamp(280px,42vw,540px)}
 .hero-portrait .mag{will-change:transform}
 .hero-video{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:26px;background:#141414;box-shadow:0 40px 120px rgba(0,0,0,.6)}
@@ -51,7 +51,6 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:24px 0
 .hero-copy{max-width:260px;text-transform:uppercase;letter-spacing:.04em;font-weight:300;line-height:1.32;color:var(--ink);font-size:clamp(.75rem,1.4vw,1.4rem)}
 @media(max-width:640px){
   .navlinks{display:none}
-  .hero-h{font-size:15vw;margin-top:2vh}
   .hero-portrait{top:50%;bottom:auto;transform:translate(-50%,-46%);width:min(74vw,340px)}
   .hero-bottom{padding-bottom:26px}.hero-copy{max-width:180px}
 }
@@ -259,6 +258,11 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-s
 
 <script>
 const APP='https://app.giaoly.com.vn';
+
+/* Fit hero heading to ~94% width (một dòng, không tràn) */
+const heroH=document.querySelector('.hero-h');
+function fitHero(){if(!heroH)return;heroH.style.fontSize='100px';const cw=heroH.clientWidth,tw=heroH.scrollWidth;if(!tw)return;const size=Math.min(100*cw*0.94/tw,300);heroH.style.fontSize=size+'px';}
+fitHero();addEventListener('resize',fitHero);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitHero);addEventListener('load',fitHero);
 
 /* FadeIn (whileInView, once) with per-element y offset */
 document.querySelectorAll('.fade').forEach(el=>{const y=el.dataset.y||30;el.style.transform='translateY('+y+'px)';});
