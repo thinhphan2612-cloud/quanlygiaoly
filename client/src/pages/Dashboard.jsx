@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
-import { useAuth } from '../auth.jsx';
 import Donut from '../components/Donut.jsx';
 import { LeaderboardTable } from '../components/Leaderboard.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -46,8 +45,6 @@ function WeeklyChart({ data }) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
   const [data, setData] = useState(null);
   const [year, setYear] = useState('');
   const [lbClasses, setLbClasses] = useState([]);
@@ -82,7 +79,7 @@ export default function Dashboard() {
             {isCurrent ? 'Điều hành lớp giáo lý cùng hệ thống quản lý.' : `Đang xem lại dữ liệu năm học ${year} (đã lưu trữ).`}
           </p>
         </div>
-        {isAdmin && data.years?.length > 1 && (
+        {data.years?.length > 1 && (
           <select value={year} onChange={(e) => loadDash(e.target.value)} style={{ width: 190 }}>
             {data.years.map((y) => <option key={y} value={y}>Năm học {y}{y === data.currentYear ? ' (hiện tại)' : ''}</option>)}
           </select>

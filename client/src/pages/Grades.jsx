@@ -130,7 +130,7 @@ export default function Grades() {
     <div>
       <h1>Điểm số</h1>
       <div className="toolbar">
-        {isAdmin && yearList.length > 1 && (
+        {yearList.length > 1 && (
           <select value={year} onChange={(e) => setYear(e.target.value)} style={{ width: 150 }}>
             {yearList.map((y) => <option key={y} value={y}>Năm {y}{y === currentYear ? ' (nay)' : ''}</option>)}
           </select>

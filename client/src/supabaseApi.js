@@ -890,8 +890,8 @@ async function handle(method, rawUrl, body = {}) {
 
     // ---------------- dashboard ----------------
     if (path === '/dashboard' && method === 'get') {
-      // admin có thể xem lại năm cũ qua ?year=; GLV luôn xem năm hiện tại
-      const wantYear = meRole() !== 'teacher' ? (q.year || null) : null;
+      // xem lại năm cũ qua ?year= (RLS lọc: GLV chỉ thấy lớp mình từng phụ trách)
+      const wantYear = q.year || null;
       let students, classes;
       if (wantYear) {
         const { data: yc } = await supabase.from('classes').select('id, name').eq('parish_id', pid).eq('school_year', wantYear).order('order_index');
