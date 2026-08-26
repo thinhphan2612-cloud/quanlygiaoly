@@ -428,7 +428,7 @@ async function handle(method, rawUrl, body = {}) {
     if (path === '/attendance' && method === 'get') {
       if (!q.class_id || !q.date) return fail(400, 'Cần class_id và date');
       const { data: students, error } = await supabase.from('students')
-        .select('id, full_name, saint_name').eq('class_id', q.class_id).eq('graduated', false).order('full_name');
+        .select('id, full_name, saint_name').eq('class_id', q.class_id).order('full_name');
       if (error) return fail(400, error.message);
       const ids = (students || []).map((s) => s.id);
       let recs = [];
@@ -455,7 +455,7 @@ async function handle(method, rawUrl, body = {}) {
     if (path === '/attendance-range' && method === 'get') {
       if (!q.class_id || !q.from || !q.to) return fail(400, 'Cần class_id, from, to');
       const { data: students } = await supabase.from('students')
-        .select('id, full_name, saint_name').eq('class_id', q.class_id).eq('graduated', false).order('full_name');
+        .select('id, full_name, saint_name').eq('class_id', q.class_id).order('full_name');
       const ids = (students || []).map((s) => s.id);
       let recs = [];
       if (ids.length) {
@@ -502,7 +502,7 @@ async function handle(method, rawUrl, body = {}) {
     if (path === '/spiritual' && method === 'get') {
       if (!q.class_id || !q.date) return fail(400, 'Cần class_id và date');
       const { data: students } = await supabase.from('students')
-        .select('id, full_name, saint_name').eq('class_id', q.class_id).eq('graduated', false).order('full_name');
+        .select('id, full_name, saint_name').eq('class_id', q.class_id).order('full_name');
       const ids = (students || []).map((s) => s.id);
       let recs = [];
       if (ids.length) {
@@ -530,7 +530,7 @@ async function handle(method, rawUrl, body = {}) {
     if (path === '/spiritual-range' && method === 'get') {
       if (!q.class_id || !q.from || !q.to) return fail(400, 'Cần class_id, from, to');
       const { data: students } = await supabase.from('students')
-        .select('id, full_name, saint_name').eq('class_id', q.class_id).eq('graduated', false).order('full_name');
+        .select('id, full_name, saint_name').eq('class_id', q.class_id).order('full_name');
       const ids = (students || []).map((s) => s.id);
       let recs = [];
       if (ids.length) {
@@ -619,7 +619,7 @@ async function handle(method, rawUrl, body = {}) {
     if (path === '/grades-class' && method === 'get') {
       if (!q.class_id) return fail(400, 'Cần class_id');
       const [{ data: students }, { data: columns }, { data: grades }] = await Promise.all([
-        supabase.from('students').select('id, full_name, saint_name, avatar_url').eq('class_id', q.class_id).eq('graduated', false).order('full_name'),
+        supabase.from('students').select('id, full_name, saint_name, avatar_url').eq('class_id', q.class_id).order('full_name'),
         supabase.from('grade_columns').select('*').eq('class_id', q.class_id).order('order_index').order('created_at'),
         supabase.from('grades').select('student_id, column_id, score')
           .in('column_id', (await supabase.from('grade_columns').select('id').eq('class_id', q.class_id)).data?.map((c) => c.id) || ['00000000-0000-0000-0000-000000000000']),

@@ -53,26 +53,28 @@ export default function Dashboard() {
   const [lbPeriod, setLbPeriod] = useState('all');
 
   function loadDash(y) {
-    api.get('/dashboard' + (y ? `?year=${encodeURIComponent(y)}` : '')).then((r) => { setData(r.data); setYear(r.data.year || ''); });
+    api.get('/dashboard' + (y ? `?year=${encodeURIComponent(y)}` : '')).then((r) => {
+      setData(r.data);
+      const yr = r.data.year || '';
+      setYear(yr);
+      // danh sách lớp cho bảng thi đua theo năm được xem
+      const url = (!yr || yr === r.data.currentYear) ? '/classes' : `/archive-classes?year=${encodeURIComponent(yr)}`;
+      api.get(url).then((cr) => {
+        setLbClasses(cr.data);
+        setLbClass((prev) => (cr.data.some((c) => c.id === prev) ? prev : (cr.data[0]?.id || '')));
+      }).catch(() => { setLbClasses([]); setLbClass(''); });
+    });
   }
-  useEffect(() => {
-    loadDash();
-    api.get('/classes').then((r) => { setLbClasses(r.data); if (r.data[0]) setLbClass(r.data[0].id); });
-  }, []);
+  useEffect(() => { loadDash(); }, []);
   const rev = useRealtime(['grades', 'attendance', 'students', 'classes', 'class_teachers']);
-  useEffect(() => {
-    if (!rev) return;
-    loadDash(year);
-    api.get('/classes').then((r) => setLbClasses(r.data));
-  }, [rev]);
-
-  const _today = new Date().toISOString().slice(0, 10);
-  const lbRange = lbPeriod === 'month' ? { from: _today.slice(0, 8) + '01', to: _today } : { from: '2000-01-01', to: _today };
+  useEffect(() => { if (rev) loadDash(year); }, [rev]);
 
   if (!data) return <div className="muted">Đang tải...</div>;
 
   const { counts, studentsPerClass, topStudents, classAverages, attendanceByWeek = [] } = data;
   const isCurrent = !data.currentYear || year === data.currentYear;
+  const _today = new Date().toISOString().slice(0, 10);
+  const lbRange = (isCurrent && lbPeriod === 'month') ? { from: _today.slice(0, 8) + '01', to: _today } : { from: '2000-01-01', to: _today };
   const donutSegments = studentsPerClass
     .filter((c) => c.count > 0)
     .map((c, i) => ({ label: c.name, value: c.count, color: PALETTE[i % PALETTE.length] }));
@@ -115,26 +117,26 @@ export default function Dashboard() {
         <WeeklyChart data={attendanceByWeek} />
       </div>
 
-      {/* Bảng xếp hạng thi đua (chỉ năm hiện tại) */}
-      {isCurrent && (
-        <div className="panel" style={{ marginBottom: 18 }}>
-          <div className="card-head">
-            <h2>🏆 Bảng xếp hạng thi đua</h2>
+      {/* Bảng xếp hạng thi đua */}
+      <div className="panel" style={{ marginBottom: 18 }}>
+        <div className="card-head">
+          <h2>🏆 Bảng xếp hạng thi đua{!isCurrent && <span className="muted" style={{ fontSize: 14, fontWeight: 400 }}> · năm {year}</span>}</h2>
+          {isCurrent && (
             <select value={lbPeriod} onChange={(e) => setLbPeriod(e.target.value)} style={{ width: 150 }}>
               <option value="all">Toàn bộ</option>
               <option value="month">Tháng này</option>
             </select>
-          </div>
-          {lbClasses.length > 1 && (
-            <div className="lb-tabs">
-              {lbClasses.map((c) => (
-                <button key={c.id} className={lbClass === c.id ? 'on' : ''} onClick={() => setLbClass(c.id)}>{c.name}</button>
-              ))}
-            </div>
           )}
-          {lbClass ? <LeaderboardTable classId={lbClass} range={lbRange} /> : <p className="muted">Chưa có lớp nào.</p>}
         </div>
-      )}
+        {lbClasses.length > 1 && (
+          <div className="lb-tabs">
+            {lbClasses.map((c) => (
+              <button key={c.id} className={lbClass === c.id ? 'on' : ''} onClick={() => setLbClass(c.id)}>{c.name}</button>
+            ))}
+          </div>
+        )}
+        {lbClass ? <LeaderboardTable classId={lbClass} range={lbRange} /> : <p className="muted">Chưa có lớp nào.</p>}
+      </div>
 
       <div className="dash-grid">
         {/* Cột trái */}
