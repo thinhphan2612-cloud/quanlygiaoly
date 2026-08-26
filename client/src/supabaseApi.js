@@ -885,6 +885,10 @@ async function handle(method, rawUrl, body = {}) {
         const { data: cts } = await supabase.from('class_teachers').select('teacher_id').in('class_id', myIds.length ? myIds : ['00000000-0000-0000-0000-000000000000']);
         teacherCount = new Set((cts || []).map((c) => c.teacher_id)).size;
       }
+      // Chỉ tính điểm/điểm danh của học viên đang hoạt động (bỏ dữ liệu năm đã lưu trữ)
+      const activeIds = new Set((students || []).map((s) => s.id));
+      grades = (grades || []).filter((g) => activeIds.has(g.student_id));
+      attend = (attend || []).filter((a) => activeIds.has(a.student_id));
       // Điểm danh theo tuần (CN đầu tuần) — tỷ lệ có mặt
       const weekMap = {};
       (attend || []).forEach((a) => {
