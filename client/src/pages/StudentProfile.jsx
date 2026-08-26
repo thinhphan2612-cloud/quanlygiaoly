@@ -8,6 +8,7 @@ import StudentForm from '../components/StudentForm.jsx';
 import { IconEditImage } from '../components/Icons.jsx';
 import { fileToDataUrl } from '../lib/img';
 import { ATT_LABEL } from '../lib/exportUtils';
+import { exportCertificate } from '../lib/certificate';
 
 const initials = (name = '') => { const p = name.trim().split(/\s+/); return ((p[p.length - 2]?.[0] || '') + (p[p.length - 1]?.[0] || '')).toUpperCase() || '?'; };
 const ATT_TONE = { present: 'ic-present', absent: 'ic-absent', late: 'ic-late', excused: 'ic-excused' };
@@ -20,6 +21,7 @@ export default function StudentProfile() {
   const canEdit = user?.role === 'admin' || user?.role === 'teacher';
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
+  const [parish, setParish] = useState(null);
   const [err, setErr] = useState('');
   const [edit, setEdit] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -37,6 +39,7 @@ export default function StudentProfile() {
     api.get(`/student-history?id=${id}`).then((r) => setHistory(r.data)).catch(() => setHistory([]));
   }
   useEffect(() => { load(); }, [id]);
+  useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
   const rev = useRealtime(['grades', 'attendance', 'spiritual_records', 'students']);
   useEffect(() => { if (rev) load(); }, [rev]);
 
@@ -44,6 +47,8 @@ export default function StudentProfile() {
   if (!data) return <div className="muted">Đang tải...</div>;
 
   const s = data.student;
+  const SAC_RANK = { none: 0, baptism: 1, ruoc_le: 2, them_suc: 3 };
+  const sacRank = SAC_RANK[s.sacrament] || 0;
   const dash = (v) => v || '—';
   const fatherFull = [s.father_saint, s.father_name].filter(Boolean).join(' ') || s.parent_name || '—';
   const motherFull = [s.mother_saint, s.mother_name].filter(Boolean).join(' ') || '—';
@@ -153,6 +158,23 @@ export default function StudentProfile() {
         </div>
 
         <div className="dash-col">
+          {/* Xuất chứng chỉ bí tích */}
+          {canEdit && (
+            <div className="panel">
+              <div className="card-head"><h2>Xuất chứng chỉ</h2></div>
+              {sacRank === 0 ? (
+                <p className="muted" style={{ margin: 0 }}>Em chưa nhận bí tích nào.</p>
+              ) : (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {sacRank >= 1 && <button className="btn ghost" onClick={() => exportCertificate({ parish, student: s, kind: 'baptism' })}>💧 Rửa tội</button>}
+                  {sacRank >= 2 && <button className="btn ghost" onClick={() => exportCertificate({ parish, student: s, kind: 'ruoc_le' })}>🕯️ Rước lễ</button>}
+                  {sacRank >= 3 && <button className="btn ghost" onClick={() => exportCertificate({ parish, student: s, kind: 'them_suc' })}>🕊️ Thêm Sức</button>}
+                </div>
+              )}
+              <p className="muted" style={{ fontSize: 12, marginTop: 10, marginBottom: 0 }}>Mở hộp thoại in → chọn "Lưu thành PDF". Mẫu tạm, sẽ thay bằng mẫu chuẩn của giáo xứ sau.</p>
+            </div>
+          )}
+
           {/* Việc thiêng liêng */}
           <div className="panel">
             <div className="card-head"><h2>Việc thiêng liêng</h2></div>
