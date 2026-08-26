@@ -866,9 +866,25 @@ async function handle(method, rawUrl, body = {}) {
 
     // ---------------- dashboard ----------------
     if (path === '/dashboard' && method === 'get') {
-      let [{ data: students }, { data: classes }, { data: profiles }, { data: grades }, { data: attend }] = await Promise.all([
-        supabase.from('students').select('id, full_name, saint_name, class_id, avatar_url').eq('graduated', false),
-        supabase.from('classes').select('id, name').eq('graduated', false),
+      // admin có thể xem lại năm cũ qua ?year=; GLV luôn xem năm hiện tại
+      const wantYear = meRole() !== 'teacher' ? (q.year || null) : null;
+      let students, classes;
+      if (wantYear) {
+        const { data: yc } = await supabase.from('classes').select('id, name').eq('parish_id', pid).eq('school_year', wantYear).order('order_index');
+        classes = yc || [];
+        const cids = classes.map((c) => c.id);
+        const { data: ys } = await supabase.from('students')
+          .select('id, full_name, saint_name, class_id, avatar_url')
+          .in('class_id', cids.length ? cids : ['00000000-0000-0000-0000-000000000000']);
+        students = ys || [];
+      } else {
+        const [{ data: c1 }, { data: s1 }] = await Promise.all([
+          supabase.from('classes').select('id, name').eq('graduated', false),
+          supabase.from('students').select('id, full_name, saint_name, class_id, avatar_url').eq('graduated', false),
+        ]);
+        classes = c1 || []; students = s1 || [];
+      }
+      let [{ data: profiles }, { data: grades }, { data: attend }] = await Promise.all([
         supabase.from('profiles').select('id, role'),
         supabase.from('grades').select('student_id, score'),
         supabase.from('attendance').select('student_id, date, status'),
@@ -928,7 +944,11 @@ async function handle(method, rawUrl, body = {}) {
         let p = 0, t = 0; ids.forEach((id) => { const x = attByStu[id]; if (x) { p += x.present; t += x.counted; } });
         return { id: c.id, name: c.name, count: ids.length, avg: scores.length ? round1(scores.reduce((a, b) => a + b, 0) / scores.length) : null, rate: t ? Math.round((p / t) * 100) : null };
       }).sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1));
-      return ok({ counts, studentsPerClass, topStudents, classAverages, attendanceByWeek });
+      // danh sách năm học (để lọc) + năm hiện tại
+      const { data: allCls } = await supabase.from('classes').select('school_year, graduated').eq('parish_id', pid);
+      const years = [...new Set((allCls || []).map((c) => c.school_year).filter(Boolean))].sort().reverse();
+      const currentYear = (allCls || []).find((c) => !c.graduated)?.school_year || null;
+      return ok({ counts, studentsPerClass, topStudents, classAverages, attendanceByWeek, years, currentYear, year: wantYear || currentYear });
     }
 
     return fail(404, 'Không tìm thấy: ' + method.toUpperCase() + ' ' + path);

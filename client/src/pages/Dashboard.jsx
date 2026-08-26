@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { useAuth } from '../auth.jsx';
 import Donut from '../components/Donut.jsx';
 import { LeaderboardTable } from '../components/Leaderboard.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -45,13 +46,19 @@ function WeeklyChart({ data }) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [data, setData] = useState(null);
+  const [year, setYear] = useState('');
   const [lbClasses, setLbClasses] = useState([]);
   const [lbClass, setLbClass] = useState('');
   const [lbPeriod, setLbPeriod] = useState('all');
 
+  function loadDash(y) {
+    api.get('/dashboard' + (y ? `?year=${encodeURIComponent(y)}` : '')).then((r) => { setData(r.data); setYear(r.data.year || ''); });
+  }
   useEffect(() => {
-    api.get('/dashboard').then((r) => setData(r.data));
+    loadDash();
     api.get('/classes').then((r) => { setLbClasses(r.data); if (r.data[0]) setLbClass(r.data[0].id); });
   }, []);
 
@@ -61,16 +68,26 @@ export default function Dashboard() {
   if (!data) return <div className="muted">Đang tải...</div>;
 
   const { counts, studentsPerClass, topStudents, classAverages, attendanceByWeek = [] } = data;
+  const isCurrent = !data.currentYear || year === data.currentYear;
   const donutSegments = studentsPerClass
     .filter((c) => c.count > 0)
     .map((c, i) => ({ label: c.name, value: c.count, color: PALETTE[i % PALETTE.length] }));
 
   return (
     <div>
-      <h1 style={{ marginBottom: 4 }}>Tổng quan</h1>
-      <p className="muted" style={{ marginTop: 0, marginBottom: 22 }}>
-        Điều hành lớp giáo lý cùng hệ thống quản lý.
-      </p>
+      <div className="dash-head">
+        <div>
+          <h1 style={{ marginBottom: 4 }}>Tổng quan</h1>
+          <p className="muted" style={{ marginTop: 0 }}>
+            {isCurrent ? 'Điều hành lớp giáo lý cùng hệ thống quản lý.' : `Đang xem lại dữ liệu năm học ${year} (đã lưu trữ).`}
+          </p>
+        </div>
+        {isAdmin && data.years?.length > 1 && (
+          <select value={year} onChange={(e) => loadDash(e.target.value)} style={{ width: 190 }}>
+            {data.years.map((y) => <option key={y} value={y}>Năm học {y}{y === data.currentYear ? ' (hiện tại)' : ''}</option>)}
+          </select>
+        )}
+      </div>
 
       {/* Thẻ thống kê */}
       <div className="dash-stats">
@@ -94,24 +111,26 @@ export default function Dashboard() {
         <WeeklyChart data={attendanceByWeek} />
       </div>
 
-      {/* Bảng xếp hạng thi đua */}
-      <div className="panel" style={{ marginBottom: 18 }}>
-        <div className="card-head">
-          <h2>🏆 Bảng xếp hạng thi đua</h2>
-          <select value={lbPeriod} onChange={(e) => setLbPeriod(e.target.value)} style={{ width: 150 }}>
-            <option value="all">Toàn bộ</option>
-            <option value="month">Tháng này</option>
-          </select>
-        </div>
-        {lbClasses.length > 1 && (
-          <div className="lb-tabs">
-            {lbClasses.map((c) => (
-              <button key={c.id} className={lbClass === c.id ? 'on' : ''} onClick={() => setLbClass(c.id)}>{c.name}</button>
-            ))}
+      {/* Bảng xếp hạng thi đua (chỉ năm hiện tại) */}
+      {isCurrent && (
+        <div className="panel" style={{ marginBottom: 18 }}>
+          <div className="card-head">
+            <h2>🏆 Bảng xếp hạng thi đua</h2>
+            <select value={lbPeriod} onChange={(e) => setLbPeriod(e.target.value)} style={{ width: 150 }}>
+              <option value="all">Toàn bộ</option>
+              <option value="month">Tháng này</option>
+            </select>
           </div>
-        )}
-        {lbClass ? <LeaderboardTable classId={lbClass} range={lbRange} /> : <p className="muted">Chưa có lớp nào.</p>}
-      </div>
+          {lbClasses.length > 1 && (
+            <div className="lb-tabs">
+              {lbClasses.map((c) => (
+                <button key={c.id} className={lbClass === c.id ? 'on' : ''} onClick={() => setLbClass(c.id)}>{c.name}</button>
+              ))}
+            </div>
+          )}
+          {lbClass ? <LeaderboardTable classId={lbClass} range={lbRange} /> : <p className="muted">Chưa có lớp nào.</p>}
+        </div>
+      )}
 
       <div className="dash-grid">
         {/* Cột trái */}
