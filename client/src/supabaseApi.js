@@ -362,17 +362,18 @@ async function handle(method, rawUrl, body = {}) {
     if (path === '/students/sacrament' && method === 'post') {
       const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : [];
       if (!ids.length) return fail(400, 'Chưa chọn học viên');
-      if (body.sacrament !== 'ruoc_le' && body.sacrament !== 'them_suc') return fail(400, 'Bí tích không hợp lệ');
+      if (!['baptism', 'ruoc_le', 'them_suc'].includes(body.sacrament)) return fail(400, 'Bí tích không hợp lệ');
       if (!body.date) return fail(400, 'Thiếu ngày lãnh nhận');
-      // chặn ghi lùi bậc (Rước lễ trước, Thêm Sức sau)
-      const RANK = { none: 0, ruoc_le: 1, them_suc: 2 };
+      // chặn ghi lùi bậc (Rửa tội -> Rước lễ -> Thêm Sức)
+      const RANK = { none: 0, baptism: 1, ruoc_le: 2, them_suc: 3 };
       const newR = RANK[body.sacrament];
       const { data: cur } = await supabase.from('students').select('id, full_name, sacrament').in('id', ids);
       const bad = (cur || []).filter((s) => (RANK[s.sacrament] || 0) > newR);
       if (bad.length) return fail(400, `Sai thứ tự bí tích cho: ${bad.map((s) => s.full_name).join(', ')}`);
       const patch = { sacrament: body.sacrament };
       if (body.sacrament === 'them_suc') patch.confirmation_date = nn(body.date);
-      else patch.first_communion_date = nn(body.date);
+      else if (body.sacrament === 'ruoc_le') patch.first_communion_date = nn(body.date);
+      else patch.baptism_date = nn(body.date);
       const { error } = await supabase.from('students').update(patch).in('id', ids);
       if (error) return fail(400, error.message);
       return ok({ count: ids.length });

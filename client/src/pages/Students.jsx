@@ -145,6 +145,7 @@ export default function Students() {
               <div className="fp-label">Bí tích</div>
               <select value={f.sacrament} onChange={(e) => setF({ ...f, sacrament: e.target.value })}>
                 <option value="">Tất cả</option>
+                <option value="baptism">Đã Rửa tội</option>
                 <option value="ruoc_le">Đã Rước lễ</option>
                 <option value="them_suc">Đã Thêm sức</option>
                 <option value="none">Chưa có bí tích</option>
@@ -166,6 +167,7 @@ export default function Students() {
       <div className="panel">
         <div className="sac-legend">
           <span>Bí tích:</span>
+          <span className="it"><SacramentBadge value="baptism" /> Rửa tội</span>
           <span className="it"><SacramentBadge value="ruoc_le" /> Rước lễ</span>
           <span className="it"><SacramentBadge value="them_suc" /> Thêm Sức</span>
           <span className="it">(không icon = chưa nhận)</span>

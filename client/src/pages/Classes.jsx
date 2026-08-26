@@ -13,7 +13,7 @@ const empty = {
   srcClasses: [], picked: [],
 };
 const SCHEDULES = ['Sáng', 'Chiều', 'Tối'];
-const SAC_RANK = { none: 0, ruoc_le: 1, them_suc: 2 }; // thứ tự bí tích: Rước lễ trước, Thêm Sức sau
+const SAC_RANK = { none: 0, baptism: 1, ruoc_le: 2, them_suc: 3 }; // Rửa tội -> Rước lễ -> Thêm Sức
 
 export default function Classes() {
   const { user } = useAuth();
@@ -520,6 +520,7 @@ export default function Classes() {
               {sac.kind === 'sacrament' ? (
                 <div className="field"><label>Bí tích</label>
                   <select value={sac.sacrament} onChange={(e) => setSac({ ...sac, sacrament: e.target.value })}>
+                    <option value="baptism">{SACRAMENTS.baptism.label}</option>
                     <option value="ruoc_le">{SACRAMENTS.ruoc_le.label}</option>
                     <option value="them_suc">{SACRAMENTS.them_suc.label}</option>
                   </select>
