@@ -6,6 +6,8 @@ import PricingModal from '../components/PricingModal.jsx';
 
 const PALETTE = ['#2563eb', '#f59e0b', '#15803d', '#db2777', '#7c3aed', '#0891b2', '#dc2626', '#0ea5e9'];
 const emptyGame = { name: '', description: '', url: '', emoji: '🎮', color: '#2563eb', min_plan: 'pro', order_index: 0 };
+// Tạm thời chưa mở game -> hiển thị "Sắp ra mắt". Đổi thành false khi game sẵn sàng.
+const COMING_SOON = true;
 
 export default function Games() {
   const { user } = useAuth();
@@ -30,7 +32,26 @@ export default function Games() {
         </div>
       </div>
 
-      {games.length === 0 ? (
+      {COMING_SOON ? (
+        <>
+          <div className="panel coming-hero">
+            <div style={{ fontSize: 44 }}>🎮</div>
+            <h2 style={{ margin: '8px 0 4px' }}>Sắp ra mắt</h2>
+            <p className="muted" style={{ margin: 0 }}>Các game học giáo lý đang được hoàn thiện và sẽ sớm có mặt tại Ephata Store.</p>
+          </div>
+          {games.length > 0 && (
+            <div className="game-grid">
+              {games.map((g) => (
+                <div key={g.id} className="game-card coming">
+                  <div className="game-thumb soon"><span>🎮</span></div>
+                  <div className="game-name">{g.name}</div>
+                  <div className="game-lock soon">Sắp ra mắt</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      ) : games.length === 0 ? (
         <div className="panel"><p className="muted">Chưa có game nào.{isAdmin ? ' Bấm "⚙ Quản lý game" để thêm.' : ''}</p></div>
       ) : (
         <div className="game-grid">

@@ -578,6 +578,12 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .sac-cur { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
 .dash-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
 
+/* Game: trạng thái Sắp ra mắt */
+.coming-hero { text-align: center; padding: 34px 20px; margin-bottom: 18px; }
+.game-card.coming { cursor: default; opacity: .9; }
+.game-thumb.soon { background: linear-gradient(135deg, #cbd5e1, #94a3b8); filter: grayscale(0.4); }
+.game-lock.soon { color: var(--muted); font-weight: 600; }
+
 /* ---------- RandomPicker: rõ chữ + nút chưa thuộc bài ---------- */
 .picker-check {
   display: flex; align-items: center; gap: 8px; margin: 0; width: auto;
