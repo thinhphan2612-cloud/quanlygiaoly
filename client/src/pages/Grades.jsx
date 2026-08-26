@@ -11,6 +11,10 @@ export default function Grades() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const [classes, setClasses] = useState([]);
+  const [activeClasses, setActiveClasses] = useState([]);
+  const [currentYear, setCurrentYear] = useState('');
+  const [year, setYear] = useState('');
+  const [yearList, setYearList] = useState([]);
   const [classId, setClassId] = useState('');
   const [data, setData] = useState({ students: [], columns: [], scores: {} });
   const [sortByRank, setSortByRank] = useState(false);
@@ -21,12 +25,31 @@ export default function Grades() {
   const [parish, setParish] = useState(null);
 
   const [searchParams] = useSearchParams();
-  useEffect(() => { api.get('/classes').then((r) => setClasses(r.data)); }, []);
+  const isCurrent = !year || year === currentYear;
+  useEffect(() => {
+    Promise.all([api.get('/classes'), api.get('/archive-years').catch(() => ({ data: [] }))]).then(([c, ay]) => {
+      setActiveClasses(c.data);
+      setClasses(c.data);
+      const cur = c.data[0]?.year || '';
+      setCurrentYear(cur);
+      const list = [...new Set([cur, ...(ay.data || []).map((y) => y.year)].filter(Boolean))];
+      setYearList(list);
+      setYear(cur || list[0] || '');
+    });
+  }, []);
   useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
   useEffect(() => { const c = searchParams.get('class'); if (c) setClassId(c); }, [searchParams]);
+  // đổi năm học -> đổi danh sách lớp
+  useEffect(() => {
+    if (!year) return;
+    setClassId(''); setData({ students: [], columns: [], scores: {} });
+    if (year === currentYear) setClasses(activeClasses);
+    else api.get(`/archive-classes?year=${encodeURIComponent(year)}`).then((r) => setClasses(r.data)).catch(() => setClasses([]));
+  }, [year, currentYear, activeClasses]);
   function load() {
     if (!classId) { setData({ students: [], columns: [], scores: {} }); return; }
-    api.get(`/grades-class?class_id=${classId}`).then((r) => setData(r.data));
+    const url = isCurrent ? `/grades-class?class_id=${classId}` : `/archive-class?class_id=${classId}`;
+    api.get(url).then((r) => setData(r.data));
   }
   async function endYear() {
     if (!confirm(
@@ -107,14 +130,19 @@ export default function Grades() {
     <div>
       <h1>Điểm số</h1>
       <div className="toolbar">
+        {isAdmin && yearList.length > 1 && (
+          <select value={year} onChange={(e) => setYear(e.target.value)} style={{ width: 150 }}>
+            {yearList.map((y) => <option key={y} value={y}>Năm {y}{y === currentYear ? ' (nay)' : ''}</option>)}
+          </select>
+        )}
         <select value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 220 }}>
           <option value="">-- Chọn lớp --</option>
           {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        {isAdmin && <button className="btn ghost" onClick={endYear}>🏁 Kết thúc năm học</button>}
+        {isAdmin && isCurrent && <button className="btn ghost" onClick={endYear}>🏁 Kết thúc năm học</button>}
         {classId && (
           <>
-            <button className="btn ghost" onClick={() => setGear(true)}>⚙ Cột điểm</button>
+            {isCurrent && <button className="btn ghost" onClick={() => setGear(true)}>⚙ Cột điểm</button>}
             <button className="btn ghost" onClick={() => setOverview(true)} disabled={columns.length === 0}>📋 Tổng quát</button>
             <button className="btn ghost" onClick={() => exportSheet('excel')} disabled={columns.length === 0}>⬇ Excel</button>
             <button className="btn ghost" onClick={() => exportSheet('pdf')} disabled={columns.length === 0}>🖨 PDF</button>
@@ -141,12 +169,12 @@ export default function Grades() {
       {!classId ? (
         <div className="panel"><p className="muted">Hãy chọn lớp để nhập điểm.</p></div>
       ) : columns.length === 0 ? (
-        <div className="panel"><p className="muted">Lớp chưa có cột điểm nào. Bấm "⚙ Cột điểm" để tạo (Kiểm tra 15', Thi HK1...).</p></div>
+        <div className="panel"><p className="muted">{isCurrent ? 'Lớp chưa có cột điểm nào. Bấm "⚙ Cột điểm" để tạo (Kiểm tra 15\', Thi HK1...).' : 'Lớp này không có cột điểm trong năm học đã chọn.'}</p></div>
       ) : students.length === 0 ? (
         <div className="panel"><p className="muted">Lớp chưa có học viên.</p></div>
       ) : (
         <div className="panel">
-          <p className="muted" style={{ marginTop: 0, fontSize: 12 }}>Nhập điểm trực tiếp vào ô, tự lưu khi bấm ra ngoài.</p>
+          <p className="muted" style={{ marginTop: 0, fontSize: 12 }}>{isCurrent ? 'Nhập điểm trực tiếp vào ô, tự lưu khi bấm ra ngoài.' : `Đang xem điểm năm học ${year} (đã lưu trữ — chỉ đọc).`}</p>
           <div className="table-scroll">
             <table className="grade-table">
               <thead>
@@ -162,13 +190,17 @@ export default function Grades() {
                     <td className="sticky-col">{s.saint_name ? s.saint_name + ' ' : ''}{s.full_name}</td>
                     {columns.map((c) => (
                       <td key={c.id} className="col-day">
-                        <input
-                          className={`cell-input ${savingCell === s.id + c.id ? 'saving' : ''}`}
-                          type="number" step="0.1" min="0" max="10"
-                          value={cellVal(s.id, c.id)}
-                          onChange={(e) => setCell(s.id, c.id, e.target.value)}
-                          onBlur={(e) => saveCell(s.id, c.id, e.target.value)}
-                        />
+                        {isCurrent ? (
+                          <input
+                            className={`cell-input ${savingCell === s.id + c.id ? 'saving' : ''}`}
+                            type="number" step="0.1" min="0" max="10"
+                            value={cellVal(s.id, c.id)}
+                            onChange={(e) => setCell(s.id, c.id, e.target.value)}
+                            onBlur={(e) => saveCell(s.id, c.id, e.target.value)}
+                          />
+                        ) : (
+                          <span>{cellVal(s.id, c.id) || '—'}</span>
+                        )}
                       </td>
                     ))}
                     <td><b>{weightedAvg(s.id) ?? '—'}</b></td>
