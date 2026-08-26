@@ -986,7 +986,7 @@ async function handle(method, rawUrl, body = {}) {
       // danh sách năm học (để lọc) + năm hiện tại
       const { data: allCls } = await supabase.from('classes').select('school_year, graduated').eq('parish_id', pid);
       const years = [...new Set((allCls || []).map((c) => c.school_year).filter(Boolean))].sort().reverse();
-      const currentYear = (allCls || []).find((c) => !c.graduated)?.school_year || null;
+      const currentYear = (allCls || []).filter((c) => !c.graduated).map((c) => c.school_year).find(Boolean) || null;
       return ok({ counts, studentsPerClass, topStudents, classAverages, attendanceByWeek, years, currentYear, year: wantYear || currentYear });
     }
 

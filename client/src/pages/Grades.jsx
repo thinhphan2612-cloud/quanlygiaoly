@@ -28,17 +28,22 @@ export default function Grades() {
   const [searchParams] = useSearchParams();
   const isCurrent = !year || year === currentYear;
   useEffect(() => {
-    Promise.all([api.get('/classes'), api.get('/archive-years').catch(() => ({ data: [] }))]).then(([c, ay]) => {
+    Promise.all([
+      api.get('/classes'),
+      api.get('/archive-years').catch(() => ({ data: [] })),
+      api.get('/parish').catch(() => ({ data: null })),
+    ]).then(([c, ay, p]) => {
       setActiveClasses(c.data);
       setClasses(c.data);
-      const cur = c.data[0]?.year || '';
+      setParish(p.data);
+      const activeYears = [...new Set(c.data.map((x) => x.year).filter(Boolean))];
+      const cur = p.data?.settings?.current_school_year || activeYears[0] || '';
       setCurrentYear(cur);
-      const list = [...new Set([cur, ...(ay.data || []).map((y) => y.year)].filter(Boolean))];
+      const list = [...new Set([cur, ...activeYears, ...(ay.data || []).map((y) => y.year)].filter(Boolean))].sort().reverse();
       setYearList(list);
       setYear(cur || list[0] || '');
     });
   }, []);
-  useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
   useEffect(() => { const c = searchParams.get('class'); if (c) setClassId(c); }, [searchParams]);
   // đổi năm học -> đổi danh sách lớp
   useEffect(() => {
