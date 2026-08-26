@@ -18,6 +18,7 @@ export default function StudentProfile() {
   const { user } = useAuth();
   const canEdit = user?.role === 'admin' || user?.role === 'teacher';
   const [data, setData] = useState(null);
+  const [history, setHistory] = useState([]);
   const [err, setErr] = useState('');
   const [edit, setEdit] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -32,6 +33,7 @@ export default function StudentProfile() {
 
   function load() {
     api.get(`/student-profile?id=${id}`).then((r) => setData(r.data)).catch((e) => setErr(e.response?.data?.error || 'Không tải được hồ sơ'));
+    api.get(`/student-history?id=${id}`).then((r) => setHistory(r.data)).catch(() => setHistory([]));
   }
   useEffect(() => { load(); }, [id]);
 
@@ -126,6 +128,25 @@ export default function StudentProfile() {
               </tbody>
             </table>
           </div>
+
+          {/* Lịch sử điểm qua các năm */}
+          {history.length > 1 && (
+            <div className="panel">
+              <div className="card-head"><h2>Lịch sử điểm các năm</h2></div>
+              <table>
+                <thead><tr><th>Năm học</th><th>Lớp</th><th style={{ textAlign: 'right' }}>Điểm TB</th></tr></thead>
+                <tbody>
+                  {history.map((h) => (
+                    <tr key={h.student_id} className={h.current ? '' : 'click-row'} onClick={h.current ? undefined : () => navigate(`/students/${h.student_id}`)}>
+                      <td>{h.year || '—'}{h.current && <span className="tag-chip muted" style={{ marginLeft: 6 }}>năm nay</span>}</td>
+                      <td>{h.class_name || '—'}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 700 }}>{h.avg ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         <div className="dash-col">

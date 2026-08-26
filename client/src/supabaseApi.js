@@ -246,6 +246,30 @@ async function handle(method, rawUrl, body = {}) {
       });
     }
 
+    // ---------------- lịch sử điểm qua các năm (theo origin_id) ----------------
+    if (path === '/student-history' && method === 'get') {
+      if (!q.id) return fail(400, 'Cần id');
+      const { data: me } = await supabase.from('students').select('id, origin_id').eq('id', q.id).maybeSingle();
+      if (!me) return fail(404, 'Không tìm thấy học viên');
+      const key = me.origin_id || me.id;
+      const { data: recs } = await supabase.from('students')
+        .select('id, class_id, classes(name, school_year)')
+        .or(`origin_id.eq.${key},id.eq.${key}`);
+      const list = recs || [];
+      const sids = list.map((r) => r.id);
+      const cids = [...new Set(list.map((r) => r.class_id).filter(Boolean))];
+      let grades = [], cols = [];
+      if (sids.length) { const { data } = await supabase.from('grades').select('student_id, column_id, score').in('student_id', sids); grades = data || []; }
+      if (cids.length) { const { data } = await supabase.from('grade_columns').select('id, weight').in('class_id', cids); cols = data || []; }
+      const wById = {}; cols.forEach((c) => { wById[c.id] = Number(c.weight) || 1; });
+      const out = list.map((r) => {
+        const gs = grades.filter((g) => g.student_id === r.id);
+        let s = 0, w = 0; gs.forEach((g) => { const wt = wById[g.column_id] || 1; s += Number(g.score) * wt; w += wt; });
+        return { student_id: r.id, year: r.classes?.school_year || null, class_name: r.classes?.name || null, avg: w ? Math.round((s / w) * 10) / 10 : null, count: gs.length, current: r.id === me.id };
+      }).sort((a, b) => String(b.year || '').localeCompare(String(a.year || '')));
+      return ok(out);
+    }
+
     // ---------------- students ----------------
     if (path === '/students' && method === 'get') {
       let query = supabase.from('students').select('*, classes(name)').order('full_name');
@@ -686,7 +710,7 @@ async function handle(method, rawUrl, body = {}) {
         const list = studs || [];
         if (!destNewId) { graduated += list.length; continue; } // lớp cao nhất -> ra trường
         const copies = list.map((s) => {
-          const o = { parish_id: pid, class_id: destNewId, graduated: false };
+          const o = { parish_id: pid, class_id: destNewId, graduated: false, origin_id: s.origin_id || s.id };
           for (const f of copyFields) if (s[f] !== undefined) o[f] = s[f];
           return o;
         });
