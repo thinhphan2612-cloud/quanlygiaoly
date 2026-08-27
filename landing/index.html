@@ -7,14 +7,13 @@
 <meta name="description" content="Nền tảng quản lý giáo lý cho giáo xứ, ban giáo lý và giáo lý viên: hồ sơ học viên, bí tích, lớp & điểm danh, điểm số, thi đua và báo cáo." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{ --bg:#F5EEE0; --bg2:#FBF6EC; --panel:#FFFFFF; --ink:#2E2721; --muted:#8A7C6A; --line:rgba(46,39,33,.13); --gold:#B4813C; }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body,#root{background:var(--bg)}
 html{scroll-behavior:smooth}
-body{font-family:'Kanit',sans-serif;background:var(--bg);color:var(--ink);overflow-x:clip;-webkit-font-smoothing:antialiased}
+body{font-family:'Oswald',sans-serif;background:var(--bg);color:var(--ink);overflow-x:clip;-webkit-font-smoothing:antialiased}
 a{text-decoration:none;color:inherit}
 img,video,svg{display:block;max-width:100%}
 ::selection{background:var(--gold);color:#fff}
@@ -36,14 +35,14 @@ img,video,svg{display:block;max-width:100%}
 .fade.in{opacity:1;transform:none}
 
 /* HERO */
-.hero{position:relative;height:100vh;min-height:640px;overflow:hidden;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;font-family:'Inter',sans-serif}
+.hero{position:relative;height:100vh;min-height:640px;overflow:hidden;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;font-family:'Oswald',sans-serif}
 nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0;position:relative;z-index:30}
-.brand{font-family:'Instrument Serif',serif;font-weight:400;font-size:30px;letter-spacing:-.01em;color:var(--ink);text-transform:none;display:flex;align-items:center;gap:7px}.brand .x{color:var(--gold);font-size:22px}
+.brand{font-family:'Oswald',sans-serif;font-weight:400;font-size:30px;letter-spacing:-.01em;color:var(--ink);text-transform:none;display:flex;align-items:center;gap:7px}.brand .x{color:var(--gold);font-size:22px}
 .navlinks{display:flex;gap:30px;font-size:14px;color:var(--muted);text-transform:none;letter-spacing:0}
 .navlinks a{opacity:1;transition:color .2s}.navlinks a:hover{color:var(--ink)}
 .nav-cta{display:flex;gap:16px;align-items:center}
 .nav-login{color:var(--muted);font-size:14px;transition:color .2s}.nav-login:hover{color:var(--ink)}
-.btn-dark{display:inline-block;background:#2E2721;color:#fff;border-radius:999px;font-family:'Inter',sans-serif;font-weight:500;border:none;transition:transform .2s,background .2s;cursor:pointer}
+.btn-dark{display:inline-block;background:#2E2721;color:#fff;border-radius:999px;font-family:'Oswald',sans-serif;font-weight:500;border:none;transition:transform .2s,background .2s;cursor:pointer}
 .btn-dark:hover{background:#3f342b}
 .btn-dark:hover{transform:scale(1.03)}
 .nav-cta .btn-dark{padding:10px 22px;font-size:14px}
@@ -52,8 +51,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 .hero-video-region video,.hero-video-region img{width:100%;height:100%;object-fit:cover;display:block;opacity:1}
 .hero-vfade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#F5EEE0 0%,rgba(245,238,224,0) 24%,rgba(245,238,224,0) 80%,#F5EEE0 100%)}
 .hero-center{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(8px,1.6vh,24px) 12px clamp(8px,1.4vh,18px)}
-.hero-h{font-family:'Instrument Serif',serif;font-weight:400;color:var(--ink);letter-spacing:-.02em;line-height:.98;font-size:clamp(1.7rem,4.3vw,3.5rem);margin:0;max-width:960px}
-.hero-h em{font-style:italic;color:var(--gold)}
+.hero-h{font-family:'Oswald',sans-serif;font-weight:600;color:var(--ink);letter-spacing:0;line-height:1.08;font-size:clamp(1.9rem,4.8vw,3.9rem);margin:0;max-width:960px}
+.hero-h em{font-style:normal;color:var(--gold);font-weight:700}
 .hero-sub{max-width:540px;color:var(--muted);font-size:clamp(.9rem,1.15vw,1.02rem);line-height:1.5;margin-top:13px;font-weight:400}
 .hero-actions{margin-top:20px}
 .hero-actions .btn-dark{padding:14px 40px;font-size:15px}
@@ -82,7 +81,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 .about{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 20px;position:relative;gap:clamp(40px,7vw,64px)}
 .deco{position:absolute;font-size:clamp(60px,10vw,150px);opacity:.12;color:var(--gold);pointer-events:none}
 .deco.tl{top:5%;left:2%}.deco.bl{bottom:8%;left:5%}.deco.tr{top:5%;right:2%}.deco.br{bottom:8%;right:5%}
-.about-h{font-weight:900;text-transform:uppercase;line-height:1.08;letter-spacing:-.03em;font-size:clamp(3rem,12vw,160px);padding-top:.04em}
+.about-h{font-weight:700;text-transform:uppercase;line-height:1.12;letter-spacing:0;font-size:clamp(3rem,12vw,160px);padding-top:.04em}
 .about-p{color:var(--ink);font-weight:500;line-height:1.55;max-width:640px;font-size:clamp(1rem,2vw,1.35rem);position:relative;z-index:2}
 .about-p .c{opacity:.2;transition:opacity .2s}
 
@@ -125,11 +124,11 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 /* CTA + footer */
 .cta{min-height:80vh;display:grid;place-items:center;text-align:center;padding:100px 0;position:relative;overflow:hidden}
 .cta::before{content:"✝";position:absolute;font-size:min(58vw,540px);color:rgba(180,129,60,.07);top:50%;left:50%;transform:translate(-50%,-50%);line-height:1}
-.cta h2{font-weight:900;text-transform:uppercase;font-size:clamp(2.6rem,9vw,140px);line-height:1.1;letter-spacing:-.03em;position:relative;padding-top:.04em}
+.cta h2{font-weight:700;text-transform:uppercase;font-size:clamp(2.6rem,9vw,140px);line-height:1.14;letter-spacing:0;position:relative;padding-top:.04em}
 .cta p{color:var(--muted);max-width:600px;margin:24px auto 0;font-weight:300;line-height:1.6;position:relative}
 .cta-actions{display:flex;gap:12px;justify-content:center;margin-top:30px;flex-wrap:wrap;position:relative}
 /* footer */
-.site-footer{background:#EDE3D1;border-top:1px solid var(--line);padding:58px 0 24px;color:var(--muted);font-family:'Kanit',sans-serif}
+.site-footer{background:#EDE3D1;border-top:1px solid var(--line);padding:58px 0 24px;color:var(--muted);font-family:'Oswald',sans-serif}
 .ft-grid{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:34px}
 .ft-brand .ft-logo{font-weight:800;font-size:21px;color:var(--ink);margin-bottom:12px}
 .ft-brand p{font-weight:300;line-height:1.65;font-size:14px;max-width:360px;margin-bottom:18px}
@@ -148,7 +147,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 .faq-h{text-align:center;font-weight:900;text-transform:uppercase;font-size:clamp(2.2rem,8vw,96px);line-height:1.08;padding-top:.04em;margin:14px 0 44px}
 .faq-list{max-width:860px;margin:auto;border-top:1px solid var(--line)}
 .faq-item{border-bottom:1px solid var(--line)}
-.faq-q{width:100%;text-align:left;background:none;border:none;color:var(--ink);font-family:'Kanit',sans-serif;font-size:clamp(1.02rem,1.8vw,1.3rem);font-weight:500;padding:22px 4px;cursor:pointer;display:flex;justify-content:space-between;gap:18px;align-items:center;transition:color .2s}
+.faq-q{width:100%;text-align:left;background:none;border:none;color:var(--ink);font-family:'Oswald',sans-serif;font-size:clamp(1.02rem,1.8vw,1.3rem);font-weight:500;padding:22px 4px;cursor:pointer;display:flex;justify-content:space-between;gap:18px;align-items:center;transition:color .2s}
 .faq-q:hover{color:var(--gold)}
 .faq-q .ic{color:var(--gold);font-size:26px;line-height:1;transition:transform .25s;flex:0 0 auto}
 .faq-item.open .faq-q .ic{transform:rotate(45deg)}
@@ -157,11 +156,11 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 .faq-a p{color:var(--muted);font-weight:300;line-height:1.7;font-size:clamp(.95rem,1.4vw,1.1rem);padding:0 4px 24px;margin:0;max-width:770px}
 
 /* popup (đăng ký / liên hệ) */
-.lp-modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px;font-family:'Inter','Kanit',sans-serif}
+.lp-modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px;font-family:'Oswald',sans-serif}
 .lp-modal[hidden]{display:none}
 .lp-bd{position:absolute;inset:0;background:rgba(8,10,16,.6);backdrop-filter:blur(3px)}
 .lp-card{position:relative;background:#fff;color:#141414;border-radius:20px;padding:28px 26px;width:min(440px,100%);max-height:92vh;overflow:auto;box-shadow:0 30px 90px rgba(0,0,0,.45)}
-.lp-card h3{font-family:'Instrument Serif',serif;font-weight:400;font-size:27px;margin:0 0 6px;color:#000;line-height:1.1}
+.lp-card h3{font-family:'Oswald',sans-serif;font-weight:400;font-size:27px;margin:0 0 6px;color:#000;line-height:1.1}
 .lp-desc{color:#6F6F6F;font-size:13.5px;margin-bottom:18px;line-height:1.5}
 .lp-card form{display:flex;flex-direction:column;gap:11px}
 .lp-card input,.lp-card textarea{width:100%;border:1px solid #dcdcdc;border-radius:10px;padding:12px 14px;font:inherit;font-size:14px;color:#141414;background:#fafafa}
@@ -181,9 +180,9 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
  <symbol id="ill-dash" viewBox="0 0 420 270">
   <rect width="420" height="270" fill="#FBF7EE"/><rect width="104" height="270" fill="#F0E7D6"/>
-  <text x="18" y="34" fill="#B4813C" font-family="Kanit" font-size="16" font-weight="800">GL.</text>
+  <text x="18" y="34" fill="#B4813C" font-family="Oswald" font-size="16" font-weight="800">GL.</text>
   <rect x="14" y="52" width="76" height="16" rx="5" fill="#B4813C"/><rect x="14" y="76" width="76" height="12" rx="4" fill="#2E2721" opacity=".12"/><rect x="14" y="94" width="76" height="12" rx="4" fill="#2E2721" opacity=".12"/><rect x="14" y="112" width="76" height="12" rx="4" fill="#2E2721" opacity=".12"/><rect x="14" y="130" width="76" height="12" rx="4" fill="#2E2721" opacity=".12"/>
-  <text x="124" y="38" fill="#2E2721" font-family="Kanit" font-size="16" font-weight="700">Tổng quan giáo xứ</text>
+  <text x="124" y="38" fill="#2E2721" font-family="Oswald" font-size="16" font-weight="700">Tổng quan giáo xứ</text>
   <rect x="124" y="54" width="86" height="54" rx="10" fill="#fff" stroke="#EADFC9"/><text x="134" y="74" fill="#8A7C6A" font-size="8">HỌC VIÊN</text><text x="134" y="97" fill="#2E2721" font-size="20" font-weight="700">1.248</text>
   <rect x="218" y="54" width="86" height="54" rx="10" fill="#fff" stroke="#EADFC9"/><text x="228" y="74" fill="#8A7C6A" font-size="8">LỚP</text><text x="228" y="97" fill="#2E2721" font-size="20" font-weight="700">38</text>
   <rect x="312" y="54" width="86" height="54" rx="10" fill="#fff" stroke="#EADFC9"/><text x="322" y="74" fill="#8A7C6A" font-size="8">CHUYÊN CẦN</text><text x="322" y="97" fill="#2E8B63" font-size="20" font-weight="700">89%</text>
@@ -192,8 +191,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
   <circle cx="356" cy="188" r="52" fill="#fff" stroke="#EADFC9"/><circle cx="356" cy="188" r="40" fill="none" stroke="#EFE3CC" stroke-width="12"/><circle cx="356" cy="188" r="40" fill="none" stroke="#B4813C" stroke-width="12" stroke-dasharray="224 251" stroke-linecap="round" transform="rotate(-90 356 188)"/><text x="356" y="194" fill="#2E2721" font-size="18" font-weight="700" text-anchor="middle">89%</text>
  </symbol>
  <symbol id="ill-att" viewBox="0 0 420 270">
-  <rect width="420" height="270" fill="#FBF7EE"/><text x="24" y="40" fill="#2E2721" font-family="Kanit" font-size="16" font-weight="700">Điểm danh · Thêm Sức 2A</text>
-  <g font-family="Kanit" font-size="12">
+  <rect width="420" height="270" fill="#FBF7EE"/><text x="24" y="40" fill="#2E2721" font-family="Oswald" font-size="16" font-weight="700">Điểm danh · Thêm Sức 2A</text>
+  <g font-family="Oswald" font-size="12">
    <rect x="24" y="60" width="372" height="34" rx="9" fill="#fff" stroke="#EADFC9"/><text x="40" y="82" fill="#2E2721">Maria Nguyễn An</text><circle cx="360" cy="77" r="9" fill="#2E8B63"/><path d="M356 77 l3 3 l5 -6" stroke="#fff" stroke-width="2" fill="none"/>
    <rect x="24" y="100" width="372" height="34" rx="9" fill="#fff" stroke="#EADFC9"/><text x="40" y="122" fill="#2E2721">Phêrô Trần Minh</text><circle cx="360" cy="117" r="9" fill="#2E8B63"/><path d="M356 117 l3 3 l5 -6" stroke="#fff" stroke-width="2" fill="none"/>
    <rect x="24" y="140" width="372" height="34" rx="9" fill="#fff" stroke="#EADFC9"/><text x="40" y="162" fill="#2E2721">Giuse Lê Nam</text><circle cx="360" cy="157" r="9" fill="#C8951B"/><text x="360" y="161" fill="#fff" font-size="11" text-anchor="middle">✚</text>
@@ -202,8 +201,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
   <rect x="24" y="228" width="150" height="26" rx="8" fill="#B4813C"/><text x="99" y="245" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Lưu điểm danh</text>
  </symbol>
  <symbol id="ill-grade" viewBox="0 0 420 270">
-  <rect width="420" height="270" fill="#FBF7EE"/><text x="24" y="38" fill="#2E2721" font-family="Kanit" font-size="16" font-weight="700">Bảng điểm · Rước Lễ 1</text>
-  <g font-size="11" font-family="Kanit">
+  <rect width="420" height="270" fill="#FBF7EE"/><text x="24" y="38" fill="#2E2721" font-family="Oswald" font-size="16" font-weight="700">Bảng điểm · Rước Lễ 1</text>
+  <g font-size="11" font-family="Oswald">
    <rect x="24" y="52" width="372" height="26" fill="#F0E7D6" rx="6"/><text x="34" y="69" fill="#B4813C">Học viên</text><text x="250" y="69" fill="#B4813C">KT15'</text><text x="300" y="69" fill="#B4813C">1 tiết</text><text x="352" y="69" fill="#B4813C">TB</text>
    <rect x="24" y="82" width="372" height="30" fill="#fff" stroke="#EADFC9"/><text x="34" y="102" fill="#2E2721">Lucia Bùi Ngọc</text><text x="255" y="102" fill="#6B5F50">8.5</text><text x="305" y="102" fill="#6B5F50">9.0</text><text x="352" y="102" font-weight="700" fill="#2E8B63">8.8</text>
    <rect x="24" y="114" width="372" height="30" fill="#FDFAF3" stroke="#EADFC9"/><text x="34" y="134" fill="#2E2721">Monica Bùi Quỳnh</text><text x="255" y="134" fill="#6B5F50">7.0</text><text x="305" y="134" fill="#6B5F50">8.0</text><text x="352" y="134" font-weight="700" fill="#2E8B63">7.6</text>
@@ -214,19 +213,19 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
  <symbol id="ill-cert" viewBox="0 0 420 270">
   <rect width="420" height="270" fill="#F0E7D6"/><rect x="30" y="22" width="360" height="226" rx="8" fill="#FDFAF3" stroke="#B98E4C" stroke-width="2"/><rect x="40" y="32" width="340" height="206" rx="5" fill="none" stroke="#e2d3ac"/>
   <text x="210" y="62" fill="#B98E4C" font-size="22" text-anchor="middle">✝</text>
-  <text x="210" y="92" fill="#7A1F2B" font-family="Kanit" font-size="18" font-weight="800" text-anchor="middle">CHỨNG CHỈ THÊM SỨC</text>
+  <text x="210" y="92" fill="#7A1F2B" font-family="Oswald" font-size="18" font-weight="800" text-anchor="middle">CHỨNG CHỈ THÊM SỨC</text>
   <text x="210" y="110" fill="#B98E4C" font-size="10" font-style="italic" text-anchor="middle">Sacramentum Confirmationis</text>
   <text x="210" y="140" fill="#3a3a3a" font-size="11" text-anchor="middle">Chứng nhận:</text>
-  <text x="210" y="164" fill="#15213B" font-family="Kanit" font-size="17" font-weight="800" text-anchor="middle">Phêrô Nguyễn Văn Minh</text>
+  <text x="210" y="164" fill="#15213B" font-family="Oswald" font-size="17" font-weight="800" text-anchor="middle">Phêrô Nguyễn Văn Minh</text>
   <line x1="90" y1="188" x2="330" y2="188" stroke="#ddd0ad" stroke-dasharray="2 3"/><line x1="120" y1="204" x2="300" y2="204" stroke="#ddd0ad" stroke-dasharray="2 3"/>
   <text x="330" y="230" fill="#555" font-size="9" text-anchor="end" font-style="italic">Linh mục Chánh xứ</text>
  </symbol>
  <symbol id="ill-leader" viewBox="0 0 420 270">
-  <rect width="420" height="270" fill="#FBF7EE"/><text x="24" y="38" fill="#2E2721" font-family="Kanit" font-size="16" font-weight="700">🏆 Bảng xếp hạng thi đua</text>
+  <rect width="420" height="270" fill="#FBF7EE"/><text x="24" y="38" fill="#2E2721" font-family="Oswald" font-size="16" font-weight="700">🏆 Bảng xếp hạng thi đua</text>
   <rect x="150" y="70" width="80" height="86" rx="12" fill="#B4813C"/><text x="190" y="96" fill="#fff" font-size="12" text-anchor="middle" font-weight="700">01</text><text x="190" y="118" fill="#fff" font-size="10" text-anchor="middle">Maria An</text><text x="190" y="140" fill="#fff" font-size="14" text-anchor="middle" font-weight="700">1.240</text>
   <rect x="40" y="92" width="80" height="64" rx="12" fill="#fff" stroke="#EADFC9"/><text x="80" y="116" fill="#B4813C" font-size="12" text-anchor="middle" font-weight="700">02</text><text x="80" y="134" fill="#2E2721" font-size="10" text-anchor="middle">Phêrô Minh</text>
   <rect x="260" y="102" width="80" height="54" rx="12" fill="#fff" stroke="#EADFC9"/><text x="300" y="124" fill="#B4813C" font-size="12" text-anchor="middle" font-weight="700">03</text><text x="300" y="142" fill="#2E2721" font-size="10" text-anchor="middle">Giuse Nam</text>
-  <g font-size="12" font-family="Kanit"><rect x="24" y="172" width="372" height="30" rx="8" fill="#fff" stroke="#EADFC9"/><text x="36" y="192" fill="#2E2721">04 · Anna Linh</text><text x="384" y="192" fill="#B4813C" text-anchor="end" font-weight="600">1.030</text>
+  <g font-size="12" font-family="Oswald"><rect x="24" y="172" width="372" height="30" rx="8" fill="#fff" stroke="#EADFC9"/><text x="36" y="192" fill="#2E2721">04 · Anna Linh</text><text x="384" y="192" fill="#B4813C" text-anchor="end" font-weight="600">1.030</text>
   <rect x="24" y="208" width="372" height="30" rx="8" fill="#fff" stroke="#EADFC9"/><text x="36" y="228" fill="#2E2721">05 · Tôma Huy</text><text x="384" y="228" fill="#B4813C" text-anchor="end" font-weight="600">990</text></g>
  </symbol>
 </defs></svg>
