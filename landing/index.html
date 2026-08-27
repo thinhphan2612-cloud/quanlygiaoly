@@ -9,12 +9,12 @@
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-<meta name="theme-color" content="#EA4A42" />
+<meta name="theme-color" content="#F34543" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&family=Imperial+Script&display=swap" rel="stylesheet">
 <style>
-:root{ --bg:#F5EEE0; --bg2:#FBF6EC; --panel:#FFFFFF; --ink:#2E2721; --muted:#5F5344; --line:rgba(46,39,33,.13); --gold:#B4813C; --primary:#7A1F2B; --primary-h:#93303c; }
+:root{ --bg:#F5EEE0; --bg2:#FBF6EC; --panel:#FFFFFF; --ink:#2E2721; --muted:#5F5344; --line:rgba(46,39,33,.13); --gold:#B4813C; --primary:#F34543; --primary-h:#db3835; }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body,#root{background:var(--bg)}
 html{scroll-behavior:smooth}
@@ -29,7 +29,7 @@ img,video,svg{display:block;max-width:100%}
 
 /* buttons */
 .btn-contact{border-radius:999px;color:#fff;font-weight:600;text-transform:uppercase;letter-spacing:.12em;padding:12px 30px;font-size:12px;display:inline-block;
-  background:var(--primary);box-shadow:0 8px 22px rgba(122,31,43,.28);transition:transform .2s,background .2s}
+  background:var(--primary);box-shadow:0 8px 22px rgba(243,69,67,.30);transition:transform .2s,background .2s}
 .btn-contact:hover{transform:translateY(-2px);background:var(--primary-h)}
 .btn-live{border-radius:999px;border:1.5px solid var(--ink);color:var(--ink);font-weight:600;text-transform:uppercase;letter-spacing:.12em;padding:11px 26px;font-size:13px;display:inline-block;transition:.2s}
 .btn-live:hover{background:rgba(46,39,33,.06)}
@@ -42,7 +42,7 @@ img,video,svg{display:block;max-width:100%}
 /* HERO */
 .hero{position:relative;height:100vh;min-height:640px;overflow:hidden;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;font-family:'Oswald',sans-serif}
 nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0;position:relative;z-index:30}
-.brand{font-family:'Imperial Script',cursive;font-weight:400;font-size:40px;letter-spacing:0;color:var(--ink);text-transform:none;display:flex;align-items:center;gap:8px;line-height:1}.brand .x{color:var(--gold);font-size:22px;font-family:'Oswald',sans-serif}
+.brand{font-family:'Imperial Script',cursive;font-weight:400;font-size:40px;letter-spacing:0;color:var(--ink);text-transform:none;display:flex;align-items:center;gap:8px;line-height:1}.brand-mark{height:40px;width:40px;object-fit:contain;display:block;flex:0 0 auto}
 .navlinks{display:flex;gap:30px;font-size:14px;color:var(--muted);text-transform:none;letter-spacing:0}
 .navlinks a{opacity:1;transition:color .2s}.navlinks a:hover{color:var(--ink)}
 .nav-cta{display:flex;gap:16px;align-items:center}
@@ -64,7 +64,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 @media(max-width:640px){
   .navlinks{display:none}
   nav{padding:16px 0}
-  .brand{font-size:32px;gap:6px}
+  .brand{font-size:32px;gap:6px}.brand-mark{height:34px;width:34px}
   .nav-cta{gap:12px}
   .nav-cta .btn-dark{padding:8px 16px;font-size:12px}
   .nav-login{font-size:12px}
@@ -135,7 +135,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 /* footer */
 .site-footer{background:#EDE3D1;border-top:1px solid var(--line);padding:58px 0 24px;color:var(--muted);font-family:'Oswald',sans-serif}
 .ft-grid{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:34px}
-.ft-brand .ft-logo{font-family:'Imperial Script',cursive;font-weight:400;font-size:34px;line-height:1;color:var(--ink);margin-bottom:14px}
+.ft-brand .ft-logo{font-family:'Imperial Script',cursive;font-weight:400;font-size:34px;line-height:1;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:9px}
+.ft-mark{height:36px;width:36px;object-fit:contain;display:block;flex:0 0 auto}
 .ft-brand p{font-weight:400;line-height:1.65;font-size:14px;max-width:360px;margin-bottom:18px}
 .ft-cta{display:inline-block;background:var(--primary);color:#fff;border-radius:999px;padding:11px 24px;font-size:13px;font-weight:600;transition:transform .2s}
 .ft-cta:hover{transform:scale(1.03)}
@@ -239,7 +240,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 <section class="hero" id="top">
  <div class="container">
   <nav>
-   <a href="#top" class="brand"><span class="x">✝&#xFE0E;</span> Giáo Lý Số</a>
+   <a href="#top" class="brand"><img class="brand-mark" src="/favicon-512.png" alt="Giáo Lý Số" /> Giáo Lý Số</a>
    <div class="navlinks"><a href="#services">Tính năng</a><a href="#projects">Vai trò</a><a href="#about">Giới thiệu</a><a href="#cta">Liên hệ</a></div>
    <div class="nav-cta">
     <a class="nav-login" href="#lienhe" onclick="openLp('mContact');return false;">Liên hệ</a>
@@ -247,7 +248,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
    </div>
   </nav>
   <div class="hero-center">
-   <h1 class="hero-h">Quản lý giáo lý <em>trọn vẹn,</em> gìn giữ <em>đức tin vững bền.</em></h1>
+   <h1 class="hero-h">Quản lý giáo lý <em>trọn vẹn,</em><br>gìn giữ <em>đức tin vững bền.</em></h1>
    <p class="hero-sub">Nền tảng cho giáo xứ, ban giáo lý và giáo lý viên: hồ sơ học viên, bí tích, lớp học, điểm danh, điểm số và báo cáo — trọn vẹn qua từng năm học.</p>
    <div class="hero-actions">
     <a class="btn-dark" id="ctaPrimary" href="#dangky" onclick="openLp('mReg');return false;">Dùng thử miễn phí</a>
@@ -333,7 +334,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 <footer class="site-footer">
  <div class="container ft-grid">
   <div class="ft-col ft-brand">
-   <div class="ft-logo"><span style="color:var(--gold)">✝&#xFE0E;</span> Giáo Lý Số</div>
+   <div class="ft-logo"><img class="ft-mark" src="/favicon-512.png" alt="" /> Giáo Lý Số</div>
    <p>Nền tảng quản lý giáo lý cho giáo xứ, ban giáo lý và giáo lý viên — hồ sơ học viên, bí tích, lớp học, điểm số và báo cáo, trọn vẹn qua từng năm học.</p>
    <a class="ft-cta" href="#dangky" onclick="openLp('mReg');return false;">Đăng ký dùng thử</a>
   </div>
