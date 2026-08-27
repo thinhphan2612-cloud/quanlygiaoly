@@ -47,14 +47,9 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 .btn-dark:hover{transform:scale(1.03)}
 .nav-cta .btn-dark{padding:10px 22px;font-size:14px}
 .hero>.container{position:relative;z-index:2;flex:0 0 auto}
-.hero-video-region{position:relative;flex:1 1 auto;min-height:0;width:100%;overflow:hidden;display:flex;align-items:flex-start;justify-content:center;padding:0 16px}
-.device{width:min(880px,100%);border-radius:14px 14px 0 0;overflow:hidden;background:#fff;border:1px solid var(--line);border-bottom:none;box-shadow:0 22px 60px rgba(46,39,33,.16),0 4px 16px rgba(46,39,33,.08);display:flex;flex-direction:column}
-.device-bar{display:flex;align-items:center;gap:7px;padding:11px 15px;background:#EFE7D7;border-bottom:1px solid var(--line);flex:0 0 auto}
-.device-bar i{width:11px;height:11px;border-radius:50%;display:inline-block}
-.device-bar i:nth-child(1){background:#E4776B}.device-bar i:nth-child(2){background:#E9B84D}.device-bar i:nth-child(3){background:#63B187}
-.device-url{margin-left:10px;flex:1;max-width:340px;background:#FBF7EE;border:1px solid var(--line);border-radius:8px;padding:5px 14px;font-size:12px;color:var(--muted);letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.device-screen{width:100%;background:#FBF7EE;line-height:0}
-.device-screen svg{width:100%;height:auto;display:block}
+.hero-video-region{position:relative;flex:1 1 auto;min-height:0;width:100%;overflow:hidden}
+.hero-video-region video,.hero-video-region img{width:100%;height:100%;object-fit:cover;display:block;opacity:1}
+.hero-vfade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#F5EEE0 0%,rgba(245,238,224,0) 24%,rgba(245,238,224,0) 80%,#F5EEE0 100%)}
 .hero-center{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(8px,1.6vh,24px) 12px clamp(8px,1.4vh,18px)}
 .hero-h{font-family:'Oswald',sans-serif;font-weight:600;color:var(--ink);letter-spacing:0;line-height:1.08;font-size:clamp(1.9rem,4.8vw,3.9rem);margin:0;max-width:960px}
 .hero-h em{font-style:normal;color:var(--gold);font-weight:700}
@@ -255,10 +250,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
   </div>
  </div>
  <div class="hero-video-region">
-  <div class="device">
-   <div class="device-bar"><i></i><i></i><i></i><span class="device-url">app.giaoly.com.vn</span></div>
-   <div class="device-screen"><svg viewBox="0 0 420 270"><use href="#ill-dash"/></svg></div>
-  </div>
+  <img id="heroImg" src="/hero-img.webp" alt="Giáo lý — minh họa" />
+  <div class="hero-vfade"></div>
  </div>
 </section>
 
