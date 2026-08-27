@@ -68,8 +68,12 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
   .nav-cta{gap:12px}
   .nav-cta .btn-dark{padding:8px 16px;font-size:12px}
   .nav-login{font-size:12px}
-  .hero-center{padding:clamp(8px,2vh,20px) 8px clamp(10px,2vh,22px)}
-  .hero-actions .btn-dark{padding:13px 32px;font-size:14px}
+  .hero-center{padding:clamp(14px,3vh,28px) 14px clamp(14px,2.5vh,26px)}
+  .hero-h{font-size:clamp(2.5rem,8vw,3.1rem);line-height:1.2;letter-spacing:0}
+  .hero-br{display:none}
+  .hero-sub{font-size:1rem;line-height:1.55;margin-top:14px;max-width:340px}
+  .hero-actions{margin-top:18px}
+  .hero-actions .btn-dark{padding:14px 34px;font-size:15px}
   .hero-video-region{min-height:0}
 }
 @media(max-width:400px){
@@ -249,7 +253,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
    </div>
   </nav>
   <div class="hero-center">
-   <h1 class="hero-h">Quản lý giáo lý <em>trọn vẹn,</em><br>gìn giữ <em>đức tin vững bền.</em></h1>
+   <h1 class="hero-h">Quản lý giáo lý <em>trọn vẹn,</em><br class="hero-br">gìn giữ <em>đức tin vững bền.</em></h1>
    <p class="hero-sub">Nền tảng cho giáo xứ, ban giáo lý và giáo lý viên: hồ sơ học viên, bí tích, lớp học, điểm danh, điểm số và báo cáo — trọn vẹn qua từng năm học.</p>
    <div class="hero-actions">
     <a class="btn-dark" id="ctaPrimary" href="#dangky" onclick="openLp('mReg');return false;">Dùng thử miễn phí</a>
