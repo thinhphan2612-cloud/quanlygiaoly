@@ -42,8 +42,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:24px 0
 .navlinks{display:flex;gap:30px;font-size:14px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink)}
 .navlinks a{opacity:.75;transition:.2s}.navlinks a:hover{opacity:1}
 .nav-cta{display:flex;gap:10px;align-items:center}
-.hero-bg{position:absolute;inset:0;z-index:0}
-.hero-bg video{width:100%;height:100%;object-fit:cover}
+.hero-bg{position:absolute;inset:0;z-index:0;background:#0C0C0C}
+.hero-bg video{width:100%;height:100%;object-fit:cover;opacity:1}
 .hero-scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(8,10,16,.66) 0%,rgba(8,10,16,.20) 42%,rgba(8,10,16,.58) 100%)}
 .hero-inner{position:relative;z-index:2;display:flex;flex-direction:column;height:100svh}
 .hero-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;gap:16px;padding-top:clamp(48px,9vh,110px)}
@@ -184,7 +184,7 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-s
 
 <!-- 1. HERO -->
 <section class="hero" id="top">
- <div class="hero-bg"><video src="/heroimg.mp4" autoplay muted loop playsinline preload="auto"></video></div>
+ <div class="hero-bg"><video id="heroVideo" src="/hero2.mp4" autoplay muted loop playsinline preload="auto"></video></div>
  <div class="hero-scrim"></div>
  <div class="container hero-inner">
   <nav>
@@ -270,6 +270,11 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-s
 
 <script>
 const APP='https://app.giaoly.com.vn';
+
+/* Hero video: fade mượt đầu/cuối mỗi vòng lặp (loop attr vẫn đảm bảo lặp) */
+const heroV=document.getElementById('heroVideo');
+function heroLoop(){if(heroV&&heroV.duration){const t=heroV.currentTime,d=heroV.duration,f=0.5;let o=1;if(t<f)o=t/f;else if(t>d-f)o=Math.max(0,(d-t)/f);heroV.style.opacity=o.toFixed(3);}requestAnimationFrame(heroLoop);}
+requestAnimationFrame(heroLoop);
 
 /* Fit hero heading to ~94% width (một dòng, không tràn) */
 /* FadeIn (whileInView, once) with per-element y offset */
