@@ -112,7 +112,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:24px 0
 .pgrid .c1a{height:clamp(120px,15vw,210px)}
 .pgrid .c1b{height:clamp(150px,21vw,320px)}
 .pgrid .c2{height:100%}
-@media(max-width:640px){.pgrid{grid-template-columns:1fr}.pgrid .c2{height:clamp(200px,60vw,360px)}}
+@media(max-width:640px){.pgrid{grid-template-columns:1fr}.pgrid .c2{height:clamp(200px,60vw,360px)}
+  .pslot{height:auto;margin-bottom:16px}.pcard{position:static;transform:none!important}}
 
 /* CTA + footer */
 .cta{min-height:80vh;display:grid;place-items:center;text-align:center;padding:100px 0;position:relative;overflow:hidden}
@@ -316,8 +317,10 @@ if(at){const txt=at.textContent;at.textContent='';const sp=[...txt].map(ch=>{con
 
 /* Sticky cards scale */
 const cards=[...document.querySelectorAll('.pcard')];const N=cards.length;
-cards.forEach((c,i)=>c.style.top=(96+i*28)+'px');
-function cardScale(){cards.forEach((c,i)=>{const slot=c.parentElement.getBoundingClientRect();const target=1-(N-1-i)*0.03;const prog=Math.max(0,Math.min(1,-slot.top/(slot.height*0.6)));c.style.transform='scale('+(1-(1-target)*prog).toFixed(3)+')';});}
+const isDesk=()=>innerWidth>640;
+function setupCards(){cards.forEach((c,i)=>{if(isDesk()){c.style.top=(96+i*28)+'px';}else{c.style.top='';c.style.transform='none';}});}
+function cardScale(){if(!isDesk())return;cards.forEach((c,i)=>{const slot=c.parentElement.getBoundingClientRect();const target=1-(N-1-i)*0.03;const prog=Math.max(0,Math.min(1,-slot.top/(slot.height*0.6)));c.style.transform='scale('+(1-(1-target)*prog).toFixed(3)+')';});}
+setupCards();addEventListener('resize',setupCards);
 addEventListener('scroll',cardScale,{passive:true});cardScale();
 
 /* Smart UX cookie */
