@@ -36,15 +36,15 @@ img,video,svg{display:block;max-width:100%}
 .fade.in{opacity:1;transform:none}
 
 /* HERO */
-.hero{position:relative;height:100svh;overflow:hidden;color:#fff}
+.hero{position:relative;height:100svh;overflow:hidden;color:#fff;background:#0C0C0C}
 nav{display:flex;align-items:center;justify-content:space-between;padding:24px 0 8px;position:relative;z-index:30}
 .brand{font-weight:900;letter-spacing:-.02em;font-size:20px;text-transform:uppercase;display:flex;align-items:center;gap:8px}.brand .x{color:#BBCCD7}
 .navlinks{display:flex;gap:30px;font-size:14px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink)}
 .navlinks a{opacity:.75;transition:.2s}.navlinks a:hover{opacity:1}
 .nav-cta{display:flex;gap:10px;align-items:center}
-.hero-bg{position:absolute;inset:0;z-index:0;background:#0C0C0C}
+.hero-bg{position:absolute;left:0;right:0;bottom:0;top:clamp(300px,46vh,520px);z-index:0}
 .hero-bg video{width:100%;height:100%;object-fit:cover;opacity:1}
-.hero-scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(8,10,16,.66) 0%,rgba(8,10,16,.20) 42%,rgba(8,10,16,.58) 100%)}
+.hero-fade{position:absolute;left:0;right:0;bottom:0;top:clamp(300px,46vh,520px);z-index:1;background:linear-gradient(180deg,#0C0C0C 0%,rgba(12,12,12,0) 26%,rgba(12,12,12,0) 82%,#0C0C0C 100%)}
 .hero-inner{position:relative;z-index:2;display:flex;flex-direction:column;height:100svh}
 .hero-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;gap:16px;padding-top:clamp(48px,9vh,110px)}
 .hero-eyebrow{color:var(--gold);letter-spacing:.3em;text-transform:uppercase;font-size:13px;font-weight:600}
@@ -185,7 +185,7 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-s
 <!-- 1. HERO -->
 <section class="hero" id="top">
  <div class="hero-bg"><video id="heroVideo" src="/hero2.mp4" autoplay muted loop playsinline preload="auto"></video></div>
- <div class="hero-scrim"></div>
+ <div class="hero-fade"></div>
  <div class="container hero-inner">
   <nav>
    <a href="#top" class="brand"><span class="x">✝</span> GIÁO LÝ SỐ</a>
