@@ -49,7 +49,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 .nav-cta .btn-dark{padding:10px 22px;font-size:14px}
 .hero>.container{position:relative;z-index:2;flex:0 0 auto}
 .hero-video-region{position:relative;flex:1 1 auto;min-height:0;width:100%;overflow:hidden}
-.hero-video-region video{width:100%;height:100%;object-fit:cover;display:block;opacity:1}
+.hero-video-region video,.hero-video-region img{width:100%;height:100%;object-fit:cover;display:block;opacity:1}
 .hero-vfade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#fff 0%,rgba(255,255,255,0) 24%,rgba(12,12,12,0) 80%,#0C0C0C 100%)}
 .hero-center{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(8px,1.6vh,24px) 12px clamp(8px,1.4vh,18px)}
 .hero-h{font-family:'Instrument Serif',serif;font-weight:400;color:#000;letter-spacing:-.02em;line-height:.98;font-size:clamp(1.7rem,4.3vw,3.5rem);margin:0;max-width:960px}
@@ -251,7 +251,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
   </div>
  </div>
  <div class="hero-video-region">
-  <video id="heroVideo" src="/hero2.mp4" autoplay muted loop playsinline preload="auto"></video>
+  <img id="heroImg" src="/hero-img.png" alt="Giáo lý — minh họa" />
   <div class="hero-vfade"></div>
  </div>
 </section>
