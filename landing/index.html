@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{ --bg:#0C0C0C; --ink:#D7E2EA; --muted:#93a0ad; --line:rgba(215,226,234,.14); }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -36,32 +37,38 @@ img,video,svg{display:block;max-width:100%}
 .fade.in{opacity:1;transform:none}
 
 /* HERO */
-.hero{position:relative;height:100svh;overflow:hidden;color:#fff;background:#0C0C0C;display:flex;flex-direction:column}
-nav{display:flex;align-items:center;justify-content:space-between;padding:24px 0 8px;position:relative;z-index:30}
-.brand{font-weight:900;letter-spacing:-.02em;font-size:20px;text-transform:uppercase;display:flex;align-items:center;gap:8px}.brand .x{color:#BBCCD7}
-.navlinks{display:flex;gap:30px;font-size:14px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink)}
-.navlinks a{opacity:.75;transition:.2s}.navlinks a:hover{opacity:1}
-.nav-cta{display:flex;gap:10px;align-items:center}
+.hero{position:relative;height:100vh;min-height:640px;overflow:hidden;background:#fff;color:#000;display:flex;flex-direction:column;font-family:'Inter',sans-serif}
+nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0;position:relative;z-index:30}
+.brand{font-family:'Instrument Serif',serif;font-weight:400;font-size:30px;letter-spacing:-.01em;color:#000;text-transform:none;display:flex;align-items:center;gap:7px}.brand .x{color:#000;font-size:22px}
+.navlinks{display:flex;gap:30px;font-size:14px;color:#6F6F6F;text-transform:none;letter-spacing:0}
+.navlinks a{opacity:1;transition:color .2s}.navlinks a:hover{color:#000}
+.nav-cta{display:flex;gap:16px;align-items:center}
+.nav-login{color:#6F6F6F;font-size:14px;transition:color .2s}.nav-login:hover{color:#000}
+.btn-dark{display:inline-block;background:#000;color:#fff;border-radius:999px;font-family:'Inter',sans-serif;font-weight:500;border:none;transition:transform .2s;cursor:pointer}
+.btn-dark:hover{transform:scale(1.03)}
+.nav-cta .btn-dark{padding:10px 22px;font-size:14px}
 .hero>.container{position:relative;z-index:2;flex:0 0 auto}
 .hero-video-region{position:relative;flex:1 1 auto;min-height:0;width:100%;overflow:hidden}
 .hero-video-region video{width:100%;height:100%;object-fit:cover;display:block;opacity:1}
-.hero-vfade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#0C0C0C 0%,rgba(12,12,12,0) 18%,rgba(12,12,12,0) 86%,#0C0C0C 100%)}
-.hero-center{display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;padding:clamp(26px,5vh,60px) 0 clamp(20px,4vh,44px)}
-.hero-eyebrow{color:var(--gold);letter-spacing:.3em;text-transform:uppercase;font-size:13px;font-weight:600}
-.hero-h{font-weight:900;text-transform:uppercase;letter-spacing:-.02em;line-height:1.02;font-size:clamp(2.4rem,7vw,5.6rem);margin:0;text-shadow:0 6px 40px rgba(0,0,0,.55)}
-.hero-sub{max-width:640px;color:#eef3f7;font-weight:300;font-size:clamp(1rem,1.8vw,1.35rem);line-height:1.55;text-shadow:0 2px 14px rgba(0,0,0,.55)}
-.hero-actions{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;justify-content:center}
+.hero-vfade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#fff 0%,rgba(255,255,255,0) 24%,rgba(12,12,12,0) 80%,#0C0C0C 100%)}
+.hero-center{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(28px,6.5vh,86px) 12px clamp(22px,5vh,52px)}
+.hero-h{font-family:'Instrument Serif',serif;font-weight:400;color:#000;letter-spacing:-.02em;line-height:.98;font-size:clamp(2.6rem,7.4vw,6rem);margin:0;max-width:1120px}
+.hero-h em{font-style:italic;color:#6F6F6F}
+.hero-sub{max-width:600px;color:#6F6F6F;font-size:clamp(1rem,1.35vw,1.15rem);line-height:1.6;margin-top:30px;font-weight:400}
+.hero-actions{margin-top:42px}
+.hero-actions .btn-dark{padding:18px 46px;font-size:16px}
 @media(max-width:640px){
   .navlinks{display:none}
   nav{padding:16px 0}
-  .brand{font-size:16px;gap:6px}
-  .nav-cta{gap:8px}
-  .btn-live,.btn-contact{padding:9px 15px;font-size:11px;letter-spacing:.08em}
-  .hero-center{gap:14px;padding-top:70px}
+  .brand{font-size:24px;gap:6px}
+  .nav-cta{gap:12px}
+  .nav-cta .btn-dark{padding:8px 16px;font-size:12px}
+  .nav-login{font-size:12px}
+  .hero-center{padding:clamp(24px,5vh,50px) 8px clamp(18px,4vh,40px)}
+  .hero-actions .btn-dark{padding:15px 36px;font-size:15px}
 }
 @media(max-width:400px){
-  .brand{font-size:14px}
-  .btn-live,.btn-contact{padding:8px 12px;font-size:10px}
+  .brand{font-size:21px}
 }
 
 /* MARQUEE */
@@ -186,20 +193,18 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-s
 <section class="hero" id="top">
  <div class="container">
   <nav>
-   <a href="#top" class="brand"><span class="x">✝</span> GIÁO LÝ SỐ</a>
+   <a href="#top" class="brand"><span class="x">✝</span> Giáo Lý Số</a>
    <div class="navlinks"><a href="#services">Tính năng</a><a href="#projects">Vai trò</a><a href="#about">Giới thiệu</a><a href="#cta">Liên hệ</a></div>
    <div class="nav-cta">
-    <a class="btn-live" id="btnLogin" href="https://app.giaoly.com.vn/login">Đăng nhập</a>
-    <a class="btn-contact" id="btnRegister" href="https://app.giaoly.com.vn/register">Đăng ký</a>
+    <a class="nav-login" id="btnLogin" href="https://app.giaoly.com.vn/login">Đăng nhập</a>
+    <a class="btn-dark" id="btnRegister" href="https://app.giaoly.com.vn/register">Đăng ký</a>
    </div>
   </nav>
   <div class="hero-center">
-   <div class="hero-eyebrow">Nền tảng quản lý giáo lý Công giáo</div>
-   <h1 class="hero-h">Giáo Lý Số</h1>
-   <p class="hero-sub">Một nơi duy nhất để giáo xứ, ban giáo lý và giáo lý viên quản lý học viên, bí tích, lớp học và tiến trình đào tạo — trọn vẹn qua từng năm học.</p>
+   <h1 class="hero-h">Quản lý giáo lý <em>trọn vẹn,</em> gìn giữ <em>đức tin.</em></h1>
+   <p class="hero-sub">Nền tảng cho giáo xứ, ban giáo lý và giáo lý viên: hồ sơ học viên, bí tích, lớp học, điểm danh, điểm số và báo cáo — trọn vẹn qua từng năm học.</p>
    <div class="hero-actions">
-    <a class="btn-contact" id="ctaPrimary" href="https://app.giaoly.com.vn/register">Dùng thử miễn phí</a>
-    <a class="btn-live" href="#services">Khám phá hệ thống</a>
+    <a class="btn-dark" id="ctaPrimary" href="https://app.giaoly.com.vn/register">Dùng thử miễn phí</a>
    </div>
   </div>
  </div>
@@ -231,7 +236,7 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-s
    <article class="svc fade" data-y="30"><div class="no">01</div><div><h3>Hồ sơ &amp; bí tích</h3><p>Hồ sơ học viên trọn đời: cá nhân, cha mẹ, người đỡ đầu; theo dõi Rửa Tội, Rước Lễ, Thêm Sức kèm ngày lãnh nhận và xuất chứng chỉ ngay từ hồ sơ.</p></div></article>
    <article class="svc fade" data-y="30" style="transition-delay:.1s"><div class="no">02</div><div><h3>Lớp &amp; điểm danh</h3><p>Phân công giáo lý viên theo năm học, điểm danh nhanh với đủ trạng thái có mặt, vắng phép, vắng không phép và ghi chú lý do.</p></div></article>
    <article class="svc fade" data-y="30" style="transition-delay:.2s"><div class="no">03</div><div><h3>Điểm số &amp; thi đua</h3><p>Cột điểm theo hệ số, tính trung bình và xếp hạng; bảng thi đua kết hợp học tập, chuyên cần và việc thiêng liêng. Xuất Excel/PDF một chạm.</p></div></article>
-   <article class="svc fade" data-y="30" style="transition-delay:.3s"><div class="no">04</div><div><h3>Quản trị giáo xứ</h3><p>Dashboard tổng hợp số lớp, học viên, giáo lý viên, chuyên cần và bí tích; lên lớp cuối năm và đồng bộ thời gian thực giữa admin và giáo lý viên.</p></div></article>
+   <article class="svc fade" data-y="30" style="transition-delay:.3s"><div class="no">04</div><div><h3>Quản trị giáo xứ</h3><p>Dashboard tổng hợp số lớp, học viên, giáo lý viên, chuyên cần và bí tích; lên lớp cuối năm và đồng bộ thời gian thực giữa cha sở và giáo lý viên.</p></div></article>
    <article class="svc fade" data-y="30" style="transition-delay:.4s"><div class="no">05</div><div><h3>Chứng chỉ &amp; lưu trữ</h3><p>Xuất chứng chỉ Rửa Tội / Rước Lễ / Thêm Sức trang trọng; lưu trữ và tra cứu dữ liệu các năm học cũ bất cứ lúc nào.</p></div></article>
   </div>
  </div>
@@ -243,18 +248,13 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-s
   <h2 class="projects-h hero-heading fade" data-y="40">VAI TRÒ</h2>
 
   <div class="pslot"><div class="pcard fade" data-y="30">
-   <div class="pctop"><div class="no hero-heading">01</div><div class="pcmeta"><div class="cat">Ban giáo lý</div><h3>Nhìn toàn bộ hệ thống</h3></div><a class="btn-live" href="https://app.giaoly.com.vn/">Vào ứng dụng</a></div>
+   <div class="pctop"><div class="no hero-heading">01</div><div class="pcmeta"><div class="cat">Cha sở · ban giáo lý</div><h3>Nhìn toàn bộ hệ thống</h3></div><a class="btn-live" href="https://app.giaoly.com.vn/">Vào ứng dụng</a></div>
    <div class="pgrid"><div class="col1"><div class="im c1a"><svg viewBox="0 0 420 270"><use href="#ill-grade"/></svg></div><div class="im c1b"><svg viewBox="0 0 420 270"><use href="#ill-leader"/></svg></div></div><div class="im c2"><svg viewBox="0 0 420 270" preserveAspectRatio="xMidYMid slice"><use href="#ill-dash"/></svg></div></div>
   </div></div>
 
   <div class="pslot"><div class="pcard fade" data-y="30">
    <div class="pctop"><div class="no hero-heading">02</div><div class="pcmeta"><div class="cat">Giáo lý viên</div><h3>Tập trung vào lớp của mình</h3></div><a class="btn-live" href="https://app.giaoly.com.vn/login">Vào ứng dụng</a></div>
    <div class="pgrid"><div class="col1"><div class="im c1a"><svg viewBox="0 0 420 270"><use href="#ill-grade"/></svg></div><div class="im c1b"><svg viewBox="0 0 420 270"><use href="#ill-dash"/></svg></div></div><div class="im c2"><svg viewBox="0 0 420 270" preserveAspectRatio="xMidYMid slice"><use href="#ill-att"/></svg></div></div>
-  </div></div>
-
-  <div class="pslot"><div class="pcard fade" data-y="30">
-   <div class="pctop"><div class="no hero-heading">03</div><div class="pcmeta"><div class="cat">Học viên · phụ huynh</div><h3>Theo dõi hành trình học</h3></div><a class="btn-live" href="https://app.giaoly.com.vn/login">Vào ứng dụng</a></div>
-   <div class="pgrid"><div class="col1"><div class="im c1a"><svg viewBox="0 0 420 270"><use href="#ill-att"/></svg></div><div class="im c1b"><svg viewBox="0 0 420 270"><use href="#ill-cert"/></svg></div></div><div class="im c2"><svg viewBox="0 0 420 270" preserveAspectRatio="xMidYMid slice"><use href="#ill-leader"/></svg></div></div>
   </div></div>
 
  </div>
