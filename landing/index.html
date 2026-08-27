@@ -36,29 +36,28 @@ img,video,svg{display:block;max-width:100%}
 .fade.in{opacity:1;transform:none}
 
 /* HERO */
-.hero{height:100svh;display:flex;flex-direction:column;overflow-x:clip;position:relative}
+.hero{position:relative;height:100svh;overflow:hidden;color:#fff}
 nav{display:flex;align-items:center;justify-content:space-between;padding:24px 0 8px;position:relative;z-index:30}
 .brand{font-weight:900;letter-spacing:-.02em;font-size:20px;text-transform:uppercase;display:flex;align-items:center;gap:8px}.brand .x{color:#BBCCD7}
 .navlinks{display:flex;gap:30px;font-size:14px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink)}
 .navlinks a{opacity:.75;transition:.2s}.navlinks a:hover{opacity:1}
 .nav-cta{display:flex;gap:10px;align-items:center}
-.hero-main{flex:1;position:relative;display:flex;flex-direction:column;overflow:visible}
-.hero-stack{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(16px,3vh,36px);min-height:0}
-.hero-h{font-weight:900;text-transform:uppercase;letter-spacing:-.03em;line-height:1.08;white-space:nowrap;width:100%;text-align:center;font-size:12vw;margin:0;padding-top:.04em}
-.hero-portrait{position:relative;width:min(64vw,840px,calc(52vh*1.78));max-width:92vw;opacity:0;animation:heroFade .9s ease .35s forwards}
-@keyframes heroFade{to{opacity:1}}
-.hero-portrait .mag{width:100%;will-change:transform}
-.hero-video{width:100%;height:auto;display:block;border-radius:22px;background:#141414;box-shadow:0 40px 120px rgba(0,0,0,.6)}
-.hero-bottom{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding-bottom:34px;position:relative;z-index:15}
-.hero-copy{max-width:260px;text-transform:uppercase;letter-spacing:.04em;font-weight:300;line-height:1.32;color:var(--ink);font-size:clamp(.75rem,1.4vw,1.4rem)}
+.hero-bg{position:absolute;inset:0;z-index:0}
+.hero-bg video{width:100%;height:100%;object-fit:cover}
+.hero-scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(8,10,16,.66) 0%,rgba(8,10,16,.20) 42%,rgba(8,10,16,.58) 100%)}
+.hero-inner{position:relative;z-index:2;display:flex;flex-direction:column;height:100svh}
+.hero-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:22px;padding:0 0 6vh}
+.hero-eyebrow{color:var(--gold);letter-spacing:.3em;text-transform:uppercase;font-size:13px;font-weight:600}
+.hero-h{font-weight:900;text-transform:uppercase;letter-spacing:-.02em;line-height:1.02;font-size:clamp(3rem,10vw,8rem);margin:0;text-shadow:0 6px 40px rgba(0,0,0,.5)}
+.hero-sub{max-width:640px;color:#eef3f7;font-weight:300;font-size:clamp(1rem,1.8vw,1.35rem);line-height:1.55;text-shadow:0 2px 14px rgba(0,0,0,.55)}
+.hero-actions{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;justify-content:center}
 @media(max-width:640px){
   .navlinks{display:none}
   nav{padding:16px 0}
   .brand{font-size:16px;gap:6px}
   .nav-cta{gap:8px}
   .btn-live,.btn-contact{padding:9px 15px;font-size:11px;letter-spacing:.08em}
-  .hero-portrait{width:min(92vw,520px)}
-  .hero-bottom{padding-bottom:26px}.hero-copy{max-width:170px}
+  .hero-center{gap:16px;padding-bottom:12vh}
 }
 @media(max-width:400px){
   .brand{font-size:14px}
@@ -185,7 +184,9 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-s
 
 <!-- 1. HERO -->
 <section class="hero" id="top">
- <div class="container" style="display:flex;flex-direction:column;flex:1">
+ <div class="hero-bg"><video src="/heroimg.mp4" autoplay muted loop playsinline preload="auto"></video></div>
+ <div class="hero-scrim"></div>
+ <div class="container hero-inner">
   <nav>
    <a href="#top" class="brand"><span class="x">✝</span> GIÁO LÝ SỐ</a>
    <div class="navlinks"><a href="#services">Tính năng</a><a href="#projects">Vai trò</a><a href="#about">Giới thiệu</a><a href="#cta">Liên hệ</a></div>
@@ -194,14 +195,13 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-s
     <a class="btn-contact" id="btnRegister" href="https://app.giaoly.com.vn/register">Đăng ký</a>
    </div>
   </nav>
-  <div class="hero-main">
-   <div class="hero-stack">
-    <h1 class="hero-h hero-heading">GIÁO LÝ SỐ</h1>
-    <div class="hero-portrait"><div class="mag" id="heroMagnet"><video class="hero-video" src="/heroimg.mp4" autoplay muted loop playsinline preload="auto"></video></div></div>
-   </div>
-   <div class="hero-bottom">
-    <p class="hero-copy">Nền tảng quản lý giáo lý cho giáo xứ, ban giáo lý và giáo lý viên.</p>
-    <a class="btn-contact" id="ctaPrimary" href="https://app.giaoly.com.vn/register">Dùng thử</a>
+  <div class="hero-center">
+   <div class="hero-eyebrow">Nền tảng quản lý giáo lý Công giáo</div>
+   <h1 class="hero-h">Giáo Lý Số</h1>
+   <p class="hero-sub">Một nơi duy nhất để giáo xứ, ban giáo lý và giáo lý viên quản lý học viên, bí tích, lớp học và tiến trình đào tạo — trọn vẹn qua từng năm học.</p>
+   <div class="hero-actions">
+    <a class="btn-contact" id="ctaPrimary" href="https://app.giaoly.com.vn/register">Dùng thử miễn phí</a>
+    <a class="btn-live" href="#services">Khám phá hệ thống</a>
    </div>
   </div>
  </div>
@@ -272,10 +272,6 @@ footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-s
 const APP='https://app.giaoly.com.vn';
 
 /* Fit hero heading to ~94% width (một dòng, không tràn) */
-const heroH=document.querySelector('.hero-h');
-function fitHero(){if(!heroH)return;const prev=heroH.style.fontSize;heroH.style.fontSize='100px';const cw=heroH.clientWidth,tw=heroH.scrollWidth;if(cw<80||tw<80){heroH.style.fontSize=prev;return;}heroH.style.fontSize=Math.min(100*cw*0.94/tw,300)+'px';}
-fitHero();addEventListener('resize',fitHero);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitHero);addEventListener('load',fitHero);setTimeout(fitHero,300);
-
 /* FadeIn (whileInView, once) with per-element y offset */
 document.querySelectorAll('.fade').forEach(el=>{const y=el.dataset.y||30;el.style.transform='translateY('+y+'px)';});
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:0,rootMargin:'0px 0px 50px 0px'});
