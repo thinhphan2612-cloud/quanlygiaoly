@@ -336,8 +336,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
   <div class="ft-col">
    <h4>Liên hệ</h4>
    <ul>
-    <li>Email: <a href="mailto:phanngocthinh2612@gmail.com">phanngocthinh2612@gmail.com</a></li>
-    <li>Hotline / Zalo: <span class="ft-muted">(đang cập nhật)</span></li>
+    <li>Email: <a href="mailto:support.giaolyso@gmail.com">support.giaolyso@gmail.com</a></li>
     <li>Trụ sở: TP. Hồ Chí Minh, Việt Nam</li>
     <li>Giờ làm việc: T2–T7, 8:00–17:00</li>
    </ul>
@@ -381,7 +380,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
    <input name="name" placeholder="Họ tên *" required>
    <input name="parish" placeholder="Giáo xứ / Giáo phận">
    <input name="email" type="email" placeholder="Email *" required>
-   <input name="phone" placeholder="Số điện thoại / Zalo">
+   <input name="phone" placeholder="Số điện thoại">
    <textarea name="note" placeholder="Lời nhắn (không bắt buộc)"></textarea>
    <button class="lp-submit" type="submit">Gửi đăng ký</button>
    <div class="lp-status"></div>
@@ -399,7 +398,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
   <form data-kind="Liên hệ">
    <input name="name" placeholder="Họ tên *" required>
    <input name="email" type="email" placeholder="Email *" required>
-   <input name="phone" placeholder="Số điện thoại / Zalo">
+   <input name="phone" placeholder="Số điện thoại">
    <textarea name="note" placeholder="Nội dung liên hệ *" required></textarea>
    <button class="lp-submit" type="submit">Gửi liên hệ</button>
    <div class="lp-status"></div>
@@ -409,8 +408,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 
 <script>
 const APP='https://app.giaoly.com.vn';
-const CONTACT_EMAIL='phanngocthinh2612@gmail.com';
-const FORM_KEY='b978f183-9404-4847-8d69-3889469ccb3d'; /* Web3Forms access key -> gửi email tự động về phanngocthinh2612@gmail.com */
+const CONTACT_EMAIL='support.giaolyso@gmail.com';
+const FORM_KEY='b978f183-9404-4847-8d69-3889469ccb3d'; /* Web3Forms access key -> gửi email tự động về hộp thư đã cấu hình */
 
 function openLp(id){const m=document.getElementById(id);if(m){m.hidden=false;document.body.style.overflow='hidden';const i=m.querySelector('input');if(i)setTimeout(()=>i.focus(),50);}}
 function closeLp(id){const m=document.getElementById(id);if(m){m.hidden=true;document.body.style.overflow='';}}
