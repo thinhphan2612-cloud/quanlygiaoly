@@ -5,9 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Giáo Lý Số — Quản lý giáo lý Công giáo</title>
 <meta name="description" content="Nền tảng quản lý giáo lý cho giáo xứ, ban giáo lý và giáo lý viên: hồ sơ học viên, bí tích, lớp & điểm danh, điểm số, thi đua và báo cáo." />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<meta name="theme-color" content="#EA4A42" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&family=Imperial+Script&display=swap" rel="stylesheet">
 <style>
 :root{ --bg:#F5EEE0; --bg2:#FBF6EC; --panel:#FFFFFF; --ink:#2E2721; --muted:#5F5344; --line:rgba(46,39,33,.13); --gold:#B4813C; --primary:#7A1F2B; --primary-h:#93303c; }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -37,7 +42,7 @@ img,video,svg{display:block;max-width:100%}
 /* HERO */
 .hero{position:relative;height:100vh;min-height:640px;overflow:hidden;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;font-family:'Oswald',sans-serif}
 nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0;position:relative;z-index:30}
-.brand{font-family:'Oswald',sans-serif;font-weight:400;font-size:30px;letter-spacing:-.01em;color:var(--ink);text-transform:none;display:flex;align-items:center;gap:7px}.brand .x{color:var(--gold);font-size:22px}
+.brand{font-family:'Imperial Script',cursive;font-weight:400;font-size:40px;letter-spacing:0;color:var(--ink);text-transform:none;display:flex;align-items:center;gap:8px;line-height:1}.brand .x{color:var(--gold);font-size:22px;font-family:'Oswald',sans-serif}
 .navlinks{display:flex;gap:30px;font-size:14px;color:var(--muted);text-transform:none;letter-spacing:0}
 .navlinks a{opacity:1;transition:color .2s}.navlinks a:hover{color:var(--ink)}
 .nav-cta{display:flex;gap:16px;align-items:center}
@@ -52,14 +57,14 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 .hero-vfade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#F5EEE0 0%,rgba(245,238,224,0) 24%,rgba(245,238,224,0) 80%,#F5EEE0 100%)}
 .hero-center{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(8px,1.6vh,24px) 12px clamp(8px,1.4vh,18px)}
 .hero-h{font-family:'Oswald',sans-serif;font-weight:600;color:var(--ink);letter-spacing:0;line-height:1.08;font-size:clamp(1.9rem,4.8vw,3.9rem);margin:0;max-width:960px}
-.hero-h em{font-style:normal;color:var(--gold);font-weight:700}
+.hero-h em{font-family:'Imperial Script',cursive;font-style:normal;color:var(--gold);font-weight:400;font-size:1.15em;letter-spacing:.01em}
 .hero-sub{max-width:540px;color:var(--muted);font-size:clamp(.9rem,1.15vw,1.02rem);line-height:1.5;margin-top:13px;font-weight:400}
 .hero-actions{margin-top:20px}
 .hero-actions .btn-dark{padding:14px 40px;font-size:15px}
 @media(max-width:640px){
   .navlinks{display:none}
   nav{padding:16px 0}
-  .brand{font-size:24px;gap:6px}
+  .brand{font-size:32px;gap:6px}
   .nav-cta{gap:12px}
   .nav-cta .btn-dark{padding:8px 16px;font-size:12px}
   .nav-login{font-size:12px}
@@ -67,7 +72,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
   .hero-actions .btn-dark{padding:15px 36px;font-size:15px}
 }
 @media(max-width:400px){
-  .brand{font-size:21px}
+  .brand{font-size:28px}
 }
 
 /* MARQUEE */
@@ -130,7 +135,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 /* footer */
 .site-footer{background:#EDE3D1;border-top:1px solid var(--line);padding:58px 0 24px;color:var(--muted);font-family:'Oswald',sans-serif}
 .ft-grid{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:34px}
-.ft-brand .ft-logo{font-weight:800;font-size:21px;color:var(--ink);margin-bottom:12px}
+.ft-brand .ft-logo{font-family:'Imperial Script',cursive;font-weight:400;font-size:34px;line-height:1;color:var(--ink);margin-bottom:14px}
 .ft-brand p{font-weight:400;line-height:1.65;font-size:14px;max-width:360px;margin-bottom:18px}
 .ft-cta{display:inline-block;background:var(--primary);color:#fff;border-radius:999px;padding:11px 24px;font-size:13px;font-weight:600;transition:transform .2s}
 .ft-cta:hover{transform:scale(1.03)}
