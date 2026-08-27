@@ -143,6 +143,19 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 @media(max-width:820px){.ft-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){.ft-grid{grid-template-columns:1fr}.ft-bottom{flex-direction:column;gap:6px}}
 
+/* FAQ */
+.faq{padding:clamp(72px,11vw,120px) 0}
+.faq-h{text-align:center;font-weight:900;text-transform:uppercase;font-size:clamp(2.2rem,8vw,96px);line-height:1.08;padding-top:.04em;margin:14px 0 44px}
+.faq-list{max-width:860px;margin:auto;border-top:1px solid var(--line)}
+.faq-item{border-bottom:1px solid var(--line)}
+.faq-q{width:100%;text-align:left;background:none;border:none;color:var(--ink);font-family:'Kanit',sans-serif;font-size:clamp(1.02rem,1.8vw,1.3rem);font-weight:500;padding:22px 4px;cursor:pointer;display:flex;justify-content:space-between;gap:18px;align-items:center;transition:color .2s}
+.faq-q:hover{color:#fff}
+.faq-q .ic{color:var(--gold);font-size:26px;line-height:1;transition:transform .25s;flex:0 0 auto}
+.faq-item.open .faq-q .ic{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.faq-item.open .faq-a{max-height:460px}
+.faq-a p{color:var(--muted);font-weight:300;line-height:1.7;font-size:clamp(.95rem,1.4vw,1.1rem);padding:0 4px 24px;margin:0;max-width:770px}
+
 /* popup (đăng ký / liên hệ) */
 .lp-modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px;font-family:'Inter','Kanit',sans-serif}
 .lp-modal[hidden]{display:none}
@@ -289,6 +302,24 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
  </div>
 </section>
 
+<!-- FAQ -->
+<section class="faq" id="faq">
+ <div class="container">
+  <div class="eyebrow reveal" style="text-align:center">Giải đáp</div>
+  <h2 class="faq-h hero-heading reveal">Câu hỏi thường gặp</h2>
+  <div class="faq-list">
+   <div class="faq-item open"><button class="faq-q">Giáo Lý Số là gì và dành cho ai?<span class="ic">+</span></button><div class="faq-a"><p>Là nền tảng web quản lý toàn bộ việc dạy giáo lý của giáo xứ: hồ sơ học viên, bí tích, lớp học, điểm danh, điểm số và báo cáo. Dành cho cha sở, ban giáo lý và giáo lý viên.</p></div></div>
+   <div class="faq-item"><button class="faq-q">Có cần cài đặt phần mềm gì không?<span class="ic">+</span></button><div class="faq-a"><p>Không. Giáo Lý Số chạy trực tiếp trên trình duyệt (máy tính, điện thoại, máy tính bảng) — chỉ cần đăng nhập là dùng được, không phải cài đặt.</p></div></div>
+   <div class="faq-item"><button class="faq-q">Chi phí thế nào? Có dùng thử miễn phí không?<span class="ic">+</span></button><div class="faq-a"><p>Có bản dùng thử. Gói dịch vụ tính theo từng giáo xứ và niên khóa. Anh chị để lại thông tin đăng ký, chúng tôi sẽ tư vấn mức phù hợp với quy mô giáo xứ.</p></div></div>
+   <div class="faq-item"><button class="faq-q">Dữ liệu của giáo xứ có riêng tư, an toàn không?<span class="ic">+</span></button><div class="faq-a"><p>Có. Mỗi giáo xứ là một không gian dữ liệu độc lập, cách ly hoàn toàn — không giáo xứ nào thấy dữ liệu của giáo xứ khác. Truy cập được phân quyền chặt chẽ giữa cha sở và giáo lý viên.</p></div></div>
+   <div class="faq-item"><button class="faq-q">Cha sở và giáo lý viên được phân quyền ra sao?<span class="ic">+</span></button><div class="faq-a"><p>Cha sở và ban giáo lý quản trị toàn xứ (năm học, lớp, giáo lý viên, báo cáo). Giáo lý viên chỉ thao tác trên lớp mình phụ trách: điểm danh, nhập điểm, nhận xét, theo dõi học viên.</p></div></div>
+   <div class="faq-item"><button class="faq-q">Có xuất được bảng điểm và chứng chỉ bí tích không?<span class="ic">+</span></button><div class="faq-a"><p>Có. Xuất bảng điểm, phiếu điểm danh ra Excel và PDF; xuất chứng chỉ Rửa Tội / Rước Lễ / Thêm Sức trang trọng ngay từ hồ sơ học viên.</p></div></div>
+   <div class="faq-item"><button class="faq-q">Cuối năm lên lớp và tra cứu năm cũ thế nào?<span class="ic">+</span></button><div class="faq-a"><p>Chỉ một thao tác “Kết thúc năm học”, hệ thống chuyển học viên lên lớp kế tiếp cho niên khóa mới (điểm bắt đầu lại). Dữ liệu các năm cũ được lưu trữ để tra cứu và tải về bất cứ lúc nào.</p></div></div>
+   <div class="faq-item"><button class="faq-q">Làm sao để bắt đầu sử dụng?<span class="ic">+</span></button><div class="faq-a"><p>Bấm “Đăng ký dùng thử”, để lại thông tin liên hệ — chúng tôi sẽ liên hệ, khởi tạo giáo xứ và hướng dẫn anh chị sử dụng từ đầu.</p></div></div>
+  </div>
+ </div>
+</section>
+
 <!-- CTA -->
 <section class="cta" id="cta"><div class="container">
  <h2 class="fade" data-y="30">DÀNH THỜI GIAN<br>CHO VIỆC DẠY.</h2>
@@ -323,6 +354,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
   <div class="ft-col">
    <h4>Hỗ trợ</h4>
    <ul>
+    <li><a href="#faq">Câu hỏi thường gặp</a></li>
     <li><a href="#lienhe" onclick="openLp('mContact');return false;">Gửi liên hệ</a></li>
     <li><a href="https://app.giaoly.com.vn/">Vào ứng dụng</a></li>
     <li><a href="#about">Giới thiệu</a></li>
@@ -408,6 +440,13 @@ document.querySelectorAll('.lp-card form').forEach(f=>{
  });
 });
 function enc(v){return encodeURIComponent(v||'—');}
+
+/* FAQ accordion (mở 1 mục, đóng các mục khác) */
+document.querySelectorAll('.faq-q').forEach(q=>q.addEventListener('click',()=>{
+ const it=q.closest('.faq-item');const wasOpen=it.classList.contains('open');
+ document.querySelectorAll('.faq-item').forEach(x=>x.classList.remove('open'));
+ if(!wasOpen)it.classList.add('open');
+}));
 
 /* Hero video: fade mượt đầu/cuối mỗi vòng lặp (loop attr vẫn đảm bảo lặp) */
 const heroV=document.getElementById('heroVideo');
