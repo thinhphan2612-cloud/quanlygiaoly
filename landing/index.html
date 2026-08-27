@@ -46,9 +46,9 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:24px 0
 .hero-bg video{width:100%;height:100%;object-fit:cover}
 .hero-scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(8,10,16,.66) 0%,rgba(8,10,16,.20) 42%,rgba(8,10,16,.58) 100%)}
 .hero-inner{position:relative;z-index:2;display:flex;flex-direction:column;height:100svh}
-.hero-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:22px;padding:0 0 6vh}
+.hero-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;gap:16px;padding-top:clamp(48px,9vh,110px)}
 .hero-eyebrow{color:var(--gold);letter-spacing:.3em;text-transform:uppercase;font-size:13px;font-weight:600}
-.hero-h{font-weight:900;text-transform:uppercase;letter-spacing:-.02em;line-height:1.02;font-size:clamp(3rem,10vw,8rem);margin:0;text-shadow:0 6px 40px rgba(0,0,0,.5)}
+.hero-h{font-weight:900;text-transform:uppercase;letter-spacing:-.02em;line-height:1.02;font-size:clamp(2.4rem,7vw,5.6rem);margin:0;text-shadow:0 6px 40px rgba(0,0,0,.55)}
 .hero-sub{max-width:640px;color:#eef3f7;font-weight:300;font-size:clamp(1rem,1.8vw,1.35rem);line-height:1.55;text-shadow:0 2px 14px rgba(0,0,0,.55)}
 .hero-actions{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;justify-content:center}
 @media(max-width:640px){
@@ -57,7 +57,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:24px 0
   .brand{font-size:16px;gap:6px}
   .nav-cta{gap:8px}
   .btn-live,.btn-contact{padding:9px 15px;font-size:11px;letter-spacing:.08em}
-  .hero-center{gap:16px;padding-bottom:12vh}
+  .hero-center{gap:14px;padding-top:70px}
 }
 @media(max-width:400px){
   .brand{font-size:14px}
