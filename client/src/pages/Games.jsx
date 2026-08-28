@@ -33,24 +33,11 @@ export default function Games() {
       </div>
 
       {COMING_SOON ? (
-        <>
-          <div className="panel coming-hero">
-            <div style={{ fontSize: 44 }}>🎮</div>
-            <h2 style={{ margin: '8px 0 4px' }}>Sắp ra mắt</h2>
-            <p className="muted" style={{ margin: 0 }}>Các game học giáo lý đang được hoàn thiện và sẽ sớm có mặt tại Ephata Store.</p>
-          </div>
-          {games.length > 0 && (
-            <div className="game-grid">
-              {games.map((g) => (
-                <div key={g.id} className="game-card coming">
-                  <div className="game-thumb soon"><span>🎮</span></div>
-                  <div className="game-name">{g.name}</div>
-                  <div className="game-lock soon">Sắp ra mắt</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
+        <div className="panel coming-hero">
+          <div style={{ fontSize: 44 }}>🎮</div>
+          <h2 style={{ margin: '8px 0 4px' }}>Sắp ra mắt</h2>
+          <p className="muted" style={{ margin: 0 }}>Các game học giáo lý đang được hoàn thiện và sẽ sớm có mặt tại Ephata Store.</p>
+        </div>
       ) : games.length === 0 ? (
         <div className="panel"><p className="muted">Chưa có game nào.{isAdmin ? ' Bấm "⚙ Quản lý game" để thêm.' : ''}</p></div>
       ) : (
