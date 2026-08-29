@@ -107,6 +107,60 @@ Deno.serve(async (req) => {
       return json({ ok: true, parish: data });
     }
 
+    // -------- sửa tên/giáo phận 1 giáo xứ --------
+    if (action === 'update-parish') {
+      const parishId = body?.parish_id;
+      const name = (body?.name || '').trim();
+      if (!parishId || !name) return json({ error: 'Thiếu tên giáo xứ' }, 400);
+      const { data, error } = await admin.from('parishes')
+        .update({ name, diocese: (body?.diocese || '').trim() || null })
+        .eq('id', parishId).select('id, name, diocese').single();
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true, parish: data });
+    }
+
+    // -------- xoá 1 giáo xứ (cascade: lớp/học viên/profile theo FK) --------
+    if (action === 'delete-parish') {
+      const parishId = body?.parish_id;
+      if (!parishId) return json({ error: 'Thiếu parish_id' }, 400);
+      const { error } = await admin.from('parishes').delete().eq('id', parishId);
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+
+    // -------- sổ thanh toán --------
+    if (action === 'payments-list') {
+      const { data, error } = await admin.from('payments')
+        .select('id, parish_id, amount, method, tier, discount_code, note, paid_at, parishes(name)')
+        .order('paid_at', { ascending: false }).order('created_at', { ascending: false }).limit(500);
+      if (error) return json({ error: error.message }, 400);
+      const payments = (data || []).map((p: any) => ({
+        id: p.id, parish_id: p.parish_id, amount: p.amount, method: p.method,
+        tier: p.tier, discount_code: p.discount_code, note: p.note, paid_at: p.paid_at,
+        parish_name: p.parishes?.name || '(đã xoá)',
+      }));
+      return json({ payments });
+    }
+    if (action === 'payment-add') {
+      const { data, error } = await admin.from('payments').insert({
+        parish_id: body?.parish_id || null,
+        amount: Number(body?.amount) || 0,
+        method: body?.method || null,
+        tier: body?.tier || null,
+        discount_code: body?.discount_code || null,
+        note: body?.note || null,
+        paid_at: body?.paid_at || new Date().toISOString().slice(0, 10),
+      }).select('id').single();
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true, id: data.id });
+    }
+    if (action === 'payment-delete') {
+      if (!body?.id) return json({ error: 'Thiếu id' }, 400);
+      const { error } = await admin.from('payments').delete().eq('id', body.id);
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+
     return json({ error: 'Action không hợp lệ' }, 400);
   } catch (e) {
     return json({ error: String((e as Error)?.message || e) }, 500);

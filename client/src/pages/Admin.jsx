@@ -5,6 +5,8 @@ import { useAuth } from '../auth.jsx';
 import { isSuperAdmin } from '../lib/superadmin';
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString('vi-VN') : '—');
+const fmtVnd = (n) => (Number(n) || 0).toLocaleString('vi-VN') + 'đ';
+const METHODS = { bank: 'Chuyển khoản', vietqr: 'VietQR', cash: 'Tiền mặt', other: 'Khác' };
 // Gợi ý hạn: 31/07 của niên khóa hiện tại (nếu đã qua tháng 7 thì sang năm sau)
 function suggestExpiry() {
   const now = new Date();
@@ -17,10 +19,13 @@ export default function Admin() {
   if (!isSuperAdmin(user)) return <Navigate to="/" replace />;
 
   const [rows, setRows] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [qText, setQText] = useState('');
-  const [editing, setEditing] = useState(null); // giáo xứ đang kích hoạt Pro
+  const [editing, setEditing] = useState(null);     // giáo xứ đang kích hoạt/gia hạn Pro
+  const [editParish, setEditParish] = useState(null); // giáo xứ đang sửa tên/giáo phận
+  const [payParish, setPayParish] = useState(null);   // ghi thanh toán rời cho giáo xứ
 
   function load() {
     setLoading(true); setErr('');
@@ -28,6 +33,7 @@ export default function Admin() {
       .then((r) => setRows(r.data))
       .catch((e) => setErr(e.response?.data?.error || 'Không tải được dữ liệu'))
       .finally(() => setLoading(false));
+    api.get('/admin/payments').then((r) => setPayments(r.data)).catch(() => {});
   }
   useEffect(() => { load(); }, []);
 
@@ -68,15 +74,49 @@ export default function Admin() {
       .sort((a, b) => a.dleft - b.dleft),
     [rows]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function setPlan(parish, plan, plan_expires_at) {
+  async function setPlan(parish, plan, plan_expires_at, payment) {
     try {
       await api.post('/admin/set-plan', { parish_id: parish.id, plan, plan_expires_at });
+      if (payment && Number(payment.amount) > 0) {
+        await api.post('/admin/payment', { parish_id: parish.id, ...payment });
+      }
       setEditing(null);
       load();
     } catch (e) {
       alert(e.response?.data?.error || 'Thao tác thất bại');
     }
   }
+
+  async function saveParish(parish, patch) {
+    try {
+      await api.post('/admin/update-parish', { parish_id: parish.id, ...patch });
+      setEditParish(null); load();
+    } catch (e) { alert(e.response?.data?.error || 'Lưu thất bại'); }
+  }
+
+  async function removeParish(parish) {
+    if (!confirm(`XOÁ giáo xứ "${parish.name}"?\nToàn bộ lớp, học viên, tài khoản GLV của giáo xứ này sẽ bị xoá theo. Không thể hoàn tác.`)) return;
+    try { await api.post('/admin/delete-parish', { parish_id: parish.id }); load(); }
+    catch (e) { alert(e.response?.data?.error || 'Xoá thất bại'); }
+  }
+
+  async function addPayment(parish, payment) {
+    try {
+      await api.post('/admin/payment', { parish_id: parish.id, ...payment });
+      setPayParish(null);
+      api.get('/admin/payments').then((r) => setPayments(r.data)).catch(() => {});
+    } catch (e) { alert(e.response?.data?.error || 'Ghi thất bại'); }
+  }
+
+  async function removePayment(id) {
+    if (!confirm('Xoá dòng thanh toán này?')) return;
+    try {
+      await api.post('/admin/payment-delete', { id });
+      setPayments((ps) => ps.filter((p) => p.id !== id));
+    } catch (e) { alert(e.response?.data?.error || 'Xoá thất bại'); }
+  }
+
+  const totalRevenue = payments.reduce((a, p) => a + (Number(p.amount) || 0), 0);
 
   return (
     <div>
@@ -196,6 +236,11 @@ export default function Admin() {
                         ) : (
                           <button className="btn sm" onClick={() => setEditing(p)}>Kích hoạt Pro</button>
                         )}
+                        <div className="row-links">
+                          <button onClick={() => setPayParish(p)}>Ghi TT</button>
+                          <button onClick={() => setEditParish(p)}>Sửa</button>
+                          <button className="danger" onClick={() => removeParish(p)}>Xoá</button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -209,26 +254,124 @@ export default function Admin() {
         </p>
       </div>
 
-      {editing && <ActivateModal parish={editing} onClose={() => setEditing(null)} onConfirm={(exp) => setPlan(editing, 'pro', exp)} />}
+      <div className="panel">
+        <div className="card-head" style={{ gap: 12, flexWrap: 'wrap' }}>
+          <h2 style={{ margin: 0 }}>Sổ thanh toán</h2>
+          <span className="muted" style={{ marginLeft: 'auto' }}>Tổng thu: <b style={{ color: '#15803d' }}>{fmtVnd(totalRevenue)}</b></span>
+        </div>
+        {payments.length === 0 ? (
+          <p className="muted">Chưa có khoản thu nào. Bấm <b>Ghi TT</b> ở một giáo xứ để thêm.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Ngày</th><th>Giáo xứ</th><th style={{ textAlign: 'right' }}>Số tiền</th>
+                  <th>Phương thức</th><th>Mã GG</th><th>Ghi chú</th><th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((p) => (
+                  <tr key={p.id}>
+                    <td className="muted" style={{ whiteSpace: 'nowrap', fontSize: 12 }}>{fmtDate(p.paid_at)}</td>
+                    <td>{p.parish_name}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>{fmtVnd(p.amount)}</td>
+                    <td>{METHODS[p.method] || p.method || '—'}</td>
+                    <td>{p.discount_code || '—'}</td>
+                    <td className="muted" style={{ fontSize: 12 }}>{p.note || ''}</td>
+                    <td style={{ textAlign: 'right' }}><button className="btn danger sm" onClick={() => removePayment(p.id)}>Xoá</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {editing && <ActivateModal parish={editing} onClose={() => setEditing(null)} onConfirm={(exp, payment) => setPlan(editing, 'pro', exp, payment)} />}
+      {editParish && <EditParishModal parish={editParish} onClose={() => setEditParish(null)} onSave={(patch) => saveParish(editParish, patch)} />}
+      {payParish && <PaymentModal parish={payParish} onClose={() => setPayParish(null)} onSave={(payment) => addPayment(payParish, payment)} />}
     </div>
   );
 }
 
+// Ô nhập thông tin thanh toán (dùng chung khi kích hoạt Pro và khi ghi TT rời)
+function PaymentFields({ pay, set }) {
+  return (
+    <>
+      <div className="row">
+        <div className="field"><label>Số tiền (VND)</label>
+          <input type="number" value={pay.amount} onChange={(e) => set({ ...pay, amount: e.target.value })} placeholder="1500000" /></div>
+        <div className="field"><label>Phương thức</label>
+          <select value={pay.method} onChange={(e) => set({ ...pay, method: e.target.value })}>
+            {Object.entries(METHODS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select></div>
+      </div>
+      <div className="row">
+        <div className="field"><label>Ngày nhận</label>
+          <input type="date" value={pay.paid_at} onChange={(e) => set({ ...pay, paid_at: e.target.value })} /></div>
+        <div className="field"><label>Mã giảm giá (nếu có)</label>
+          <input value={pay.discount_code} onChange={(e) => set({ ...pay, discount_code: e.target.value })} placeholder="—" /></div>
+      </div>
+      <div className="field"><label>Ghi chú</label>
+        <input value={pay.note} onChange={(e) => set({ ...pay, note: e.target.value })} /></div>
+    </>
+  );
+}
+
+const emptyPay = () => ({ amount: '', method: 'bank', paid_at: new Date().toISOString().slice(0, 10), discount_code: '', note: '' });
+
 function ActivateModal({ parish, onClose, onConfirm }) {
   const [exp, setExp] = useState(parish.plan_expires_at ? parish.plan_expires_at.slice(0, 10) : suggestExpiry());
+  const [pay, setPay] = useState(emptyPay());
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ marginTop: 0 }}>Kích hoạt Pro — {parish.name}</h2>
-        <p className="muted" style={{ marginTop: 0 }}>Chỉ bấm sau khi đã xác nhận nhận được thanh toán.</p>
+      <div className="modal wide" onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ marginTop: 0 }}>Kích hoạt / gia hạn Pro — {parish.name}</h2>
         <div className="field">
           <label>Hạn gói (đến hết ngày)</label>
           <input type="date" value={exp} onChange={(e) => setExp(e.target.value)} />
+          <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>Để trống nếu muốn Pro không giới hạn thời gian.</p>
         </div>
-        <p className="muted" style={{ fontSize: 12 }}>Để trống nếu muốn Pro không giới hạn thời gian.</p>
+        <div className="form-section">Ghi nhận thanh toán (nhập số tiền để lưu vào sổ; để trống nếu không ghi)</div>
+        <PaymentFields pay={pay} set={setPay} />
         <div className="modal-actions">
           <button className="btn ghost" onClick={onClose}>Hủy</button>
-          <button className="btn" onClick={() => onConfirm(exp || null)}>Kích hoạt Pro</button>
+          <button className="btn" onClick={() => onConfirm(exp || null, pay)}>Kích hoạt Pro</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditParishModal({ parish, onClose, onSave }) {
+  const [name, setName] = useState(parish.name || '');
+  const [diocese, setDiocese] = useState(parish.diocese || '');
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ marginTop: 0 }}>Sửa giáo xứ</h2>
+        <div className="field"><label>Tên giáo xứ</label><input value={name} onChange={(e) => setName(e.target.value)} /></div>
+        <div className="field"><label>Giáo phận</label><input value={diocese} onChange={(e) => setDiocese(e.target.value)} /></div>
+        <div className="modal-actions">
+          <button className="btn ghost" onClick={onClose}>Hủy</button>
+          <button className="btn" onClick={() => name.trim() && onSave({ name: name.trim(), diocese: diocese.trim() })}>Lưu</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PaymentModal({ parish, onClose, onSave }) {
+  const [pay, setPay] = useState(emptyPay());
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal wide" onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ marginTop: 0 }}>Ghi thanh toán — {parish.name}</h2>
+        <PaymentFields pay={pay} set={setPay} />
+        <div className="modal-actions">
+          <button className="btn ghost" onClick={onClose}>Hủy</button>
+          <button className="btn" onClick={() => (Number(pay.amount) > 0 ? onSave(pay) : alert('Nhập số tiền'))}>Lưu</button>
         </div>
       </div>
     </div>

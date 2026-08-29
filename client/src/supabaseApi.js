@@ -42,6 +42,18 @@ async function myClassIds() {
 // '' → null cho các cột uuid/date để tránh lỗi kiểu dữ liệu
 const nn = (v) => (v === '' || v === undefined ? null : v);
 
+// Gọi Edge Function admin-api (super-admin). Trả { data } hoặc { error, status }.
+async function adminCall(action, extra = {}) {
+  const { data, error } = await supabase.functions.invoke('admin-api', { body: { action, ...extra } });
+  if (error) {
+    let msg = 'Thao tác thất bại (đã deploy Edge Function admin-api chưa?)';
+    try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch { /* noop */ }
+    return { error: msg, status: 400 };
+  }
+  if (data?.error) return { error: data.error, status: 403 };
+  return { data };
+}
+
 const STUDENT_FIELDS = [
   'full_name', 'saint_name', 'birth_date', 'gender', 'parent_name', 'parent_phone',
   'student_phone', 'address', 'class_id', 'notes', 'position', 'sacrament', 'avatar_url',
@@ -661,26 +673,33 @@ async function handle(method, rawUrl, body = {}) {
 
     // ---------------- super-admin (chủ hệ thống) ----------------
     if (path === '/admin/parishes' && method === 'get') {
-      const { data, error } = await supabase.functions.invoke('admin-api', { body: { action: 'list' } });
-      if (error) {
-        let msg = 'Không tải được (đã deploy Edge Function admin-api chưa?)';
-        try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch { /* noop */ }
-        return fail(400, msg);
-      }
-      if (data?.error) return fail(403, data.error);
-      return ok(data.parishes || []);
+      const r = await adminCall('list'); if (r.error) return fail(r.status, r.error); return ok(r.data.parishes || []);
     }
     if (path === '/admin/set-plan' && method === 'post') {
-      const { data, error } = await supabase.functions.invoke('admin-api', {
-        body: { action: 'set-plan', parish_id: body.parish_id, plan: body.plan, plan_expires_at: nn(body.plan_expires_at) },
+      const r = await adminCall('set-plan', { parish_id: body.parish_id, plan: body.plan, plan_expires_at: nn(body.plan_expires_at) });
+      if (r.error) return fail(r.status, r.error); return ok(r.data);
+    }
+    if (path === '/admin/update-parish' && method === 'post') {
+      const r = await adminCall('update-parish', { parish_id: body.parish_id, name: body.name, diocese: body.diocese });
+      if (r.error) return fail(r.status, r.error); return ok(r.data);
+    }
+    if (path === '/admin/delete-parish' && method === 'post') {
+      const r = await adminCall('delete-parish', { parish_id: body.parish_id });
+      if (r.error) return fail(r.status, r.error); return ok(r.data);
+    }
+    if (path === '/admin/payments' && method === 'get') {
+      const r = await adminCall('payments-list'); if (r.error) return fail(r.status, r.error); return ok(r.data.payments || []);
+    }
+    if (path === '/admin/payment' && method === 'post') {
+      const r = await adminCall('payment-add', {
+        parish_id: body.parish_id, amount: body.amount, method: body.method,
+        tier: nn(body.tier), discount_code: nn(body.discount_code), note: nn(body.note), paid_at: nn(body.paid_at),
       });
-      if (error) {
-        let msg = 'Cập nhật thất bại';
-        try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch { /* noop */ }
-        return fail(400, msg);
-      }
-      if (data?.error) return fail(403, data.error);
-      return ok(data);
+      if (r.error) return fail(r.status, r.error); return ok(r.data);
+    }
+    if (path === '/admin/payment-delete' && method === 'post') {
+      const r = await adminCall('payment-delete', { id: body.id });
+      if (r.error) return fail(r.status, r.error); return ok(r.data);
     }
 
     // ---------------- school_years (năm học) ----------------
