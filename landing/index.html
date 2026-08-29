@@ -153,6 +153,31 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
 @media(max-width:820px){.ft-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){.ft-grid{grid-template-columns:1fr}.ft-bottom{flex-direction:column;gap:6px}}
 
+/* GÓI DỊCH VỤ (bảng so sánh) */
+.plans{background:var(--panel);padding:clamp(72px,10vw,110px) 0}
+.plans-h{text-align:center;font-weight:700;text-transform:uppercase;font-size:clamp(2rem,5vw,66px);line-height:1.08;padding-top:.04em;margin-bottom:10px}
+.plans-sub{text-align:center;color:var(--muted);max-width:580px;margin:0 auto clamp(22px,3vw,30px);font-size:clamp(.95rem,1.3vw,1.08rem);line-height:1.55}
+.plans-ideal{max-width:720px;margin:0 auto clamp(30px,4vw,46px);background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:12px;padding:16px 20px;color:var(--ink);font-size:clamp(.92rem,1.2vw,1.02rem);line-height:1.6}
+.ptable-wrap{max-width:920px;margin:0 auto;overflow-x:auto;border:1px solid var(--line);border-radius:18px}
+.ptable{width:100%;border-collapse:collapse;min-width:580px}
+.ptable th,.ptable td{padding:15px 18px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+.ptable tbody tr:last-child td{border-bottom:none}
+.ptable thead th{border-bottom:2px solid var(--line);vertical-align:bottom;background:var(--bg2)}
+.ptable .col-plan{text-align:center;width:220px}
+.ptable .pname{font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;font-size:21px;letter-spacing:.02em;color:var(--ink)}
+.ptable .pprice{color:var(--muted);font-size:12.5px;margin-top:3px;font-weight:400;line-height:1.3}
+.ptable .feat{font-weight:500;color:var(--ink);font-size:clamp(.9rem,1.2vw,1.02rem)}
+.ptable td.val{text-align:center;font-weight:600}
+.ptable .yes{color:#2E8B63;font-size:20px;font-weight:700}
+.ptable .no{color:var(--muted);opacity:.45;font-size:18px}
+.ptable .txt{color:var(--ink);font-weight:600;font-size:14px}
+.ptable .col-pro{background:rgba(180,129,60,.07)}
+.pbadge{display:inline-block;background:var(--primary);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.05em;padding:2px 10px;border-radius:999px;margin-bottom:7px;text-transform:uppercase}
+.ptable .pcta{padding:22px 18px;text-align:center}
+.ptable .pcta .btn-dark{padding:12px 32px;font-size:14px}
+.plan-note{text-align:center;color:var(--muted);font-size:13px;margin-top:20px;max-width:820px;margin-left:auto;margin-right:auto;line-height:1.6}
+@media(max-width:640px){.ptable th,.ptable td{padding:12px 12px}.ptable .col-plan{width:130px}.ptable .pname{font-size:17px}}
+
 /* FAQ */
 .faq{padding:clamp(72px,11vw,120px) 0}
 .faq-h{text-align:center;font-weight:700;text-transform:uppercase;font-size:clamp(2rem,4.5vw,58px);line-height:1.08;padding-top:.04em;margin:14px 0 40px}
@@ -246,7 +271,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
  <div class="container">
   <nav>
    <a href="#top" class="brand"><img class="brand-logo" src="/logo-full.png" alt="Giáo Lý Số" /></a>
-   <div class="navlinks"><a href="#services">Tính năng</a><a href="#projects">Vai trò</a><a href="#about">Giới thiệu</a><a href="#cta">Liên hệ</a></div>
+   <div class="navlinks"><a href="#services">Tính năng</a><a href="#projects">Vai trò</a><a href="#about">Giới thiệu</a><a href="#pricing">Bảng giá</a><a href="#cta">Liên hệ</a></div>
    <div class="nav-cta">
     <a class="nav-login" href="#lienhe" onclick="openLp('mContact');return false;">Liên hệ</a>
     <a class="btn-dark" id="btnRegister" href="#dangky" onclick="openLp('mReg');return false;">Đăng ký</a>
@@ -311,6 +336,49 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
    <div class="pgrid"><div class="col1"><div class="im c1a"><svg viewBox="0 0 420 270"><use href="#ill-grade"/></svg></div><div class="im c1b"><svg viewBox="0 0 420 270"><use href="#ill-dash"/></svg></div></div><div class="im c2"><svg viewBox="0 0 420 270" preserveAspectRatio="xMidYMid slice"><use href="#ill-att"/></svg></div></div>
   </div></div>
 
+ </div>
+</section>
+
+<!-- GÓI DỊCH VỤ -->
+<section class="plans" id="pricing">
+ <div class="container">
+  <h2 class="plans-h hero-heading fade" data-y="40">GÓI DỊCH VỤ</h2>
+  <p class="plans-sub fade" data-y="20">Tính theo giáo xứ, mỗi niên khóa. Bắt đầu miễn phí với 1 lớp, nâng lên Pro khi cần mở rộng.</p>
+  <div class="plans-ideal fade" data-y="20">
+   <b>💡 Lý tưởng khi áp dụng cho cả giáo xứ</b> — hoặc cả nhóm giáo lý viên các lớp, để mọi người <b>đồng bộ dữ liệu</b> với nhau (hồ sơ học viên, điểm danh, điểm số, bí tích dùng chung một hệ thống). Cá nhân vẫn dùng được với gói <b>Khởi động miễn phí (1 lớp)</b>, nhưng sẽ giới hạn một vài tính năng.
+  </div>
+  <div class="ptable-wrap fade" data-y="20">
+   <table class="ptable">
+    <thead>
+     <tr>
+      <th></th>
+      <th class="col-plan"><div class="pname">Khởi động</div><div class="pprice">Miễn phí</div></th>
+      <th class="col-plan col-pro"><span class="pbadge">Khuyên dùng</span><div class="pname">Pro</div><div class="pprice">Theo quy mô · từ 1.500.000đ / niên khóa</div></th>
+     </tr>
+    </thead>
+    <tbody>
+     <tr><td class="feat">Số lớp quản lý</td><td class="val txt">1 lớp</td><td class="val txt col-pro">Không giới hạn</td></tr>
+     <tr><td class="feat">Hồ sơ học viên &amp; bí tích</td><td class="val"><span class="yes">✓</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Điểm danh &amp; điểm số</td><td class="val"><span class="yes">✓</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Xuất Excel / PDF · bốc thăm trả bài</td><td class="val"><span class="yes">✓</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Nhiều giáo lý viên mỗi lớp</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Tự động lên lớp cuối năm học</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Điểm danh việc thiêng liêng + thống kê tuần/tháng</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Thông báo &amp; chuông báo vắng tự động</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Kiểm toán thu chi</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Xuất chứng chỉ Rửa Tội / Rước Lễ / Thêm Sức</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Lưu trữ &amp; tra cứu các năm học cũ</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Game học giáo lý</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Ưu tiên hỗ trợ</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr>
+      <td></td>
+      <td class="pcta"><a class="btn-live" href="#dangky" onclick="openLp('mReg');return false;">Bắt đầu miễn phí</a></td>
+      <td class="pcta col-pro"><a class="btn-dark" href="#dangky" onclick="openLp('mReg');return false;">Dùng thử Pro</a></td>
+     </tr>
+    </tbody>
+   </table>
+  </div>
+  <p class="plan-note fade" data-y="20">Bậc Pro theo số lớp: <b>nhỏ ≤5 lớp</b> 1.500.000đ · <b>vừa 6–12 lớp</b> 2.900.000đ · <b>lớn ≥13 lớp</b> liên hệ — tất cả tính theo niên khóa.</p>
  </div>
 </section>
 
