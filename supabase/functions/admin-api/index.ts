@@ -161,6 +161,94 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    // -------- đơn chờ thanh toán --------
+    if (action === 'orders-list') {
+      let q = admin.from('plan_orders')
+        .select('id, order_code, parish_id, tier_label, base_amount, discount_code, discount_amount, final_amount, status, created_at, parishes(name)')
+        .order('created_at', { ascending: false }).limit(500);
+      if (body?.status) q = q.eq('status', body.status);
+      const { data, error } = await q;
+      if (error) return json({ error: error.message }, 400);
+      const orders = (data || []).map((o: any) => ({
+        id: o.id, order_code: o.order_code, parish_id: o.parish_id, tier_label: o.tier_label,
+        base_amount: o.base_amount, discount_code: o.discount_code, discount_amount: o.discount_amount,
+        final_amount: o.final_amount, status: o.status, created_at: o.created_at,
+        parish_name: o.parishes?.name || '(đã xoá)',
+      }));
+      return json({ orders });
+    }
+    // đánh dấu đơn đã trả -> kích hoạt Pro + ghi sổ thu + cộng lượt dùng mã
+    if (action === 'order-paid') {
+      const id = body?.id;
+      if (!id) return json({ error: 'Thiếu id' }, 400);
+      const { data: o, error: e0 } = await admin.from('plan_orders').select('*').eq('id', id).single();
+      if (e0 || !o) return json({ error: 'Không tìm thấy đơn' }, 400);
+      const expires = body?.plan_expires_at || null;
+      if (o.parish_id) {
+        const { error: e1 } = await admin.from('parishes')
+          .update({ plan: 'pro', plan_expires_at: expires }).eq('id', o.parish_id);
+        if (e1) return json({ error: e1.message }, 400);
+      }
+      await admin.from('plan_orders').update({ status: 'paid' }).eq('id', id);
+      await admin.from('payments').insert({
+        parish_id: o.parish_id, amount: o.final_amount, method: 'bank',
+        tier: o.tier_label, discount_code: o.discount_code,
+        note: `Đơn ${o.order_code}`, paid_at: new Date().toISOString().slice(0, 10),
+      });
+      if (o.discount_code) {
+        const { data: dc } = await admin.from('discount_codes').select('used_count').eq('code', o.discount_code).single();
+        if (dc) await admin.from('discount_codes').update({ used_count: (dc.used_count || 0) + 1 }).eq('code', o.discount_code);
+      }
+      return json({ ok: true });
+    }
+    if (action === 'order-cancel') {
+      if (!body?.id) return json({ error: 'Thiếu id' }, 400);
+      const { error } = await admin.from('plan_orders').update({ status: 'canceled' }).eq('id', body.id);
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+
+    // -------- mã giảm giá --------
+    if (action === 'codes-list') {
+      const { data, error } = await admin.from('discount_codes').select('*').order('created_at', { ascending: false });
+      if (error) return json({ error: error.message }, 400);
+      return json({ codes: data || [] });
+    }
+    if (action === 'code-save') {
+      const code = (body?.code || '').trim().toUpperCase();
+      if (!code) return json({ error: 'Thiếu mã' }, 400);
+      const row = {
+        code,
+        kind: body?.kind === 'amount' ? 'amount' : 'percent',
+        value: Number(body?.value) || 0,
+        expires_at: body?.expires_at || null,
+        max_uses: body?.max_uses === '' || body?.max_uses == null ? null : Number(body.max_uses),
+        active: body?.active !== false,
+        note: body?.note || null,
+      };
+      const { error } = await admin.from('discount_codes').upsert(row, { onConflict: 'code' });
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+    if (action === 'code-delete') {
+      if (!body?.code) return json({ error: 'Thiếu mã' }, 400);
+      const { error } = await admin.from('discount_codes').delete().eq('code', body.code);
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+
+    // -------- sửa giá gói --------
+    if (action === 'tier-save') {
+      const id = Number(body?.id);
+      if (!id) return json({ error: 'Thiếu id bậc' }, 400);
+      const patch: Record<string, unknown> = {};
+      if (body?.label !== undefined) patch.label = body.label;
+      if (body?.price !== undefined) patch.price = body.price === '' || body.price == null ? null : Number(body.price);
+      const { error } = await admin.from('plan_tiers').update(patch).eq('id', id);
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+
     return json({ error: 'Action không hợp lệ' }, 400);
   } catch (e) {
     return json({ error: String((e as Error)?.message || e) }, 500);

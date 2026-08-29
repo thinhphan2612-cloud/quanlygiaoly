@@ -26,6 +26,11 @@ export default function Admin() {
   const [editing, setEditing] = useState(null);     // giáo xứ đang kích hoạt/gia hạn Pro
   const [editParish, setEditParish] = useState(null); // giáo xứ đang sửa tên/giáo phận
   const [payParish, setPayParish] = useState(null);   // ghi thanh toán rời cho giáo xứ
+  const [orders, setOrders] = useState([]);           // đơn chờ thanh toán
+  const [codes, setCodes] = useState([]);             // mã giảm giá
+  const [tiers, setTiers] = useState([]);             // bảng giá
+  const [payingOrder, setPayingOrder] = useState(null); // đơn đang đánh dấu đã trả
+  const [editCode, setEditCode] = useState(null);     // mã đang tạo/sửa
 
   function load() {
     setLoading(true); setErr('');
@@ -34,6 +39,9 @@ export default function Admin() {
       .catch((e) => setErr(e.response?.data?.error || 'Không tải được dữ liệu'))
       .finally(() => setLoading(false));
     api.get('/admin/payments').then((r) => setPayments(r.data)).catch(() => {});
+    api.get('/admin/orders?status=pending').then((r) => setOrders(r.data)).catch(() => {});
+    api.get('/admin/codes').then((r) => setCodes(r.data)).catch(() => {});
+    api.get('/upgrade/tiers').then((r) => setTiers(r.data)).catch(() => {});
   }
   useEffect(() => { load(); }, []);
 
@@ -117,6 +125,31 @@ export default function Admin() {
   }
 
   const totalRevenue = payments.reduce((a, p) => a + (Number(p.amount) || 0), 0);
+
+  async function markOrderPaid(order, plan_expires_at) {
+    try {
+      await api.post('/admin/order-paid', { id: order.id, plan_expires_at });
+      setPayingOrder(null); load();
+    } catch (e) { alert(e.response?.data?.error || 'Thất bại'); }
+  }
+  async function cancelOrder(order) {
+    if (!confirm(`Huỷ đơn ${order.order_code}?`)) return;
+    try { await api.post('/admin/order-cancel', { id: order.id }); load(); }
+    catch (e) { alert(e.response?.data?.error || 'Thất bại'); }
+  }
+  async function saveCode(c) {
+    try { await api.post('/admin/code', c); setEditCode(null); api.get('/admin/codes').then((r) => setCodes(r.data)); }
+    catch (e) { alert(e.response?.data?.error || 'Lưu mã thất bại'); }
+  }
+  async function deleteCode(code) {
+    if (!confirm(`Xoá mã "${code}"?`)) return;
+    try { await api.post('/admin/code-delete', { code }); setCodes((cs) => cs.filter((x) => x.code !== code)); }
+    catch (e) { alert(e.response?.data?.error || 'Xoá thất bại'); }
+  }
+  async function saveTier(id, patch) {
+    try { await api.post('/admin/tier', { id, ...patch }); api.get('/upgrade/tiers').then((r) => setTiers(r.data)); }
+    catch (e) { alert(e.response?.data?.error || 'Lưu giá thất bại'); }
+  }
 
   return (
     <div>
@@ -254,6 +287,33 @@ export default function Admin() {
         </p>
       </div>
 
+      {orders.length > 0 && (
+        <div className="panel">
+          <div className="card-head"><h2 style={{ margin: 0 }}>🧾 Đơn chờ thanh toán ({orders.length})</h2></div>
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead><tr><th>Mã đơn</th><th>Giáo xứ</th><th>Gói</th><th>Mã GG</th><th style={{ textAlign: 'right' }}>Số tiền</th><th>Ngày</th><th></th></tr></thead>
+              <tbody>
+                {orders.map((o) => (
+                  <tr key={o.id}>
+                    <td style={{ fontWeight: 600 }}>{o.order_code}</td>
+                    <td>{o.parish_name}</td>
+                    <td className="muted" style={{ fontSize: 12 }}>{o.tier_label}</td>
+                    <td>{o.discount_code || '—'}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>{fmtVnd(o.final_amount)}</td>
+                    <td className="muted" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{fmtDate(o.created_at)}</td>
+                    <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
+                      <button className="btn sm" onClick={() => setPayingOrder(o)}>Đã trả → Kích hoạt</button>
+                      <div className="row-links"><button className="danger" onClick={() => cancelOrder(o)}>Huỷ đơn</button></div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <div className="panel">
         <div className="card-head" style={{ gap: 12, flexWrap: 'wrap' }}>
           <h2 style={{ margin: 0 }}>Sổ thanh toán</h2>
@@ -288,9 +348,120 @@ export default function Admin() {
         )}
       </div>
 
+      <div className="panel">
+        <div className="card-head" style={{ gap: 12, flexWrap: 'wrap' }}>
+          <h2 style={{ margin: 0 }}>Mã giảm giá</h2>
+          <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => setEditCode({ code: '', kind: 'percent', value: '', expires_at: '', max_uses: '', active: true, note: '' })}>+ Tạo mã</button>
+        </div>
+        {codes.length === 0 ? <p className="muted">Chưa có mã giảm giá.</p> : (
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead><tr><th>Mã</th><th>Giảm</th><th>Hạn</th><th style={{ textAlign: 'center' }}>Đã dùng</th><th>Trạng thái</th><th></th></tr></thead>
+              <tbody>
+                {codes.map((c) => (
+                  <tr key={c.code}>
+                    <td style={{ fontWeight: 600 }}>{c.code}</td>
+                    <td>{c.kind === 'percent' ? c.value + '%' : fmtVnd(c.value)}</td>
+                    <td className="muted" style={{ fontSize: 12 }}>{c.expires_at ? fmtDate(c.expires_at) : 'Không hạn'}</td>
+                    <td style={{ textAlign: 'center' }}>{c.used_count}{c.max_uses ? ' / ' + c.max_uses : ''}</td>
+                    <td>{c.active ? <span className="plan-badge pro">Bật</span> : <span className="plan-badge free">Tắt</span>}</td>
+                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button className="btn ghost sm" onClick={() => setEditCode({ ...c, expires_at: c.expires_at || '', max_uses: c.max_uses ?? '' })}>Sửa</button>{' '}
+                      <button className="btn danger sm" onClick={() => deleteCode(c.code)}>Xoá</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="panel">
+        <div className="card-head"><h2 style={{ margin: 0 }}>Bảng giá gói Pro</h2></div>
+        <div className="stack" style={{ gap: 10 }}>
+          {tiers.map((t) => <TierRow key={t.id} tier={t} onSave={(patch) => saveTier(t.id, patch)} />)}
+          {tiers.length === 0 && <p className="muted">Chưa tải được bảng giá.</p>}
+        </div>
+        <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>Để trống ô giá = "Liên hệ" (không tạo QR).</p>
+      </div>
+
       {editing && <ActivateModal parish={editing} onClose={() => setEditing(null)} onConfirm={(exp, payment) => setPlan(editing, 'pro', exp, payment)} />}
       {editParish && <EditParishModal parish={editParish} onClose={() => setEditParish(null)} onSave={(patch) => saveParish(editParish, patch)} />}
       {payParish && <PaymentModal parish={payParish} onClose={() => setPayParish(null)} onSave={(payment) => addPayment(payParish, payment)} />}
+      {payingOrder && <OrderPaidModal order={payingOrder} onClose={() => setPayingOrder(null)} onConfirm={(exp) => markOrderPaid(payingOrder, exp)} />}
+      {editCode && <CodeModal code={editCode} onClose={() => setEditCode(null)} onSave={saveCode} />}
+    </div>
+  );
+}
+
+function TierRow({ tier, onSave }) {
+  const [label, setLabel] = useState(tier.label || '');
+  const [price, setPrice] = useState(tier.price ?? '');
+  const dirty = label !== (tier.label || '') || String(price) !== String(tier.price ?? '');
+  return (
+    <div className="tier-row">
+      <input value={label} onChange={(e) => setLabel(e.target.value)} style={{ flex: 1, minWidth: 180 }} />
+      <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Liên hệ" style={{ width: 130 }} />
+      <span className="muted" style={{ fontSize: 12 }}>đ/niên khóa</span>
+      <button className="btn sm" disabled={!dirty} onClick={() => onSave({ label: label.trim(), price: price === '' ? null : Number(price) })}>Lưu</button>
+    </div>
+  );
+}
+
+function OrderPaidModal({ order, onClose, onConfirm }) {
+  const [exp, setExp] = useState(suggestExpiry());
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ marginTop: 0 }}>Xác nhận đã thanh toán</h2>
+        <p className="muted" style={{ marginTop: 0 }}>
+          Đơn <b>{order.order_code}</b> · {order.parish_name} · <b>{fmtVnd(order.final_amount)}</b>{order.discount_code ? ` · mã ${order.discount_code}` : ''}.
+          Kích hoạt Pro cho giáo xứ + ghi vào sổ thu.
+        </p>
+        <div className="field"><label>Hạn gói (đến hết ngày)</label><input type="date" value={exp} onChange={(e) => setExp(e.target.value)} /></div>
+        <div className="modal-actions">
+          <button className="btn ghost" onClick={onClose}>Huỷ</button>
+          <button className="btn" onClick={() => onConfirm(exp || null)}>Kích hoạt Pro</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CodeModal({ code, onClose, onSave }) {
+  const [c, setC] = useState(code);
+  const isNew = !code.code;
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal wide" onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ marginTop: 0 }}>{isNew ? 'Tạo mã giảm giá' : `Sửa mã ${code.code}`}</h2>
+        <div className="row">
+          <div className="field" style={{ flex: 1 }}><label>Mã</label>
+            <input value={c.code} disabled={!isNew} onChange={(e) => setC({ ...c, code: e.target.value.toUpperCase() })} placeholder="VD: HE2026" /></div>
+          <div className="field"><label>Kiểu</label>
+            <select value={c.kind} onChange={(e) => setC({ ...c, kind: e.target.value })}>
+              <option value="percent">Giảm %</option><option value="amount">Giảm số tiền</option>
+            </select></div>
+          <div className="field"><label>Giá trị</label>
+            <input type="number" value={c.value} onChange={(e) => setC({ ...c, value: e.target.value })} placeholder={c.kind === 'percent' ? '10' : '200000'} /></div>
+        </div>
+        <div className="row">
+          <div className="field"><label>Hạn dùng (để trống = không hạn)</label>
+            <input type="date" value={c.expires_at} onChange={(e) => setC({ ...c, expires_at: e.target.value })} /></div>
+          <div className="field"><label>Số lần dùng tối đa</label>
+            <input type="number" value={c.max_uses} onChange={(e) => setC({ ...c, max_uses: e.target.value })} placeholder="Không giới hạn" /></div>
+          <div className="field"><label>Trạng thái</label>
+            <select value={c.active ? '1' : '0'} onChange={(e) => setC({ ...c, active: e.target.value === '1' })}>
+              <option value="1">Bật</option><option value="0">Tắt</option>
+            </select></div>
+        </div>
+        <div className="field"><label>Ghi chú</label><input value={c.note || ''} onChange={(e) => setC({ ...c, note: e.target.value })} /></div>
+        <div className="modal-actions">
+          <button className="btn ghost" onClick={onClose}>Huỷ</button>
+          <button className="btn" onClick={() => (c.code.trim() ? onSave(c) : alert('Nhập mã'))}>Lưu</button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -702,6 +702,47 @@ async function handle(method, rawUrl, body = {}) {
       if (r.error) return fail(r.status, r.error); return ok(r.data);
     }
 
+    // ---------------- nâng cấp gói (giáo xứ) ----------------
+    if (path === '/upgrade/tiers' && method === 'get') {
+      const { data, error } = await supabase.from('plan_tiers').select('*').eq('active', true).order('order_index');
+      if (error) return fail(400, error.message);
+      return ok(data || []);
+    }
+    if (path === '/upgrade/discount' && method === 'get') {
+      const { data, error } = await supabase.rpc('get_discount', { p_code: q.code || '' });
+      if (error) return fail(400, error.message);
+      return ok(data); // null nếu mã không hợp lệ
+    }
+    if (path === '/upgrade/order' && method === 'post') {
+      const { data, error } = await supabase.rpc('create_plan_order', { p_tier_id: body.tier_id, p_code: nn(body.code) });
+      if (error) return fail(400, error.message);
+      if (data?.error) return fail(400, data.error);
+      return ok(data);
+    }
+
+    // ---------------- super-admin Đợt 3: đơn / mã giảm giá / giá gói ----------------
+    if (path === '/admin/orders' && method === 'get') {
+      const r = await adminCall('orders-list', { status: nn(q.status) }); if (r.error) return fail(r.status, r.error); return ok(r.data.orders || []);
+    }
+    if (path === '/admin/order-paid' && method === 'post') {
+      const r = await adminCall('order-paid', { id: body.id, plan_expires_at: nn(body.plan_expires_at) }); if (r.error) return fail(r.status, r.error); return ok(r.data);
+    }
+    if (path === '/admin/order-cancel' && method === 'post') {
+      const r = await adminCall('order-cancel', { id: body.id }); if (r.error) return fail(r.status, r.error); return ok(r.data);
+    }
+    if (path === '/admin/codes' && method === 'get') {
+      const r = await adminCall('codes-list'); if (r.error) return fail(r.status, r.error); return ok(r.data.codes || []);
+    }
+    if (path === '/admin/code' && method === 'post') {
+      const r = await adminCall('code-save', body); if (r.error) return fail(r.status, r.error); return ok(r.data);
+    }
+    if (path === '/admin/code-delete' && method === 'post') {
+      const r = await adminCall('code-delete', { code: body.code }); if (r.error) return fail(r.status, r.error); return ok(r.data);
+    }
+    if (path === '/admin/tier' && method === 'post') {
+      const r = await adminCall('tier-save', body); if (r.error) return fail(r.status, r.error); return ok(r.data);
+    }
+
     // ---------------- school_years (năm học) ----------------
     if (path === '/school-years' && method === 'get') {
       const { data, error } = await supabase.from('school_years').select('*').order('name', { ascending: false });
