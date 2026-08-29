@@ -28,6 +28,16 @@ const nav = [
   { to: '/admin', label: 'Quản trị hệ thống', Icon: IconMoney, superOnly: true },
 ];
 
+// Lối tắt cuộn tới từng mục trong trang /admin (chỉ super-admin)
+const ADMIN_SECTIONS = [
+  { id: 'sec-overview', label: 'Tổng quan' },
+  { id: 'sec-parishes', label: 'Giáo xứ' },
+  { id: 'sec-orders', label: 'Đơn chờ thanh toán' },
+  { id: 'sec-payments', label: 'Sổ thanh toán' },
+  { id: 'sec-codes', label: 'Mã giảm giá' },
+  { id: 'sec-tiers', label: 'Bảng giá' },
+];
+
 function initials(name = '') {
   const p = name.trim().split(/\s+/);
   return ((p[p.length - 2]?.[0] || '') + (p[p.length - 1]?.[0] || '')).toUpperCase() || '?';
@@ -76,6 +86,13 @@ export default function Layout({ children }) {
 
   function handleLogout() { logout(); navigate('/login'); }
 
+  function goSection(id) {
+    const off = location.pathname !== '/admin';
+    if (off) navigate('/admin');
+    setNavOpen(false);
+    setTimeout(() => { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, off ? 140 : 0);
+  }
+
   const AvatarImg = ({ size }) => (
     user?.avatar_url
       ? <img className="ava-img" src={user.avatar_url} alt="avatar" style={{ width: size, height: size }} />
@@ -98,6 +115,13 @@ export default function Layout({ children }) {
               <Icon /><span>{label}</span>
             </NavLink>
           ))}
+          {sa && (
+            <div className="admin-subnav">
+              {ADMIN_SECTIONS.map((s) => (
+                <button key={s.id} onClick={() => goSection(s.id)}>{s.label}</button>
+              ))}
+            </div>
+          )}
         </nav>
         {sa ? null : !pro ? (
           <div className="upgrade-card" onClick={() => setPricing(true)}>

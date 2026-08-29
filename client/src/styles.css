@@ -918,3 +918,7 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .qr-info { flex: 1; min-width: 210px; }
 .qr-info .row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
 .qr-info .row:last-child { border-bottom: 0; }
+.admin-subnav { display: flex; flex-direction: column; gap: 2px; margin: 6px 0 0 10px; padding-left: 10px; border-left: 2px solid var(--border); }
+.admin-subnav button { background: none; border: 0; text-align: left; padding: 7px 10px; border-radius: 8px; color: var(--muted); font-size: 13.5px; cursor: pointer; }
+.admin-subnav button:hover { background: var(--primary-soft); color: var(--primary); }
+#sec-overview, #sec-parishes, #sec-orders, #sec-payments, #sec-codes, #sec-tiers { scroll-margin-top: 76px; }

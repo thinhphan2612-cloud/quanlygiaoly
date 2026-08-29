@@ -158,7 +158,7 @@ export default function Admin() {
         <button className="btn ghost" onClick={load}>↻ Tải lại</button>
       </div>
 
-      <div className="admin-kpis">
+      <div className="admin-kpis" id="sec-overview">
         <div className="panel kpi"><div className="n">{stats.total}</div><div className="l">Giáo xứ</div></div>
         <div className="panel kpi"><div className="n" style={{ color: '#15803d' }}>{stats.proActive}</div><div className="l">Pro còn hạn</div></div>
         <div className="panel kpi"><div className="n">{stats.free}</div><div className="l">Khởi động</div></div>
@@ -202,7 +202,7 @@ export default function Admin() {
         </div>
       )}
 
-      <div className="panel">
+      <div className="panel" id="sec-parishes">
         <div className="card-head" style={{ gap: 12, flexWrap: 'wrap' }}>
           <h2 style={{ margin: 0 }}>Danh sách giáo xứ</h2>
           <input
@@ -287,9 +287,9 @@ export default function Admin() {
         </p>
       </div>
 
-      {orders.length > 0 && (
-        <div className="panel">
-          <div className="card-head"><h2 style={{ margin: 0 }}>🧾 Đơn chờ thanh toán ({orders.length})</h2></div>
+      <div className="panel" id="sec-orders">
+        <div className="card-head"><h2 style={{ margin: 0 }}>🧾 Đơn chờ thanh toán ({orders.length})</h2></div>
+        {orders.length === 0 ? <p className="muted">Không có đơn nào đang chờ.</p> : (
           <div style={{ overflowX: 'auto' }}>
             <table>
               <thead><tr><th>Mã đơn</th><th>Giáo xứ</th><th>Gói</th><th>Mã GG</th><th style={{ textAlign: 'right' }}>Số tiền</th><th>Ngày</th><th></th></tr></thead>
@@ -311,10 +311,10 @@ export default function Admin() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      <div className="panel">
+      <div className="panel" id="sec-payments">
         <div className="card-head" style={{ gap: 12, flexWrap: 'wrap' }}>
           <h2 style={{ margin: 0 }}>Sổ thanh toán</h2>
           <span className="muted" style={{ marginLeft: 'auto' }}>Tổng thu: <b style={{ color: '#15803d' }}>{fmtVnd(totalRevenue)}</b></span>
@@ -348,7 +348,7 @@ export default function Admin() {
         )}
       </div>
 
-      <div className="panel">
+      <div className="panel" id="sec-codes">
         <div className="card-head" style={{ gap: 12, flexWrap: 'wrap' }}>
           <h2 style={{ margin: 0 }}>Mã giảm giá</h2>
           <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => setEditCode({ code: '', kind: 'percent', value: '', expires_at: '', max_uses: '', active: true, note: '' })}>+ Tạo mã</button>
@@ -377,7 +377,7 @@ export default function Admin() {
         )}
       </div>
 
-      <div className="panel">
+      <div className="panel" id="sec-tiers">
         <div className="card-head"><h2 style={{ margin: 0 }}>Bảng giá gói Pro</h2></div>
         <div className="stack" style={{ gap: 10 }}>
           {tiers.map((t) => <TierRow key={t.id} tier={t} onSave={(patch) => saveTier(t.id, patch)} />)}
