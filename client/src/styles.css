@@ -891,3 +891,17 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .plan-badge.free { background: var(--primary-soft); color: var(--muted); }
 .plan-badge.expired { background: #fee2e2; color: #b91c1c; }
 .btn.sm, .btn.ghost.sm, .btn.danger.sm { padding: 5px 10px; font-size: 13px; }
+.admin-kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px; }
+.admin-kpis .kpi { text-align: center; padding: 16px 8px; }
+.admin-kpis .kpi .n { font-size: 26px; font-weight: 800; line-height: 1.1; }
+.admin-kpis .kpi .l { color: var(--muted); font-size: 12px; margin-top: 2px; }
+@media (max-width: 720px) { .admin-kpis { grid-template-columns: repeat(3, 1fr); } }
+.growth-chart { display: flex; align-items: flex-end; gap: 10px; height: 150px; padding: 8px 4px 0; }
+.growth-chart .gc-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
+.growth-chart .gc-n { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+.growth-chart .gc-bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.growth-chart .gc-bar { width: 100%; max-width: 42px; margin: 0 auto; min-height: 3px; background: var(--primary); border-radius: 6px 6px 0 0; transition: height .3s; }
+.growth-chart .gc-l { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.expiry-panel { border: 1px solid #f0d9b5; }
+.expiry-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 0; border-top: 1px solid var(--border); }
+.expiry-row:first-child { border-top: 0; }

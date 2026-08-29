@@ -38,7 +38,35 @@ export default function Admin() {
       [p.name, p.diocese, p.admin_email, p.admin_name].some((x) => (x || '').toLowerCase().includes(t)));
   }, [rows, qText]);
 
-  const proCount = rows.filter((p) => p.plan === 'pro').length;
+  const now = Date.now();
+  const daysLeft = (p) => (p.plan_expires_at ? Math.ceil((new Date(p.plan_expires_at).getTime() - now) / 86400000) : null);
+
+  const stats = useMemo(() => {
+    const pro = rows.filter((p) => p.plan === 'pro');
+    const proActive = pro.filter((p) => !p.plan_expires_at || new Date(p.plan_expires_at).getTime() >= now);
+    const sum = (k) => rows.reduce((a, p) => a + (p[k] || 0), 0);
+    // đăng ký 6 tháng gần nhất
+    const months = [];
+    const d = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const m = new Date(d.getFullYear(), d.getMonth() - i, 1);
+      months.push({ key: `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}`, label: `${m.getMonth() + 1}/${String(m.getFullYear()).slice(2)}`, count: 0 });
+    }
+    const idx = Object.fromEntries(months.map((m, i) => [m.key, i]));
+    rows.forEach((p) => { const k = String(p.created_at || '').slice(0, 7); if (k in idx) months[idx[k]].count += 1; });
+    return {
+      total: rows.length, proActive: proActive.length, free: rows.length - pro.length,
+      students: sum('students'), teachers: sum('teachers'), classes: sum('classes'), months,
+    };
+  }, [rows]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pro sắp hết hạn (<=30 ngày) hoặc đã hết hạn — để nhắc gia hạn
+  const expiring = useMemo(() =>
+    rows.filter((p) => p.plan === 'pro' && p.plan_expires_at)
+      .map((p) => ({ ...p, dleft: daysLeft(p) }))
+      .filter((p) => p.dleft !== null && p.dleft <= 30)
+      .sort((a, b) => a.dleft - b.dleft),
+    [rows]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function setPlan(parish, plan, plan_expires_at) {
     try {
@@ -57,11 +85,49 @@ export default function Admin() {
         <button className="btn ghost" onClick={load}>↻ Tải lại</button>
       </div>
 
-      <div className="admin-stats">
-        <div className="panel stat"><div className="n">{rows.length}</div><div className="l">Giáo xứ</div></div>
-        <div className="panel stat"><div className="n">{proCount}</div><div className="l">Đang Pro</div></div>
-        <div className="panel stat"><div className="n">{rows.length - proCount}</div><div className="l">Khởi động</div></div>
+      <div className="admin-kpis">
+        <div className="panel kpi"><div className="n">{stats.total}</div><div className="l">Giáo xứ</div></div>
+        <div className="panel kpi"><div className="n" style={{ color: '#15803d' }}>{stats.proActive}</div><div className="l">Pro còn hạn</div></div>
+        <div className="panel kpi"><div className="n">{stats.free}</div><div className="l">Khởi động</div></div>
+        <div className="panel kpi"><div className="n">{stats.teachers}</div><div className="l">Giáo lý viên</div></div>
+        <div className="panel kpi"><div className="n">{stats.students}</div><div className="l">Học viên</div></div>
+        <div className="panel kpi"><div className="n">{stats.classes}</div><div className="l">Lớp học</div></div>
       </div>
+
+      <div className="panel">
+        <div className="card-head"><h2 style={{ margin: 0 }}>Đăng ký 6 tháng gần nhất</h2></div>
+        <div className="growth-chart">
+          {stats.months.map((m) => {
+            const max = Math.max(1, ...stats.months.map((x) => x.count));
+            return (
+              <div className="gc-col" key={m.key}>
+                <div className="gc-n">{m.count}</div>
+                <div className="gc-bar-wrap"><div className="gc-bar" style={{ height: `${(m.count / max) * 100}%` }} /></div>
+                <div className="gc-l">{m.label}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {expiring.length > 0 && (
+        <div className="panel expiry-panel">
+          <div className="card-head"><h2 style={{ margin: 0 }}>⏰ Pro sắp / đã hết hạn ({expiring.length})</h2></div>
+          <div className="stack" style={{ gap: 8 }}>
+            {expiring.map((p) => (
+              <div key={p.id} className="expiry-row">
+                <div style={{ flex: 1, minWidth: 160 }}><b>{p.name}</b>{p.diocese && <span className="muted" style={{ fontSize: 12 }}> · {p.diocese}</span>}</div>
+                <div style={{ fontSize: 13 }}>
+                  {p.dleft < 0
+                    ? <span style={{ color: '#b91c1c' }}>Đã hết hạn {fmtDate(p.plan_expires_at)}</span>
+                    : <span style={{ color: '#a8641b' }}>Còn {p.dleft} ngày · đến {fmtDate(p.plan_expires_at)}</span>}
+                </div>
+                <button className="btn ghost sm" onClick={() => setEditing(p)}>Gia hạn</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="panel">
         <div className="card-head" style={{ gap: 12, flexWrap: 'wrap' }}>
