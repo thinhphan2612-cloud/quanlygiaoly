@@ -154,13 +154,15 @@ export default function Settings() {
       <div className="panel">
         <div className="card-head"><h2>Gói dịch vụ</h2></div>
         <div className="field" style={{ maxWidth: 280 }}>
-          <label>Gói hiện tại (thanh toán bổ sung sau)</label>
-          <select value={isPro(parish.plan) ? 'pro' : 'free'} onChange={(e) => saveParish({ plan: e.target.value })}>
-            <option value="free">Khởi động (miễn phí — 1 lớp)</option>
-            <option value="pro">Pro (trọn gói, không giới hạn lớp)</option>
-          </select>
+          <label>Gói hiện tại</label>
+          <div style={{ fontWeight: 600, fontSize: 16 }}>
+            {isPro(parish.plan) ? 'Pro (trọn gói, không giới hạn lớp)' : 'Khởi động (miễn phí — 1 lớp)'}
+          </div>
         </div>
-        <p className="muted" style={{ fontSize: 12 }}>Gói Khởi động chỉ quản lý 1 lớp. Gói Pro mở khóa không giới hạn lớp + toàn bộ tính năng.</p>
+        <p className="muted" style={{ fontSize: 12 }}>
+          Gói Khởi động chỉ quản lý 1 lớp. Nâng lên Pro để mở khóa không giới hạn lớp + toàn bộ tính năng —
+          liên hệ tác giả để thanh toán (chuyển khoản / VietQR) và được kích hoạt.
+        </p>
       </div>
 
       {/* Tiện ích mở rộng (kho tính năng) */}

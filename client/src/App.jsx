@@ -15,6 +15,8 @@ import Settings from './pages/Settings.jsx';
 import Archive from './pages/Archive.jsx';
 import Audit from './pages/Audit.jsx';
 import Notify from './pages/Notify.jsx';
+import Admin from './pages/Admin.jsx';
+import { isSuperAdmin } from './lib/superadmin';
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -23,12 +25,20 @@ function Protected({ children }) {
   return <Layout>{children}</Layout>;
 }
 
+// Trang chủ: super-admin vào thẳng bảng quản trị hệ thống (không có giáo xứ)
+function Home() {
+  const { user } = useAuth();
+  if (isSuperAdmin(user)) return <Navigate to="/admin" replace />;
+  return <Dashboard />;
+}
+
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Login initialMode="register" />} />
-      <Route path="/" element={<Protected><Dashboard /></Protected>} />
+      <Route path="/" element={<Protected><Home /></Protected>} />
+      <Route path="/admin" element={<Protected><Admin /></Protected>} />
       <Route path="/students" element={<Protected><Students /></Protected>} />
       <Route path="/students/:id" element={<Protected><StudentProfile /></Protected>} />
       <Route path="/classes" element={<Protected><Classes /></Protected>} />

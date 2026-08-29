@@ -5,6 +5,7 @@ import { useParish } from '../parish.jsx';
 import { useRealtime } from '../realtime.jsx';
 import api from '../api';
 import { isPro, planName } from '../lib/plans';
+import { isSuperAdmin } from '../lib/superadmin';
 import { fileToDataUrl } from '../lib/img';
 import PricingModal from './PricingModal.jsx';
 import {
@@ -24,6 +25,7 @@ const nav = [
   { to: '/teachers', label: 'Giáo lý viên', Icon: IconTeacher, adminOnly: true },
   { to: '/archive', label: 'Lưu trữ', Icon: IconArchive, adminOnly: true },
   { to: '/notify', label: 'Thông báo', Icon: IconBell, adminOnly: true },
+  { to: '/admin', label: 'Quản trị hệ thống', Icon: IconMoney, superOnly: true },
 ];
 
 function initials(name = '') {
@@ -46,6 +48,7 @@ export default function Layout({ children }) {
   const fileRef = useRef(null);
   const plan = parish?.plan || 'free';
   const pro = isPro(plan);
+  const sa = isSuperAdmin(user);
   const unread = notifs.filter((n) => !n.read).length;
   const parishName = parish?.name || 'Quản lý Giáo lý';
 
@@ -90,13 +93,13 @@ export default function Layout({ children }) {
           </div>
         </div>
         <nav>
-          {nav.filter((n) => !n.adminOnly || user?.role === 'admin').map(({ to, label, Icon, end }) => (
+          {nav.filter((n) => (sa ? n.superOnly : !n.superOnly && (!n.adminOnly || user?.role === 'admin'))).map(({ to, label, Icon, end }) => (
             <NavLink key={to} to={to} end={end} className={({ isActive }) => (isActive ? 'active' : '')}>
               <Icon /><span>{label}</span>
             </NavLink>
           ))}
         </nav>
-        {!pro ? (
+        {sa ? null : !pro ? (
           <div className="upgrade-card" onClick={() => setPricing(true)}>
             <div className="emoji">🚀</div>
             <div className="t">Bạn đang dùng gói Khởi động. Nâng lên Pro để mở khóa toàn bộ.</div>

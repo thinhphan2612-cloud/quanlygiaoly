@@ -651,10 +651,35 @@ async function handle(method, rawUrl, body = {}) {
       return ok(data);
     }
     if (path === '/parish' && method === 'put') {
+      // 'plan' KHÔNG cho sửa ở đây (chống tự lên Pro) — chỉ super-admin đổi qua admin-api.
       const patch = {};
-      for (const k of ['name', 'diocese', 'logo_url', 'settings', 'plan']) if (body[k] !== undefined) patch[k] = body[k];
+      for (const k of ['name', 'diocese', 'logo_url', 'settings']) if (body[k] !== undefined) patch[k] = body[k];
       const { data, error } = await supabase.from('parishes').update(patch).eq('id', pid).select().single();
       if (error) return fail(400, error.message);
+      return ok(data);
+    }
+
+    // ---------------- super-admin (chủ hệ thống) ----------------
+    if (path === '/admin/parishes' && method === 'get') {
+      const { data, error } = await supabase.functions.invoke('admin-api', { body: { action: 'list' } });
+      if (error) {
+        let msg = 'Không tải được (đã deploy Edge Function admin-api chưa?)';
+        try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch { /* noop */ }
+        return fail(400, msg);
+      }
+      if (data?.error) return fail(403, data.error);
+      return ok(data.parishes || []);
+    }
+    if (path === '/admin/set-plan' && method === 'post') {
+      const { data, error } = await supabase.functions.invoke('admin-api', {
+        body: { action: 'set-plan', parish_id: body.parish_id, plan: body.plan, plan_expires_at: nn(body.plan_expires_at) },
+      });
+      if (error) {
+        let msg = 'Cập nhật thất bại';
+        try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch { /* noop */ }
+        return fail(400, msg);
+      }
+      if (data?.error) return fail(403, data.error);
       return ok(data);
     }
 
