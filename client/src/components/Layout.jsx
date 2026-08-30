@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
+import { supabase } from '../supabase';
 import { useParish } from '../parish.jsx';
 import { useRealtime } from '../realtime.jsx';
 import api from '../api';
@@ -53,6 +54,7 @@ export default function Layout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [pricing, setPricing] = useState(false);
   const [feedback, setFeedback] = useState(false);
+  const [pwModal, setPwModal] = useState(false);
   const [notifs, setNotifs] = useState([]);
   const [bellOpen, setBellOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -206,6 +208,7 @@ export default function Layout({ children }) {
                     {user?.role === 'admin' && (
                       <button className="user-menu-item" onClick={() => navigate('/settings')}>⚙ Cài đặt quản lý</button>
                     )}
+                    <button className="user-menu-item" onClick={() => { setMenuOpen(false); setPwModal(true); }}>🔑 Đổi mật khẩu</button>
                     <button className="user-menu-item danger" onClick={handleLogout}><IconLogout /> Đăng xuất</button>
                   </div>
                   <div className="ac-foot">https://www.giaoly.com.vn</div>
@@ -231,6 +234,57 @@ export default function Layout({ children }) {
           </div>
         </div>
       )}
+      {pwModal && <ChangePasswordModal email={user?.email} onClose={() => setPwModal(false)} />}
+    </div>
+  );
+}
+
+function ChangePasswordModal({ email, onClose }) {
+  const [cur, setCur] = useState('');
+  const [pw, setPw] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [err, setErr] = useState('');
+  const [msg, setMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function submit(e) {
+    e.preventDefault();
+    setErr(''); setMsg('');
+    if (pw.length < 6) { setErr('Mật khẩu mới tối thiểu 6 ký tự'); return; }
+    if (pw !== pw2) { setErr('Mật khẩu nhập lại không khớp'); return; }
+    setLoading(true);
+    try {
+      // Xác minh mật khẩu hiện tại
+      const { error: e1 } = await supabase.auth.signInWithPassword({ email, password: cur });
+      if (e1) { setErr('Mật khẩu hiện tại không đúng'); setLoading(false); return; }
+      const { error: e2 } = await supabase.auth.updateUser({ password: pw });
+      if (e2) throw e2;
+      setMsg('Đã đổi mật khẩu thành công.');
+      setCur(''); setPw(''); setPw2('');
+    } catch (e3) {
+      setErr(e3.message || 'Đổi mật khẩu thất bại');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
+        <h2 style={{ marginTop: 0 }}>Đổi mật khẩu</h2>
+        <div className="field"><label>Mật khẩu hiện tại</label>
+          <input type="password" value={cur} onChange={(e) => setCur(e.target.value)} required autoFocus /></div>
+        <div className="field"><label>Mật khẩu mới</label>
+          <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} required /></div>
+        <div className="field"><label>Nhập lại mật khẩu mới</label>
+          <input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} required /></div>
+        {err && <div className="error">{err}</div>}
+        {msg && <div className="info-box">{msg}</div>}
+        <div className="modal-actions">
+          <button type="button" className="btn ghost" onClick={onClose}>Đóng</button>
+          <button className="btn" disabled={loading}>{loading ? 'Đang lưu...' : 'Đổi mật khẩu'}</button>
+        </div>
+      </form>
     </div>
   );
 }
