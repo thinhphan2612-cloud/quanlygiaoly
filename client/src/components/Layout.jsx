@@ -127,7 +127,7 @@ export default function Layout({ children }) {
             </div>
           )}
         </nav>
-        {sa ? null : !pro ? (
+        {(sa || user?.role === 'teacher') ? null : !pro ? (
           <div className="upgrade-card" onClick={() => setPricing(true)}>
             <div className="emoji">🚀</div>
             <div className="t">Bạn đang dùng gói Khởi động. Nâng lên Pro để mở khóa toàn bộ.</div>
