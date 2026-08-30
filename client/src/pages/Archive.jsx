@@ -24,6 +24,7 @@ export default function Archive() {
   const [msg, setMsg] = useState('');
   const [grads, setGrads] = useState([]);
   const [gradYear, setGradYear] = useState('');
+  const [gradKind, setGradKind] = useState('');
   const [gradSearch, setGradSearch] = useState('');
 
   function loadYears() { api.get('/archive-years').then((r) => setYears(r.data)).catch(() => {}); }
@@ -98,6 +99,7 @@ export default function Archive() {
   const gradYears = [...new Set(grads.map((g) => g.year).filter(Boolean))].sort().reverse();
   const gradList = grads.filter((g) =>
     (!gradYear || g.year === gradYear) &&
+    (!gradKind || (g.kind || 'catechism') === gradKind) &&
     ((g.full_name + ' ' + (g.saint_name || '')).toLowerCase().includes(gradSearch.toLowerCase())));
 
   return (
@@ -147,7 +149,12 @@ export default function Archive() {
               <option value="">Tất cả niên khóa</option>
               {gradYears.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
-            <input placeholder="Tìm theo tên…" value={gradSearch} onChange={(e) => setGradSearch(e.target.value)} style={{ minWidth: 200 }} />
+            <select value={gradKind} onChange={(e) => setGradKind(e.target.value)}>
+              <option value="">Tất cả loại lớp</option>
+              <option value="catechism">Giáo lý chính quy</option>
+              <option value="external">Ngoài hệ thống</option>
+            </select>
+            <input placeholder="Tìm theo tên…" value={gradSearch} onChange={(e) => setGradSearch(e.target.value)} style={{ minWidth: 180 }} />
           </div>
         </div>
         {grads.length === 0 ? (
@@ -157,7 +164,7 @@ export default function Archive() {
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table>
-              <thead><tr><th>Tên thánh</th><th>Họ tên</th><th>Năm ra trường</th><th>Lớp cuối</th><th>Bí tích</th></tr></thead>
+              <thead><tr><th>Tên thánh</th><th>Họ tên</th><th>Năm</th><th>Lớp</th><th>Loại</th><th>Kết quả</th></tr></thead>
               <tbody>
                 {gradList.map((g) => (
                   <tr key={g.id}>
@@ -165,7 +172,10 @@ export default function Archive() {
                     <td><span className="link-name" onClick={() => navigate(`/students/${g.id}`)}>{g.full_name}</span></td>
                     <td>{g.year || '—'}</td>
                     <td className="muted">{g.class_name || '—'}</td>
-                    <td className="muted">{SACRAMENTS[g.sacrament]?.label || SACRAMENTS.none.label}</td>
+                    <td className="muted" style={{ fontSize: 12 }}>{g.kind === 'external' ? 'Ngoài hệ thống' : 'Giáo lý'}</td>
+                    <td>{g.passed
+                      ? <span style={{ color: '#15803d', fontWeight: 600 }}>Tốt nghiệp ✓</span>
+                      : <span style={{ color: '#b91c1c' }}>Không đạt</span>}</td>
                   </tr>
                 ))}
               </tbody>

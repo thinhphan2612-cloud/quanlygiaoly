@@ -11,7 +11,7 @@ import Avatar from '../components/Avatar.jsx';
 import { byViName } from '../lib/viName';
 
 const empty = {
-  mode: 'new', name: '', year: '', room: '', schedule: '', promotes: true, teachers: [],
+  mode: 'new', name: '', year: '', room: '', schedule: '', promotes: true, kind: 'catechism', is_graduation: false, teachers: [],
   srcClasses: [], picked: [],
 };
 const SCHEDULES = ['Sáng', 'Chiều', 'Tối'];
@@ -35,6 +35,8 @@ export default function Classes() {
   const [mv, setMv] = useState(null); // chuyển lớp: { ids, dest }
   const [hist, setHist] = useState(null); // lịch sử lớp: { cls, rows }
   const [error, setError] = useState('');
+  const [tab, setTab] = useState('catechism'); // 'catechism' | 'external'
+  const [gradModal, setGradModal] = useState(null); // xét tốt nghiệp lớp ngoài hệ thống
 
   function load() { api.get('/classes').then((r) => setClasses(r.data)); }
   useEffect(() => {
@@ -57,7 +59,7 @@ export default function Classes() {
     setError('');
     setModal({
       ...c, mode: 'edit', year: c.year || '', room: c.room || '', schedule: c.schedule || '',
-      promotes: c.promotes !== false,
+      promotes: c.promotes !== false, kind: c.kind === 'external' ? 'external' : 'catechism', is_graduation: !!c.is_graduation,
       teachers: (c.teachers || []).map((t) => ({ teacher_id: t.id, is_primary: t.is_primary })),
     });
   }
@@ -102,7 +104,7 @@ export default function Classes() {
       if (modal.mode === 'edit') {
         await api.put(`/classes/${modal.id}`, {
           name: modal.name, year: modal.year, room: modal.room, schedule: modal.schedule,
-          promotes: modal.promotes, teachers: modal.teachers,
+          kind: modal.kind, is_graduation: modal.kind === 'catechism' && !!modal.is_graduation, teachers: modal.teachers,
         });
         setModal(null); load();
         return;
@@ -112,8 +114,9 @@ export default function Classes() {
       // tạo lớp mới (chế độ 'from' = lớp gộp)
       const r = await api.post('/classes', {
         name: modal.name, year: modal.year, room: modal.room, schedule: modal.schedule,
-        promotes: modal.promotes, teachers: modal.teachers, merged: modal.mode === 'from',
-        order_index: modal.promotes ? maxOrder + 1 : 0,
+        kind: modal.kind, is_graduation: modal.kind === 'catechism' && !!modal.is_graduation,
+        teachers: modal.teachers, merged: modal.mode === 'from',
+        order_index: modal.kind === 'catechism' ? maxOrder + 1 : 0,
       });
       const newId = r.data.id;
       // chuyển học viên (chế độ tạo từ có sẵn) — ghi nhớ lớp cũ để trả về sau
@@ -179,6 +182,22 @@ export default function Classes() {
     } catch (e) { setSac({ ...sac, err: e.response?.data?.error || 'Lưu thất bại' }); }
   }
 
+  // ---- xét tốt nghiệp lớp ngoài hệ thống ----
+  async function openGrad(c) {
+    setGradModal({ cls: c, students: null, passed: [] });
+    const r = await api.get(`/students?class_id=${c.id}`);
+    setGradModal((g) => (g && g.cls.id === c.id ? { ...g, students: r.data, passed: r.data.map((s) => s.id) } : g));
+  }
+  const gAll = gradModal?.students && gradModal.students.length > 0 && gradModal.students.every((s) => gradModal.passed.includes(s.id));
+  const gToggle = (id) => setGradModal({ ...gradModal, passed: gradModal.passed.includes(id) ? gradModal.passed.filter((x) => x !== id) : [...gradModal.passed, id] });
+  const gToggleAll = () => setGradModal({ ...gradModal, passed: gAll ? [] : gradModal.students.map((s) => s.id) });
+  async function saveGrad() {
+    const total = gradModal.students?.length || 0;
+    if (!confirm(`Xét tốt nghiệp lớp "${gradModal.cls.name}"?\n${gradModal.passed.length} tốt nghiệp · ${total - gradModal.passed.length} không đạt.\nLớp sẽ được ĐÓNG và chuyển vào Lưu trữ.`)) return;
+    try { await api.post('/external-graduate', { class_id: gradModal.cls.id, passed: gradModal.passed }); setGradModal(null); load(); }
+    catch (e) { alert(e.response?.data?.error || 'Thất bại'); }
+  }
+
   // ---- xem & chỉnh danh sách học viên của 1 lớp ----
   async function openDetail(c) {
     setDetail({ cls: c, students: null, picked: [] });
@@ -224,6 +243,8 @@ export default function Classes() {
 
   const showActions = isAdmin || isTeacher;
   const colCount = 6 + (showActions ? 1 : 0);
+  const shown = classes.filter((c) => (c.kind || 'catechism') === tab);
+  const externalCount = classes.filter((c) => c.kind === 'external').length;
 
   return (
     <div>
@@ -238,6 +259,11 @@ export default function Classes() {
         </div>
       )}
 
+      <div className="seg" style={{ marginBottom: 14, maxWidth: 460 }}>
+        <button className={`seg-btn ${tab === 'catechism' ? 'on' : ''}`} onClick={() => setTab('catechism')}>Giáo lý chính quy</button>
+        <button className={`seg-btn ${tab === 'external' ? 'on' : ''}`} onClick={() => setTab('external')}>Ngoài hệ thống{externalCount ? ` (${externalCount})` : ''}</button>
+      </div>
+
       <div className="panel">
         <table>
           <thead>
@@ -247,12 +273,12 @@ export default function Classes() {
             </tr>
           </thead>
           <tbody>
-            {classes.map((c) => (
+            {shown.map((c) => (
               <tr key={c.id}>
                 <td>
                   <span className="link-name" onClick={() => openDetail(c)}>{c.name}</span>
                   {c.merged && <span className="tag-chip merged" style={{ marginLeft: 6 }}>● lớp gộp</span>}
-                  {c.promotes === false && <span className="tag-chip muted" style={{ marginLeft: 6 }}>không lên lớp</span>}
+                  {c.is_graduation && <span className="tag-chip" style={{ marginLeft: 6, background: '#dcfce7', color: '#15803d' }}>🎓 lớp tốt nghiệp</span>}
                 </td>
                 <td>{c.year || '—'}</td>
                 <td>{c.room || '—'}</td>
@@ -262,13 +288,14 @@ export default function Classes() {
                 {showActions && (
                   <td style={{ whiteSpace: 'nowrap' }}>
                     <button className="btn ghost sm" onClick={() => openSac(c)}>✝ Ghi bí tích</button>{' '}
+                    {isAdmin && c.kind === 'external' && <button className="btn ghost sm" onClick={() => openGrad(c)}>🎓 Xét tốt nghiệp</button>}{' '}
                     {isAdmin && <><button className="btn ghost sm" onClick={() => openEdit(c)}>Sửa</button>{' '}
                       <button className="btn danger sm" onClick={() => remove(c)}>Xóa</button></>}
                   </td>
                 )}
               </tr>
             ))}
-            {classes.length === 0 && <tr><td colSpan={colCount} className="muted">Chưa có lớp nào</td></tr>}
+            {shown.length === 0 && <tr><td colSpan={colCount} className="muted">{tab === 'external' ? 'Chưa có lớp ngoài hệ thống (hôn nhân, dự tòng…).' : 'Chưa có lớp giáo lý chính quy nào.'}</td></tr>}
           </tbody>
         </table>
       </div>
@@ -421,10 +448,20 @@ export default function Classes() {
                   </div>
                 </div>
 
-                {!isFree && (
+                <div className="field">
+                  <label>Loại lớp</label>
+                  <div className="seg">
+                    <button type="button" className={`seg-btn ${modal.kind === 'catechism' ? 'on' : ''}`} onClick={() => setModal({ ...modal, kind: 'catechism' })}>Giáo lý chính quy</button>
+                    <button type="button" className={`seg-btn ${modal.kind === 'external' ? 'on' : ''}`} onClick={() => setModal({ ...modal, kind: 'external', is_graduation: false })}>Ngoài hệ thống</button>
+                  </div>
+                  <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                    {modal.kind === 'external' ? 'Lớp hôn nhân / dự tòng… — học 1 khóa, tự xét tốt nghiệp, không lên lớp.' : 'Lớp cho học viên chính quy — nằm trong hệ thống lên lớp hằng năm.'}
+                  </p>
+                </div>
+                {!isFree && modal.kind === 'catechism' && (
                   <div className="toggle-row" style={{ padding: '10px 0' }}>
-                    <span>Tự động lên lớp cho năm sau<br /><span className="muted" style={{ fontSize: 12 }}>Bật: lớp nằm trong bảng thứ tự lên lớp. Tắt: lớp hè/dự tòng/hôn nhân/GLV (học 1 lần, không lên lớp)</span></span>
-                    <button className={`switch ${modal.promotes ? 'on' : ''}`} onClick={() => setModal({ ...modal, promotes: !modal.promotes })} role="switch" aria-checked={modal.promotes}><span className="knob" /></button>
+                    <span>Đây là lớp tốt nghiệp<br /><span className="muted" style={{ fontSize: 12 }}>Học viên lớp này sẽ RA TRƯỜNG khi "Kết thúc năm học". Gán cho lớp bậc cao nhất.</span></span>
+                    <button className={`switch ${modal.is_graduation ? 'on' : ''}`} onClick={() => setModal({ ...modal, is_graduation: !modal.is_graduation })} role="switch" aria-checked={modal.is_graduation}><span className="knob" /></button>
                   </div>
                 )}
 
@@ -564,6 +601,34 @@ export default function Classes() {
             <div className="modal-actions">
               <button className="btn ghost" onClick={() => setSac(null)}>Đóng</button>
               <button className="btn" onClick={saveSac} disabled={sac.students === null}>Lưu</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal xét tốt nghiệp lớp ngoài hệ thống */}
+      {gradModal && (
+        <div className="modal-backdrop" onClick={() => setGradModal(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Xét tốt nghiệp — {gradModal.cls.name}</h2>
+            <p className="muted" style={{ marginTop: -6, fontSize: 13 }}>Tích những học viên <b>tốt nghiệp</b>. Sau khi lưu, lớp sẽ được đóng &amp; chuyển vào Lưu trữ; ai không tích coi như không đạt (vẫn được lưu kết quả).</p>
+            <div className="fp-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Tốt nghiệp ({gradModal.passed.length}/{gradModal.students?.length || 0})</span>
+              {gradModal.students?.length > 0 && <span className="link" onClick={gToggleAll}>{gAll ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}</span>}
+            </div>
+            <div className="pick-list">
+              {gradModal.students === null && <div className="muted" style={{ fontSize: 13 }}>Đang tải...</div>}
+              {(gradModal.students || []).map((s) => (
+                <label key={s.id} className="fp-chk">
+                  <input type="checkbox" checked={gradModal.passed.includes(s.id)} onChange={() => gToggle(s.id)} />
+                  <span>{s.saint_name ? s.saint_name + ' ' : ''}{s.full_name}</span>
+                </label>
+              ))}
+              {gradModal.students?.length === 0 && <div className="muted" style={{ fontSize: 13 }}>Lớp chưa có học viên.</div>}
+            </div>
+            <div className="modal-actions">
+              <button className="btn ghost" onClick={() => setGradModal(null)}>Hủy</button>
+              <button className="btn" onClick={saveGrad} disabled={gradModal.students === null}>Lưu &amp; đóng lớp</button>
             </div>
           </div>
         </div>

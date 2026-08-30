@@ -60,11 +60,15 @@ export default function Grades() {
     api.get(url).then((r) => setData(r.data));
   }
   async function endYear() {
+    const catechism = (classes || []).filter((c) => c.kind !== 'external');
+    if (catechism.length && !catechism.some((c) => c.is_graduation)) {
+      if (!confirm('Bạn CHƯA gắn nhãn "🎓 Lớp tốt nghiệp" cho lớp giáo lý nào.\n\nHệ thống sẽ tự lấy lớp bậc cao nhất làm lớp tốt nghiệp. Nên vào "Lớp học" → sửa lớp cao nhất → bật "Đây là lớp tốt nghiệp" để chính xác.\n\nVẫn tiếp tục?')) return;
+    }
     if (!confirm(
       'KẾT THÚC NĂM HỌC & LÊN LỚP\n\n' +
-      'Hệ thống sẽ tạo bộ lớp mới cho năm sau (sao chép các lớp bật "Tự động lên lớp"), ' +
-      'chuyển học viên lên bậc kế tiếp (điểm bắt đầu lại). Học viên lớp cao nhất ra trường.\n\n' +
-      'Dữ liệu năm hiện tại được đóng băng, tra cứu ở tab "Lưu trữ".\n\nBạn chắc chắn?'
+      'Hệ thống sẽ tạo bộ lớp mới cho năm sau cho các lớp giáo lý chính quy, ' +
+      'chuyển học viên lên bậc kế tiếp (điểm bắt đầu lại). Học viên "lớp tốt nghiệp" ra trường.\n\n' +
+      'Dữ liệu năm hiện tại được đóng băng, tra cứu ở tab "Lưu trữ". Lớp ngoài hệ thống không bị ảnh hưởng.\n\nBạn chắc chắn?'
     )) return;
     try {
       const r = await api.post('/promote', {});

@@ -80,11 +80,17 @@ export default function Settings() {
   }
 
   async function promote() {
+    let cls = [];
+    try { cls = (await api.get('/classes')).data || []; } catch { /* noop */ }
+    const catechism = cls.filter((c) => c.kind !== 'external');
+    if (catechism.length && !catechism.some((c) => c.is_graduation)) {
+      if (!confirm('Bạn CHƯA gắn nhãn "🎓 Lớp tốt nghiệp" cho lớp giáo lý nào.\n\nHệ thống sẽ tự lấy lớp bậc cao nhất làm lớp tốt nghiệp. Nên vào "Lớp học" → sửa lớp cao nhất → bật "Đây là lớp tốt nghiệp" để chính xác.\n\nVẫn tiếp tục?')) return;
+    }
     if (!confirm(
       'KẾT THÚC NĂM HỌC & LÊN LỚP\n\n' +
-      'Hệ thống sẽ TẠO BỘ LỚP MỚI cho năm sau (sao chép các lớp bật "Tự động lên lớp"), ' +
-      'chuyển học viên lên bậc kế tiếp (điểm bắt đầu lại). Học viên lớp cao nhất sẽ ra trường.\n\n' +
-      'Dữ liệu năm hiện tại được ĐÓNG BĂNG và tra cứu ở tab "Lưu trữ" (không mất).\n\n' +
+      'Hệ thống sẽ TẠO BỘ LỚP MỚI cho năm sau cho các lớp giáo lý chính quy, ' +
+      'chuyển học viên lên bậc kế tiếp (điểm bắt đầu lại). Học viên "lớp tốt nghiệp" sẽ ra trường.\n\n' +
+      'Dữ liệu năm hiện tại được ĐÓNG BĂNG và tra cứu ở tab "Lưu trữ" (không mất). Lớp ngoài hệ thống không bị ảnh hưởng.\n\n' +
       'Bạn chắc chắn?'
     )) return;
     try {
