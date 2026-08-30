@@ -247,7 +247,7 @@ function FeedbackModal({ user, parish, onClose }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2 style={{ marginTop: 0 }}>Góp ý / liên hệ tác giả</h2>
-        <p className="muted" style={{ marginTop: 0 }}>Mọi góp ý giúp ứng dụng tốt hơn. Rất mong nhận phản hồi từ quý cha và anh chị giáo lý viên.</p>
+        <p className="muted" style={{ marginTop: 0 }}>Để giúp ứng dụng tốt hơn, chúng con kính mong nhận được sự góp ý của Quý Cha, Quý Soeur và anh chị Giáo lý viên.</p>
         {sent ? (
           <div className="info-box">Đã gửi! Cảm ơn phản hồi của bạn.</div>
         ) : (
