@@ -254,7 +254,6 @@ function FeedbackModal({ user, parish, onClose }) {
           <>
             <div className="field"><label>Nội dung</label>
               <textarea rows={4} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Nhập góp ý hoặc câu hỏi của bạn…" autoFocus /></div>
-            <p className="muted" style={{ fontSize: 12 }}>Gửi kèm tài khoản <b>{user?.email}</b> để chúng tôi phản hồi.</p>
           </>
         )}
         <div className="modal-actions" style={{ justifyContent: 'space-between' }}>
