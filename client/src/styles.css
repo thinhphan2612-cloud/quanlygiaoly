@@ -922,3 +922,4 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .admin-subnav button { background: none; border: 0; text-align: left; padding: 7px 10px; border-radius: 8px; color: var(--muted); font-size: 13.5px; cursor: pointer; }
 .admin-subnav button:hover { background: var(--primary-soft); color: var(--primary); }
 #sec-overview, #sec-parishes, #sec-orders, #sec-payments, #sec-codes, #sec-tiers { scroll-margin-top: 76px; }
+.pager { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 14px 0 2px; }

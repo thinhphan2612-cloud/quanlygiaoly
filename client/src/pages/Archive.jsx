@@ -26,6 +26,8 @@ export default function Archive() {
   const [gradYear, setGradYear] = useState('');
   const [gradKind, setGradKind] = useState('');
   const [gradSearch, setGradSearch] = useState('');
+  const [gradPage, setGradPage] = useState(1);
+  useEffect(() => { setGradPage(1); }, [gradYear, gradKind, gradSearch]);
 
   function loadYears() { api.get('/archive-years').then((r) => setYears(r.data)).catch(() => {}); }
   useEffect(() => {
@@ -101,6 +103,9 @@ export default function Archive() {
     (!gradYear || g.year === gradYear) &&
     (!gradKind || (g.kind || 'catechism') === gradKind) &&
     ((g.full_name + ' ' + (g.saint_name || '')).toLowerCase().includes(gradSearch.toLowerCase())));
+  const GRAD_PER_PAGE = 15;
+  const gradPages = Math.max(1, Math.ceil(gradList.length / GRAD_PER_PAGE));
+  const gradPageItems = gradList.slice((gradPage - 1) * GRAD_PER_PAGE, gradPage * GRAD_PER_PAGE);
 
   return (
     <div>
@@ -166,7 +171,7 @@ export default function Archive() {
             <table>
               <thead><tr><th>Tên thánh</th><th>Họ tên</th><th>Năm</th><th>Lớp</th><th>Loại</th><th>Kết quả</th></tr></thead>
               <tbody>
-                {gradList.map((g) => (
+                {gradPageItems.map((g) => (
                   <tr key={g.id}>
                     <td>{g.saint_name || '—'}</td>
                     <td><span className="link-name" onClick={() => navigate(`/students/${g.id}`)}>{g.full_name}</span></td>
@@ -180,6 +185,13 @@ export default function Archive() {
                 ))}
               </tbody>
             </table>
+            {gradPages > 1 && (
+              <div className="pager">
+                <button className="btn ghost sm" disabled={gradPage <= 1} onClick={() => setGradPage((p) => p - 1)}>← Trước</button>
+                <span className="muted" style={{ fontSize: 13 }}>Trang {gradPage}/{gradPages} · {gradList.length} em</span>
+                <button className="btn ghost sm" disabled={gradPage >= gradPages} onClick={() => setGradPage((p) => p + 1)}>Sau →</button>
+              </div>
+            )}
           </div>
         )}
       </div>
