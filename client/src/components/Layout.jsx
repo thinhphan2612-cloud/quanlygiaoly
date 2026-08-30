@@ -22,9 +22,9 @@ const nav = [
   { to: '/random', label: 'Chọn trả bài', Icon: IconDice },
   { to: '/games', label: 'Game học', Icon: IconGame },
   { to: '/audit', label: 'Thu chi', Icon: IconMoney },
-  { to: '/teachers', label: 'Giáo lý viên', Icon: IconTeacher, adminOnly: true },
-  { to: '/archive', label: 'Lưu trữ', Icon: IconArchive, adminOnly: true },
-  { to: '/notify', label: 'Thông báo', Icon: IconBell, adminOnly: true },
+  { to: '/teachers', label: 'Giáo lý viên', Icon: IconTeacher, adminOnly: true, proOnly: true },
+  { to: '/archive', label: 'Lưu trữ', Icon: IconArchive, adminOnly: true, proOnly: true },
+  { to: '/notify', label: 'Thông báo', Icon: IconBell, adminOnly: true, proOnly: true },
   { to: '/admin', label: 'Quản trị hệ thống', Icon: IconMoney, superOnly: true },
 ];
 
@@ -110,7 +110,7 @@ export default function Layout({ children }) {
           </div>
         </div>
         <nav>
-          {nav.filter((n) => (sa ? n.superOnly : !n.superOnly && (!n.adminOnly || user?.role === 'admin'))).map(({ to, label, Icon, end }) => (
+          {nav.filter((n) => (sa ? n.superOnly : !n.superOnly && (!n.adminOnly || user?.role === 'admin') && !(n.proOnly && !pro))).map(({ to, label, Icon, end }) => (
             <NavLink key={to} to={to} end={end} className={({ isActive }) => (isActive ? 'active' : '')}>
               <Icon /><span>{label}</span>
             </NavLink>

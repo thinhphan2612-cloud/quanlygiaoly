@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { useRealtime } from '../realtime.jsx';
+import { useParish } from '../parish.jsx';
+import { isPro } from '../lib/plans';
 import { SACRAMENTS, CERT_SUGGESTIONS } from '../components/SacramentBadge.jsx';
 import StudentForm from '../components/StudentForm.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -20,6 +22,8 @@ export default function Classes() {
   const navigate = useNavigate();
   const isAdmin = user?.role === 'admin';
   const isTeacher = user?.role === 'teacher';
+  const { parish } = useParish();
+  const isFree = !isPro(parish?.plan || 'free');
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [allStudents, setAllStudents] = useState([]);
@@ -226,8 +230,11 @@ export default function Classes() {
       <h1>Quản lý lớp học</h1>
       {isAdmin && (
         <div className="toolbar">
-          <button className="btn" onClick={openCreate}>+ Thêm lớp</button>
-          <button className="btn ghost" onClick={openOrder} disabled={classes.length < 2}>⚙ Cài đặt lớp học</button>
+          {!(isFree && classes.length >= 1) && <button className="btn" onClick={openCreate}>+ Thêm lớp</button>}
+          {!isFree && <button className="btn ghost" onClick={openOrder} disabled={classes.length < 2}>⚙ Cài đặt lớp học</button>}
+          {isFree && classes.length >= 1 && (
+            <span className="muted" style={{ fontSize: 13 }}>Gói Khởi động quản lý 1 lớp — muốn dùng tiếp thì sửa lại lớp hiện có. Nâng lên Pro để thêm lớp không giới hạn.</span>
+          )}
         </div>
       )}
 
@@ -414,10 +421,12 @@ export default function Classes() {
                   </div>
                 </div>
 
-                <div className="toggle-row" style={{ padding: '10px 0' }}>
-                  <span>Tự động lên lớp cho năm sau<br /><span className="muted" style={{ fontSize: 12 }}>Bật: lớp nằm trong bảng thứ tự lên lớp. Tắt: lớp hè/dự tòng/hôn nhân/GLV (học 1 lần, không lên lớp)</span></span>
-                  <button className={`switch ${modal.promotes ? 'on' : ''}`} onClick={() => setModal({ ...modal, promotes: !modal.promotes })} role="switch" aria-checked={modal.promotes}><span className="knob" /></button>
-                </div>
+                {!isFree && (
+                  <div className="toggle-row" style={{ padding: '10px 0' }}>
+                    <span>Tự động lên lớp cho năm sau<br /><span className="muted" style={{ fontSize: 12 }}>Bật: lớp nằm trong bảng thứ tự lên lớp. Tắt: lớp hè/dự tòng/hôn nhân/GLV (học 1 lần, không lên lớp)</span></span>
+                    <button className={`switch ${modal.promotes ? 'on' : ''}`} onClick={() => setModal({ ...modal, promotes: !modal.promotes })} role="switch" aria-checked={modal.promotes}><span className="knob" /></button>
+                  </div>
+                )}
 
                 <div className="field">
                   <label>Giáo lý viên phụ trách (chọn nhiều, đánh dấu 1 người chính)</label>

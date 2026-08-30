@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { useRealtime } from '../realtime.jsx';
+import { isPro } from '../lib/plans';
 import { byViName } from '../lib/viName';
 import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 
@@ -24,6 +25,7 @@ export default function Grades() {
   const [overview, setOverview] = useState(false);
   const [savingCell, setSavingCell] = useState('');
   const [parish, setParish] = useState(null);
+  const isFree = !isPro(parish?.plan || 'free');
 
   const [searchParams] = useSearchParams();
   const isCurrent = !year || year === currentYear;
@@ -150,7 +152,7 @@ export default function Grades() {
           <option value="">-- Chọn lớp --</option>
           {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        {isAdmin && isCurrent && <button className="btn ghost" onClick={endYear}>🏁 Kết thúc năm học</button>}
+        {isAdmin && isCurrent && !isFree && <button className="btn ghost" onClick={endYear}>🏁 Kết thúc năm học</button>}
         {classId && (
           <>
             {isCurrent && <button className="btn ghost" onClick={() => setGear(true)}>⚙ Cột điểm</button>}

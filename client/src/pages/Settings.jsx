@@ -25,6 +25,7 @@ export default function Settings() {
 
   const settings = parish?.settings || {};
   const flag = (k) => settings[k] !== false; // mặc định ON
+  const isFree = !isPro(parish?.plan || 'free');
 
   function loadAll() {
     api.get('/school-years').then((r) => setYears(r.data));
@@ -147,7 +148,7 @@ export default function Settings() {
       <div className="panel">
         <div className="card-head"><h2>Tùy chọn quản lý</h2></div>
         <ToggleRow label="Quản lý theo năm học giáo lý" on={flag('manage_by_school_year')} onClick={() => toggle('manage_by_school_year')} />
-        <ToggleRow label="Hiện nút kết thúc năm học & lên lớp" on={flag('auto_promote')} onClick={() => toggle('auto_promote')} />
+        {!isFree && <ToggleRow label="Hiện nút kết thúc năm học & lên lớp" on={flag('auto_promote')} onClick={() => toggle('auto_promote')} />}
       </div>
 
       {/* Gói dịch vụ */}
@@ -215,7 +216,7 @@ export default function Settings() {
       )}
 
       {/* Lên lớp cuối năm */}
-      {flag('auto_promote') && (
+      {!isFree && flag('auto_promote') && (
         <div className="panel">
           <div className="card-head"><h2>Kết thúc năm học & lên lớp</h2></div>
           <p className="muted" style={{ marginTop: 0 }}>

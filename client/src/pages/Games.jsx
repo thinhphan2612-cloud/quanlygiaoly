@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
-import { rank } from '../lib/plans';
+import { rank, isPro } from '../lib/plans';
 import PricingModal from '../components/PricingModal.jsx';
 
 const PALETTE = ['#2563eb', '#f59e0b', '#15803d', '#db2777', '#7c3aed', '#0891b2', '#dc2626', '#0ea5e9'];
@@ -17,6 +17,8 @@ export default function Games() {
   const [open, setOpen] = useState(null);
   const [pricing, setPricing] = useState(false);
   const [manage, setManage] = useState(false);
+  const [proNotice, setProNotice] = useState(false);
+  const isFree = !isPro(plan);
 
   function load() { api.get('/games').then((r) => setGames(r.data)); }
   useEffect(() => { api.get('/parish').then((r) => setPlan(r.data?.plan || 'free')).catch(() => {}); load(); }, []);
@@ -28,7 +30,7 @@ export default function Games() {
       <div className="att-head">
         <h1 style={{ margin: 0 }}>Game học giáo lý</h1>
         <div style={{ display: 'flex', gap: 8 }}>
-          {isAdmin && <button className="btn ghost" onClick={() => setManage(true)}>⚙ Quản lý game</button>}
+          {isAdmin && <button className="btn ghost" onClick={() => (isFree ? setProNotice(true) : setManage(true))}>⚙ Quản lý game</button>}
         </div>
       </div>
 
@@ -72,6 +74,19 @@ export default function Games() {
       )}
       {pricing && <PricingModal current={plan} onClose={() => setPricing(false)} />}
       {manage && <GameManager games={games} onChange={load} onClose={() => setManage(false)} />}
+      {proNotice && (
+        <div className="modal-backdrop" onClick={() => setProNotice(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 40, textAlign: 'center' }}>🎮</div>
+            <h2 style={{ textAlign: 'center', marginTop: 6 }}>Cần gói Pro</h2>
+            <p className="muted" style={{ textAlign: 'center' }}>Quản lý game học giáo lý là tính năng của gói Pro. Nâng cấp để mở khoá.</p>
+            <div className="modal-actions" style={{ justifyContent: 'center' }}>
+              <button className="btn ghost" onClick={() => setProNotice(false)}>Đóng</button>
+              <button className="btn" onClick={() => { setProNotice(false); setPricing(true); }}>Xem gói Pro</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
