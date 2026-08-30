@@ -16,9 +16,13 @@ import Archive from './pages/Archive.jsx';
 import Audit from './pages/Audit.jsx';
 import Notify from './pages/Notify.jsx';
 import Admin from './pages/Admin.jsx';
+import SetPassword from './pages/SetPassword.jsx';
 import { isSuperAdmin } from './lib/superadmin';
 import { useParish } from './parish.jsx';
 import { isPro } from './lib/plans';
+
+// Bắt link mời / đặt lại mật khẩu (đọc hash trước khi Supabase xoá) — buộc đặt mật khẩu.
+const INVITE_LINK = typeof window !== 'undefined' && /type=(invite|recovery)/i.test(window.location.hash);
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -37,6 +41,7 @@ function RequirePro({ children }) {
 // Trang chủ: super-admin vào thẳng bảng quản trị hệ thống (không có giáo xứ)
 function Home() {
   const { user } = useAuth();
+  if (INVITE_LINK) return <Navigate to="/set-password" replace />;
   if (isSuperAdmin(user)) return <Navigate to="/admin" replace />;
   return <Dashboard />;
 }
@@ -46,6 +51,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Login initialMode="register" />} />
+      <Route path="/set-password" element={<SetPassword />} />
       <Route path="/" element={<Protected><Home /></Protected>} />
       <Route path="/admin" element={<Protected><Admin /></Protected>} />
       <Route path="/students" element={<Protected><Students /></Protected>} />
