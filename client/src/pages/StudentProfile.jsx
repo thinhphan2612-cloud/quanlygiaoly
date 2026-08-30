@@ -22,6 +22,7 @@ export default function StudentProfile() {
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
   const [parish, setParish] = useState(null);
+  const [classes, setClasses] = useState([]);
   const [err, setErr] = useState('');
   const [edit, setEdit] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -40,6 +41,7 @@ export default function StudentProfile() {
   }
   useEffect(() => { load(); }, [id]);
   useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
+  useEffect(() => { api.get('/classes').then((r) => setClasses(r.data)).catch(() => {}); }, []);
   const rev = useRealtime(['grades', 'attendance', 'spiritual_records', 'students']);
   useEffect(() => { if (rev) load(); }, [rev]);
 
@@ -207,7 +209,7 @@ export default function StudentProfile() {
         <div className="modal-backdrop" onClick={() => setEdit(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Sửa thông tin học viên</h2>
-            <StudentForm form={edit} setForm={setEdit} />
+            <StudentForm form={edit} setForm={setEdit} classes={classes} />
             <div className="modal-actions">
               <button className="btn ghost" onClick={() => setEdit(null)}>Hủy</button>
               <button className="btn" onClick={save}>Lưu</button>
