@@ -243,7 +243,9 @@ export default function Classes() {
 
   const showActions = isAdmin || isTeacher;
   const colCount = 6 + (showActions ? 1 : 0);
-  const shown = classes.filter((c) => (c.kind || 'catechism') === tab);
+  // Danh sách hiển thị: catechism xếp theo thứ tự lớp (cao nhất trên cùng — khớp "Cài đặt thứ tự lớp")
+  const shown = classes.filter((c) => (c.kind || 'catechism') === tab)
+    .slice().sort((a, b) => (tab === 'catechism' ? (b.order_index || 0) - (a.order_index || 0) : 0));
   const externalCount = classes.filter((c) => c.kind === 'external').length;
 
   return (
@@ -299,6 +301,11 @@ export default function Classes() {
           </tbody>
         </table>
       </div>
+      {tab === 'catechism' && (
+        <p className="muted" style={{ fontSize: 13, marginTop: -4 }}>
+          🎓 <b>Lớp tốt nghiệp</b>: học viên lớp này sẽ <b>ra trường</b> khi bấm "Kết thúc năm học". Gán nhãn ở nút <b>Sửa</b> của lớp bậc cao nhất; chưa gán thì hệ thống tự lấy lớp trên cùng.
+        </p>
+      )}
 
       {/* Danh sách học viên của lớp được chọn */}
       {detail && (
@@ -531,8 +538,8 @@ export default function Classes() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Cài đặt thứ tự lớp</h2>
             <p className="muted" style={{ marginTop: 0 }}>
-              Sắp xếp để dùng tính năng <b>tự động lên lớp</b>. <b>Trên cùng là lớp lớn nhất</b> (ra trường khi lên lớp),
-              dưới cùng là lớp nhỏ nhất. Bật "Tự động lên lớp" ở Cài đặt quản lý.
+              Sắp xếp bậc lớp cho việc lên lớp cuối năm. <b>Trên cùng là lớp cao nhất</b> (thường là lớp tốt nghiệp — ra trường khi lên lớp),
+              dưới cùng là lớp nhỏ nhất. Đánh dấu "🎓 lớp tốt nghiệp" ở nút <b>Sửa</b> của lớp cao nhất.
             </p>
             <div className="order-list">
               {orderList.map((c, i) => (
