@@ -21,7 +21,7 @@ const nav = [
   { to: '/grades', label: 'Điểm số', Icon: IconGrades },
   { to: '/random', label: 'Chọn trả bài', Icon: IconDice },
   { to: '/games', label: 'Game học', Icon: IconGame },
-  { to: '/audit', label: 'Thu chi', Icon: IconMoney },
+  { to: '/audit', label: 'Thu chi', Icon: IconMoney, proOnly: true },
   { to: '/teachers', label: 'Giáo lý viên', Icon: IconTeacher, adminOnly: true, proOnly: true },
   { to: '/archive', label: 'Lưu trữ', Icon: IconArchive, adminOnly: true, proOnly: true },
   { to: '/notify', label: 'Thông báo', Icon: IconBell, adminOnly: true, proOnly: true },

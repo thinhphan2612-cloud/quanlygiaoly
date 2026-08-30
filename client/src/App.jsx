@@ -17,12 +17,21 @@ import Audit from './pages/Audit.jsx';
 import Notify from './pages/Notify.jsx';
 import Admin from './pages/Admin.jsx';
 import { isSuperAdmin } from './lib/superadmin';
+import { useParish } from './parish.jsx';
+import { isPro } from './lib/plans';
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="app-loading">Đang tải...</div>;
   if (!user) return <Navigate to="/login" replace />;
   return <Layout>{children}</Layout>;
+}
+
+// Chặn gói free vào các trang chỉ dành cho Pro (kể cả gõ URL trực tiếp).
+function RequirePro({ children }) {
+  const { parish } = useParish();
+  if (parish && !isPro(parish.plan)) return <Navigate to="/" replace />;
+  return children;
 }
 
 // Trang chủ: super-admin vào thẳng bảng quản trị hệ thống (không có giáo xứ)
@@ -42,15 +51,15 @@ export default function App() {
       <Route path="/students" element={<Protected><Students /></Protected>} />
       <Route path="/students/:id" element={<Protected><StudentProfile /></Protected>} />
       <Route path="/classes" element={<Protected><Classes /></Protected>} />
-      <Route path="/teachers" element={<Protected><Teachers /></Protected>} />
+      <Route path="/teachers" element={<Protected><RequirePro><Teachers /></RequirePro></Protected>} />
       <Route path="/attendance" element={<Protected><Attendance /></Protected>} />
       <Route path="/grades" element={<Protected><Grades /></Protected>} />
       <Route path="/random" element={<Protected><RandomPicker /></Protected>} />
       <Route path="/games" element={<Protected><Games /></Protected>} />
       <Route path="/settings" element={<Protected><Settings /></Protected>} />
-      <Route path="/archive" element={<Protected><Archive /></Protected>} />
-      <Route path="/audit" element={<Protected><Audit /></Protected>} />
-      <Route path="/notify" element={<Protected><Notify /></Protected>} />
+      <Route path="/archive" element={<Protected><RequirePro><Archive /></RequirePro></Protected>} />
+      <Route path="/audit" element={<Protected><RequirePro><Audit /></RequirePro></Protected>} />
+      <Route path="/notify" element={<Protected><RequirePro><Notify /></RequirePro></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
