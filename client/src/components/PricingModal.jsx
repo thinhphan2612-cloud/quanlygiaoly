@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import { PLANS, isPro } from '../lib/plans';
+import { useAuth } from '../auth.jsx';
+import { useParish } from '../parish.jsx';
+import { sendContactMessage } from '../lib/contact';
 
 const vnd = (n) => (Number(n) || 0).toLocaleString('vi-VN') + 'đ';
 
@@ -11,6 +14,10 @@ const qrUrl = (amount, order) =>
 
 export default function PricingModal({ current = 'free', onClose }) {
   const currentKey = isPro(current) ? 'pro' : 'free';
+  const { user } = useAuth();
+  const { parish } = useParish();
+  const [msg, setMsg] = useState('');
+  const [sent, setSent] = useState(false);
   const [tiers, setTiers] = useState([]);
   const [step, setStep] = useState('choose'); // choose | pay | qr
   const [tier, setTier] = useState(null);
@@ -40,6 +47,16 @@ export default function PricingModal({ current = 'free', onClose }) {
       else { setDisc(null); setCodeMsg('Mã không hợp lệ hoặc đã hết hạn'); }
     } catch { setDisc(null); setCodeMsg('Không kiểm tra được mã'); }
     finally { setChecking(false); }
+  }
+
+  async function sendContact() {
+    if (!msg.trim()) { alert('Vui lòng nhập lời nhắn'); return; }
+    setBusy(true);
+    try {
+      await sendContactMessage({ user, parish, message: msg, context: 'Nâng cấp: ' + (tier?.label || 'Giáo xứ lớn') });
+      setSent(true);
+    } catch (e) { alert(e.message || 'Gửi thất bại'); }
+    finally { setBusy(false); }
   }
 
   async function pay() {
@@ -117,11 +134,20 @@ export default function PricingModal({ current = 'free', onClose }) {
         {step === 'pay' && tier && tier.price == null && (
           <>
             <h2 style={{ marginTop: 0 }}>{tier.label}</h2>
-            <p className="muted">Giáo xứ quy mô lớn được báo giá riêng. Vui lòng liên hệ để được tư vấn và kích hoạt.</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <a className="btn" href="mailto:support.giaolyso@gmail.com?subject=Nâng cấp Pro - giáo xứ lớn">✉ Gửi email liên hệ</a>
+            <p className="muted" style={{ marginTop: 0 }}>Giáo xứ quy mô lớn được báo giá riêng. Gửi lời nhắn cho chúng tôi — đội ngũ Giáo Lý Số sẽ liên hệ tư vấn &amp; kích hoạt.</p>
+            {sent ? (
+              <div className="info-box">Đã gửi lời nhắn! Chúng tôi sẽ liên hệ với bạn sớm. Cảm ơn bạn.</div>
+            ) : (
+              <>
+                <div className="field"><label>Lời nhắn</label>
+                  <textarea rows={4} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="VD: Giáo xứ chúng tôi có khoảng 15 lớp, xin được tư vấn gói phù hợp…" /></div>
+                <p className="muted" style={{ fontSize: 12 }}>Chúng tôi sẽ phản hồi qua email <b>{user?.email}</b>.</p>
+              </>
+            )}
+            <div className="modal-actions">
+              <button className="btn ghost" onClick={() => setStep('choose')}>← Quay lại</button>
+              {!sent && <button className="btn" disabled={busy} onClick={sendContact}>{busy ? 'Đang gửi…' : 'Gửi lời nhắn'}</button>}
             </div>
-            <div className="modal-actions"><button className="btn ghost" onClick={() => setStep('choose')}>← Quay lại</button></div>
           </>
         )}
 

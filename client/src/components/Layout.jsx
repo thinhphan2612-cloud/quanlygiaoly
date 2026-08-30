@@ -7,6 +7,7 @@ import { useRealtime } from '../realtime.jsx';
 import api from '../api';
 import { isPro, planName } from '../lib/plans';
 import { isSuperAdmin } from '../lib/superadmin';
+import { sendContactMessage } from '../lib/contact';
 import { fileToDataUrl } from '../lib/img';
 import PricingModal from './PricingModal.jsx';
 import {
@@ -221,20 +222,49 @@ export default function Layout({ children }) {
       </div>
 
       {pricing && <PricingModal current={plan} onClose={() => setPricing(false)} />}
-      {feedback && (
-        <div className="modal-backdrop" onClick={() => setFeedback(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Góp ý / liên hệ tác giả</h2>
-            <p className="muted" style={{ marginTop: 0 }}>Mọi góp ý giúp ứng dụng tốt hơn. Rất mong nhận phản hồi từ quý cha và anh chị giáo lý viên.</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <a className="btn" href="mailto:phanngocthinh2612@gmail.com?subject=Góp ý Quản lý Giáo lý">✉ Gửi email góp ý</a>
-              <a className="btn ghost" href="https://ephatastore.com" target="_blank" rel="noopener noreferrer">🌐 Khám phá Ephata Store</a>
-            </div>
-            <div className="modal-actions"><button className="btn ghost" onClick={() => setFeedback(false)}>Đóng</button></div>
-          </div>
-        </div>
-      )}
+      {feedback && <FeedbackModal user={user} parish={parish} onClose={() => setFeedback(false)} />}
       {pwModal && <ChangePasswordModal email={user?.email} onClose={() => setPwModal(false)} />}
+    </div>
+  );
+}
+
+function FeedbackModal({ user, parish, onClose }) {
+  const [msg, setMsg] = useState('');
+  const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function send() {
+    if (!msg.trim()) { alert('Vui lòng nhập nội dung'); return; }
+    setBusy(true);
+    try {
+      await sendContactMessage({ user, parish, message: msg, context: 'Góp ý' });
+      setSent(true);
+    } catch (e) { alert(e.message || 'Gửi thất bại'); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ marginTop: 0 }}>Góp ý / liên hệ tác giả</h2>
+        <p className="muted" style={{ marginTop: 0 }}>Mọi góp ý giúp ứng dụng tốt hơn. Rất mong nhận phản hồi từ quý cha và anh chị giáo lý viên.</p>
+        {sent ? (
+          <div className="info-box">Đã gửi! Cảm ơn phản hồi của bạn.</div>
+        ) : (
+          <>
+            <div className="field"><label>Nội dung</label>
+              <textarea rows={4} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Nhập góp ý hoặc câu hỏi của bạn…" autoFocus /></div>
+            <p className="muted" style={{ fontSize: 12 }}>Gửi kèm tài khoản <b>{user?.email}</b> để chúng tôi phản hồi.</p>
+          </>
+        )}
+        <div className="modal-actions" style={{ justifyContent: 'space-between' }}>
+          <a className="btn ghost" href="https://ephatastore.com" target="_blank" rel="noopener noreferrer">🌐 Ephata Store</a>
+          <span style={{ display: 'flex', gap: 8 }}>
+            <button className="btn ghost" onClick={onClose}>Đóng</button>
+            {!sent && <button className="btn" disabled={busy} onClick={send}>{busy ? 'Đang gửi…' : 'Gửi'}</button>}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
