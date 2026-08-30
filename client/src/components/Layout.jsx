@@ -31,6 +31,7 @@ const nav = [
 // Lối tắt cuộn tới từng mục trong trang /admin (chỉ super-admin)
 const ADMIN_SECTIONS = [
   { id: 'sec-overview', label: 'Tổng quan' },
+  { id: 'sec-leads', label: 'Đơn liên hệ' },
   { id: 'sec-parishes', label: 'Giáo xứ' },
   { id: 'sec-orders', label: 'Đơn chờ thanh toán' },
   { id: 'sec-payments', label: 'Sổ thanh toán' },

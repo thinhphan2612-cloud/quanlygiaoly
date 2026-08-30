@@ -489,6 +489,10 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
 const APP='https://app.giaoly.com.vn';
 const CONTACT_EMAIL='support.giaolyso@gmail.com';
 const FORM_KEY='93c36314-d9bf-48d7-bc43-3224e8180076'; /* Web3Forms access key -> gửi email tự động về support.giaolyso@gmail.com */
+/* Ghi đơn vào Supabase (leads) để hiện ở trang Quản trị. Anon key công khai; RLS chỉ cho INSERT. */
+const SB_URL='https://jznntxlixctjwxqxatxs.supabase.co';
+const SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6bm50eGxpeGN0and4cXhhdHhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyNDA1OTcsImV4cCI6MjEwMjgxNjU5N30.dtn_YobVpZNYSjlr9EV9gA8YVRQHqUb-ieYbn3EtO10';
+function saveLead(kind,d){try{fetch(SB_URL+'/rest/v1/leads',{method:'POST',headers:{'Content-Type':'application/json',apikey:SB_ANON,Authorization:'Bearer '+SB_ANON,Prefer:'return=minimal'},body:JSON.stringify({kind:kind==='Liên hệ'?'contact':'register',name:d.name||null,email:d.email||null,phone:d.phone||null,parish_name:d.parish||null,note:d.note||null})}).catch(()=>{});}catch(e){}}
 
 function openLp(id){const m=document.getElementById(id);if(m){m.hidden=false;document.body.style.overflow='hidden';const i=m.querySelector('input');if(i)setTimeout(()=>i.focus(),50);}}
 function closeLp(id){const m=document.getElementById(id);if(m){m.hidden=true;document.body.style.overflow='';}}
@@ -499,6 +503,7 @@ document.querySelectorAll('.lp-card form').forEach(f=>{
   e.preventDefault();
   const kind=f.dataset.kind;const st=f.querySelector('.lp-status');const btn=f.querySelector('.lp-submit');
   const d=Object.fromEntries(new FormData(f).entries());
+  saveLead(kind,d);
   st.className='lp-status';st.textContent='';
   if(FORM_KEY){
    btn.disabled=true;btn.textContent='Đang gửi...';

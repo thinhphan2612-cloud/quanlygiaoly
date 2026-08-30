@@ -31,6 +31,8 @@ export default function Admin() {
   const [tiers, setTiers] = useState([]);             // bảng giá
   const [payingOrder, setPayingOrder] = useState(null); // đơn đang đánh dấu đã trả
   const [editCode, setEditCode] = useState(null);     // mã đang tạo/sửa
+  const [leads, setLeads] = useState([]);             // đơn liên hệ / đăng ký
+  const [grantLead, setGrantLead] = useState(null);   // lead đang cấp tài khoản
 
   function load() {
     setLoading(true); setErr('');
@@ -42,7 +44,9 @@ export default function Admin() {
     api.get('/admin/orders?status=pending').then((r) => setOrders(r.data)).catch(() => {});
     api.get('/admin/codes').then((r) => setCodes(r.data)).catch(() => {});
     api.get('/upgrade/tiers').then((r) => setTiers(r.data)).catch(() => {});
+    api.get('/admin/leads').then((r) => setLeads(r.data)).catch(() => {});
   }
+  function loadLeads() { api.get('/admin/leads').then((r) => setLeads(r.data)).catch(() => {}); }
   useEffect(() => { load(); }, []);
 
   const filtered = useMemo(() => {
@@ -150,6 +154,23 @@ export default function Admin() {
     try { await api.post('/admin/tier', { id, ...patch }); api.get('/upgrade/tiers').then((r) => setTiers(r.data)); }
     catch (e) { alert(e.response?.data?.error || 'Lưu giá thất bại'); }
   }
+  async function grantAccount(lead, form) {
+    try {
+      await api.post('/admin/grant-account', { lead_id: lead.id, email: form.email, full_name: form.full_name, parish_name: form.parish_name, diocese: form.diocese });
+      setGrantLead(null); loadLeads();
+      alert('Đã gửi email mời tới ' + form.email + '. Người dùng bấm link trong email để đặt mật khẩu và đăng nhập.');
+    } catch (e) { alert(e.response?.data?.error || 'Cấp tài khoản thất bại'); }
+  }
+  async function setLeadStatus(lead, status) {
+    try { await api.post('/admin/lead-status', { id: lead.id, status }); loadLeads(); }
+    catch (e) { alert(e.response?.data?.error || 'Thất bại'); }
+  }
+  async function deleteLead(lead) {
+    if (!confirm('Xoá đơn này?')) return;
+    try { await api.post('/admin/lead-delete', { id: lead.id }); setLeads((ls) => ls.filter((x) => x.id !== lead.id)); }
+    catch (e) { alert(e.response?.data?.error || 'Xoá thất bại'); }
+  }
+  const newLeads = leads.filter((l) => l.status === 'new').length;
 
   return (
     <div>
@@ -201,6 +222,39 @@ export default function Admin() {
           </div>
         </div>
       )}
+
+      <div className="panel" id="sec-leads">
+        <div className="card-head"><h2 style={{ margin: 0 }}>Đơn liên hệ &amp; đăng ký dùng thử{newLeads > 0 ? ` (${newLeads} mới)` : ''}</h2></div>
+        {leads.length === 0 ? <p className="muted">Chưa có đơn nào.</p> : (
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead><tr><th>Ngày</th><th>Loại</th><th>Người gửi</th><th>Giáo xứ</th><th>Nội dung</th><th>Trạng thái</th><th></th></tr></thead>
+              <tbody>
+                {leads.map((l) => (
+                  <tr key={l.id} style={l.status === 'new' ? { background: 'rgba(180,129,60,.05)' } : undefined}>
+                    <td className="muted" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{fmtDate(l.created_at)}</td>
+                    <td>{l.kind === 'register' ? <span className="plan-badge pro">Đăng ký</span> : <span className="plan-badge free">Liên hệ</span>}</td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{l.name || '—'}</div>
+                      <div className="muted" style={{ fontSize: 12 }}>{l.email || ''}{l.phone ? ' · ' + l.phone : ''}</div>
+                    </td>
+                    <td>{l.parish_name || '—'}</td>
+                    <td className="muted" style={{ fontSize: 12, maxWidth: 220 }}>{l.note || ''}</td>
+                    <td>{l.status === 'granted' ? <span style={{ color: '#15803d', fontSize: 12 }}>Đã cấp ✓</span> : l.status === 'archived' ? <span className="muted" style={{ fontSize: 12 }}>Đã lưu</span> : <span style={{ color: '#a8641b', fontSize: 12 }}>Mới</span>}</td>
+                    <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
+                      {l.status !== 'granted' && <button className="btn sm" disabled={!l.email} onClick={() => setGrantLead(l)}>Cấp tài khoản</button>}
+                      <div className="row-links">
+                        {l.status === 'new' && <button onClick={() => setLeadStatus(l, 'archived')}>Lưu</button>}
+                        <button className="danger" onClick={() => deleteLead(l)}>Xoá</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       <div className="panel" id="sec-parishes">
         <div className="card-head" style={{ gap: 12, flexWrap: 'wrap' }}>
@@ -391,6 +445,31 @@ export default function Admin() {
       {payParish && <PaymentModal parish={payParish} onClose={() => setPayParish(null)} onSave={(payment) => addPayment(payParish, payment)} />}
       {payingOrder && <OrderPaidModal order={payingOrder} onClose={() => setPayingOrder(null)} onConfirm={(exp) => markOrderPaid(payingOrder, exp)} />}
       {editCode && <CodeModal code={editCode} onClose={() => setEditCode(null)} onSave={saveCode} />}
+      {grantLead && <GrantModal lead={grantLead} onClose={() => setGrantLead(null)} onConfirm={(form) => grantAccount(grantLead, form)} />}
+    </div>
+  );
+}
+
+function GrantModal({ lead, onClose, onConfirm }) {
+  const [f, setF] = useState({ email: lead.email || '', full_name: lead.name || '', parish_name: lead.parish_name || '', diocese: '' });
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal wide" onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ marginTop: 0 }}>Cấp tài khoản dùng thử</h2>
+        <p className="muted" style={{ marginTop: 0 }}>Tạo giáo xứ + tài khoản quản trị theo email này, rồi gửi email mời để người dùng tự đặt mật khẩu và đăng nhập.</p>
+        <div className="row">
+          <div className="field" style={{ flex: 2 }}><label>Email *</label><input value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></div>
+          <div className="field" style={{ flex: 2 }}><label>Họ tên quản trị</label><input value={f.full_name} onChange={(e) => setF({ ...f, full_name: e.target.value })} /></div>
+        </div>
+        <div className="row">
+          <div className="field" style={{ flex: 2 }}><label>Tên giáo xứ *</label><input value={f.parish_name} onChange={(e) => setF({ ...f, parish_name: e.target.value })} placeholder="VD: Giáo xứ Tân Định" /></div>
+          <div className="field" style={{ flex: 1 }}><label>Giáo phận</label><input value={f.diocese} onChange={(e) => setF({ ...f, diocese: e.target.value })} /></div>
+        </div>
+        <div className="modal-actions">
+          <button className="btn ghost" onClick={onClose}>Huỷ</button>
+          <button className="btn" onClick={() => (f.email.trim() && f.parish_name.trim() ? onConfirm(f) : alert('Cần email và tên giáo xứ'))}>Gửi lời mời</button>
+        </div>
+      </div>
     </div>
   );
 }

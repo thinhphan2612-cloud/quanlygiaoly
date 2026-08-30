@@ -249,6 +249,41 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    // -------- đơn liên hệ & đăng ký dùng thử (leads) --------
+    if (action === 'leads-list') {
+      const { data, error } = await admin.from('leads')
+        .select('*').order('created_at', { ascending: false }).limit(500);
+      if (error) return json({ error: error.message }, 400);
+      return json({ leads: data || [] });
+    }
+    if (action === 'lead-status') {
+      if (!body?.id || !body?.status) return json({ error: 'Thiếu id/status' }, 400);
+      const { error } = await admin.from('leads').update({ status: body.status }).eq('id', body.id);
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+    if (action === 'lead-delete') {
+      if (!body?.id) return json({ error: 'Thiếu id' }, 400);
+      const { error } = await admin.from('leads').delete().eq('id', body.id);
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+    // Cấp tài khoản cho người liên hệ: mời qua email (Supabase gửi link đặt mật khẩu).
+    // Trigger handle_new_user tự tạo giáo xứ + tài khoản admin từ metadata.
+    if (action === 'grant-account') {
+      const email = (body?.email || '').trim().toLowerCase();
+      const parishName = (body?.parish_name || '').trim();
+      const fullName = (body?.full_name || '').trim();
+      if (!email) return json({ error: 'Thiếu email' }, 400);
+      if (!parishName) return json({ error: 'Thiếu tên giáo xứ' }, 400);
+      const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
+        data: { full_name: fullName, parish_name: parishName, diocese: (body?.diocese || '').trim() },
+      });
+      if (error) return json({ error: error.message }, 400);
+      if (body?.lead_id) await admin.from('leads').update({ status: 'granted' }).eq('id', body.lead_id);
+      return json({ ok: true, user_id: data?.user?.id, email });
+    }
+
     return json({ error: 'Action không hợp lệ' }, 400);
   } catch (e) {
     return json({ error: String((e as Error)?.message || e) }, 500);

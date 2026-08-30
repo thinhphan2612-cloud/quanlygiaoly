@@ -742,6 +742,18 @@ async function handle(method, rawUrl, body = {}) {
     if (path === '/admin/tier' && method === 'post') {
       const r = await adminCall('tier-save', body); if (r.error) return fail(r.status, r.error); return ok(r.data);
     }
+    if (path === '/admin/leads' && method === 'get') {
+      const r = await adminCall('leads-list'); if (r.error) return fail(r.status, r.error); return ok(r.data.leads || []);
+    }
+    if (path === '/admin/lead-status' && method === 'post') {
+      const r = await adminCall('lead-status', { id: body.id, status: body.status }); if (r.error) return fail(r.status, r.error); return ok(r.data);
+    }
+    if (path === '/admin/lead-delete' && method === 'post') {
+      const r = await adminCall('lead-delete', { id: body.id }); if (r.error) return fail(r.status, r.error); return ok(r.data);
+    }
+    if (path === '/admin/grant-account' && method === 'post') {
+      const r = await adminCall('grant-account', body); if (r.error) return fail(r.status, r.error); return ok(r.data);
+    }
 
     // ---------------- school_years (năm học) ----------------
     if (path === '/school-years' && method === 'get') {
