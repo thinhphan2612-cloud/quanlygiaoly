@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { exportXlsx, exportXlsxMulti, exportPdf, STT_COL, exportSubtitle, fileSlug } from '../lib/exportUtils';
+import { SACRAMENTS } from '../components/SacramentBadge.jsx';
 
 // Tính điểm TB có trọng số cho 1 học viên từ cột điểm + điểm số
 function avgOf(columns, rowScores) {
@@ -21,9 +22,16 @@ export default function Archive() {
   const [search, setSearch] = useState('');
   const [parish, setParish] = useState(null);
   const [msg, setMsg] = useState('');
+  const [grads, setGrads] = useState([]);
+  const [gradYear, setGradYear] = useState('');
+  const [gradSearch, setGradSearch] = useState('');
 
   function loadYears() { api.get('/archive-years').then((r) => setYears(r.data)).catch(() => {}); }
-  useEffect(() => { loadYears(); api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
+  useEffect(() => {
+    loadYears();
+    api.get('/parish').then((r) => setParish(r.data)).catch(() => {});
+    api.get('/graduates').then((r) => setGrads(r.data)).catch(() => {});
+  }, []);
 
   if (user?.role !== 'admin') return <div className="muted">Chỉ quản trị viên được truy cập lưu trữ.</div>;
 
@@ -86,6 +94,12 @@ export default function Archive() {
     rows: detail.students,
   };
 
+  // ---- học sinh đã ra trường ----
+  const gradYears = [...new Set(grads.map((g) => g.year).filter(Boolean))].sort().reverse();
+  const gradList = grads.filter((g) =>
+    (!gradYear || g.year === gradYear) &&
+    ((g.full_name + ' ' + (g.saint_name || '')).toLowerCase().includes(gradSearch.toLowerCase())));
+
   return (
     <div>
       <h1>Lưu trữ theo năm học</h1>
@@ -123,6 +137,41 @@ export default function Archive() {
             )}
           </div>
         ))}
+      </div>
+
+      <div className="panel" style={{ marginTop: 18 }}>
+        <div className="card-head" style={{ gap: 12, flexWrap: 'wrap' }}>
+          <h2 style={{ margin: 0 }}>🎓 Học sinh đã ra trường ({grads.length})</h2>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <select value={gradYear} onChange={(e) => setGradYear(e.target.value)}>
+              <option value="">Tất cả niên khóa</option>
+              {gradYears.map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <input placeholder="Tìm theo tên…" value={gradSearch} onChange={(e) => setGradSearch(e.target.value)} style={{ minWidth: 200 }} />
+          </div>
+        </div>
+        {grads.length === 0 ? (
+          <p className="muted">Chưa có học sinh nào ra trường. Sau khi "Kết thúc năm học & lên lớp", các em ở lớp cao nhất sẽ ra trường và hiện tại đây.</p>
+        ) : gradList.length === 0 ? (
+          <p className="muted">Không tìm thấy học sinh phù hợp.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead><tr><th>Tên thánh</th><th>Họ tên</th><th>Năm ra trường</th><th>Lớp cuối</th><th>Bí tích</th></tr></thead>
+              <tbody>
+                {gradList.map((g) => (
+                  <tr key={g.id}>
+                    <td>{g.saint_name || '—'}</td>
+                    <td><span className="link-name" onClick={() => navigate(`/students/${g.id}`)}>{g.full_name}</span></td>
+                    <td>{g.year || '—'}</td>
+                    <td className="muted">{g.class_name || '—'}</td>
+                    <td className="muted">{SACRAMENTS[g.sacrament]?.label || SACRAMENTS.none.label}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Modal bảng điểm lớp năm cũ */}

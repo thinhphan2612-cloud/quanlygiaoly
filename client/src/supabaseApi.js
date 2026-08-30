@@ -897,6 +897,30 @@ async function handle(method, rawUrl, body = {}) {
         columns: columns || [], scores,
       });
     }
+    // ---------------- học sinh đã ra trường (tốt nghiệp) ----------------
+    // Ra trường = bản ghi MỚI NHẤT của học viên (theo niên khóa) đã graduated
+    // (không được copy lên lớp mới) -> đã hoàn thành & rời chương trình.
+    if (path === '/graduates' && method === 'get') {
+      const { data: studs, error } = await supabase.from('students')
+        .select('id, origin_id, full_name, saint_name, birth_date, gender, sacrament, avatar_url, graduated, classes(name, school_year)');
+      if (error) return fail(400, error.message);
+      const byLineage = {};
+      (studs || []).forEach((s) => { const key = s.origin_id || s.id; (byLineage[key] = byLineage[key] || []).push(s); });
+      const grads = [];
+      Object.values(byLineage).forEach((list) => {
+        const latest = list.slice().sort((a, b) => String(b.classes?.school_year || '').localeCompare(String(a.classes?.school_year || '')))[0];
+        if (latest && latest.graduated) {
+          grads.push({
+            id: latest.id, full_name: latest.full_name, saint_name: latest.saint_name,
+            birth_date: latest.birth_date, gender: latest.gender, sacrament: latest.sacrament,
+            avatar_url: latest.avatar_url, class_name: latest.classes?.name || null,
+            year: latest.classes?.school_year || null,
+          });
+        }
+      });
+      return ok(grads.sort((a, b) => byViName(a, b)));
+    }
+
     // ---------------- entitlement (kho tính năng) ----------------
     if (path === '/features' && method === 'get') {
       const { data, error } = await supabase.from('features').select('*').eq('active', true).order('order_index');
