@@ -134,10 +134,14 @@ export default function Layout({ children }) {
             <button className="btn-w">Nâng cấp Pro</button>
           </div>
         ) : (
-          <div className="side-card">
-            <div className="emoji">📖</div>
-            <div className="t">Đồng hành cùng các em thiếu nhi trong hành trình đức tin.</div>
-            <button className="btn-w" onClick={() => setPricing(true)}>Gói {planName(plan)}</button>
+          <div className="side-card plan-card">
+            <div className="pc-badge">✦ Gói {planName(plan)}</div>
+            <div className="pc-feats">
+              ✓ Không giới hạn lớp &amp; giáo lý viên<br />
+              ✓ Điểm danh · điểm số · thi đua<br />
+              ✓ Chứng chỉ · lưu trữ · game
+            </div>
+            <button className="btn-w" onClick={() => setPricing(true)}>Xem gói &amp; nâng cấp</button>
           </div>
         )}
         <button className="feedback-link" onClick={() => setFeedback(true)}>💬 Góp ý / liên hệ tác giả</button>

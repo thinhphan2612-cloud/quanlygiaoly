@@ -445,7 +445,7 @@ async function handle(method, rawUrl, body = {}) {
     if (path === '/attendance' && method === 'get') {
       if (!q.class_id || !q.date) return fail(400, 'Cần class_id và date');
       const { data: students, error } = await supabase.from('students')
-        .select('id, full_name, saint_name').eq('class_id', q.class_id).order('full_name');
+        .select('id, full_name, saint_name, avatar_url').eq('class_id', q.class_id).order('full_name');
       if (error) return fail(400, error.message);
       const ids = (students || []).map((s) => s.id);
       let recs = [];

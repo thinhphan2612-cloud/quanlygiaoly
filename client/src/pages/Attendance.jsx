@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import { exportXlsx, exportPdf, STT_COL, ATT_LABEL, fileSlug, exportSubtitle } from '../lib/exportUtils';
+import Avatar from '../components/Avatar.jsx';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const STATUSES = [
@@ -137,7 +138,7 @@ function GiaoLyDay({ classId, date, cls, parish }) {
           {rows.map((r) => (
             <tr key={r.id}>
               <td>{r.saint_name || '—'}</td>
-              <td>{r.full_name}</td>
+              <td><div className="stu-cell"><Avatar url={r.avatar_url} name={r.full_name} size={30} /><span>{r.full_name}</span></div></td>
               <td>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                   {STATUSES.map((s) => (

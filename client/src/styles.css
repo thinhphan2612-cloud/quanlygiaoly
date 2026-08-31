@@ -923,3 +923,5 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .admin-subnav button:hover { background: var(--primary-soft); color: var(--primary); }
 #sec-overview, #sec-parishes, #sec-orders, #sec-payments, #sec-codes, #sec-tiers { scroll-margin-top: 76px; }
 .pager { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 14px 0 2px; }
+.plan-card .pc-badge { display: inline-block; background: rgba(255,255,255,.22); color: #fff; font-weight: 700; font-size: 12.5px; padding: 3px 12px; border-radius: 999px; margin-bottom: 10px; }
+.plan-card .pc-feats { color: #fff; opacity: .93; font-size: 12px; line-height: 1.8; text-align: left; margin-bottom: 12px; }
