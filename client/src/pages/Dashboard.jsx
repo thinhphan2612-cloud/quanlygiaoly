@@ -81,6 +81,7 @@ function ClassReviews() {
   useEffect(() => { load(); }, []);
   const rev = useRealtime(['class_reviews', 'classes']);
   useEffect(() => { if (rev) load(); }, [rev]);
+  if (!rows) return null; // chưa tải xong -> không render (tránh null.filter)
   const cat = rows.filter((r) => r.kind !== 'external');            // lớp chính quy -> cổng cuối năm
   const ext = rows.filter((r) => r.kind === 'external' && r.status !== 'none'); // lớp ngoài -> duyệt riêng
   const catActive = cat.some((r) => r.status !== 'none');
