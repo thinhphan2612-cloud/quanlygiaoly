@@ -57,6 +57,19 @@ export default function Layout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [pricing, setPricing] = useState(false);
   const [promoOpen, setPromoOpen] = useState(true); // banner khuyến mãi: hiện mỗi lần tải trang (F5), tắt khi bấm X
+  const [promoCopied, setPromoCopied] = useState(false);
+  const copyPromo = () => {
+    const code = 'GIAOLYSO50';
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch { /* noop */ }
+      document.body.removeChild(ta);
+    } catch { /* noop */ }
+    navigator.clipboard?.writeText(code).catch(() => {});
+    setPromoCopied(true); setTimeout(() => setPromoCopied(false), 1800);
+  };
   const [feedback, setFeedback] = useState(false);
   const [pwModal, setPwModal] = useState(false);
   const [notifs, setNotifs] = useState([]);
@@ -237,6 +250,10 @@ export default function Layout({ children }) {
             <button className="promo-close" onClick={() => setPromoOpen(false)} aria-label="Đóng">✕</button>
             <img className="promo-img" src="/coupon50.png" alt="Giảm 50% — nhập mã GIAOLYSO50"
               onClick={() => { setPromoOpen(false); setPricing(true); }} />
+            <div className="promo-code">
+              <span>Mã ưu đãi: <b>GIAOLYSO50</b></span>
+              <button className="btn sm" onClick={copyPromo}>{promoCopied ? '✓ Đã sao chép' : '📋 Sao chép mã'}</button>
+            </div>
           </div>
         </div>
       )}
