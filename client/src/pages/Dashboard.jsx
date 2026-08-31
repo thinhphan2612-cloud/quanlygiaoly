@@ -81,10 +81,13 @@ function ClassReviews() {
   useEffect(() => { load(); }, []);
   const rev = useRealtime(['class_reviews', 'classes']);
   useEffect(() => { if (rev) load(); }, [rev]);
-  // Chỉ hiện khi đã có ít nhất 1 lớp được GLV chốt (bắt đầu quy trình cuối năm).
-  if (!rows || !rows.some((r) => r.status !== 'none')) return null;
-  const approved = rows.filter((r) => r.status === 'approved').length;
-  const total = rows.length;
+  const cat = rows.filter((r) => r.kind !== 'external');            // lớp chính quy -> cổng cuối năm
+  const ext = rows.filter((r) => r.kind === 'external' && r.status !== 'none'); // lớp ngoài -> duyệt riêng
+  const catActive = cat.some((r) => r.status !== 'none');
+  // Chỉ hiện khi đã có ít nhất 1 lớp được GLV chốt.
+  if (!catActive && ext.length === 0) return null;
+  const approved = cat.filter((r) => r.status === 'approved').length;
+  const total = cat.length;
   const toggle = (id) => setOpen((o) => ({ ...o, [id]: !o[id] }));
   async function approve(r) {
     if (!confirm(`Duyệt lớp "${r.class_name}"?` + (r.kind === 'external' ? '\nLớp ngoài hệ thống sẽ được đóng & chuyển vào Lưu trữ ngay.' : ''))) return;
@@ -97,58 +100,73 @@ function ClassReviews() {
     try { await api.post('/review-revision', { id: r.review_id, note }); load(); }
     catch (e) { alert(e.response?.data?.error || 'Thất bại'); }
   }
+  const renderRows = (list) => list.map((r) => {
+    const d = Object.values(r.decisions || {});
+    const has = r.status !== 'none';
+    let summary;
+    if (!has) summary = <span className="muted">—</span>;
+    else if (r.kind === 'external') { const p = d.filter((v) => v === 'pass').length; summary = `Đậu ${p} · Không đạt ${d.length - p}`; }
+    else { const a = d.filter((v) => v === 'advance').length; summary = `Lên lớp ${a} · Ở lại ${d.length - a}`; }
+    return (
+      <Fragment key={r.class_id}>
+        <tr>
+          <td>
+            {has ? (
+              <span className="link-name" onClick={() => toggle(r.class_id)}>{open[r.class_id] ? '▾ ' : '▸ '}{r.class_name}</span>
+            ) : r.class_name}
+            {r.is_graduation && ' 🎓'}
+          </td>
+          <td className="muted">{r.kind === 'external' ? 'Ngoài HT' : 'Chính quy'}</td>
+          <td>{has ? <span className="link" onClick={() => toggle(r.class_id)}>{summary}</span> : summary}</td>
+          <td className="muted">{r.submitted_by_name || '—'}</td>
+          <td style={{ whiteSpace: 'nowrap' }}>
+            {r.status === 'submitted' && (
+              <>
+                <button className="btn sm" onClick={() => approve(r)}>Duyệt</button>{' '}
+                <button className="btn ghost sm" onClick={() => revise(r)}>Yêu cầu xem lại</button>
+              </>
+            )}
+            {r.status === 'approved' && <span className="tag-chip" style={{ background: '#dcfce7', color: '#15803d' }}>✓ Đã duyệt</span>}
+            {r.status === 'revision' && <span className="tag-chip" style={{ background: '#fee2e2', color: '#b91c1c' }}>↩ Đã trả lại GLV</span>}
+            {r.status === 'none' && <span className="muted" style={{ fontSize: 12 }}>Chờ GLV gửi</span>}
+          </td>
+        </tr>
+        {has && open[r.class_id] && (
+          <tr className="rv-detail"><td colSpan={5}><ReviewDetail r={r} /></td></tr>
+        )}
+      </Fragment>
+    );
+  });
+  const renderTable = (list) => (
+    <div className="table-scroll">
+      <table>
+        <thead><tr><th>Lớp</th><th>Loại</th><th>Kết quả</th><th>GLV gửi</th><th></th></tr></thead>
+        <tbody>{renderRows(list)}</tbody>
+      </table>
+    </div>
+  );
   return (
     <div className="panel" style={{ marginBottom: 18 }}>
-      <div className="card-head">
-        <h2>📋 Lớp chờ duyệt (cuối năm)</h2>
-        <span className="muted" style={{ fontSize: 13 }}>{approved}/{total} lớp đã duyệt</span>
-      </div>
-      <div className="table-scroll">
-        <table>
-          <thead><tr><th>Lớp</th><th>Loại</th><th>Kết quả</th><th>GLV gửi</th><th></th></tr></thead>
-          <tbody>
-            {rows.map((r) => {
-              const d = Object.values(r.decisions || {});
-              const has = r.status !== 'none';
-              let summary;
-              if (!has) summary = <span className="muted">—</span>;
-              else if (r.kind === 'external') { const p = d.filter((v) => v === 'pass').length; summary = `Đậu ${p} · Không đạt ${d.length - p}`; }
-              else { const a = d.filter((v) => v === 'advance').length; summary = `Lên lớp ${a} · Ở lại ${d.length - a}`; }
-              return (
-                <Fragment key={r.class_id}>
-                  <tr>
-                    <td>
-                      {has ? (
-                        <span className="link-name" onClick={() => toggle(r.class_id)}>{open[r.class_id] ? '▾ ' : '▸ '}{r.class_name}</span>
-                      ) : r.class_name}
-                      {r.is_graduation && ' 🎓'}
-                    </td>
-                    <td className="muted">{r.kind === 'external' ? 'Ngoài HT' : 'Chính quy'}</td>
-                    <td>{has ? <span className="link" onClick={() => toggle(r.class_id)}>{summary}</span> : summary}</td>
-                    <td className="muted">{r.submitted_by_name || '—'}</td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      {r.status === 'submitted' && (
-                        <>
-                          <button className="btn sm" onClick={() => approve(r)}>Duyệt</button>{' '}
-                          <button className="btn ghost sm" onClick={() => revise(r)}>Yêu cầu xem lại</button>
-                        </>
-                      )}
-                      {r.status === 'approved' && <span className="tag-chip" style={{ background: '#dcfce7', color: '#15803d' }}>✓ Đã duyệt</span>}
-                      {r.status === 'revision' && <span className="tag-chip" style={{ background: '#fee2e2', color: '#b91c1c' }}>↩ Đã trả lại GLV</span>}
-                      {r.status === 'none' && <span className="muted" style={{ fontSize: 12 }}>Chờ GLV gửi</span>}
-                    </td>
-                  </tr>
-                  {has && open[r.class_id] && (
-                    <tr className="rv-detail"><td colSpan={5}><ReviewDetail r={r} /></td></tr>
-                  )}
-                </Fragment>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      {approved === total && total > 0 && (
-        <p className="muted" style={{ fontSize: 13, marginTop: 10 }}>✓ Tất cả lớp đã được duyệt — có thể "Kết thúc năm học & lên lớp" ở mục Cài đặt.</p>
+      {catActive && (
+        <>
+          <div className="card-head">
+            <h2>📋 Lớp chính quy chờ duyệt (cuối năm)</h2>
+            <span className="muted" style={{ fontSize: 13 }}>{approved}/{total} lớp đã duyệt</span>
+          </div>
+          {renderTable(cat)}
+          {approved === total && total > 0 && (
+            <p className="muted" style={{ fontSize: 13, marginTop: 10 }}>✓ Tất cả lớp chính quy đã được duyệt — có thể "Kết thúc năm học & lên lớp" ở mục Cài đặt.</p>
+          )}
+        </>
+      )}
+      {ext.length > 0 && (
+        <div style={{ marginTop: catActive ? 20 : 0 }}>
+          <div className="card-head">
+            <h2>🎓 Lớp ngoài hệ thống chờ duyệt</h2>
+            <span className="muted" style={{ fontSize: 13 }}>Duyệt riêng · không ảnh hưởng kết thúc năm học</span>
+          </div>
+          {renderTable(ext)}
+        </div>
       )}
     </div>
   );

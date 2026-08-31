@@ -801,13 +801,13 @@ async function handle(method, rawUrl, body = {}) {
       const chain = active.filter((c) => c.kind !== 'external').sort((a, b) => a.order_index - b.order_index);
       if (!chain.length) return fail(400, 'Chưa có lớp giáo lý chính quy nào để lên lớp.');
 
-      // CỔNG DUYỆT: mọi lớp đang hoạt động phải có đơn review 'approved'.
-      // (Lớp ngoài hệ thống đã được đóng ngay khi Admin duyệt, nên chỉ còn lớp chính quy ở đây.)
+      // CỔNG DUYỆT: chỉ các lớp GIÁO LÝ CHÍNH QUY phải có đơn review 'approved'.
+      // Lớp ngoài hệ thống duyệt RIÊNG (đóng ngay khi Admin duyệt), KHÔNG chặn kết thúc năm học.
       const { data: reviews } = await supabase.from('class_reviews')
         .select('class_id, status, decisions').eq('parish_id', pid);
       const revByClass = {}; (reviews || []).forEach((r) => { revByClass[r.class_id] = r; });
-      const pending = active.filter((c) => revByClass[c.id]?.status !== 'approved');
-      if (pending.length) return fail(400, `Còn ${pending.length} lớp chưa được duyệt: ${pending.map((c) => c.name).join(', ')}. Cần GLV gửi và Admin duyệt đủ tất cả lớp trước khi kết thúc năm học.`);
+      const pending = chain.filter((c) => revByClass[c.id]?.status !== 'approved');
+      if (pending.length) return fail(400, `Còn ${pending.length} lớp chính quy chưa được duyệt: ${pending.map((c) => c.name).join(', ')}. Cần GLV gửi và Admin duyệt đủ các lớp chính quy trước khi kết thúc năm học.`);
 
       const curYear = chain.map((c) => c.school_year).find(Boolean) || null;
       const nextYear = bumpYear(curYear);
