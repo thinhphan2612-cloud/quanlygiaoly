@@ -46,10 +46,21 @@ export default function Login({ initialMode = 'login' }) {
   const isReset = mode === 'reset';
 
   return (
-    <div className="login-wrap">
+    <div className="auth-stage">
+      <section className="auth-hero">
+        <video className="auth-video" autoPlay muted loop playsInline preload="auto" poster="/hero-poster.webp">
+          <source src="/hero.mp4" type="video/mp4" />
+        </video>
+        <div className="auth-scrim" />
+        <div className="auth-hero-content">
+          <span className="auth-badge">✝ Nền tảng quản lý giáo lý</span>
+          <h2 className="auth-head">Quản lý giáo lý trọn vẹn,<br />gìn giữ đức tin vững bền.</h2>
+        </div>
+      </section>
+      <section className="auth-panel">
       <form className="login-card" onSubmit={handleSubmit}>
-        <div className="login-logo">✝</div>
-        <h1>Quản lý Giáo lý</h1>
+        <img className="login-logo-img" src="/logo-full.png" alt="Giáo Lý Số" />
+        <h1 className="sr-only">Giáo Lý Số</h1>
         <p className="tagline">{isReset ? 'Đặt lại mật khẩu' : isReg ? 'Đăng ký giáo xứ mới' : 'Đăng nhập để tiếp tục'}</p>
 
         {isReg && (
@@ -110,6 +121,7 @@ export default function Login({ initialMode = 'login' }) {
           )}
         </p>
       </form>
+      </section>
     </div>
   );
 }
