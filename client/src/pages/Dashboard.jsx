@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
@@ -46,8 +46,37 @@ function WeeklyChart({ data }) {
 }
 
 // Mục duyệt cuối năm: các lớp GLV đã chốt chờ Admin duyệt (#5)
+const DEC_LABEL = { advance: 'Lên lớp', stay: 'Ở lại', pass: 'Đậu', fail: 'Không đạt' };
+const DEC_OK = { advance: true, pass: true }; // quyết định "tích cực"
+
+function ReviewDetail({ r }) {
+  const ids = Object.keys(r.decisions || {});
+  if (!ids.length) return <span className="muted" style={{ fontSize: 13 }}>Không có học viên.</span>;
+  const det = r.details || {};
+  const list = ids.map((id) => ({
+    id, dec: r.decisions[id],
+    name: det[id]?.name || 'HV', score: det[id]?.score, reason: det[id]?.reason || '',
+  })).sort((a, b) => (DEC_OK[a.dec] ? 1 : 0) - (DEC_OK[b.dec] ? 1 : 0) || a.name.localeCompare(b.name, 'vi'));
+  return (
+    <table>
+      <thead><tr><th>Học viên</th><th style={{ width: 90 }}>Điểm cuối kỳ</th><th style={{ width: 110 }}>Kết quả</th><th>Lý do</th></tr></thead>
+      <tbody>
+        {list.map((s) => (
+          <tr key={s.id}>
+            <td>{s.name}</td>
+            <td>{s.score != null ? s.score : '—'}</td>
+            <td><span className={`rv-tag ${DEC_OK[s.dec] ? 'ok' : 'bad'}`}>{DEC_LABEL[s.dec] || s.dec}</span></td>
+            <td className="muted">{s.reason || (DEC_OK[s.dec] ? '' : '—')}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 function ClassReviews() {
   const [rows, setRows] = useState(null);
+  const [open, setOpen] = useState({});
   const load = () => api.get('/reviews-pending').then((r) => setRows(r.data)).catch(() => setRows([]));
   useEffect(() => { load(); }, []);
   const rev = useRealtime(['class_reviews', 'classes']);
@@ -56,6 +85,7 @@ function ClassReviews() {
   if (!rows || !rows.some((r) => r.status !== 'none')) return null;
   const approved = rows.filter((r) => r.status === 'approved').length;
   const total = rows.length;
+  const toggle = (id) => setOpen((o) => ({ ...o, [id]: !o[id] }));
   async function approve(r) {
     if (!confirm(`Duyệt lớp "${r.class_name}"?` + (r.kind === 'external' ? '\nLớp ngoài hệ thống sẽ được đóng & chuyển vào Lưu trữ ngay.' : ''))) return;
     try { await api.post('/review-approve', { id: r.review_id }); load(); }
@@ -79,28 +109,39 @@ function ClassReviews() {
           <tbody>
             {rows.map((r) => {
               const d = Object.values(r.decisions || {});
+              const has = r.status !== 'none';
               let summary;
-              if (r.status === 'none') summary = <span className="muted">—</span>;
+              if (!has) summary = <span className="muted">—</span>;
               else if (r.kind === 'external') { const p = d.filter((v) => v === 'pass').length; summary = `Đậu ${p} · Không đạt ${d.length - p}`; }
               else { const a = d.filter((v) => v === 'advance').length; summary = `Lên lớp ${a} · Ở lại ${d.length - a}`; }
               return (
-                <tr key={r.class_id}>
-                  <td>{r.class_name}{r.is_graduation && ' 🎓'}</td>
-                  <td className="muted">{r.kind === 'external' ? 'Ngoài HT' : 'Chính quy'}</td>
-                  <td>{summary}</td>
-                  <td className="muted">{r.submitted_by_name || '—'}</td>
-                  <td style={{ whiteSpace: 'nowrap' }}>
-                    {r.status === 'submitted' && (
-                      <>
-                        <button className="btn sm" onClick={() => approve(r)}>Duyệt</button>{' '}
-                        <button className="btn ghost sm" onClick={() => revise(r)}>Yêu cầu xem lại</button>
-                      </>
-                    )}
-                    {r.status === 'approved' && <span className="tag-chip" style={{ background: '#dcfce7', color: '#15803d' }}>✓ Đã duyệt</span>}
-                    {r.status === 'revision' && <span className="tag-chip" style={{ background: '#fee2e2', color: '#b91c1c' }}>↩ Đã trả lại GLV</span>}
-                    {r.status === 'none' && <span className="muted" style={{ fontSize: 12 }}>Chờ GLV gửi</span>}
-                  </td>
-                </tr>
+                <Fragment key={r.class_id}>
+                  <tr>
+                    <td>
+                      {has ? (
+                        <span className="link-name" onClick={() => toggle(r.class_id)}>{open[r.class_id] ? '▾ ' : '▸ '}{r.class_name}</span>
+                      ) : r.class_name}
+                      {r.is_graduation && ' 🎓'}
+                    </td>
+                    <td className="muted">{r.kind === 'external' ? 'Ngoài HT' : 'Chính quy'}</td>
+                    <td>{has ? <span className="link" onClick={() => toggle(r.class_id)}>{summary}</span> : summary}</td>
+                    <td className="muted">{r.submitted_by_name || '—'}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      {r.status === 'submitted' && (
+                        <>
+                          <button className="btn sm" onClick={() => approve(r)}>Duyệt</button>{' '}
+                          <button className="btn ghost sm" onClick={() => revise(r)}>Yêu cầu xem lại</button>
+                        </>
+                      )}
+                      {r.status === 'approved' && <span className="tag-chip" style={{ background: '#dcfce7', color: '#15803d' }}>✓ Đã duyệt</span>}
+                      {r.status === 'revision' && <span className="tag-chip" style={{ background: '#fee2e2', color: '#b91c1c' }}>↩ Đã trả lại GLV</span>}
+                      {r.status === 'none' && <span className="muted" style={{ fontSize: 12 }}>Chờ GLV gửi</span>}
+                    </td>
+                  </tr>
+                  {has && open[r.class_id] && (
+                    <tr className="rv-detail"><td colSpan={5}><ReviewDetail r={r} /></td></tr>
+                  )}
+                </Fragment>
               );
             })}
           </tbody>

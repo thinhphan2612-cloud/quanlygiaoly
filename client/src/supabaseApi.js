@@ -912,11 +912,16 @@ async function handle(method, rawUrl, body = {}) {
       if (!cls) return fail(404, 'Không tìm thấy lớp');
       const row = {
         parish_id: pid, class_id: cid, school_year: cls.school_year, kind: cls.kind === 'external' ? 'external' : 'catechism',
-        status: 'submitted', decisions: body.decisions || {},
+        status: 'submitted', decisions: body.decisions || {}, details: body.details || {},
         submitted_by: meId(), submitted_at: new Date().toISOString(),
         admin_note: null, reviewed_by: null, reviewed_at: null,
       };
-      const { data, error } = await supabase.from('class_reviews').upsert(row, { onConflict: 'class_id' }).select().single();
+      let { data, error } = await supabase.from('class_reviews').upsert(row, { onConflict: 'class_id' }).select().single();
+      if (error && /details/i.test(error.message || '')) {
+        // Cột details chưa được thêm (chưa chạy migration_class_reviews_details.sql) -> lưu tạm, bỏ chi tiết.
+        const { details: _omit, ...basic } = row;
+        ({ data, error } = await supabase.from('class_reviews').upsert(basic, { onConflict: 'class_id' }).select().single());
+      }
       if (error) return fail(400, error.message);
       return ok(data);
     }
@@ -937,7 +942,7 @@ async function handle(method, rawUrl, body = {}) {
         const r = byClass[c.id];
         return {
           class_id: c.id, class_name: c.name, kind: c.kind === 'external' ? 'external' : 'catechism', is_graduation: !!c.is_graduation,
-          review_id: r?.id || null, status: r?.status || 'none', decisions: r?.decisions || {},
+          review_id: r?.id || null, status: r?.status || 'none', decisions: r?.decisions || {}, details: r?.details || {},
           admin_note: r?.admin_note || null, submitted_by_name: r ? (names[r.submitted_by] || '') : '',
           submitted_at: r?.submitted_at || null,
         };

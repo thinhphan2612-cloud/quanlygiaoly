@@ -940,3 +940,11 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .seg.sm .seg-btn { padding: 4px 12px; font-size: 12px; }
 .seg-btn.on.ok { background: #16a34a; color: #fff; border-color: #16a34a; }
 .seg-btn.on.bad { background: #dc2626; color: #fff; border-color: #dc2626; }
+.rv-score { display: inline-block; min-width: 24px; text-align: center; margin-left: 8px; padding: 1px 7px; border-radius: 6px; background: var(--surface-2, #f1f5f9); color: #475569; font-size: 12px; font-weight: 600; }
+.rv-reason { flex-basis: 100%; margin-top: 6px; padding: 6px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: 8px; }
+.rv-detail { background: var(--surface-2, #f8fafc); }
+.rv-detail table { width: 100%; font-size: 13px; }
+.rv-detail th, .rv-detail td { padding: 6px 10px; text-align: left; }
+.rv-tag { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.rv-tag.ok { background: #dcfce7; color: #15803d; }
+.rv-tag.bad { background: #fee2e2; color: #b91c1c; }

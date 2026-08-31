@@ -26,6 +26,16 @@ function reviewBadge(status) {
   if (!v) return null;
   return <span className="tag-chip" style={{ marginLeft: 6, background: v[1], color: v[2] }}>{v[0]}</span>;
 }
+// Điểm cuối kỳ = trung bình có hệ số trên các cột đã có điểm.
+function avgOf(scoreMap, columns) {
+  if (!scoreMap) return null;
+  let s = 0, w = 0;
+  (columns || []).forEach((c) => {
+    const v = scoreMap[c.id];
+    if (v !== undefined && v !== null && v !== '') { const wt = Number(c.weight) || 1; s += Number(v) * wt; w += wt; }
+  });
+  return w ? Math.round((s / w) * 10) / 10 : null;
+}
 
 export default function Classes() {
   const { user } = useAuth();
@@ -203,23 +213,32 @@ export default function Classes() {
   // ---- chốt lớp: GLV chọn kết quả từng em -> gửi Admin duyệt (#5) ----
   async function openReview(c) {
     const kind = c.kind === 'external' ? 'external' : 'catechism';
-    setReviewModal({ cls: c, kind, students: null, decisions: {}, existing: null });
-    const [sr, er] = await Promise.all([
+    setReviewModal({ cls: c, kind, students: null, decisions: {}, reasons: {}, scores: {}, existing: null });
+    const [sr, er, gr] = await Promise.all([
       api.get(`/students?class_id=${c.id}`),
       api.get(`/class-review?class_id=${c.id}`),
+      api.get(`/grades-class?class_id=${c.id}`).catch(() => ({ data: { columns: [], scores: {} } })),
     ]);
     const existing = er.data;
     const def = kind === 'external' ? 'pass' : 'advance';
-    const decisions = {};
-    (sr.data || []).forEach((s) => { decisions[s.id] = existing?.decisions?.[s.id] || def; });
-    setReviewModal((m) => (m && m.cls.id === c.id ? { ...m, students: sr.data, decisions, existing } : m));
+    const cols = gr.data?.columns || [];
+    const sc = gr.data?.scores || {};
+    const decisions = {}, reasons = {}, scores = {};
+    (sr.data || []).forEach((s) => {
+      decisions[s.id] = existing?.decisions?.[s.id] || def;
+      reasons[s.id] = existing?.details?.[s.id]?.reason || '';
+      scores[s.id] = avgOf(sc[s.id], cols);
+    });
+    setReviewModal((m) => (m && m.cls.id === c.id ? { ...m, students: sr.data, decisions, reasons, scores, existing } : m));
   }
   const setDec = (id, val) => setReviewModal((m) => ({ ...m, decisions: { ...m.decisions, [id]: val } }));
+  const setReason = (id, val) => setReviewModal((m) => ({ ...m, reasons: { ...m.reasons, [id]: val } }));
   const setAllDec = (val) => setReviewModal((m) => {
     const d = {}; (m.students || []).forEach((s) => { d[s.id] = val; }); return { ...m, decisions: d };
   });
   async function submitReview() {
     const m = reviewModal;
+    const neg = m.kind === 'external' ? 'fail' : 'stay';
     const vals = (m.students || []).map((s) => m.decisions[s.id]);
     let msg;
     if (m.kind === 'external') {
@@ -230,7 +249,16 @@ export default function Classes() {
       msg = `Gửi kết quả lớp "${m.cls.name}" để Admin duyệt?\nLên lớp: ${adv} · Ở lại: ${vals.length - adv}.`;
     }
     if (!confirm(msg)) return;
-    try { await api.post('/class-review', { class_id: m.cls.id, decisions: m.decisions }); setReviewModal(null); loadReviews(); load(); }
+    // Snapshot chi tiết: tên + điểm cuối kỳ + lý do (khi ở lại/không đạt)
+    const details = {};
+    (m.students || []).forEach((s) => {
+      details[s.id] = {
+        name: (s.saint_name ? s.saint_name + ' ' : '') + s.full_name,
+        score: m.scores[s.id] ?? null,
+        reason: (m.decisions[s.id] === neg && m.reasons[s.id]) ? m.reasons[s.id].trim() : '',
+      };
+    });
+    try { await api.post('/class-review', { class_id: m.cls.id, decisions: m.decisions, details }); setReviewModal(null); loadReviews(); load(); }
     catch (e) { alert(e.response?.data?.error || 'Gửi thất bại'); }
   }
 
@@ -676,24 +704,36 @@ export default function Classes() {
             </div>
             <div className="pick-list" style={{ maxHeight: 360 }}>
               {reviewModal.students === null && <div className="muted" style={{ fontSize: 13 }}>Đang tải...</div>}
-              {(reviewModal.students || []).map((s) => (
-                <div key={s.id} className="rv-row">
-                  <span className="rv-name">{s.saint_name ? s.saint_name + ' ' : ''}{s.full_name}</span>
-                  <div className="seg sm">
-                    {reviewModal.kind === 'external' ? (
-                      <>
-                        <button className={`seg-btn ${reviewModal.decisions[s.id] === 'pass' ? 'on ok' : ''}`} onClick={() => setDec(s.id, 'pass')}>Đậu</button>
-                        <button className={`seg-btn ${reviewModal.decisions[s.id] === 'fail' ? 'on bad' : ''}`} onClick={() => setDec(s.id, 'fail')}>Không đạt</button>
-                      </>
-                    ) : (
-                      <>
-                        <button className={`seg-btn ${reviewModal.decisions[s.id] === 'advance' ? 'on ok' : ''}`} onClick={() => setDec(s.id, 'advance')}>Lên lớp</button>
-                        <button className={`seg-btn ${reviewModal.decisions[s.id] === 'stay' ? 'on bad' : ''}`} onClick={() => setDec(s.id, 'stay')}>Ở lại</button>
-                      </>
+              {(reviewModal.students || []).map((s) => {
+                const neg = reviewModal.kind === 'external' ? 'fail' : 'stay';
+                const isNeg = reviewModal.decisions[s.id] === neg;
+                const sc = reviewModal.scores[s.id];
+                return (
+                  <div key={s.id} className="rv-row" style={{ flexWrap: 'wrap' }}>
+                    <span className="rv-name">
+                      {s.saint_name ? s.saint_name + ' ' : ''}{s.full_name}
+                      <span className="rv-score" title="Điểm cuối kỳ">{sc != null ? sc : '—'}</span>
+                    </span>
+                    <div className="seg sm">
+                      {reviewModal.kind === 'external' ? (
+                        <>
+                          <button className={`seg-btn ${reviewModal.decisions[s.id] === 'pass' ? 'on ok' : ''}`} onClick={() => setDec(s.id, 'pass')}>Đậu</button>
+                          <button className={`seg-btn ${reviewModal.decisions[s.id] === 'fail' ? 'on bad' : ''}`} onClick={() => setDec(s.id, 'fail')}>Không đạt</button>
+                        </>
+                      ) : (
+                        <>
+                          <button className={`seg-btn ${reviewModal.decisions[s.id] === 'advance' ? 'on ok' : ''}`} onClick={() => setDec(s.id, 'advance')}>Lên lớp</button>
+                          <button className={`seg-btn ${reviewModal.decisions[s.id] === 'stay' ? 'on bad' : ''}`} onClick={() => setDec(s.id, 'stay')}>Ở lại</button>
+                        </>
+                      )}
+                    </div>
+                    {isNeg && (
+                      <input className="rv-reason" value={reviewModal.reasons[s.id] || ''} onChange={(e) => setReason(s.id, e.target.value)}
+                        placeholder={reviewModal.kind === 'external' ? 'Lý do không đạt…' : 'Lý do ở lại…'} />
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {reviewModal.students?.length === 0 && <div className="muted" style={{ fontSize: 13 }}>Lớp chưa có học viên.</div>}
             </div>
             <div className="modal-actions">
