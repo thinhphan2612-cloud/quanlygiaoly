@@ -11,6 +11,10 @@ const TYPES = [
 
 export default function Certificates() {
   const [parish, setParish] = useState(null);
+  const [currentClasses, setCurrentClasses] = useState([]);
+  const [currentYear, setCurrentYear] = useState('');
+  const [archYears, setArchYears] = useState([]); // [{year, classes, students}]
+  const [year, setYear] = useState('');
   const [classes, setClasses] = useState([]);
   const [kind, setKind] = useState('them_suc');
   const [classId, setClassId] = useState('');
@@ -21,11 +25,40 @@ export default function Certificates() {
   const [meritReason, setMeritReason] = useState('');
 
   useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
-  useEffect(() => { api.get('/classes').then((r) => setClasses(r.data)).catch(() => {}); }, []);
+  useEffect(() => {
+    Promise.all([
+      api.get('/classes').then((r) => r.data).catch(() => []),
+      api.get('/archive-years').then((r) => r.data).catch(() => []),
+    ]).then(([cur, ay]) => {
+      const cy = cur.map((c) => c.year).find(Boolean) || '';
+      setCurrentClasses(cur); setCurrentYear(cy); setArchYears(ay || []);
+      setYear(cy || (ay?.[0]?.year || ''));
+    });
+  }, []);
+
+  const isCurrentYear = !!year && year === currentYear;
+
+  // Đổi niên khóa -> nạp danh sách lớp tương ứng (hiện tại hoặc lưu trữ).
+  useEffect(() => {
+    setClassId(''); setStudents([]); setPicked([]);
+    if (!year) { setClasses([]); return; }
+    if (year === currentYear) { setClasses(currentClasses); return; }
+    api.get(`/archive-classes?year=${encodeURIComponent(year)}`).then((r) => setClasses(r.data)).catch(() => setClasses([]));
+  }, [year, currentYear, currentClasses]);
+
+  // Đổi lớp -> nạp học viên (khóa hiện tại hay khóa đã lưu trữ).
   useEffect(() => {
     if (!classId) { setStudents([]); setPicked([]); return; }
-    api.get(`/students?class_id=${classId}`).then((r) => { setStudents(r.data); setPicked(r.data.map((s) => s.id)); }).catch(() => {});
-  }, [classId]);
+    const req = isCurrentYear
+      ? api.get(`/students?class_id=${classId}`).then((r) => r.data)
+      : api.get(`/archive-class?class_id=${classId}`).then((r) => r.data.students || []);
+    req.then((list) => { setStudents(list); setPicked(list.map((s) => s.id)); }).catch(() => {});
+  }, [classId, isCurrentYear]);
+
+  const yearOptions = useMemo(() => [
+    ...(currentYear ? [{ value: currentYear, label: `${currentYear} (hiện tại)` }] : []),
+    ...(archYears || []).filter((a) => a.year && a.year !== currentYear).map((a) => ({ value: a.year, label: a.year })),
+  ], [currentYear, archYears]);
 
   const cls = classes.find((c) => c.id === classId) || {};
   const shown = useMemo(() => {
@@ -67,8 +100,14 @@ export default function Certificates() {
         )}
 
         <div className="row">
+          <div className="field" style={{ flex: 1 }}><label>Niên khóa</label>
+            <select value={year} onChange={(e) => setYear(e.target.value)}>
+              {yearOptions.length === 0 && <option value="">— Chưa có —</option>}
+              {yearOptions.map((y) => <option key={y.value} value={y.value}>Niên khóa {y.label}</option>)}
+            </select>
+          </div>
           <div className="field" style={{ flex: 1 }}><label>Lớp</label>
-            <select value={classId} onChange={(e) => setClassId(e.target.value)}>
+            <select value={classId} onChange={(e) => setClassId(e.target.value)} disabled={!classes.length}>
               <option value="">— Chọn lớp —</option>
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -76,8 +115,12 @@ export default function Certificates() {
           <div className="field" style={{ flex: 1 }}><label>Tìm học viên</label><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm theo tên…" disabled={!classId} /></div>
         </div>
 
+        {!isCurrentYear && year && (
+          <p className="muted" style={{ fontSize: 12, marginTop: -4 }}>Đang cấp lại cho niên khóa đã lưu trữ {year} — học viên các khóa trước.</p>
+        )}
+
         {!classId ? (
-          <p className="muted">Chọn lớp để hiện danh sách học viên; sau đó tick chọn (cả lớp / một số / từng em) rồi bấm Xuất.</p>
+          <p className="muted">Chọn niên khóa &amp; lớp để hiện danh sách học viên; sau đó tick chọn (cả lớp / một số / từng em) rồi bấm Xuất.</p>
         ) : students.length === 0 ? (
           <p className="muted">Lớp chưa có học viên.</p>
         ) : (
