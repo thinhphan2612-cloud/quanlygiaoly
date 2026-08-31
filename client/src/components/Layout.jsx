@@ -12,7 +12,7 @@ import { fileToDataUrl } from '../lib/img';
 import PricingModal from './PricingModal.jsx';
 import {
   IconHome, IconStudents, IconClass, IconCheck, IconGrades,
-  IconDice, IconGame, IconTeacher, IconLogout, IconBell, IconMoney, IconEditImage, IconArchive, IconCert,
+  IconDice, IconGame, IconTeacher, IconLogout, IconBell, IconMoney, IconEditImage, IconArchive, IconCert, IconStore,
 } from './Icons.jsx';
 
 const nav = [
@@ -25,6 +25,7 @@ const nav = [
   { to: '/certificates', label: 'Chứng chỉ', Icon: IconCert, proOnly: true },
   { to: '/random', label: 'Chọn trả bài', Icon: IconDice },
   { to: '/games', label: 'Game học', Icon: IconGame },
+  { to: '/store', label: 'Ephata Store', Icon: IconStore },
   { to: '/audit', label: 'Thu chi', Icon: IconMoney, proOnly: true },
   { to: '/archive', label: 'Lưu trữ', Icon: IconArchive, adminOnly: true, proOnly: true },
   { to: '/notify', label: 'Thông báo', Icon: IconBell, adminOnly: true, proOnly: true },

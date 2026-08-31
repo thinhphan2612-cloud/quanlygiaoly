@@ -925,3 +925,9 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .pager { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 14px 0 2px; }
 .plan-card .pc-badge { display: inline-block; background: rgba(255,255,255,.22); color: #fff; font-weight: 700; font-size: 12.5px; padding: 3px 12px; border-radius: 999px; margin-bottom: 10px; }
 .plan-card .pc-feats { color: #fff; opacity: .93; font-size: 12px; line-height: 1.8; text-align: left; margin-bottom: 12px; }
+.store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.store-card { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; background: var(--surface, #fff); }
+.store-card.owned { border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
+.store-card .sc-name { font-weight: 700; font-size: 15px; }
+.store-card .sc-desc { color: var(--muted); font-size: 13px; line-height: 1.5; flex: 1; }
+.store-card .sc-foot { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
