@@ -811,14 +811,12 @@ async function handle(method, rawUrl, body = {}) {
 
       const curYear = chain.map((c) => c.school_year).find(Boolean) || null;
       const nextYear = bumpYear(curYear);
-      // Lớp tốt nghiệp = lớp gắn nhãn is_graduation; chưa gán thì lấy lớp bậc cao nhất.
+      // Lớp tốt nghiệp = lớp gắn nhãn is_graduation; chưa gán thì lấy lớp bậc cao nhất theo thứ tự.
       const gradClass = chain.find((c) => c.is_graduation) || chain[chain.length - 1];
-      const gradOrder = gradClass ? gradClass.order_index : Infinity;
 
-      // 1) Tạo bộ lớp mới năm sau cho các lớp <= lớp tốt nghiệp (giữ tên + thứ tự + nhãn tốt nghiệp).
+      // 1) Tạo bộ lớp mới năm sau cho MỌI lớp chính quy (giữ tên + thứ tự + nhãn tốt nghiệp).
       const newIdByOld = {};
       for (const c of chain) {
-        if (c.order_index > gradOrder) continue;
         const { data: nc, error: ce } = await supabase.from('classes').insert({
           parish_id: pid, name: c.name, school_year: nextYear, order_index: c.order_index,
           room: null, schedule: null, kind: 'catechism', is_graduation: !!c.is_graduation, promotes: true, graduated: false,
@@ -828,7 +826,7 @@ async function handle(method, rawUrl, body = {}) {
       }
 
       // 2) Áp quyết định từng em (từ đơn review đã duyệt):
-      //    'advance' -> lên bậc kế (hoặc RA TRƯỜNG nếu ở lớp tốt nghiệp);
+      //    'advance' -> lên bậc kế; nếu đang ở LỚP TỐT NGHIỆP (theo id) hoặc không còn bậc trên -> RA TRƯỜNG.
       //    'stay'    -> ở lại (vào bản sao CÙNG lớp năm sau).
       //    Không có quyết định -> mặc định 'advance'.
       const copyFields = STUDENT_FIELDS.filter((f) => f !== 'class_id');
@@ -841,12 +839,13 @@ async function handle(method, rawUrl, body = {}) {
         const { data: studs } = await supabase.from('students').select('*').eq('class_id', c.id).eq('graduated', false);
         const list = studs || [];
         const next = chain[i + 1];
+        const isGrad = c.id === gradClass.id;
         for (const s of list) {
           const dec = decisions[s.id] || 'advance';
           let destNewId = null;
           if (dec === 'stay') destNewId = newIdByOld[c.id] || null;
-          else if (c.order_index < gradOrder && next) destNewId = newIdByOld[next.id] || null;
-          // else: advance tại/trên lớp tốt nghiệp -> ra trường (destNewId = null)
+          else if (!isGrad && next) destNewId = newIdByOld[next.id] || null;
+          // else: advance ở lớp tốt nghiệp (hoặc không còn bậc trên) -> ra trường (destNewId = null)
           if (destNewId) {
             if (dec === 'stay') stayed++; else promoted++;
             const o = { parish_id: pid, class_id: destNewId, graduated: false, origin_id: s.origin_id || s.id };
