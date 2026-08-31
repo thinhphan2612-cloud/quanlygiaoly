@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { useAuth } from '../auth.jsx';
 import { useRealtime } from '../realtime.jsx';
 import Donut from '../components/Donut.jsx';
 import { LeaderboardTable } from '../components/Leaderboard.jsx';
@@ -44,8 +45,78 @@ function WeeklyChart({ data }) {
   );
 }
 
+// Mục duyệt cuối năm: các lớp GLV đã chốt chờ Admin duyệt (#5)
+function ClassReviews() {
+  const [rows, setRows] = useState(null);
+  const load = () => api.get('/reviews-pending').then((r) => setRows(r.data)).catch(() => setRows([]));
+  useEffect(() => { load(); }, []);
+  const rev = useRealtime(['class_reviews', 'classes']);
+  useEffect(() => { if (rev) load(); }, [rev]);
+  // Chỉ hiện khi đã có ít nhất 1 lớp được GLV chốt (bắt đầu quy trình cuối năm).
+  if (!rows || !rows.some((r) => r.status !== 'none')) return null;
+  const approved = rows.filter((r) => r.status === 'approved').length;
+  const total = rows.length;
+  async function approve(r) {
+    if (!confirm(`Duyệt lớp "${r.class_name}"?` + (r.kind === 'external' ? '\nLớp ngoài hệ thống sẽ được đóng & chuyển vào Lưu trữ ngay.' : ''))) return;
+    try { await api.post('/review-approve', { id: r.review_id }); load(); }
+    catch (e) { alert(e.response?.data?.error || 'Thất bại'); }
+  }
+  async function revise(r) {
+    const note = prompt('Ghi chú gửi lại GLV (nêu rõ cần chỉnh gì):', '');
+    if (note === null) return;
+    try { await api.post('/review-revision', { id: r.review_id, note }); load(); }
+    catch (e) { alert(e.response?.data?.error || 'Thất bại'); }
+  }
+  return (
+    <div className="panel" style={{ marginBottom: 18 }}>
+      <div className="card-head">
+        <h2>📋 Lớp chờ duyệt (cuối năm)</h2>
+        <span className="muted" style={{ fontSize: 13 }}>{approved}/{total} lớp đã duyệt</span>
+      </div>
+      <div className="table-scroll">
+        <table>
+          <thead><tr><th>Lớp</th><th>Loại</th><th>Kết quả</th><th>GLV gửi</th><th></th></tr></thead>
+          <tbody>
+            {rows.map((r) => {
+              const d = Object.values(r.decisions || {});
+              let summary;
+              if (r.status === 'none') summary = <span className="muted">—</span>;
+              else if (r.kind === 'external') { const p = d.filter((v) => v === 'pass').length; summary = `Đậu ${p} · Không đạt ${d.length - p}`; }
+              else { const a = d.filter((v) => v === 'advance').length; summary = `Lên lớp ${a} · Ở lại ${d.length - a}`; }
+              return (
+                <tr key={r.class_id}>
+                  <td>{r.class_name}{r.is_graduation && ' 🎓'}</td>
+                  <td className="muted">{r.kind === 'external' ? 'Ngoài HT' : 'Chính quy'}</td>
+                  <td>{summary}</td>
+                  <td className="muted">{r.submitted_by_name || '—'}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    {r.status === 'submitted' && (
+                      <>
+                        <button className="btn sm" onClick={() => approve(r)}>Duyệt</button>{' '}
+                        <button className="btn ghost sm" onClick={() => revise(r)}>Yêu cầu xem lại</button>
+                      </>
+                    )}
+                    {r.status === 'approved' && <span className="tag-chip" style={{ background: '#dcfce7', color: '#15803d' }}>✓ Đã duyệt</span>}
+                    {r.status === 'revision' && <span className="tag-chip" style={{ background: '#fee2e2', color: '#b91c1c' }}>↩ Đã trả lại GLV</span>}
+                    {r.status === 'none' && <span className="muted" style={{ fontSize: 12 }}>Chờ GLV gửi</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {approved === total && total > 0 && (
+        <p className="muted" style={{ fontSize: 13, marginTop: 10 }}>✓ Tất cả lớp đã được duyệt — có thể "Kết thúc năm học & lên lớp" ở mục Cài đặt.</p>
+      )}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [data, setData] = useState(null);
   const [year, setYear] = useState('');
   const [lbClasses, setLbClasses] = useState([]);
@@ -110,6 +181,8 @@ export default function Dashboard() {
           <div className="ic"><IconClass /></div>
         </div>
       </div>
+
+      {isAdmin && <ClassReviews />}
 
       {/* Biểu đồ điểm danh theo tuần */}
       <div className="panel" style={{ marginBottom: 18 }}>

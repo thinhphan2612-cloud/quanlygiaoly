@@ -16,6 +16,16 @@ const empty = {
 };
 const SCHEDULES = ['Sáng', 'Chiều', 'Tối'];
 const SAC_RANK = { none: 0, baptism: 1, ruoc_le: 2, them_suc: 3 }; // Rửa tội -> Rước lễ -> Thêm Sức
+const REVIEW_BADGE = {
+  submitted: ['⏳ Chờ duyệt', '#fef9c3', '#854d0e'],
+  approved: ['✓ Đã duyệt', '#dcfce7', '#15803d'],
+  revision: ['↩ Cần xem lại', '#fee2e2', '#b91c1c'],
+};
+function reviewBadge(status) {
+  const v = REVIEW_BADGE[status];
+  if (!v) return null;
+  return <span className="tag-chip" style={{ marginLeft: 6, background: v[1], color: v[2] }}>{v[0]}</span>;
+}
 
 export default function Classes() {
   const { user } = useAuth();
@@ -36,20 +46,28 @@ export default function Classes() {
   const [hist, setHist] = useState(null); // lịch sử lớp: { cls, rows }
   const [error, setError] = useState('');
   const [tab, setTab] = useState('catechism'); // 'catechism' | 'external'
-  const [gradModal, setGradModal] = useState(null); // xét tốt nghiệp lớp ngoài hệ thống
+  const [reviewModal, setReviewModal] = useState(null); // chốt lớp -> gửi Admin duyệt
+  const [rev2, setRev2] = useState({}); // trạng thái đơn review theo class_id
 
   function load() { api.get('/classes').then((r) => setClasses(r.data)); }
+  function loadReviews() {
+    api.get('/reviews-pending').then((r) => {
+      const m = {}; (r.data || []).forEach((x) => { m[x.class_id] = x; }); setRev2(m);
+    }).catch(() => {});
+  }
   useEffect(() => {
     load();
+    loadReviews();
     if (isAdmin) {
       api.get('/auth/users').then((r) => setTeachers(r.data)).catch(() => {});
       api.get('/students').then((r) => setAllStudents(r.data)).catch(() => {});
     }
   }, [isAdmin]);
-  const rev = useRealtime(['classes', 'students', 'class_teachers']);
+  const rev = useRealtime(['classes', 'students', 'class_teachers', 'class_reviews']);
   useEffect(() => {
     if (!rev) return;
     load();
+    loadReviews();
     if (isAdmin) api.get('/students').then((r) => setAllStudents(r.data)).catch(() => {});
     setDetail((d) => { if (d) api.get(`/students?class_id=${d.cls.id}`).then((r) => setDetail((x) => (x && x.cls.id === d.cls.id ? { ...x, students: r.data } : x))); return d; });
   }, [rev]);
@@ -182,20 +200,38 @@ export default function Classes() {
     } catch (e) { setSac({ ...sac, err: e.response?.data?.error || 'Lưu thất bại' }); }
   }
 
-  // ---- xét tốt nghiệp lớp ngoài hệ thống ----
-  async function openGrad(c) {
-    setGradModal({ cls: c, students: null, passed: [] });
-    const r = await api.get(`/students?class_id=${c.id}`);
-    setGradModal((g) => (g && g.cls.id === c.id ? { ...g, students: r.data, passed: r.data.map((s) => s.id) } : g));
+  // ---- chốt lớp: GLV chọn kết quả từng em -> gửi Admin duyệt (#5) ----
+  async function openReview(c) {
+    const kind = c.kind === 'external' ? 'external' : 'catechism';
+    setReviewModal({ cls: c, kind, students: null, decisions: {}, existing: null });
+    const [sr, er] = await Promise.all([
+      api.get(`/students?class_id=${c.id}`),
+      api.get(`/class-review?class_id=${c.id}`),
+    ]);
+    const existing = er.data;
+    const def = kind === 'external' ? 'pass' : 'advance';
+    const decisions = {};
+    (sr.data || []).forEach((s) => { decisions[s.id] = existing?.decisions?.[s.id] || def; });
+    setReviewModal((m) => (m && m.cls.id === c.id ? { ...m, students: sr.data, decisions, existing } : m));
   }
-  const gAll = gradModal?.students && gradModal.students.length > 0 && gradModal.students.every((s) => gradModal.passed.includes(s.id));
-  const gToggle = (id) => setGradModal({ ...gradModal, passed: gradModal.passed.includes(id) ? gradModal.passed.filter((x) => x !== id) : [...gradModal.passed, id] });
-  const gToggleAll = () => setGradModal({ ...gradModal, passed: gAll ? [] : gradModal.students.map((s) => s.id) });
-  async function saveGrad() {
-    const total = gradModal.students?.length || 0;
-    if (!confirm(`Xét tốt nghiệp lớp "${gradModal.cls.name}"?\n${gradModal.passed.length} tốt nghiệp · ${total - gradModal.passed.length} không đạt.\nLớp sẽ được ĐÓNG và chuyển vào Lưu trữ.`)) return;
-    try { await api.post('/external-graduate', { class_id: gradModal.cls.id, passed: gradModal.passed }); setGradModal(null); load(); }
-    catch (e) { alert(e.response?.data?.error || 'Thất bại'); }
+  const setDec = (id, val) => setReviewModal((m) => ({ ...m, decisions: { ...m.decisions, [id]: val } }));
+  const setAllDec = (val) => setReviewModal((m) => {
+    const d = {}; (m.students || []).forEach((s) => { d[s.id] = val; }); return { ...m, decisions: d };
+  });
+  async function submitReview() {
+    const m = reviewModal;
+    const vals = (m.students || []).map((s) => m.decisions[s.id]);
+    let msg;
+    if (m.kind === 'external') {
+      const pass = vals.filter((v) => v === 'pass').length;
+      msg = `Gửi kết quả lớp "${m.cls.name}" để Admin duyệt?\nĐậu: ${pass} · Không đạt: ${vals.length - pass}.`;
+    } else {
+      const adv = vals.filter((v) => v === 'advance').length;
+      msg = `Gửi kết quả lớp "${m.cls.name}" để Admin duyệt?\nLên lớp: ${adv} · Ở lại: ${vals.length - adv}.`;
+    }
+    if (!confirm(msg)) return;
+    try { await api.post('/class-review', { class_id: m.cls.id, decisions: m.decisions }); setReviewModal(null); loadReviews(); load(); }
+    catch (e) { alert(e.response?.data?.error || 'Gửi thất bại'); }
   }
 
   // ---- xem & chỉnh danh sách học viên của 1 lớp ----
@@ -281,6 +317,7 @@ export default function Classes() {
                   <span className="link-name" onClick={() => openDetail(c)}>{c.name}</span>
                   {c.merged && <span className="tag-chip merged" style={{ marginLeft: 6 }}>● lớp gộp</span>}
                   {c.is_graduation && <span className="tag-chip" style={{ marginLeft: 6, background: '#dcfce7', color: '#15803d' }}>🎓 lớp tốt nghiệp</span>}
+                  {reviewBadge(rev2[c.id]?.status)}
                 </td>
                 <td>{c.year || '—'}</td>
                 <td>{c.room || '—'}</td>
@@ -290,7 +327,7 @@ export default function Classes() {
                 {showActions && (
                   <td style={{ whiteSpace: 'nowrap' }}>
                     <button className="btn ghost sm" onClick={() => openSac(c)}>✝ Ghi bí tích</button>{' '}
-                    {isAdmin && c.kind === 'external' && <button className="btn ghost sm" onClick={() => openGrad(c)}>🎓 Xét tốt nghiệp</button>}{' '}
+                    {rev2[c.id]?.status !== 'approved' && <button className="btn ghost sm" onClick={() => openReview(c)}>🏁 Kết thúc lớp</button>}{' '}
                     {isAdmin && <><button className="btn ghost sm" onClick={() => openEdit(c)}>Sửa</button>{' '}
                       <button className="btn danger sm" onClick={() => remove(c)}>Xóa</button></>}
                   </td>
@@ -613,29 +650,55 @@ export default function Classes() {
         </div>
       )}
 
-      {/* Modal xét tốt nghiệp lớp ngoài hệ thống */}
-      {gradModal && (
-        <div className="modal-backdrop" onClick={() => setGradModal(null)}>
+      {/* Modal chốt lớp: GLV chọn kết quả từng em -> gửi Admin duyệt */}
+      {reviewModal && (
+        <div className="modal-backdrop" onClick={() => setReviewModal(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Xét tốt nghiệp — {gradModal.cls.name}</h2>
-            <p className="muted" style={{ marginTop: -6, fontSize: 13 }}>Tích những học viên <b>tốt nghiệp</b>. Sau khi lưu, lớp sẽ được đóng &amp; chuyển vào Lưu trữ; ai không tích coi như không đạt (vẫn được lưu kết quả).</p>
+            <h2>🏁 Kết thúc lớp — {reviewModal.cls.name}</h2>
+            <p className="muted" style={{ marginTop: -6, fontSize: 13 }}>
+              {reviewModal.kind === 'external'
+                ? 'Chọn kết quả từng em rồi gửi Admin duyệt. Khi Admin duyệt, lớp sẽ đóng & chuyển vào Lưu trữ.'
+                : 'Chọn em nào lên lớp / ở lại rồi gửi Admin duyệt. Việc lên lớp chỉ thực hiện khi Admin "Kết thúc năm học".'}
+            </p>
+            {reviewModal.existing?.status === 'revision' && reviewModal.existing.admin_note && (
+              <div className="note-box err">↩ Admin yêu cầu xem lại: {reviewModal.existing.admin_note}</div>
+            )}
+            {reviewModal.existing?.status === 'submitted' && (
+              <div className="note-box">⏳ Đã gửi, đang chờ Admin duyệt. Bạn có thể chỉnh và gửi lại.</div>
+            )}
             <div className="fp-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Tốt nghiệp ({gradModal.passed.length}/{gradModal.students?.length || 0})</span>
-              {gradModal.students?.length > 0 && <span className="link" onClick={gToggleAll}>{gAll ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}</span>}
+              <span>{reviewModal.students?.length || 0} học viên</span>
+              {reviewModal.students?.length > 0 && (
+                <span>
+                  <span className="link" onClick={() => setAllDec(reviewModal.kind === 'external' ? 'pass' : 'advance')}>{reviewModal.kind === 'external' ? 'Tất cả đậu' : 'Tất cả lên lớp'}</span>
+                </span>
+              )}
             </div>
-            <div className="pick-list">
-              {gradModal.students === null && <div className="muted" style={{ fontSize: 13 }}>Đang tải...</div>}
-              {(gradModal.students || []).map((s) => (
-                <label key={s.id} className="fp-chk">
-                  <input type="checkbox" checked={gradModal.passed.includes(s.id)} onChange={() => gToggle(s.id)} />
-                  <span>{s.saint_name ? s.saint_name + ' ' : ''}{s.full_name}</span>
-                </label>
+            <div className="pick-list" style={{ maxHeight: 360 }}>
+              {reviewModal.students === null && <div className="muted" style={{ fontSize: 13 }}>Đang tải...</div>}
+              {(reviewModal.students || []).map((s) => (
+                <div key={s.id} className="rv-row">
+                  <span className="rv-name">{s.saint_name ? s.saint_name + ' ' : ''}{s.full_name}</span>
+                  <div className="seg sm">
+                    {reviewModal.kind === 'external' ? (
+                      <>
+                        <button className={`seg-btn ${reviewModal.decisions[s.id] === 'pass' ? 'on ok' : ''}`} onClick={() => setDec(s.id, 'pass')}>Đậu</button>
+                        <button className={`seg-btn ${reviewModal.decisions[s.id] === 'fail' ? 'on bad' : ''}`} onClick={() => setDec(s.id, 'fail')}>Không đạt</button>
+                      </>
+                    ) : (
+                      <>
+                        <button className={`seg-btn ${reviewModal.decisions[s.id] === 'advance' ? 'on ok' : ''}`} onClick={() => setDec(s.id, 'advance')}>Lên lớp</button>
+                        <button className={`seg-btn ${reviewModal.decisions[s.id] === 'stay' ? 'on bad' : ''}`} onClick={() => setDec(s.id, 'stay')}>Ở lại</button>
+                      </>
+                    )}
+                  </div>
+                </div>
               ))}
-              {gradModal.students?.length === 0 && <div className="muted" style={{ fontSize: 13 }}>Lớp chưa có học viên.</div>}
+              {reviewModal.students?.length === 0 && <div className="muted" style={{ fontSize: 13 }}>Lớp chưa có học viên.</div>}
             </div>
             <div className="modal-actions">
-              <button className="btn ghost" onClick={() => setGradModal(null)}>Hủy</button>
-              <button className="btn" onClick={saveGrad} disabled={gradModal.students === null}>Lưu &amp; đóng lớp</button>
+              <button className="btn ghost" onClick={() => setReviewModal(null)}>Hủy</button>
+              <button className="btn" onClick={submitReview} disabled={!reviewModal.students?.length}>Gửi duyệt</button>
             </div>
           </div>
         </div>

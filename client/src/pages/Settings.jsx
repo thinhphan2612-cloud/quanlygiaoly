@@ -88,14 +88,15 @@ export default function Settings() {
     }
     if (!confirm(
       'KẾT THÚC NĂM HỌC & LÊN LỚP\n\n' +
-      'Hệ thống sẽ TẠO BỘ LỚP MỚI cho năm sau cho các lớp giáo lý chính quy, ' +
-      'chuyển học viên lên bậc kế tiếp (điểm bắt đầu lại). Học viên "lớp tốt nghiệp" sẽ ra trường.\n\n' +
-      'Dữ liệu năm hiện tại được ĐÓNG BĂNG và tra cứu ở tab "Lưu trữ" (không mất). Lớp ngoài hệ thống không bị ảnh hưởng.\n\n' +
+      'Chỉ chạy được khi TẤT CẢ các lớp đã được duyệt (GLV chốt lớp → Admin duyệt ở Tổng quan).\n\n' +
+      'Hệ thống áp quyết định từng em: "lên lớp" chuyển lên bậc kế (điểm bắt đầu lại), "ở lại" giữ nguyên lớp năm sau. ' +
+      'Học viên "lớp tốt nghiệp" được cho lên lớp sẽ ra trường.\n\n' +
+      'Dữ liệu năm hiện tại được ĐÓNG BĂNG và tra cứu ở tab "Lưu trữ" (không mất).\n\n' +
       'Bạn chắc chắn?'
     )) return;
     try {
       const r = await api.post('/promote', {});
-      flash(`Đã lên lớp ${r.data.promoted} học viên, ${r.data.graduated} em ra trường.` + (r.data.new_year ? ` Năm học mới: ${r.data.new_year}.` : ''));
+      flash(`Đã lên lớp ${r.data.promoted} học viên` + (r.data.stayed ? `, ${r.data.stayed} em ở lại` : '') + `, ${r.data.graduated} em ra trường.` + (r.data.new_year ? ` Năm học mới: ${r.data.new_year}.` : ''));
       loadAll();
       reloadParish();
     } catch (e) { fail(e.response?.data?.error || 'Lên lớp thất bại'); }
