@@ -56,6 +56,7 @@ export default function Layout({ children }) {
   const [navOpen, setNavOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [pricing, setPricing] = useState(false);
+  const [promoOpen, setPromoOpen] = useState(true); // banner khuyến mãi: hiện mỗi lần tải trang (F5), tắt khi bấm X
   const [feedback, setFeedback] = useState(false);
   const [pwModal, setPwModal] = useState(false);
   const [notifs, setNotifs] = useState([]);
@@ -228,6 +229,17 @@ export default function Layout({ children }) {
       </div>
 
       {pricing && <PricingModal current={plan} onClose={() => setPricing(false)} />}
+
+      {/* Banner khuyến mãi cho user gói free (hiện mỗi lần tải trang, tắt bằng X hoặc nền) */}
+      {!pro && !sa && promoOpen && (
+        <div className="promo-overlay" onClick={() => setPromoOpen(false)}>
+          <div className="promo-box" onClick={(e) => e.stopPropagation()}>
+            <button className="promo-close" onClick={() => setPromoOpen(false)} aria-label="Đóng">✕</button>
+            <img className="promo-img" src="/coupon50.png" alt="Giảm 50% — nhập mã GIAOLYSO50"
+              onClick={() => { setPromoOpen(false); setPricing(true); }} />
+          </div>
+        </div>
+      )}
       {feedback && <FeedbackModal user={user} parish={parish} onClose={() => setFeedback(false)} />}
       {pwModal && <ChangePasswordModal email={user?.email} onClose={() => setPwModal(false)} />}
     </div>

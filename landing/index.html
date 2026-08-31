@@ -206,6 +206,14 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
 .lp-submit:hover{transform:scale(1.02)}.lp-submit:disabled{opacity:.6;cursor:default;transform:none}
 .lp-x{position:absolute;top:12px;right:15px;background:none;border:none;font-size:26px;line-height:1;color:#aaa;cursor:pointer}.lp-x:hover{color:#000}
 .lp-status{font-size:13px;text-align:center;min-height:16px;margin-top:2px}
+.promo-modal{position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;padding:20px}
+.promo-modal.hide{display:none}
+.promo-modal .promo-bd{position:absolute;inset:0;background:rgba(8,10,16,.6);backdrop-filter:blur(3px)}
+.promo-card{position:relative;width:min(620px,94vw)}
+.promo-card img{width:100%;height:auto;display:block;border-radius:16px;box-shadow:0 30px 90px rgba(0,0,0,.45);cursor:pointer}
+.promo-x{position:absolute;top:-14px;right:-14px;width:38px;height:38px;border-radius:50%;border:none;background:#fff;color:#333;font-size:18px;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);z-index:1}
+.promo-x:hover{background:#f1f1f1}
+@media(max-width:480px){.promo-x{top:-10px;right:-10px;width:32px;height:32px;font-size:16px}}
 .lp-status.ok{color:#1a7f4b}.lp-status.err{color:#c0392b}
 </style>
 </head>
@@ -589,5 +597,14 @@ addEventListener('scroll',cardScale,{passive:true});cardScale();
 (function(){if(!/(?:^|;\s*)gl_signed_in=1(?:;|$)/.test(document.cookie))return;
  ['btnRegister','ctaPrimary','ctaPrimary2'].forEach(id=>{var c=document.getElementById(id);if(c){c.textContent='Vào ứng dụng ↗';c.href=APP+'/';c.onclick=null;}});})();
 </script>
+
+<!-- Banner khuyến mãi (hiện mỗi lần tải trang; tắt bằng X hoặc nền) -->
+<div class="promo-modal" id="promoModal">
+  <div class="promo-bd" onclick="document.getElementById('promoModal').classList.add('hide')"></div>
+  <div class="promo-card">
+    <button class="promo-x" aria-label="Đóng" onclick="document.getElementById('promoModal').classList.add('hide')">✕</button>
+    <a href="#pricing" onclick="document.getElementById('promoModal').classList.add('hide')"><img src="/coupon50.png" alt="Giảm 50% — nhập mã GIAOLYSO50"></a>
+  </div>
+</div>
 </body>
 </html>
