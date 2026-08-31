@@ -1,6 +1,6 @@
-// Xuất chứng chỉ bí tích (Rửa tội / Rước lễ / Thêm Sức) ra PDF bằng cách in
+// Xuất chứng chỉ bí tích + giấy khen ra PDF bằng cách in
 // (trình duyệt render tiếng Việt hoàn hảo, người dùng chọn "Lưu thành PDF").
-// Mẫu tạm do Claude thiết kế — sẽ thay bằng mẫu chuẩn của giáo xứ sau.
+// Hỗ trợ xuất HÀNG LOẠT: nhiều học viên -> mỗi em một trang A4 trong cùng file in.
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const dashDate = (d) => (d ? d.split('-').reverse().join(' / ') : '…… / …… / ………');
@@ -11,24 +11,12 @@ const KINDS = {
   them_suc: { title: 'CHỨNG CHỈ THÊM SỨC', latin: 'Sacramentum Confirmationis', verb: 'đã lãnh nhận Bí tích <b>Thêm Sức</b>', dateKey: 'confirmation_date', showGodparent: true },
 };
 
-export function exportCertificate({ parish, student, kind }) {
-  const K = KINDS[kind];
-  if (!K) return;
-  const fullName = ((student.saint_name ? student.saint_name + ' ' : '') + (student.full_name || '')).trim();
-  const father = [student.father_saint, student.father_name].filter(Boolean).join(' ') || student.parent_name || '………………………';
-  const mother = [student.mother_saint, student.mother_name].filter(Boolean).join(' ') || '………………………';
-  const parishName = parish?.name || '……………………………';
-  const diocese = parish?.diocese || '';
-  const logo = parish?.logo_url ? `<img class="logo" src="${parish.logo_url}" alt="logo" />` : '<div class="logo cross">✝</div>';
-  const today = new Date();
-  const place = parishName;
-
-  const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${esc(K.title)} - ${esc(fullName)}</title>
-  <style>
+const STYLE = `
     @page { size: A4 landscape; margin: 0; }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: 'Times New Roman', Georgia, serif; color: #1a1a1a; }
-    .sheet { width: 297mm; height: 210mm; padding: 12mm; }
+    .sheet { width: 297mm; height: 210mm; padding: 12mm; page-break-after: always; }
+    .sheet:last-child { page-break-after: auto; }
     .frame { width: 100%; height: 100%; border: 3px double #8a6d3b; border-radius: 6px; padding: 10mm 16mm; position: relative; display: flex; flex-direction: column; align-items: center; }
     .frame::before { content: ''; position: absolute; inset: 4mm; border: 1px solid #c9b58b; border-radius: 4px; pointer-events: none; }
     .head { text-align: center; }
@@ -45,38 +33,69 @@ export function exportCertificate({ parish, student, kind }) {
     .sign { text-align: center; width: 80mm; }
     .sign .role { font-style: italic; font-size: 14px; }
     .sign .line { margin-top: 22mm; border-top: 1px solid #333; padding-top: 4px; font-weight: 700; }
-    .place { text-align: center; width: 80mm; font-style: italic; font-size: 14px; }
-  </style></head>
-  <body>
-    <div class="sheet"><div class="frame">
-      <div class="head">
-        ${logo}
-        ${diocese ? `<div class="diocese">${esc(diocese)}</div>` : ''}
-        <div class="parish">Giáo xứ ${esc(parishName)}</div>
-      </div>
-      <div class="title">${esc(K.title)}</div>
-      <div class="latin">${esc(K.latin)}</div>
-      <div class="body">
-        Chứng nhận:
-        <div class="name">${esc(fullName)}</div>
-        Sinh ngày <span class="u">${dashDate(student.birth_date)}</span>${student.gender ? ` &nbsp;·&nbsp; Giới tính: <span class="u">${esc(student.gender)}</span>` : ''}<br/>
-        Con ông <span class="u">${esc(father)}</span> và bà <span class="u">${esc(mother)}</span><br/>
-        ${K.showGodparent ? `Người đỡ đầu: <span class="u">${esc(student.godparent_name || '………………………')}</span><br/>` : ''}
-        ${K.verb} ngày <span class="u">${dashDate(student[K.dateKey])}</span><br/>
-        tại giáo xứ <span class="u">${esc(parishName)}</span>.
-      </div>
-      <div class="foot">
-        <div class="place">
-          ${esc(place)}, ngày ${today.getDate()} tháng ${today.getMonth() + 1} năm ${today.getFullYear()}
-        </div>
-        <div class="sign">
-          <div class="role">Linh mục Chánh xứ</div>
-          <div class="line">(Ký tên &amp; đóng dấu)</div>
-        </div>
-      </div>
-    </div></div>
-  </body></html>`;
+    .place { text-align: center; width: 80mm; font-style: italic; font-size: 14px; }`;
 
+function headHtml(parish) {
+  const parishName = parish?.name || '……………………………';
+  const diocese = parish?.diocese || '';
+  const logo = parish?.logo_url ? `<img class="logo" src="${parish.logo_url}" alt="logo" />` : '<div class="logo cross">✝</div>';
+  return `<div class="head">${logo}${diocese ? `<div class="diocese">${esc(diocese)}</div>` : ''}<div class="parish">Giáo xứ ${esc(parishName)}</div></div>`;
+}
+
+function footHtml(parish) {
+  const place = parish?.name || '';
+  const t = new Date();
+  return `<div class="foot">
+      <div class="place">${esc(place)}, ngày ${t.getDate()} tháng ${t.getMonth() + 1} năm ${t.getFullYear()}</div>
+      <div class="sign"><div class="role">Linh mục Chánh xứ</div><div class="line">(Ký tên &amp; đóng dấu)</div></div>
+    </div>`;
+}
+
+// Một trang chứng chỉ bí tích
+function sacramentSheet(parish, student, K) {
+  const fullName = ((student.saint_name ? student.saint_name + ' ' : '') + (student.full_name || '')).trim();
+  const father = [student.father_saint, student.father_name].filter(Boolean).join(' ') || student.parent_name || '………………………';
+  const mother = [student.mother_saint, student.mother_name].filter(Boolean).join(' ') || '………………………';
+  const parishName = parish?.name || '……………………………';
+  return `<div class="sheet"><div class="frame">
+    ${headHtml(parish)}
+    <div class="title">${esc(K.title)}</div>
+    <div class="latin">${esc(K.latin)}</div>
+    <div class="body">
+      Chứng nhận:
+      <div class="name">${esc(fullName)}</div>
+      Sinh ngày <span class="u">${dashDate(student.birth_date)}</span>${student.gender ? ` &nbsp;·&nbsp; Giới tính: <span class="u">${esc(student.gender)}</span>` : ''}<br/>
+      Con ông <span class="u">${esc(father)}</span> và bà <span class="u">${esc(mother)}</span><br/>
+      ${K.showGodparent ? `Người đỡ đầu: <span class="u">${esc(student.godparent_name || '………………………')}</span><br/>` : ''}
+      ${K.verb} ngày <span class="u">${dashDate(student[K.dateKey])}</span><br/>
+      tại giáo xứ <span class="u">${esc(parishName)}</span>.
+    </div>
+    ${footHtml(parish)}
+  </div></div>`;
+}
+
+// Một trang giấy khen
+function meritSheet(parish, student, merit) {
+  const fullName = ((student.saint_name ? student.saint_name + ' ' : '') + (student.full_name || '')).trim();
+  const title = (merit?.title || 'GIẤY KHEN').toUpperCase();
+  const reason = merit?.reason || 'đã có nhiều cố gắng, đạt thành tích tốt trong học tập và rèn luyện';
+  const line2 = [merit?.className ? `Lớp ${merit.className}` : '', merit?.year ? `Niên khóa ${merit.year}` : ''].filter(Boolean).join(' · ');
+  return `<div class="sheet"><div class="frame">
+    ${headHtml(parish)}
+    <div class="title">${esc(title)}</div>
+    <div class="latin">Ban Giáo lý trân trọng khen tặng</div>
+    <div class="body">
+      Khen tặng em:
+      <div class="name">${esc(fullName)}</div>
+      ${line2 ? `<span class="u">${esc(line2)}</span><br/>` : ''}
+      Đã ${esc(reason)}.
+    </div>
+    ${footHtml(parish)}
+  </div></div>`;
+}
+
+function printHtml(inner, titleText) {
+  const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${esc(titleText)}</title><style>${STYLE}</style></head><body>${inner}</body></html>`;
   const iframe = document.createElement('iframe');
   Object.assign(iframe.style, { position: 'fixed', right: '0', bottom: '0', width: '0', height: '0', border: '0' });
   document.body.appendChild(iframe);
@@ -86,5 +105,20 @@ export function exportCertificate({ parish, student, kind }) {
     iframe.contentWindow.focus();
     iframe.contentWindow.print();
     setTimeout(() => document.body.removeChild(iframe), 1500);
-  }, 300);
+  }, 350);
+}
+
+// Xuất hàng loạt: students = mảng học viên. kind = 'baptism'|'ruoc_le'|'them_suc'|'merit'.
+export function exportCertificates({ parish, students, kind, merit }) {
+  const list = Array.isArray(students) ? students : [students];
+  if (!list.length) return;
+  const sheets = list.map((s) => (kind === 'merit' ? meritSheet(parish, s, merit) : (KINDS[kind] ? sacramentSheet(parish, s, KINDS[kind]) : ''))).join('');
+  if (!sheets) return;
+  const label = kind === 'merit' ? (merit?.title || 'Giấy khen') : (KINDS[kind]?.title || 'Chứng chỉ');
+  printHtml(sheets, `${label}${list.length > 1 ? ` (${list.length})` : ` - ${list[0].full_name || ''}`}`);
+}
+
+// Giữ tương thích: xuất 1 chứng chỉ bí tích (dùng ở Hồ sơ học viên)
+export function exportCertificate({ parish, student, kind }) {
+  exportCertificates({ parish, students: [student], kind });
 }

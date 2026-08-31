@@ -17,6 +17,7 @@ import Audit from './pages/Audit.jsx';
 import Notify from './pages/Notify.jsx';
 import Admin from './pages/Admin.jsx';
 import SetPassword from './pages/SetPassword.jsx';
+import Certificates from './pages/Certificates.jsx';
 import { isSuperAdmin } from './lib/superadmin';
 import { useParish } from './parish.jsx';
 import { isPro } from './lib/plans';
@@ -60,6 +61,7 @@ export default function App() {
       <Route path="/teachers" element={<Protected><RequirePro><Teachers /></RequirePro></Protected>} />
       <Route path="/attendance" element={<Protected><Attendance /></Protected>} />
       <Route path="/grades" element={<Protected><Grades /></Protected>} />
+      <Route path="/certificates" element={<Protected><RequirePro><Certificates /></RequirePro></Protected>} />
       <Route path="/random" element={<Protected><RandomPicker /></Protected>} />
       <Route path="/games" element={<Protected><Games /></Protected>} />
       <Route path="/settings" element={<Protected><Settings /></Protected>} />

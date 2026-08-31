@@ -50,6 +50,14 @@ export const IconMoney = (p) => (
 export const IconArchive = (p) => (
   <svg {...base} {...p}><rect x="3" y="4" width="18" height="4" rx="1" /><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>
 );
+// Icon chứng chỉ / giấy khen (huy hiệu + dải ruy băng)
+export const IconCert = (p) => (
+  <svg {...base} {...p}><circle cx="12" cy="9" r="5" /><path d="m8.5 13.5-1.5 6 5-2.5 5 2.5-1.5-6" /><path d="m10 9 1.4 1.4 3-3" /></svg>
+);
+// Icon cửa hàng (Ephata Store)
+export const IconStore = (p) => (
+  <svg {...base} {...p}><path d="M4 8h16l-1 3.5a3 3 0 0 1-3 2.5H8a3 3 0 0 1-3-2.5z" /><path d="M4 8 6 4h12l2 4" /><path d="M6 14v6h12v-6" /></svg>
+);
 // Icon "sửa ảnh": khung ảnh + bút chì
 export const IconEditImage = (p) => (
   <svg {...base} {...p}>
