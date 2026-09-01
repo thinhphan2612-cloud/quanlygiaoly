@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api';
 import QRCode from 'qrcode';
+import { exportXlsx, fileSlug } from '../lib/exportUtils';
 
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const KINDS = [{ v: '15p', l: '15 phút' }, { v: '1tiet', l: '1 tiết' }, { v: 'hocky', l: 'Học kỳ' }, { v: 'khac', l: 'Khác' }];
 const kindLabel = (k) => (KINDS.find((x) => x.v === k) || { l: k }).l;
 const EXAM_BASE = (typeof window !== 'undefined' ? window.location.origin : '') + '/exam/';
@@ -166,7 +168,28 @@ function ExamRoom({ examId, onBack }) {
   const [exam, setExam] = useState(null);
   const [qr, setQr] = useState('');
   const [savedMsg, setSavedMsg] = useState('');
+  const [reviewing, setReviewing] = useState(null); // attempt đang xem lại
   const pollRef = useRef(null);
+
+  function exportResults() {
+    const qs = exam.questions || [];
+    const rows = (exam.attempts || []).filter((a) => a.status === 'submitted');
+    const columns = [
+      { label: 'STT', get: (_r, i) => i + 1, width: 6 },
+      { label: 'Họ tên', get: (r) => r.student_name, width: 26 },
+      { label: 'Điểm', get: (r) => (r.score ?? ''), width: 8 },
+      { label: 'Số câu đúng', get: (r) => (r.correct_count ?? ''), width: 11 },
+      { label: 'Tổng câu', get: (r) => (r.total ?? ''), width: 9 },
+      { label: 'Nộp lúc', get: (r) => (r.submitted_at ? new Date(r.submitted_at).toLocaleString('vi-VN') : ''), width: 19 },
+      ...qs.map((q, qi) => ({ label: 'C' + (qi + 1), get: (r) => { const c = r.answers?.[q.id]; return c == null ? '—' : (c === q.correct ? 'Đ' : 'S'); }, width: 5 })),
+    ];
+    exportXlsx({
+      filename: `ket-qua-${fileSlug(exam.title)}.xlsx`, sheetName: 'Kết quả',
+      title: 'KẾT QUẢ THI: ' + exam.title,
+      subtitle: [`Lớp: ${exam.class_name || ''}`, `${kindLabel(exam.kind)} — hệ số ${exam.weight} — ${qs.length} câu`, 'Đ = đúng · S = sai · — = bỏ trống'],
+      columns, rows,
+    });
+  }
 
   function load() { return api.get(`/exams/${examId}`).then((r) => setExam(r.data)).catch(() => {}); }
   useEffect(() => { load(); }, [examId]);
@@ -224,13 +247,17 @@ function ExamRoom({ examId, onBack }) {
         <div className="dash-col">
           <div className="panel">
             <div className="card-head"><h2 style={{ margin: 0 }}>Học viên ({attempts.length})</h2>
-              <span className="muted" style={{ fontSize: 13 }}>Đã nộp {submitted.length}</span></div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <span className="muted" style={{ fontSize: 13 }}>Đã nộp {submitted.length}</span>
+                {submitted.length > 0 && <button className="btn ghost sm" onClick={exportResults}>⬇ Excel</button>}
+              </div>
+            </div>
             <div className="table-scroll" style={{ maxHeight: 320 }}><table>
               <thead><tr><th>Tên</th><th>Trạng thái</th><th>Điểm</th></tr></thead>
               <tbody>
                 {attempts.map((a) => (
-                  <tr key={a.id}>
-                    <td>{a.student_name}</td>
+                  <tr key={a.id} className={a.status === 'submitted' ? 'click-row' : ''} onClick={() => a.status === 'submitted' && setReviewing(a)}>
+                    <td>{a.student_name}{a.status === 'submitted' && <span className="muted" style={{ fontSize: 11 }}> · xem lại</span>}</td>
                     <td>{a.status === 'submitted' ? <span className="tag-chip" style={{ background: '#dcfce7', color: '#15803d' }}>Đã nộp</span> : <span className="muted">Đang làm</span>}</td>
                     <td style={{ fontWeight: 600 }}>{a.score != null ? a.score : '—'}{a.total ? <span className="muted" style={{ fontSize: 12 }}> ({a.correct_count}/{a.total})</span> : ''}</td>
                   </tr>
@@ -247,6 +274,34 @@ function ExamRoom({ examId, onBack }) {
           </div>
         </div>
       </div>
+
+      {reviewing && (
+        <div className="modal-backdrop" onClick={() => setReviewing(null)}>
+          <div className="modal wide" onClick={(e) => e.stopPropagation()}>
+            <div className="card-head"><h2 style={{ margin: 0 }}>Bài làm — {reviewing.student_name}</h2>
+              <span className="muted">{reviewing.score}/10 · đúng {reviewing.correct_count}/{reviewing.total}</span></div>
+            <div className="pick-list" style={{ maxHeight: '62vh' }}>
+              {(exam.questions || []).map((q, i) => {
+                const chosen = reviewing.answers?.[q.id];
+                const right = chosen === q.correct;
+                return (
+                  <div className="rv-q" key={q.id}>
+                    <div className="rv-q-t"><b>Câu {i + 1}.</b> {q.text} {chosen == null ? <span className="muted">(bỏ trống)</span> : right ? <span style={{ color: '#15803d' }}>✓</span> : <span style={{ color: '#dc2626' }}>✗</span>}</div>
+                    {(q.options || []).map((opt, idx) => (
+                      <div key={idx} className={`rv-opt ${idx === q.correct ? 'correct' : ''} ${idx === chosen && !right ? 'wrong' : ''}`}>
+                        <b>{LETTERS[idx]}.</b> {opt}
+                        {idx === q.correct && <span className="rv-tag ok"> đáp án đúng</span>}
+                        {idx === chosen && <span className="muted"> ← em chọn</span>}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="modal-actions"><button className="btn ghost" onClick={() => setReviewing(null)}>Đóng</button></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -678,6 +678,12 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .exam-bar span { font-weight: 600; color: #445; }
 .exam-timer { font-variant-numeric: tabular-nums; background: #eef1f5; padding: 6px 12px; border-radius: 999px; color: #16202e; }
 .exam-timer.low { background: #fee2e2; color: #b91c1c; }
+.rv-q { padding: 12px 4px; border-bottom: 1px solid var(--border, #e5e7eb); }
+.rv-q:last-child { border-bottom: none; }
+.rv-q-t { font-size: 14px; margin-bottom: 8px; line-height: 1.5; }
+.rv-opt { font-size: 13.5px; padding: 6px 10px; border-radius: 8px; margin: 3px 0; line-height: 1.45; }
+.rv-opt.correct { background: #dcfce7; color: #14532d; }
+.rv-opt.wrong { background: #fee2e2; color: #991b1b; }
 .exam-bar .exam-btn { width: auto; margin: 0; padding: 12px 34px; }
 .exam-result { text-align: center; }
 .exam-score { font-size: 60px; font-weight: 800; color: #2563eb; line-height: 1; margin: 8px 0; }

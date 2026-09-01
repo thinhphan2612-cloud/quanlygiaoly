@@ -1169,7 +1169,17 @@ async function handle(method, rawUrl, body = {}) {
     if (seg[0] === 'exams' && seg[1] && seg[2] === 'status' && method === 'post') {
       const st = ['draft', 'waiting', 'started', 'closed'].includes(body.status) ? body.status : null;
       if (!st) return fail(400, 'Trạng thái không hợp lệ');
-      const { error } = await supabase.from('exams').update({ status: st }).eq('id', seg[1]);
+      const patch = { status: st };
+      // Khi bắt đầu: tạo sẵn cột điểm (một lần) để điểm tự đồng bộ sang tab Điểm số khi HV nộp.
+      if (st === 'started') {
+        const { data: ex } = await supabase.from('exams').select('class_id, grade_column_id, title, weight').eq('id', seg[1]).maybeSingle();
+        if (ex && ex.class_id && !ex.grade_column_id) {
+          const { data: col } = await supabase.from('grade_columns')
+            .insert({ parish_id: pid, class_id: ex.class_id, name: ex.title, weight: Number(ex.weight) || 1, order_index: 99 }).select('id').single();
+          if (col) patch.grade_column_id = col.id;
+        }
+      }
+      const { error } = await supabase.from('exams').update(patch).eq('id', seg[1]);
       if (error) return fail(400, error.message);
       return ok({ ok: true });
     }

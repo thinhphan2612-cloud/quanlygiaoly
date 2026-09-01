@@ -30,6 +30,7 @@ export default function ExamTake() {
   const [answers, setAnswers] = useState({});
   const [showMissing, setShowMissing] = useState(false);
   const [result, setResult] = useState(null);
+  const [review, setReview] = useState(null);
   const [deadline, setDeadline] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
   const [err, setErr] = useState('');
@@ -117,14 +118,37 @@ export default function ExamTake() {
   if (exam === undefined) return <div className="exam-wrap"><div className="exam-msg">Đang tải…</div></div>;
   if (exam === null) return <div className="exam-wrap"><div className="exam-msg">Không tìm thấy đề thi. Kiểm tra lại mã hoặc QR.</div></div>;
 
+  async function loadReview() {
+    const { data } = await supabase.rpc('exam_review', { p_attempt_id: attempt.id });
+    if (data && !data.error) setReview(data);
+  }
   if (result) return (
-    <div className="exam-wrap"><div className="exam-paper exam-result">
-      <div style={{ fontSize: 46 }}>🎉</div>
-      <h2>Đã nộp bài!</h2>
-      <p className="muted">{attempt?.name}</p>
-      <div className="exam-score">{result.score}<span>/10</span></div>
-      <p className="muted">Đúng {result.correct}/{result.total} câu</p>
-      <p className="muted" style={{ fontSize: 13 }}>Cảm ơn con. Có thể đóng trang này.</p>
+    <div className="exam-wrap"><div className="exam-paper">
+      <div className="exam-result">
+        <div style={{ fontSize: 46 }}>🎉</div>
+        <h2>Đã nộp bài!</h2>
+        <p className="muted">{attempt?.name}</p>
+        <div className="exam-score">{result.score}<span>/10</span></div>
+        <p className="muted">Đúng {result.correct}/{result.total} câu</p>
+        {!review && <button className="exam-btn" style={{ maxWidth: 280, margin: '10px auto 0' }} onClick={loadReview}>Xem lại bài (đúng / sai)</button>}
+      </div>
+      {review && (
+        <div style={{ marginTop: 16 }}>
+          {review.questions.map((q, i) => {
+            const right = q.chosen === q.correct;
+            return (
+              <div className="rv-q" key={i}>
+                <div className="rv-q-t"><b>Câu {i + 1}.</b> {q.text} {q.chosen == null ? <span className="muted">(bỏ trống)</span> : right ? <span style={{ color: '#15803d' }}>✓ đúng</span> : <span style={{ color: '#dc2626' }}>✗ sai</span>}</div>
+                {q.options.map((opt, idx) => (
+                  <div key={idx} className={`rv-opt ${idx === q.correct ? 'correct' : ''} ${idx === q.chosen && !right ? 'wrong' : ''}`}>
+                    <b>{LETTERS[idx]}.</b> {opt}{idx === q.correct ? ' ✔' : ''}{idx === q.chosen ? ' ← con chọn' : ''}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div></div>
   );
 
