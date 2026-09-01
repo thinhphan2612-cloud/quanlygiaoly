@@ -650,8 +650,9 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .game-thumb { height: 96px; border-radius: var(--radius); display: grid; place-items: center; font-size: 40px; box-shadow: var(--shadow-sm); }
 .game-name { margin-top: 8px; font-weight: 600; font-size: 14px; }
 .game-card { position: relative; }
-.ug-remove { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; border: none; background: rgba(0,0,0,.4); color: #fff; font-size: 15px; line-height: 1; cursor: pointer; z-index: 2; display: none; }
-.game-card:hover .ug-remove { display: block; }
+.ug-remove { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; border: none; background: rgba(0,0,0,.45); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; z-index: 2; display: grid; place-items: center; }
+.ug-remove:hover { background: #dc2626; }
+.ug-actions { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
 /* Chơi game nhúng iframe */
 .game-frame-overlay { position: fixed; inset: 0; z-index: 250; background: rgba(10,12,16,.7); display: flex; align-items: center; justify-content: center; padding: 18px; }
 .game-frame-box { width: min(1000px, 96vw); height: min(720px, 92vh); background: #fff; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0,0,0,.4); }
