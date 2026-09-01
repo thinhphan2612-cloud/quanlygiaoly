@@ -648,6 +648,7 @@ function DefaultGamesManager() {
   const [title, setTitle] = useState('');
   const [icon, setIcon] = useState('🎮');
   const [file, setFile] = useState(null);
+  const [thumbFile, setThumbFile] = useState(null);
   const [busy, setBusy] = useState('');
   const [err, setErr] = useState('');
 
@@ -688,9 +689,19 @@ function DefaultGamesManager() {
         done++; setBusy(`Đang tải lên… ${done}/${entries.length}`);
       }
       const { data: pub } = supabase.storage.from('default-games').getPublicUrl(`${slug}/index.html`);
-      await api.post('/default-games', { key: slug, title: title.trim(), icon: icon || '🎮', play_url: pub.publicUrl, source: 'upload' });
-      setBusy(''); setTitle(''); setIcon('🎮'); setFile(null);
+      let thumbUrl = null;
+      if (thumbFile) {
+        setBusy('Đang tải thumbnail…');
+        const ext = (thumbFile.name.split('.').pop() || 'jpg').toLowerCase();
+        const dest = `${slug}/__thumb.${ext}`;
+        const { error: te } = await supabase.storage.from('default-games').upload(dest, thumbFile, { upsert: true, contentType: thumbFile.type || mimeOf(dest) });
+        if (te) throw new Error('Tải thumbnail lỗi: ' + te.message);
+        thumbUrl = supabase.storage.from('default-games').getPublicUrl(dest).data.publicUrl;
+      }
+      await api.post('/default-games', { key: slug, title: title.trim(), icon: icon || '🎮', play_url: pub.publicUrl, thumb_url: thumbUrl, source: 'upload' });
+      setBusy(''); setTitle(''); setIcon('🎮'); setFile(null); setThumbFile(null);
       document.getElementById('dg-file') && (document.getElementById('dg-file').value = '');
+      document.getElementById('dg-thumb') && (document.getElementById('dg-thumb').value = '');
       load();
     } catch (e) { setBusy(''); setErr(e.message || 'Tải lên thất bại'); }
   }
@@ -715,6 +726,7 @@ function DefaultGamesManager() {
         <div className="field" style={{ flex: 2 }}><label>Tên game *</label><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="VD: Ai Là Triệu Phú" /></div>
         <div className="field" style={{ flex: '0 0 90px' }}><label>Icon</label><input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="🎮" /></div>
         <div className="field" style={{ flex: 2 }}><label>File .zip</label><input id="dg-file" type="file" accept=".zip,application/zip" onChange={(e) => setFile(e.target.files?.[0] || null)} /></div>
+        <div className="field" style={{ flex: 2 }}><label>Thumbnail (tuỳ chọn)</label><input id="dg-thumb" type="file" accept="image/*" onChange={(e) => setThumbFile(e.target.files?.[0] || null)} /></div>
         <div className="field" style={{ flex: '0 0 auto' }}><button className="btn" onClick={upload} disabled={!!busy}>{busy || 'Tải lên'}</button></div>
       </div>
       {err && <div className="error">{err}</div>}

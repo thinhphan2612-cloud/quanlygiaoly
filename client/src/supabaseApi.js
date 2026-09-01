@@ -1109,7 +1109,7 @@ async function handle(method, rawUrl, body = {}) {
     if (path === '/default-games' && method === 'post') {
       const row = {
         key: nn(body.key), title: nn(body.title), icon: body.icon || '🎮',
-        play_url: nn(body.play_url), source: body.source === 'builtin' ? 'builtin' : 'upload',
+        play_url: nn(body.play_url), thumb_url: nn(body.thumb_url), source: body.source === 'builtin' ? 'builtin' : 'upload',
         order_index: Number(body.order_index) || 0,
       };
       const { data, error } = await supabase.from('default_games')

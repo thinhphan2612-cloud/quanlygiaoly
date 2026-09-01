@@ -28,7 +28,7 @@ export default function Games() {
       <div key={g.id} className="game-card">
         {onRemove && <button className="ug-remove" title="Gỡ liên kết" onClick={() => onRemove(g)}>×</button>}
         <div className="game-thumb" style={{ background: g.color || '#2563eb', cursor: 'pointer' }} onClick={() => setPlaying(g)}>
-          <span>{g.icon || '◈'}</span>
+          {g.thumb_url ? <img className="game-thumb-img" src={g.thumb_url} alt={g.title} /> : <span>{g.icon || '◈'}</span>}
         </div>
         <div className="game-name">{g.title}</div>
         <div className="ug-actions">
