@@ -1188,7 +1188,7 @@ async function handle(method, rawUrl, body = {}) {
       const { data: col, error: ce } = await supabase.from('grade_columns')
         .insert({ parish_id: pid, class_id: exam.class_id, name: exam.title, weight: Number(exam.weight) || 1, order_index: 99 }).select().single();
       if (ce) return fail(400, ce.message);
-      const rows = attempts.map((a) => ({ student_id: a.student_id, column_id: col.id, score: a.score }));
+      const rows = attempts.map((a) => ({ parish_id: pid, student_id: a.student_id, column_id: col.id, score: a.score }));
       const { error: ge } = await supabase.from('grades').insert(rows);
       if (ge) return fail(400, ge.message);
       return ok({ column_id: col.id, saved: rows.length });
