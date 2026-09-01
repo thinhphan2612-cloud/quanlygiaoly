@@ -57,6 +57,7 @@ function ExamBuilder({ classes, onDone, onCancel }) {
   const [classId, setClassId] = useState('');
   const [kind, setKind] = useState('15p');
   const [weight, setWeight] = useState(1);
+  const [duration, setDuration] = useState(15);
   const [bank, setBank] = useState(null);      // { topics: [...] }
   const [topicId, setTopicId] = useState('');
   const [n, setN] = useState(10);
@@ -91,7 +92,7 @@ function ExamBuilder({ classes, onDone, onCancel }) {
     setSaving(true);
     try {
       const questions = pickedList.map((q) => ({ text: q.text, options: q.options, correct: q.correct }));
-      const { data } = await api.post('/exams', { title: title.trim(), class_id: classId, kind, weight: Number(weight) || 1, questions });
+      const { data } = await api.post('/exams', { title: title.trim(), class_id: classId, kind, weight: Number(weight) || 1, duration_min: Number(duration) || null, questions });
       onDone(data.id);
     } catch (e) { setErr(e.response?.data?.error || 'Tạo đề thất bại'); setSaving(false); }
   }
@@ -117,6 +118,9 @@ function ExamBuilder({ classes, onDone, onCancel }) {
           </div>
           <div className="field" style={{ flex: 1 }}><label>Hệ số điểm</label>
             <input type="number" min="1" step="0.5" value={weight} onChange={(e) => setWeight(e.target.value)} />
+          </div>
+          <div className="field" style={{ flex: 1 }}><label>Thời lượng (phút, 0 = không giới hạn)</label>
+            <input type="number" min="0" value={duration} onChange={(e) => setDuration(e.target.value)} />
           </div>
         </div>
       </div>
@@ -195,7 +199,7 @@ function ExamRoom({ examId, onBack }) {
         <h1 style={{ margin: 0 }}>{exam.title} {badge(exam.status)}</h1>
         <button className="btn ghost" onClick={onBack}>← Danh sách đề</button>
       </div>
-      <p className="muted" style={{ marginTop: -6 }}>Lớp: <b>{exam.class_name || '—'}</b> · {kindLabel(exam.kind)} (×{exam.weight}) · {exam.questions?.length || 0} câu</p>
+      <p className="muted" style={{ marginTop: -6 }}>Lớp: <b>{exam.class_name || '—'}</b> · {kindLabel(exam.kind)} (×{exam.weight}) · {exam.questions?.length || 0} câu · {exam.duration_min ? `${exam.duration_min} phút` : 'không giới hạn giờ'}</p>
 
       <div className="dash-grid">
         <div className="dash-col">
@@ -207,11 +211,13 @@ function ExamRoom({ examId, onBack }) {
             <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 3, margin: '6px 0' }}>{exam.code}</div>
             <div className="muted" style={{ fontSize: 12, wordBreak: 'break-all' }}>{link}</div>
             <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-              {(exam.status === 'draft' || exam.status === 'closed') && <button className="btn" onClick={() => setStatus('waiting')}>Mở phòng chờ</button>}
+              {exam.status === 'draft' && <button className="btn" onClick={() => setStatus('waiting')}>Mở phòng chờ</button>}
               {exam.status === 'waiting' && <button className="btn" onClick={() => setStatus('started')}>▶ Bắt đầu thi</button>}
               {exam.status === 'started' && <button className="btn danger" onClick={() => { if (confirm('Kết thúc & đóng phòng thi?')) setStatus('closed'); }}>■ Kết thúc</button>}
+              {exam.status === 'closed' && <button className="btn" onClick={() => setStatus('started')}>↻ Mở thi lại (cho em vắng)</button>}
             </div>
             {exam.status === 'waiting' && <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>Các em quét QR, chọn tên và chờ. Bấm "Bắt đầu thi" khi đủ.</p>}
+            {exam.status === 'closed' && <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>Bấm "Mở thi lại" để em vắng buổi thi vào làm; điểm sẽ được gộp vào cùng cột điểm cũ.</p>}
           </div>
         </div>
 

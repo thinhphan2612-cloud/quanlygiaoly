@@ -1185,13 +1185,23 @@ async function handle(method, rawUrl, body = {}) {
       const { data: attempts } = await supabase.from('exam_attempts')
         .select('student_id, score').eq('exam_id', seg[1]).eq('status', 'submitted').not('student_id', 'is', null);
       if (!attempts?.length) return fail(400, 'Chưa có bài nộp nào để lưu điểm');
-      const { data: col, error: ce } = await supabase.from('grade_columns')
-        .insert({ parish_id: pid, class_id: exam.class_id, name: exam.title, weight: Number(exam.weight) || 1, order_index: 99 }).select().single();
-      if (ce) return fail(400, ce.message);
-      const rows = attempts.map((a) => ({ parish_id: pid, student_id: a.student_id, column_id: col.id, score: a.score }));
-      const { error: ge } = await supabase.from('grades').insert(rows);
+      // Gộp vào ĐÚNG 1 cột điểm của đề này (thi lại cũng ghi vào cột cũ).
+      let columnId = exam.grade_column_id;
+      if (columnId) {
+        const { data: c } = await supabase.from('grade_columns').select('id').eq('id', columnId).maybeSingle();
+        if (!c) columnId = null; // cột cũ đã bị xoá -> tạo lại
+      }
+      if (!columnId) {
+        const { data: col, error: ce } = await supabase.from('grade_columns')
+          .insert({ parish_id: pid, class_id: exam.class_id, name: exam.title, weight: Number(exam.weight) || 1, order_index: 99 }).select().single();
+        if (ce) return fail(400, ce.message);
+        columnId = col.id;
+        await supabase.from('exams').update({ grade_column_id: columnId }).eq('id', exam.id);
+      }
+      const rows = attempts.map((a) => ({ parish_id: pid, student_id: a.student_id, column_id: columnId, score: a.score }));
+      const { error: ge } = await supabase.from('grades').upsert(rows, { onConflict: 'student_id,column_id' });
       if (ge) return fail(400, ge.message);
-      return ok({ column_id: col.id, saved: rows.length });
+      return ok({ column_id: columnId, saved: rows.length });
     }
     if (seg[0] === 'exams' && seg[1] && !seg[2] && method === 'get') {
       const { data: exam } = await supabase.from('exams').select('*, classes(name)').eq('id', seg[1]).maybeSingle();

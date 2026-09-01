@@ -676,6 +676,8 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .exam-opt.on .exam-letter { background: #2563eb; color: #fff; }
 .exam-bar { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,.96); backdrop-filter: blur(8px); border-top: 1px solid #e2e6ec; padding: 12px clamp(14px,4vw,28px); display: flex; align-items: center; justify-content: space-between; gap: 14px; max-width: 780px; margin: 0 auto; }
 .exam-bar span { font-weight: 600; color: #445; }
+.exam-timer { font-variant-numeric: tabular-nums; background: #eef1f5; padding: 6px 12px; border-radius: 999px; color: #16202e; }
+.exam-timer.low { background: #fee2e2; color: #b91c1c; }
 .exam-bar .exam-btn { width: auto; margin: 0; padding: 12px 34px; }
 .exam-result { text-align: center; }
 .exam-score { font-size: 60px; font-weight: 800; color: #2563eb; line-height: 1; margin: 8px 0; }
