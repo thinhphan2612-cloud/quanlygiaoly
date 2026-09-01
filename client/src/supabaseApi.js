@@ -1175,7 +1175,7 @@ async function handle(method, rawUrl, body = {}) {
       const st = ['draft', 'waiting', 'started', 'closed'].includes(body.status) ? body.status : null;
       if (!st) return fail(400, 'Trạng thái không hợp lệ');
       const patch = { status: st };
-      // Khi bắt đầu: tạo sẵn cột điểm (một lần) để điểm tự đồng bộ sang tab Điểm số khi HV nộp.
+      // Khi bắt đầu: tạo sẵn cột điểm (một lần) để tự đồng bộ Điểm số.
       if (st === 'started') {
         const { data: ex } = await supabase.from('exams').select('class_id, grade_column_id, title, weight').eq('id', seg[1]).maybeSingle();
         if (ex && ex.class_id && !ex.grade_column_id) {
@@ -1186,6 +1186,8 @@ async function handle(method, rawUrl, body = {}) {
       }
       const { error } = await supabase.from('exams').update(patch).eq('id', seg[1]);
       if (error) return fail(400, error.message);
+      // Mốc giờ cho đồng hồ GLV (best-effort; bỏ qua nếu chưa chạy migration v5).
+      if (st === 'started') await supabase.from('exams').update({ started_at: new Date().toISOString() }).eq('id', seg[1]);
       return ok({ ok: true });
     }
     if (seg[0] === 'exams' && seg[1] && seg[2] === 'attempts' && method === 'get') {

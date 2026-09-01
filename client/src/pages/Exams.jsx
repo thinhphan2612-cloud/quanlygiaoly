@@ -12,6 +12,7 @@ const ST = {
   started: ['Đang thi', '#dcfce7', '#15803d'], closed: ['Đã đóng', '#e0e7ff', '#3730a3'],
 };
 function badge(s) { const v = ST[s] || ST.draft; return <span className="tag-chip" style={{ background: v[1], color: v[2] }}>{v[0]}</span>; }
+const fmt = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
 
 export default function Exams() {
   const [view, setView] = useState('list'); // list | build | room
@@ -169,6 +170,7 @@ function ExamRoom({ examId, onBack }) {
   const [qr, setQr] = useState('');
   const [savedMsg, setSavedMsg] = useState('');
   const [reviewing, setReviewing] = useState(null); // attempt đang xem lại
+  const [timeLeft, setTimeLeft] = useState(null);    // đồng hồ đếm ngược cho GLV
   const pollRef = useRef(null);
 
   function exportResults() {
@@ -204,6 +206,15 @@ function ExamRoom({ examId, onBack }) {
       return () => clearInterval(pollRef.current);
     }
   }, [exam?.status]); // eslint-disable-line
+  // Đồng hồ đếm ngược cho GLV (đề có giới hạn giờ)
+  useEffect(() => {
+    if (exam?.status === 'started' && exam.duration_min && exam.started_at) {
+      const dl = Date.parse(exam.started_at) + exam.duration_min * 60000;
+      const tick = () => setTimeLeft(dl - Date.now());
+      tick(); const t = setInterval(tick, 1000); return () => clearInterval(t);
+    }
+    setTimeLeft(null);
+  }, [exam?.status, exam?.duration_min, exam?.started_at]);
 
   async function setStatus(status) { await api.post(`/exams/${examId}/status`, { status }); load(); }
   async function saveGrades() {
@@ -233,6 +244,11 @@ function ExamRoom({ examId, onBack }) {
               : <div className="muted" style={{ padding: 30 }}>QR hiện khi mở phòng chờ</div>}
             <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 3, margin: '6px 0' }}>{exam.code}</div>
             <div className="muted" style={{ fontSize: 12, wordBreak: 'break-all' }}>{link}</div>
+            {exam.status === 'started' && timeLeft != null && (
+              <div className={`room-timer ${timeLeft <= 60000 ? 'low' : ''}`}>
+                {timeLeft > 0 ? <>⏱ Còn lại <b>{fmt(timeLeft)}</b></> : '⏱ Đã hết giờ'}
+              </div>
+            )}
             <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
               {exam.status === 'draft' && <button className="btn" onClick={() => setStatus('waiting')}>Mở phòng chờ</button>}
               {exam.status === 'waiting' && <button className="btn" onClick={() => setStatus('started')}>▶ Bắt đầu thi</button>}
