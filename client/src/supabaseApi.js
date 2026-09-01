@@ -1096,6 +1096,33 @@ async function handle(method, rawUrl, body = {}) {
       return ok({ ok: true });
     }
 
+    // ---------------- game MẶC ĐỊNH toàn dự án (super-admin quản lý) ----------------
+    if (path === '/default-games' && method === 'get') {
+      const { data, error } = await supabase.from('default_games')
+        .select('*').order('order_index').order('created_at');
+      if (error) {
+        if (/default_games/i.test(error.message || '')) return ok([]); // chưa chạy migration
+        return fail(400, error.message);
+      }
+      return ok(data || []);
+    }
+    if (path === '/default-games' && method === 'post') {
+      const row = {
+        key: nn(body.key), title: nn(body.title), icon: body.icon || '🎮',
+        play_url: nn(body.play_url), source: body.source === 'builtin' ? 'builtin' : 'upload',
+        order_index: Number(body.order_index) || 0,
+      };
+      const { data, error } = await supabase.from('default_games')
+        .upsert(row, { onConflict: 'key' }).select().single();
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
+    if (seg[0] === 'default-games' && seg[1] && method === 'delete') {
+      const { error } = await supabase.from('default_games').delete().eq('id', seg[1]);
+      if (error) return fail(400, error.message);
+      return ok({ ok: true });
+    }
+
     // ---------------- thông báo ----------------
     if (path === '/notifications' && method === 'get') {
       const { data, error } = await supabase.from('notifications')

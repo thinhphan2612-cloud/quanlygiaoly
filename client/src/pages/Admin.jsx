@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { isSuperAdmin } from '../lib/superadmin';
+import { supabase } from '../supabase';
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString('vi-VN') : '—');
 const fmtVnd = (n) => (Number(n) || 0).toLocaleString('vi-VN') + 'đ';
@@ -255,6 +256,8 @@ export default function Admin() {
           </div>
         )}
       </div>
+
+      <DefaultGamesManager />
 
       <div className="panel" id="sec-parishes">
         <div className="card-head" style={{ gap: 12, flexWrap: 'wrap' }}>
@@ -624,6 +627,113 @@ function PaymentModal({ parish, onClose, onSave }) {
           <button className="btn" onClick={() => (Number(pay.amount) > 0 ? onSave(pay) : alert('Nhập số tiền'))}>Lưu</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ---------------- Game mặc định toàn dự án (super-admin tải zip) ---------------- */
+const MIME = {
+  html: 'text/html', htm: 'text/html', js: 'text/javascript', mjs: 'text/javascript',
+  css: 'text/css', json: 'application/json', svg: 'image/svg+xml', png: 'image/png',
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif',
+  mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg', mp4: 'video/mp4', webm: 'video/webm',
+  woff: 'font/woff', woff2: 'font/woff2', ttf: 'font/ttf', ico: 'image/x-icon', txt: 'text/plain',
+};
+const mimeOf = (p) => MIME[(p.split('.').pop() || '').toLowerCase()] || 'application/octet-stream';
+const slugify = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || ('game-' + Date.now());
+
+function DefaultGamesManager() {
+  const [games, setGames] = useState([]);
+  const [title, setTitle] = useState('');
+  const [icon, setIcon] = useState('🎮');
+  const [file, setFile] = useState(null);
+  const [busy, setBusy] = useState('');
+  const [err, setErr] = useState('');
+
+  function load() { api.get('/default-games').then((r) => setGames(r.data)).catch(() => setGames([])); }
+  useEffect(() => { load(); }, []);
+
+  async function rmDir(prefix) {
+    const { data } = await supabase.storage.from('default-games').list(prefix, { limit: 1000 });
+    if (!data) return;
+    const files = [], dirs = [];
+    for (const it of data) { (it.id === null ? dirs : files).push(prefix + '/' + it.name); }
+    if (files.length) await supabase.storage.from('default-games').remove(files);
+    for (const d of dirs) await rmDir(d);
+  }
+
+  async function upload() {
+    setErr('');
+    if (!title.trim()) { setErr('Nhập tên game'); return; }
+    if (!file) { setErr('Chọn file .zip của game'); return; }
+    try {
+      setBusy('Đang giải nén…');
+      const JSZip = (await import('jszip')).default;
+      const zip = await JSZip.loadAsync(file);
+      const htmls = Object.keys(zip.files).filter((p) => /(^|\/)index\.html$/i.test(p) && !zip.files[p].dir);
+      if (!htmls.length) throw new Error('Zip phải có file index.html (điểm vào của game).');
+      htmls.sort((a, b) => a.split('/').length - b.split('/').length);
+      const indexPath = htmls[0];
+      const baseDir = indexPath.slice(0, indexPath.toLowerCase().lastIndexOf('index.html'));
+      const slug = slugify(title);
+      const entries = Object.keys(zip.files).filter((p) => p.startsWith(baseDir) && !zip.files[p].dir);
+      let done = 0;
+      for (const p of entries) {
+        const rel = p.slice(baseDir.length);
+        const blob = await zip.files[p].async('blob');
+        const { error } = await supabase.storage.from('default-games')
+          .upload(`${slug}/${rel}`, blob, { upsert: true, contentType: mimeOf(rel) });
+        if (error) throw new Error('Tải lên Storage lỗi: ' + error.message + ' (đã tạo bucket default-games + policy chưa?)');
+        done++; setBusy(`Đang tải lên… ${done}/${entries.length}`);
+      }
+      const { data: pub } = supabase.storage.from('default-games').getPublicUrl(`${slug}/index.html`);
+      await api.post('/default-games', { key: slug, title: title.trim(), icon: icon || '🎮', play_url: pub.publicUrl, source: 'upload' });
+      setBusy(''); setTitle(''); setIcon('🎮'); setFile(null);
+      document.getElementById('dg-file') && (document.getElementById('dg-file').value = '');
+      load();
+    } catch (e) { setBusy(''); setErr(e.message || 'Tải lên thất bại'); }
+  }
+
+  async function del(g) {
+    if (!confirm(`Xoá game mặc định "${g.title}"? (gỡ khỏi mọi tài khoản)`)) return;
+    try {
+      if (g.source === 'upload') await rmDir(g.key);
+      await api.delete(`/default-games/${g.id}`);
+      load();
+    } catch (e) { alert(e.response?.data?.error || e.message || 'Thất bại'); }
+  }
+
+  return (
+    <div className="panel" id="sec-default-games">
+      <div className="card-head"><h2 style={{ margin: 0 }}>🎮 Game mặc định (toàn dự án)</h2></div>
+      <p className="muted" style={{ marginTop: 0, fontSize: 13 }}>
+        Tải lên file <b>.zip</b> của game web (phải có <code>index.html</code>). Game sẽ có mặc định cho <b>mọi tài khoản</b> trong mục Game. Có thể thêm nhiều game.
+      </p>
+
+      <div className="row" style={{ alignItems: 'flex-end' }}>
+        <div className="field" style={{ flex: 2 }}><label>Tên game *</label><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="VD: Ai Là Triệu Phú" /></div>
+        <div className="field" style={{ flex: '0 0 90px' }}><label>Icon</label><input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="🎮" /></div>
+        <div className="field" style={{ flex: 2 }}><label>File .zip</label><input id="dg-file" type="file" accept=".zip,application/zip" onChange={(e) => setFile(e.target.files?.[0] || null)} /></div>
+        <div className="field" style={{ flex: '0 0 auto' }}><button className="btn" onClick={upload} disabled={!!busy}>{busy || 'Tải lên'}</button></div>
+      </div>
+      {err && <div className="error">{err}</div>}
+
+      <table style={{ marginTop: 10 }}>
+        <thead><tr><th></th><th>Tên</th><th>Nguồn</th><th>Link</th><th></th></tr></thead>
+        <tbody>
+          {games.map((g) => (
+            <tr key={g.id}>
+              <td style={{ fontSize: 20 }}>{g.icon}</td>
+              <td>{g.title}</td>
+              <td className="muted">{g.source === 'builtin' ? 'Bundle sẵn' : 'Tải lên'}</td>
+              <td className="muted" style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.play_url}</td>
+              <td><button className="btn danger sm" onClick={() => del(g)}>Xoá</button></td>
+            </tr>
+          ))}
+          {games.length === 0 && <tr><td colSpan={5} className="muted">Chưa có game mặc định</td></tr>}
+        </tbody>
+      </table>
     </div>
   );
 }

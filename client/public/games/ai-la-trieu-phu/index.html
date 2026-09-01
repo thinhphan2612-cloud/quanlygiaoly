@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ai là triệu phú Giáo lý</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="game-shell" aria-live="polite">
+      <section class="stage" aria-label="Sân chơi">
+        <div class="light light-one"></div>
+        <div class="light light-two"></div>
+        <div class="light light-three"></div>
+        <div class="topbar">
+          <div class="utility-buttons">
+            <button class="utility-button video-button" type="button" id="introButton">
+              <span aria-hidden="true">▶</span>
+              <span>Chiếu video dạo</span>
+            </button>
+            <button class="round-button utility-button icon-button" type="button" id="settingsButton" title="Quản lý trò chơi">
+              <span aria-hidden="true">⚙</span>
+              <span class="sr-only">Quản lý trò chơi</span>
+            </button>
+            <button class="round-button utility-button icon-button" type="button" id="fullscreenButton" title="Toàn màn hình">
+              <span aria-hidden="true">⛶</span>
+              <span class="sr-only">Toàn màn hình</span>
+            </button>
+            <button class="end-game-button" type="button" id="endGameButton" hidden>Kết thúc trò chơi</button>
+          </div>
+          <div class="lifeline-bar" aria-label="Quyền trợ giúp">
+            <button class="round-button lifeline" type="button" data-lifeline="fifty" title="50:50">50:50</button>
+            <button class="round-button lifeline" type="button" data-lifeline="phone" title="Hỏi một bạn">
+              <span aria-hidden="true">☎</span>
+              <span class="sr-only">Hỏi một bạn</span>
+            </button>
+            <button class="round-button lifeline" type="button" data-lifeline="audience" title="Hỏi cả lớp">
+              <span aria-hidden="true">◉</span>
+              <span class="sr-only">Hỏi cả lớp</span>
+            </button>
+            <button class="round-button lifeline" type="button" data-lifeline="host" title="Hỏi giáo lý viên">
+            <span aria-hidden="true">✦</span>
+              <span class="sr-only">Hỏi giáo lý viên</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="timer" id="timer" hidden>
+          <svg viewBox="0 0 120 120" role="img" aria-label="Đồng hồ đếm ngược">
+            <circle class="timer-track" cx="60" cy="60" r="52"></circle>
+            <circle class="timer-progress" id="timerProgress" cx="60" cy="60" r="52"></circle>
+          </svg>
+          <span id="timerValue">45</span>
+        </div>
+
+        <section class="intro-screen" id="introScreen">
+          <h1>Ai là triệu phú Giáo lý</h1>
+          <p id="introSubtitle">Chọn gói câu hỏi sẵn theo lớp hoặc tạo riêng cho chính bạn.</p>
+          <div class="class-picker" id="classPicker" aria-label="Chọn lớp dự thi"></div>
+          <p class="class-selection" id="classSelection">Chưa chọn lớp dự thi</p>
+          <div class="intro-actions">
+            <button class="primary-button" type="button" id="startButton" disabled>Bắt đầu chơi</button>
+            <button class="secondary-button create-question-button" type="button" id="createQuestionButton">+ Tạo câu hỏi</button>
+          </div>
+        </section>
+
+        <section class="question-screen" id="questionScreen" hidden>
+          <article class="question-card">
+            <p class="question-text" id="questionText"></p>
+            <img class="question-image" id="questionImage" alt="" />
+          </article>
+          <div class="answers" id="answers"></div>
+          <div class="action-row">
+            <button class="primary-button final-button" type="button" id="finalButton" hidden>Chốt đáp án</button>
+            <button class="primary-button next-button" type="button" id="nextButton" hidden>Câu tiếp theo</button>
+            <button class="secondary-button" type="button" id="restartButton" hidden>Chơi lại</button>
+          </div>
+        </section>
+
+        <section class="result-panel" id="resultPanel" hidden>
+          <h2 id="resultTitle"></h2>
+          <p id="resultText"></p>
+          <button class="primary-button" type="button" id="resultRestartButton">Chơi lại</button>
+        </section>
+
+        <section class="intro-video" id="introVideo" hidden>
+          <button class="skip-intro-button" type="button" id="skipIntroButton">Bỏ qua video</button>
+          <video id="introVideoMedia" playsinline preload="auto">
+            <source src="./assets/hasagi/backgroundintro.mp4" type="video/mp4" />
+          </video>
+        </section>
+      </section>
+
+      <aside class="prize-panel" aria-label="Bảng điểm">
+        <div class="prize-total">Điểm: <span id="currentPrize">$0</span></div>
+        <ol class="prize-list" id="prizeList"></ol>
+      </aside>
+
+      <div class="helper-modal" id="helperModal" hidden>
+        <div class="helper-card" role="dialog" aria-modal="true" aria-labelledby="helperTitle">
+          <button class="close-button" type="button" id="closeHelper" title="Đóng">×</button>
+          <h2 id="helperTitle"></h2>
+          <div id="helperContent"></div>
+        </div>
+      </div>
+
+      <section class="manager-modal" id="managerModal" hidden aria-labelledby="managerTitle">
+        <div class="manager-window" role="dialog" aria-modal="true">
+          <div class="manager-notice" id="managerNotice" role="status" hidden></div>
+          <div class="manager-tooltip" id="managerTooltip" role="tooltip" hidden></div>
+          <header class="manager-header">
+            <div>
+              <p class="manager-eyebrow">🏆 QUẢN LÝ TRÒ CHƠI</p>
+              <h2 id="managerTitle">Quản lý câu hỏi</h2>
+            </div>
+            <div class="manager-actions">
+              <button class="manager-back" type="button" id="backToHomeButton">← <span>Quay lại</span></button>
+              <button class="manager-preview" type="button" id="previewGameButton">◉ Xem trước trò chơi</button>
+              <button class="manager-import" type="button" id="importGameButton">⇧ Nhập JSON game</button>
+              <button class="manager-save" type="button" id="saveGameButton">⇩ Lưu trò chơi</button>
+              <input id="importGameFile" type="file" accept="application/json,.json" hidden />
+            </div>
+          </header>
+          <div class="manager-body">
+            <aside class="manager-nav" aria-label="Danh mục quản lý">
+              <p>DANH MỤC</p>
+              <div class="question-slot-pills manager-question-slots" id="questionSlotPills" aria-label="15 câu hỏi của lượt chơi"></div>
+              <button class="manager-nav-item background-nav-item" type="button" data-manager-tab="background">⚙ Cài đặt trò chơi</button>
+              <div class="background-quick-picker" aria-label="Hình nền trò chơi">
+                <strong>HÌNH NỀN TRÒ CHƠI</strong>
+                <div>
+                  <button class="background-thumb selected" type="button" data-background-preset="default" aria-label="Hình nền mặc định"></button>
+                  <button class="background-thumb violet" type="button" data-background-preset="violet" aria-label="Hình nền tím"></button>
+                  <button class="background-thumb background-upload-thumb" type="button" id="quickBackgroundUpload" aria-label="Tải hình nền từ máy">+</button>
+                </div>
+                <button class="change-background-button" type="button" data-manager-tab="background">Đổi hình nền</button>
+              </div>
+              <small>Các thay đổi chỉ dùng trong lần mở web này.</small>
+            </aside>
+            <div class="manager-content">
+              <section class="settings-card" id="backgroundSettings">
+                <h3>Hình nền sân chơi</h3>
+                <p>Nhập liên kết trực tiếp đến ảnh (ví dụ ảnh từ Pexels) hoặc chọn một tệp ảnh từ máy tính.</p>
+                <label for="backgroundUrl">Liên kết ảnh</label>
+                <div class="background-url-row">
+                  <input id="backgroundUrl" type="url" placeholder="https://images.pexels.com/..." autocomplete="url" />
+                  <button type="button" id="applyBackgroundUrl">Áp dụng</button>
+                </div>
+                <p class="field-hint">Dùng liên kết ảnh trực tiếp; liên kết trang Pexels có thể không hiển thị ảnh.</p>
+                <label class="upload-control" for="backgroundUpload">
+                  <span>↑</span> Tải ảnh từ máy tính
+                  <input id="backgroundUpload" type="file" accept="image/*" />
+                </label>
+                <button class="reset-background" type="button" id="resetBackground">Khôi phục hình nền mặc định</button>
+              </section>
+              <aside class="manager-preview-panel">
+                <p>XEM TRƯỚC</p>
+                <div class="background-preview" id="backgroundPreview"><span>Hình nền sân chơi</span></div>
+              </aside>
+              <section class="question-settings" id="questionSettings" hidden>
+                <div class="question-settings-heading">
+                  <div>
+                    <p class="manager-section-kicker">QUẢN LÝ CÂU HỎI</p>
+                    <h3>Danh sách câu hỏi trong trò chơi</h3>
+                    <p>Soạn đủ 15 câu cho lượt chơi. Bạn có thể nhập từ ngân hàng hoặc tự tạo hoàn toàn.</p>
+                  </div>
+                </div>
+                <div class="question-workspace">
+                  <section class="game-questions-panel">
+                    <div class="game-list-heading">
+                      <div>
+                        <strong id="gameListSummary">DANH SÁCH CÂU HỎI TRONG TRÒ CHƠI (0/15)</strong>
+                        <span>Tối đa 15 câu hỏi</span>
+                      </div>
+                      <button class="load-game-button" type="button" id="loadIntoGameButton" hidden>Nạp vào game</button>
+                    </div>
+                    <div class="game-slot-list" id="gameSlotList" aria-label="Danh sách 15 câu hỏi"></div>
+                    <section class="imported-questions" id="importedQuestions" hidden>
+                      <h4>Câu hỏi đã nạp — có thể chỉnh sửa</h4>
+                      <div class="imported-questions-layout">
+                        <div id="importedQuestionsList"></div>
+                      </div>
+                    </section>
+                    <div class="question-editor-toolbar">
+                      <h4 class="question-section-title manual-question-title">Tạo câu hỏi mới</h4>
+                      <p>Tự nhập nội dung, bốn đáp án và đáp án đúng. Câu mới sẽ đi vào ô trống tiếp theo của lượt chơi.</p>
+                    </div>
+                    <form id="questionEditor" class="question-editor">
+                      <label for="editorQuestionText">Nội dung câu hỏi</label>
+                      <textarea id="editorQuestionText" rows="3" required></textarea>
+                      <div class="editor-options">
+                        <label>A <input id="editorOption0" required /></label>
+                        <label>B <input id="editorOption1" required /></label>
+                        <label>C <input id="editorOption2" required /></label>
+                        <label>D <input id="editorOption3" required /></label>
+                      </div>
+                      <label for="editorCorrect">Đáp án đúng</label>
+                      <select id="editorCorrect">
+                        <option value="0">A</option>
+                        <option value="1">B</option>
+                        <option value="2">C</option>
+                        <option value="3">D</option>
+                      </select>
+                      <div class="question-editor-actions">
+                        <button type="submit" class="save-question-button">Lưu câu hỏi</button>
+                        <button type="button" class="cancel-question-button" id="cancelQuestionButton">Hủy</button>
+                      </div>
+                    </form>
+                  </section>
+                  <aside class="question-bank-panel">
+                    <h4 class="question-section-title">Ngân hàng câu hỏi</h4>
+                    <p>Chọn câu trong gói rồi nhập xuống danh sách trò chơi.</p>
+                    <label class="package-select-label" for="questionPackage">Gói đang chọn</label>
+                    <select id="questionPackage" class="question-package-select"></select>
+                    <div class="question-bank-selection">
+                      <div class="question-bank-selection-title">
+                        <strong>Câu hỏi trong gói</strong>
+                        <span id="pickedQuestionCount">Đã chọn 0/15</span>
+                      </div>
+                      <div class="question-bank-list" id="questionBankList"></div>
+                    </div>
+                    <button class="random-questions-button" type="button" id="randomQuestionsButton">Chọn ngẫu nhiên 15 câu</button>
+                    <button class="import-picked-button" type="button" id="importPickedQuestions" hidden>Nhập nội dung</button>
+                  </aside>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="package-modal" id="packageModal" hidden>
+        <div class="package-dialog" role="dialog" aria-modal="true" aria-labelledby="packageModalTitle">
+          <button class="close-button" type="button" id="closePackageModal" title="Đóng">×</button>
+          <h3 id="packageModalTitle">Chọn gói câu hỏi</h3>
+          <p>Chọn một gói để xem và tích tối đa 15 câu hỏi cho lượt chơi.</p>
+          <div class="package-list" id="packageList"></div>
+        </div>
+      </div>
+
+      <div class="sound-library" aria-hidden="true">
+        <audio id="soundBackground" preload="auto" src="./assets/hasagi/background.mp3"></audio>
+        <audio id="soundMain" preload="auto" src="./assets/hasagi/main-theme.mp3"></audio>
+        <audio id="soundFinal" preload="auto" src="./assets/hasagi/final-answer.mp3"></audio>
+        <audio id="soundCorrect" preload="auto" src="./assets/hasagi/correct.mp3"></audio>
+        <audio id="soundWrong" preload="auto" src="./assets/hasagi/wrong.mp3"></audio>
+        <audio id="soundFifty" preload="auto" src="./assets/hasagi/50-50.mp3"></audio>
+        <audio id="soundPhone" preload="auto" src="./assets/hasagi/Phone-A-Friend.mp3"></audio>
+        <audio id="soundHover" preload="auto" src="./assets/hasagi/hover.mp3"></audio>
+      </div>
+    </main>
+
+    <script src="./question-bank.js"></script>
+    <script src="./script.js"></script>
+  </body>
+</html>
