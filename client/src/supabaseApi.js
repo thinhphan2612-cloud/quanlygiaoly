@@ -42,6 +42,13 @@ async function myClassIds() {
 // '' → null cho các cột uuid/date để tránh lỗi kiểu dữ liệu
 const nn = (v) => (v === '' || v === undefined ? null : v);
 
+// Mã đề thi 6 ký tự (bỏ ký tự dễ nhầm)
+function genExamCode() {
+  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = ''; for (let i = 0; i < 6; i++) s += c[Math.floor(Math.random() * c.length)];
+  return s;
+}
+
 // Gọi Edge Function admin-api (super-admin). Trả { data } hoặc { error, status }.
 async function adminCall(action, extra = {}) {
   const { data, error } = await supabase.functions.invoke('admin-api', { body: { action, ...extra } });
@@ -1119,6 +1126,84 @@ async function handle(method, rawUrl, body = {}) {
     }
     if (seg[0] === 'default-games' && seg[1] && method === 'delete') {
       const { error } = await supabase.from('default_games').delete().eq('id', seg[1]);
+      if (error) return fail(400, error.message);
+      return ok({ ok: true });
+    }
+
+    // ---------------- thi online (GLV) ----------------
+    if (path === '/exams' && method === 'get') {
+      const { data: exams, error } = await supabase.from('exams')
+        .select('*, classes(name)').eq('parish_id', pid).order('created_at', { ascending: false });
+      if (error) { if (/exams/i.test(error.message || '')) return ok([]); return fail(400, error.message); }
+      const ids = (exams || []).map((e) => e.id);
+      const joined = {}, subs = {}, qc = {};
+      if (ids.length) {
+        const [{ data: att }, { data: qs }] = await Promise.all([
+          supabase.from('exam_attempts').select('exam_id, status').in('exam_id', ids),
+          supabase.from('exam_questions').select('exam_id').in('exam_id', ids),
+        ]);
+        (att || []).forEach((a) => { joined[a.exam_id] = (joined[a.exam_id] || 0) + 1; if (a.status === 'submitted') subs[a.exam_id] = (subs[a.exam_id] || 0) + 1; });
+        (qs || []).forEach((q) => { qc[q.exam_id] = (qc[q.exam_id] || 0) + 1; });
+      }
+      return ok((exams || []).map((e) => ({ ...e, class_name: e.classes?.name || null, joined: joined[e.id] || 0, submitted: subs[e.id] || 0, num_questions: qc[e.id] || 0 })));
+    }
+    if (path === '/exams' && method === 'post') {
+      const qs = Array.isArray(body.questions) ? body.questions : [];
+      if (!body.title || !body.class_id || !qs.length) return fail(400, 'Thiếu tiêu đề / lớp / câu hỏi');
+      let examRow = null, tries = 0;
+      while (tries++ < 6 && !examRow) {
+        const { data, error } = await supabase.from('exams').insert({
+          parish_id: pid, class_id: body.class_id, teacher_id: meId(), title: body.title,
+          kind: body.kind || '15p', weight: Number(body.weight) || 1, code: genExamCode(),
+          status: 'draft', duration_min: body.duration_min ? Number(body.duration_min) : null,
+        }).select().single();
+        if (!error) { examRow = data; break; }
+        if (!/code|duplicate|unique/i.test(error.message || '')) return fail(400, error.message);
+      }
+      if (!examRow) return fail(400, 'Không tạo được mã đề, thử lại');
+      const rows = qs.map((x, i) => ({ exam_id: examRow.id, parish_id: pid, order_index: i, text: x.text, options: x.options, correct: Number(x.correct) || 0 }));
+      const { error: qe } = await supabase.from('exam_questions').insert(rows);
+      if (qe) { await supabase.from('exams').delete().eq('id', examRow.id); return fail(400, qe.message); }
+      return ok(examRow);
+    }
+    if (seg[0] === 'exams' && seg[1] && seg[2] === 'status' && method === 'post') {
+      const st = ['draft', 'waiting', 'started', 'closed'].includes(body.status) ? body.status : null;
+      if (!st) return fail(400, 'Trạng thái không hợp lệ');
+      const { error } = await supabase.from('exams').update({ status: st }).eq('id', seg[1]);
+      if (error) return fail(400, error.message);
+      return ok({ ok: true });
+    }
+    if (seg[0] === 'exams' && seg[1] && seg[2] === 'attempts' && method === 'get') {
+      const { data } = await supabase.from('exam_attempts').select('*').eq('exam_id', seg[1])
+        .order('score', { ascending: false, nullsFirst: false });
+      return ok(data || []);
+    }
+    if (seg[0] === 'exams' && seg[1] && seg[2] === 'save-grades' && method === 'post') {
+      const { data: exam } = await supabase.from('exams').select('*').eq('id', seg[1]).maybeSingle();
+      if (!exam) return fail(404, 'Không tìm thấy đề');
+      if (!exam.class_id) return fail(400, 'Đề chưa gắn lớp');
+      const { data: attempts } = await supabase.from('exam_attempts')
+        .select('student_id, score').eq('exam_id', seg[1]).eq('status', 'submitted').not('student_id', 'is', null);
+      if (!attempts?.length) return fail(400, 'Chưa có bài nộp nào để lưu điểm');
+      const { data: col, error: ce } = await supabase.from('grade_columns')
+        .insert({ parish_id: pid, class_id: exam.class_id, name: exam.title, weight: Number(exam.weight) || 1, order_index: 99 }).select().single();
+      if (ce) return fail(400, ce.message);
+      const rows = attempts.map((a) => ({ student_id: a.student_id, column_id: col.id, score: a.score }));
+      const { error: ge } = await supabase.from('grades').insert(rows);
+      if (ge) return fail(400, ge.message);
+      return ok({ column_id: col.id, saved: rows.length });
+    }
+    if (seg[0] === 'exams' && seg[1] && !seg[2] && method === 'get') {
+      const { data: exam } = await supabase.from('exams').select('*, classes(name)').eq('id', seg[1]).maybeSingle();
+      if (!exam) return fail(404, 'Không tìm thấy đề');
+      const [{ data: questions }, { data: attempts }] = await Promise.all([
+        supabase.from('exam_questions').select('*').eq('exam_id', seg[1]).order('order_index'),
+        supabase.from('exam_attempts').select('*').eq('exam_id', seg[1]).order('score', { ascending: false, nullsFirst: false }),
+      ]);
+      return ok({ ...exam, class_name: exam.classes?.name || null, questions: questions || [], attempts: attempts || [] });
+    }
+    if (seg[0] === 'exams' && seg[1] && !seg[2] && method === 'delete') {
+      const { error } = await supabase.from('exams').delete().eq('id', seg[1]);
       if (error) return fail(400, error.message);
       return ok({ ok: true });
     }

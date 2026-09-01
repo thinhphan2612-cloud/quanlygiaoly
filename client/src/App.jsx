@@ -19,6 +19,8 @@ import Admin from './pages/Admin.jsx';
 import SetPassword from './pages/SetPassword.jsx';
 import Certificates from './pages/Certificates.jsx';
 import EphataStore from './pages/EphataStore.jsx';
+import Exams from './pages/Exams.jsx';
+import ExamTake from './pages/ExamTake.jsx';
 import { isSuperAdmin } from './lib/superadmin';
 import { useParish } from './parish.jsx';
 import { isPro } from './lib/plans';
@@ -54,6 +56,7 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Login initialMode="register" />} />
       <Route path="/set-password" element={<SetPassword />} />
+      <Route path="/exam/:code" element={<ExamTake />} />
       <Route path="/" element={<Protected><Home /></Protected>} />
       <Route path="/admin" element={<Protected><Admin /></Protected>} />
       <Route path="/students" element={<Protected><Students /></Protected>} />
@@ -63,6 +66,7 @@ export default function App() {
       <Route path="/attendance" element={<Protected><Attendance /></Protected>} />
       <Route path="/grades" element={<Protected><Grades /></Protected>} />
       <Route path="/certificates" element={<Protected><RequirePro><Certificates /></RequirePro></Protected>} />
+      <Route path="/exams" element={<Protected><RequirePro><Exams /></RequirePro></Protected>} />
       <Route path="/random" element={<Protected><RandomPicker /></Protected>} />
       <Route path="/games" element={<Protected><Games /></Protected>} />
       <Route path="/store" element={<Protected><EphataStore /></Protected>} />

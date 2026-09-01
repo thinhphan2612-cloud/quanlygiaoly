@@ -649,6 +649,38 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .game-card.locked { opacity: 0.75; }
 .game-thumb { height: 96px; border-radius: var(--radius); display: grid; place-items: center; font-size: 40px; box-shadow: var(--shadow-sm); overflow: hidden; }
 .game-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ---------- Thi online (trang công khai) ---------- */
+.exam-wrap { min-height: 100vh; background: linear-gradient(160deg, #eef2f7 0%, #e6ebf2 100%); padding: 20px 12px 96px; display: flex; flex-direction: column; align-items: center; font-family: inherit; color: #1f2733; }
+.exam-msg { background: #fff; border-radius: 14px; padding: 28px 24px; margin-top: 60px; box-shadow: 0 10px 30px rgba(20,28,40,.1); color: #556; }
+.exam-paper { width: 100%; max-width: 780px; background: #fff; border-radius: 14px; padding: clamp(20px, 4vw, 40px); box-shadow: 0 12px 40px rgba(20,28,40,.12); }
+.exam-head { text-align: center; border-bottom: 2px solid #eef1f5; padding-bottom: 14px; margin-bottom: 18px; }
+.exam-head h1 { font-size: clamp(20px, 3.4vw, 27px); margin: 0 0 4px; color: #16202e; }
+.exam-input { width: 100%; padding: 12px 14px; border: 1.5px solid #d3d8df; border-radius: 10px; font-size: 16px; margin-bottom: 12px; }
+.exam-roster { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; border: 1px solid #eef1f5; border-radius: 10px; padding: 8px; }
+.exam-name { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 15.5px; }
+.exam-name:hover { background: #f5f7fa; }
+.exam-name.on { background: #e0edff; font-weight: 600; }
+.exam-btn { display: block; width: 100%; margin-top: 16px; background: #2563eb; color: #fff; border: none; border-radius: 999px; padding: 15px; font-size: 16px; font-weight: 700; cursor: pointer; }
+.exam-btn:hover { background: #1d4ed8; } .exam-btn:disabled { opacity: .55; cursor: default; }
+.exam-q { padding: 16px 0; border-bottom: 1px dashed #e7ebf0; }
+.exam-q:last-child { border-bottom: none; }
+.exam-q-text { font-size: 15.5px; line-height: 1.55; margin-bottom: 10px; }
+.exam-q-text.miss { background: #fff4f4; border-left: 3px solid #ef4444; padding: 6px 10px; border-radius: 6px; }
+.exam-opts { display: flex; flex-direction: column; gap: 8px; }
+.exam-opt { display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px; border: 1.5px solid #e2e6ec; border-radius: 10px; cursor: pointer; font-size: 15px; line-height: 1.4; transition: border-color .12s, background .12s; }
+.exam-opt:hover { border-color: #b9c4d4; }
+.exam-opt.on { border-color: #2563eb; background: #eff5ff; }
+.exam-opt input { display: none; }
+.exam-letter { flex: 0 0 26px; height: 26px; border-radius: 50%; background: #eef1f5; color: #334; display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+.exam-opt.on .exam-letter { background: #2563eb; color: #fff; }
+.exam-bar { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,.96); backdrop-filter: blur(8px); border-top: 1px solid #e2e6ec; padding: 12px clamp(14px,4vw,28px); display: flex; align-items: center; justify-content: space-between; gap: 14px; max-width: 780px; margin: 0 auto; }
+.exam-bar span { font-weight: 600; color: #445; }
+.exam-bar .exam-btn { width: auto; margin: 0; padding: 12px 34px; }
+.exam-result { text-align: center; }
+.exam-score { font-size: 60px; font-weight: 800; color: #2563eb; line-height: 1; margin: 8px 0; }
+.exam-score span { font-size: 24px; color: #97a3b4; }
+.exam-spin { font-size: 46px; margin-bottom: 6px; }
 .game-name { margin-top: 8px; font-weight: 600; font-size: 14px; }
 .game-card { position: relative; }
 .ug-remove { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; border: none; background: rgba(0,0,0,.45); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; z-index: 2; display: grid; place-items: center; }

@@ -54,6 +54,10 @@ export const IconArchive = (p) => (
 export const IconCert = (p) => (
   <svg {...base} {...p}><circle cx="12" cy="9" r="5" /><path d="m8.5 13.5-1.5 6 5-2.5 5 2.5-1.5-6" /><path d="m10 9 1.4 1.4 3-3" /></svg>
 );
+// Icon đề thi (giấy + dấu tích)
+export const IconExam = (p) => (
+  <svg {...base} {...p}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /><path d="m9.5 13.5 1.5 1.5 3-3" /></svg>
+);
 // Icon cửa hàng (Ephata Store)
 export const IconStore = (p) => (
   <svg {...base} {...p}><path d="M4 8h16l-1 3.5a3 3 0 0 1-3 2.5H8a3 3 0 0 1-3-2.5z" /><path d="M4 8 6 4h12l2 4" /><path d="M6 14v6h12v-6" /></svg>
