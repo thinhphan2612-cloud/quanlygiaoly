@@ -267,7 +267,8 @@ function ExamRoom({ examId, onBack }) {
             </table></div>
             {submitted.length > 0 && (
               <div style={{ marginTop: 12 }}>
-                <button className="btn" onClick={saveGrades}>💾 Lưu {submitted.length} điểm vào bảng điểm lớp</button>
+                <button className="btn ghost" onClick={saveGrades}>🔄 Đồng bộ lại điểm sang Điểm số</button>
+                <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>Điểm tự đồng bộ khi các em nộp; nút này chỉ để đồng bộ lại thủ công khi cần.</p>
                 {savedMsg && <div className="info-box" style={{ marginTop: 8 }}>{savedMsg}</div>}
               </div>
             )}
