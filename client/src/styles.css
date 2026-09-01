@@ -661,6 +661,8 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .exam-name { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 15.5px; }
 .exam-name:hover { background: #f5f7fa; }
 .exam-name.on { background: #e0edff; font-weight: 600; }
+.exam-name input[type="radio"] { width: 18px; height: 18px; flex: 0 0 auto; margin: 0; }
+.exam-name span { flex: 1; min-width: 0; }
 .exam-btn { display: block; width: 100%; margin-top: 16px; background: #2563eb; color: #fff; border: none; border-radius: 999px; padding: 15px; font-size: 16px; font-weight: 700; cursor: pointer; }
 .exam-btn:hover { background: #1d4ed8; } .exam-btn:disabled { opacity: .55; cursor: default; }
 .exam-q { padding: 16px 0; border-bottom: 1px dashed #e7ebf0; }
@@ -686,6 +688,7 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .rv-opt.wrong { background: #fee2e2; color: #991b1b; }
 .room-timer { margin: 12px auto 0; display: inline-block; font-size: 20px; font-variant-numeric: tabular-nums; background: #eff6ff; color: #1d4ed8; padding: 8px 20px; border-radius: 999px; font-weight: 600; }
 .room-timer.low { background: #fee2e2; color: #b91c1c; }
+.col-time { display: block; font-weight: 400; font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; }
 .exam-bar .exam-btn { width: auto; margin: 0; padding: 12px 34px; }
 .exam-result { text-align: center; }
 .exam-score { font-size: 60px; font-weight: 800; color: #2563eb; line-height: 1; margin: 8px 0; }

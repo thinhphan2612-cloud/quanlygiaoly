@@ -9,6 +9,14 @@ import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib
 
 const round1 = (n) => Math.round(n * 10) / 10;
 
+// Tách phần "· dd/MM HH:mm(:ss)" ở cuối tên cột (đề thi) xuống dòng nhỏ cho gọn.
+const COL_TIME_RE = /^(.*?)\s·\s(\d{2}\/\d{2}\s\d{2}:\d{2}(?::\d{2})?)$/;
+function colTitle(name) {
+  const m = String(name || '').match(COL_TIME_RE);
+  if (!m) return name;
+  return <>{m[1]}<span className="col-time">{m[2]}</span></>;
+}
+
 export default function Grades() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
@@ -198,7 +206,7 @@ export default function Grades() {
               <thead>
                 <tr>
                   <th className="sticky-col">Học viên</th>
-                  {columns.map((c) => <th key={c.id} className="col-day">{c.name}{Number(c.weight) !== 1 && <span className="wt">x{c.weight}</span>}</th>)}
+                  {columns.map((c) => <th key={c.id} className="col-day">{colTitle(c.name)}{Number(c.weight) !== 1 && <span className="wt">x{c.weight}</span>}</th>)}
                   <th>TB</th><th>Hạng</th>
                 </tr>
               </thead>
@@ -239,7 +247,7 @@ export default function Grades() {
             <div className="table-scroll">
               <table className="grade-table">
                 <thead>
-                  <tr><th>Học viên</th>{columns.map((c) => <th key={c.id}>{c.name}{Number(c.weight) !== 1 && <span className="wt">x{c.weight}</span>}</th>)}<th>TB</th><th>Hạng</th></tr>
+                  <tr><th>Học viên</th>{columns.map((c) => <th key={c.id}>{colTitle(c.name)}{Number(c.weight) !== 1 && <span className="wt">x{c.weight}</span>}</th>)}<th>TB</th><th>Hạng</th></tr>
                 </thead>
                 <tbody>
                   {ranked.map((s) => (
