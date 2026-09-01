@@ -18,10 +18,17 @@ export default function Games() {
   const [pricing, setPricing] = useState(false);
   const [manage, setManage] = useState(false);
   const [proNotice, setProNotice] = useState(false);
+  const [myGames, setMyGames] = useState([]); // game user thêm từ Ephata Store
+  const [playing, setPlaying] = useState(null); // game đang chơi (iframe)
   const isFree = !isPro(plan);
 
   function load() { api.get('/games').then((r) => setGames(r.data)); }
-  useEffect(() => { api.get('/parish').then((r) => setPlan(r.data?.plan || 'free')).catch(() => {}); load(); }, []);
+  function loadMine() { api.get('/user-games').then((r) => setMyGames(r.data)).catch(() => setMyGames([])); }
+  useEffect(() => { api.get('/parish').then((r) => setPlan(r.data?.plan || 'free')).catch(() => {}); load(); loadMine(); }, []);
+  async function removeMine(g) {
+    if (!confirm(`Gỡ "${g.title}" khỏi kho game của bạn?`)) return;
+    try { await api.delete(`/user-games/${g.id}`); loadMine(); } catch (e) { alert(e.response?.data?.error || 'Thất bại'); }
+  }
 
   const unlocked = (g) => rank(plan) >= rank(g.min_plan);
 
@@ -33,6 +40,24 @@ export default function Games() {
           {isAdmin && <button className="btn ghost" onClick={() => (isFree ? setProNotice(true) : setManage(true))}>⚙ Quản lý game</button>}
         </div>
       </div>
+
+      {myGames.length > 0 && (
+        <div className="panel" style={{ marginBottom: 16 }}>
+          <div className="card-head">
+            <h2 style={{ margin: 0 }}>Game của tôi</h2>
+            <span className="muted" style={{ fontSize: 13 }}>Đã thêm từ Ephata Store</span>
+          </div>
+          <div className="game-grid">
+            {myGames.map((g) => (
+              <div key={g.id} className="game-card" onClick={() => setPlaying(g)}>
+                <button className="ug-remove" title="Gỡ khỏi kho" onClick={(e) => { e.stopPropagation(); removeMine(g); }}>×</button>
+                <div className="game-thumb" style={{ background: '#2563eb' }}><span>{g.icon || '◈'}</span></div>
+                <div className="game-name">{g.title}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {COMING_SOON ? (
         <div className="panel coming-hero">
@@ -69,6 +94,20 @@ export default function Games() {
               <button className="btn ghost" onClick={() => setOpen(null)}>Đóng</button>
               {open.url && <a className="btn" href={open.url} target="_blank" rel="noopener noreferrer">▶ Chơi ngay</a>}
             </div>
+          </div>
+        </div>
+      )}
+      {playing && (
+        <div className="game-frame-overlay" onClick={() => setPlaying(null)}>
+          <div className="game-frame-box" onClick={(e) => e.stopPropagation()}>
+            <div className="game-frame-head">
+              <span>{playing.icon || '◈'} {playing.title}</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <a className="btn ghost sm" href={playing.play_url} target="_blank" rel="noopener noreferrer">Mở tab mới ↗</a>
+                <button className="btn ghost sm" onClick={() => setPlaying(null)}>Đóng ✕</button>
+              </div>
+            </div>
+            <iframe className="game-frame" src={playing.play_url} title={playing.title} allow="fullscreen; autoplay; gamepad" />
           </div>
         </div>
       )}

@@ -1080,6 +1080,22 @@ async function handle(method, rawUrl, body = {}) {
       return ok({ ok: true });
     }
 
+    // ---------------- game của TỪNG user (thêm từ Ephata Store) ----------------
+    if (path === '/user-games' && method === 'get') {
+      const { data, error } = await supabase.from('user_games')
+        .select('*').order('created_at', { ascending: false });
+      if (error) {
+        if (/user_games/i.test(error.message || '')) return ok([]); // chưa chạy migration
+        return fail(400, error.message);
+      }
+      return ok(data || []);
+    }
+    if (seg[0] === 'user-games' && seg[1] && method === 'delete') {
+      const { error } = await supabase.from('user_games').delete().eq('id', seg[1]);
+      if (error) return fail(400, error.message);
+      return ok({ ok: true });
+    }
+
     // ---------------- thông báo ----------------
     if (path === '/notifications' && method === 'get') {
       const { data, error } = await supabase.from('notifications')
