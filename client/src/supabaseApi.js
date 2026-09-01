@@ -48,6 +48,11 @@ function genExamCode() {
   let s = ''; for (let i = 0; i < 6; i++) s += c[Math.floor(Math.random() * c.length)];
   return s;
 }
+// Tên cột điểm cho đề thi: kèm ngày + giờ bắt đầu để phân biệt các buổi trùng tên.
+function examColumnName(title) {
+  const d = new Date(); const p = (n) => String(n).padStart(2, '0');
+  return `${title} · ${p(d.getDate())}/${p(d.getMonth() + 1)} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
 
 // Gọi Edge Function admin-api (super-admin). Trả { data } hoặc { error, status }.
 async function adminCall(action, extra = {}) {
@@ -1175,7 +1180,7 @@ async function handle(method, rawUrl, body = {}) {
         const { data: ex } = await supabase.from('exams').select('class_id, grade_column_id, title, weight').eq('id', seg[1]).maybeSingle();
         if (ex && ex.class_id && !ex.grade_column_id) {
           const { data: col } = await supabase.from('grade_columns')
-            .insert({ parish_id: pid, class_id: ex.class_id, name: ex.title, weight: Number(ex.weight) || 1, order_index: 99 }).select('id').single();
+            .insert({ parish_id: pid, class_id: ex.class_id, name: examColumnName(ex.title), weight: Number(ex.weight) || 1, order_index: 99 }).select('id').single();
           if (col) patch.grade_column_id = col.id;
         }
       }
@@ -1203,7 +1208,7 @@ async function handle(method, rawUrl, body = {}) {
       }
       if (!columnId) {
         const { data: col, error: ce } = await supabase.from('grade_columns')
-          .insert({ parish_id: pid, class_id: exam.class_id, name: exam.title, weight: Number(exam.weight) || 1, order_index: 99 }).select().single();
+          .insert({ parish_id: pid, class_id: exam.class_id, name: examColumnName(exam.title), weight: Number(exam.weight) || 1, order_index: 99 }).select().single();
         if (ce) return fail(400, ce.message);
         columnId = col.id;
         await supabase.from('exams').update({ grade_column_id: columnId }).eq('id', exam.id);
