@@ -22,10 +22,10 @@ export default function EphataStore() {
     <div>
       <div className="att-head" style={{ alignItems: 'center' }}>
         <h1 style={{ margin: 0 }}>Ephata Store</h1>
-        <a className="btn" href={STORE_URL} target="_blank" rel="noopener noreferrer">🌐 Mở cửa hàng</a>
+        <a className="btn" href={STORE_URL} target="_blank" rel="noopener noreferrer">🔑 Đăng nhập Ephata Store ↗</a>
       </div>
       <p className="muted" style={{ marginTop: -6 }}>
-        Kho ứng dụng &amp; tiện ích Công giáo. Các tính năng bạn đã mua / thêm từ Ephata Store sẽ hiện tại đây để dùng ngay trong ứng dụng.
+        Kho ứng dụng &amp; tiện ích Công giáo. Đăng nhập bằng <b>chính tài khoản Giáo Lý Số</b> của bạn — tài khoản tự liên kết. Tính năng đã mua / thêm sẽ hiện tại đây để dùng ngay trong ứng dụng.
       </p>
 
       {loading ? <div className="panel"><p className="muted">Đang tải…</p></div> : (

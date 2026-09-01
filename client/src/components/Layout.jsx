@@ -229,6 +229,7 @@ export default function Layout({ children }) {
                     {user?.role === 'admin' && (
                       <button className="user-menu-item" onClick={() => navigate('/settings')}>⚙ Cài đặt quản lý</button>
                     )}
+                    <button className="user-menu-item" onClick={() => { setMenuOpen(false); window.open('https://ephatastore.com', '_blank', 'noopener'); }}>🔑 Đăng nhập Ephata Store ↗</button>
                     <button className="user-menu-item" onClick={() => { setMenuOpen(false); setPwModal(true); }}>🔑 Đổi mật khẩu</button>
                     <button className="user-menu-item danger" onClick={handleLogout}><IconLogout /> Đăng xuất</button>
                   </div>
