@@ -183,6 +183,7 @@ function ExamRoom({ examId, onBack }) {
       { label: 'Số câu đúng', get: (r) => (r.correct_count ?? ''), width: 11 },
       { label: 'Tổng câu', get: (r) => (r.total ?? ''), width: 9 },
       { label: 'Nộp lúc', get: (r) => (r.submitted_at ? new Date(r.submitted_at).toLocaleString('vi-VN') : ''), width: 19 },
+      { label: 'Rời MH', get: (r) => (r.leave_count || 0), width: 8 },
       ...qs.map((q, qi) => ({ label: 'C' + (qi + 1), get: (r) => { const c = r.answers?.[q.id]; return c == null ? '—' : (c === q.correct ? 'Đ' : 'S'); }, width: 5 })),
     ];
     exportXlsx({
@@ -273,7 +274,7 @@ function ExamRoom({ examId, onBack }) {
               <tbody>
                 {attempts.map((a) => (
                   <tr key={a.id} className={a.status === 'submitted' ? 'click-row' : ''} onClick={() => a.status === 'submitted' && setReviewing(a)}>
-                    <td>{a.student_name}{a.status === 'submitted' && <span className="muted" style={{ fontSize: 11 }}> · xem lại</span>}</td>
+                    <td>{a.student_name}{a.leave_count > 0 && <span title="Số lần rời màn hình thi" style={{ color: '#dc2626', fontWeight: 700, fontSize: 12 }}> ⚠{a.leave_count}</span>}{a.status === 'submitted' && <span className="muted" style={{ fontSize: 11 }}> · xem lại</span>}</td>
                     <td>{a.status === 'submitted' ? <span className="tag-chip" style={{ background: '#dcfce7', color: '#15803d' }}>Đã nộp</span> : <span className="muted">Đang làm</span>}</td>
                     <td style={{ fontWeight: 600 }}>{a.score != null ? a.score : '—'}{a.total ? <span className="muted" style={{ fontSize: 12 }}> ({a.correct_count}/{a.total})</span> : ''}</td>
                   </tr>

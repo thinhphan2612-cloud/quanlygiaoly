@@ -96,6 +96,24 @@ export default function ExamTake() {
     })();
   }, [attempt, revealed, exam, timeLeft, deadline, submitted]); // eslint-disable-line
 
+  // Chống gian lận: khi đang làm bài, chặn bôi đen/copy/cut/chuột phải để không sao chép câu hỏi ra ngoài.
+  const taking = !!(attempt && exam && exam.status === 'started' && displayQs && !submitted && !revealed);
+  const [leftWarn, setLeftWarn] = useState(false);
+  useEffect(() => {
+    if (!taking) return;
+    const block = (e) => e.preventDefault();
+    // Rời màn hình (đổi app/tab, chụp màn hình…) -> ghi nhận + cảnh báo.
+    const onHide = () => { if (document.visibilityState === 'hidden') { supabase.rpc('exam_leave', { p_attempt_id: attempt.id }).catch(() => {}); setLeftWarn(true); } };
+    document.addEventListener('copy', block);
+    document.addEventListener('cut', block);
+    document.addEventListener('contextmenu', block);
+    document.addEventListener('visibilitychange', onHide);
+    return () => {
+      document.removeEventListener('copy', block); document.removeEventListener('cut', block);
+      document.removeEventListener('contextmenu', block); document.removeEventListener('visibilitychange', onHide);
+    };
+  }, [taking, attempt]);
+
   const shownRoster = useMemo(() => { const t = search.trim().toLowerCase(); return roster.filter((r) => !t || (r.name || '').toLowerCase().includes(t)); }, [roster, search]);
 
   async function join() {
@@ -186,8 +204,9 @@ export default function ExamTake() {
     const low = timeLeft != null && timeLeft <= 60000;
     return (
       <div className="exam-wrap">
-        <div className="exam-paper">
+        <div className="exam-paper exam-noselect">
           <div className="exam-head"><h1>{exam.title}</h1><p className="muted">Họ tên: <b>{attempt.name}</b> · Lớp {exam.class_name}</p></div>
+          {leftWarn && <div className="exam-warn">⚠ Con vừa rời khỏi màn hình thi. Vui lòng ở lại trang cho đến khi nộp — mỗi lần rời màn hình đều được ghi lại cho giáo lý viên.</div>}
           {displayQs.map((q, i) => (
             <div className="exam-q" id={'q-' + q.id} key={q.id}>
               <div className={`exam-q-text ${showMissing && answers[q.id] == null ? 'miss' : ''}`}><b>Câu {i + 1}.</b> {q.text}</div>

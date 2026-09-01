@@ -689,6 +689,8 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .room-timer { margin: 12px auto 0; display: inline-block; font-size: 20px; font-variant-numeric: tabular-nums; background: #eff6ff; color: #1d4ed8; padding: 8px 20px; border-radius: 999px; font-weight: 600; }
 .room-timer.low { background: #fee2e2; color: #b91c1c; }
 .col-time { display: block; font-weight: 400; font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; }
+.exam-noselect, .exam-noselect * { -webkit-user-select: none; -moz-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.exam-warn { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; border-radius: 10px; padding: 10px 14px; font-size: 13.5px; line-height: 1.5; margin-bottom: 14px; }
 .exam-bar .exam-btn { width: auto; margin: 0; padding: 12px 34px; }
 .exam-result { text-align: center; }
 .exam-score { font-size: 60px; font-weight: 800; color: #2563eb; line-height: 1; margin: 8px 0; }
