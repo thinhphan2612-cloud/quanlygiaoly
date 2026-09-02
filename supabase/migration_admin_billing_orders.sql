@@ -18,7 +18,8 @@ create policy plan_tiers_read on public.plan_tiers for select using (true);  -- 
 insert into public.plan_tiers (id, label, price, order_index) values
   (1, 'Giáo xứ nhỏ — tối đa 5 lớp', 1500000, 1),
   (2, 'Giáo xứ vừa — 6 đến 12 lớp', 2900000, 2),
-  (3, 'Giáo xứ lớn — từ 13 lớp',     null,    3)
+  (3, 'Giáo xứ lớn — 13 đến 20 lớp', 5200000, 3),
+  (4, 'Giáo xứ rất lớn — trên 20 lớp', null,   4)
 on conflict (id) do nothing;
 
 -- 2) Mã giảm giá. Đọc qua RPC get_discount (không lộ cả bảng), ghi qua service_role.

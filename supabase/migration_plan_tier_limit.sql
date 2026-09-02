@@ -9,10 +9,11 @@
 alter table public.parishes  add column if not exists plan_max_classes int;
 alter table public.plan_tiers add column if not exists max_classes int;
 
--- Mức nhỏ = 5 lớp, vừa = 12 lớp, lớn = không giới hạn (null).
+-- Nhỏ = 5, vừa = 12, lớn = 20, rất lớn (trên 20) = liên hệ / không giới hạn (null).
 update public.plan_tiers set max_classes = 5    where id = 1;
 update public.plan_tiers set max_classes = 12   where id = 2;
-update public.plan_tiers set max_classes = null where id = 3;
+update public.plan_tiers set max_classes = 20   where id = 3;
+update public.plan_tiers set max_classes = null where id = 4;
 
 -- Chặn tạo lớp vượt mức (free = 1 lớp; pro = plan_max_classes; null = vô hạn).
 -- Chỉ tính lớp đang hoạt động (chưa tốt nghiệp/lưu trữ).

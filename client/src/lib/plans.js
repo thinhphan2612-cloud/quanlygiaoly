@@ -44,7 +44,8 @@ export const PLANS = [
 export const PRO_TIERS = [
   { label: 'Giáo xứ nhỏ — tối đa 5 lớp', price: '1.500.000đ', period: '/niên khóa' },
   { label: 'Giáo xứ vừa — 6 đến 12 lớp', price: '2.900.000đ', period: '/niên khóa' },
-  { label: 'Giáo xứ lớn — từ 13 lớp', price: 'Liên hệ', period: '' },
+  { label: 'Giáo xứ lớn — 13 đến 20 lớp', price: '5.200.000đ', period: '/niên khóa' },
+  { label: 'Giáo xứ rất lớn — trên 20 lớp', price: 'Liên hệ', period: '' },
 ];
 
 // Game mở khóa khi gói của giáo xứ đạt gói tối thiểu của game
