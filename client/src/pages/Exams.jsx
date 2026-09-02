@@ -69,6 +69,7 @@ function ExamBuilder({ classes, onDone, onCancel }) {
   const [err, setErr] = useState('');
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(null); // câu đang sửa / thêm mới
+  const [qtab, setQtab] = useState('bank');     // bank | chosen
 
   useEffect(() => {
     fetch('/exam-question-bank.json').then((r) => r.json()).then((b) => {
@@ -139,57 +140,62 @@ function ExamBuilder({ classes, onDone, onCancel }) {
       </div>
 
       <div className="panel">
-        <div className="card-head"><h2 style={{ margin: 0 }}>Chọn câu hỏi</h2>
-          <span className="muted" style={{ fontSize: 13 }}>Đã chọn <b>{pickedList.length}</b> câu</span></div>
-        {!bank ? <p className="muted">Đang tải ngân hàng câu hỏi…</p> : (
-          <>
-            <div className="row" style={{ alignItems: 'flex-end' }}>
-              <div className="field" style={{ flex: 1 }}><label>Ngân hàng (theo cấp)</label>
-                <select value={topicId} onChange={(e) => setTopicId(e.target.value)}>
-                  {bank.topics.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.count} câu)</option>)}
-                </select>
-              </div>
-              <div className="field" style={{ flex: '0 0 110px' }}><label>Số câu bốc</label><input type="number" min="1" value={n} onChange={(e) => setN(e.target.value)} /></div>
-              <div className="field" style={{ flex: '0 0 auto' }}><button className="btn ghost" onClick={pickRandom}>🎲 Bốc ngẫu nhiên</button></div>
-              <div className="field" style={{ flex: '0 0 auto' }}><button className="btn ghost" onClick={clearTopic}>Bỏ chọn cấp này</button></div>
-            </div>
-            <div className="pick-list" style={{ maxHeight: 340 }}>
-              {(topic?.questions || []).map((q) => (
-                <label key={q.id} className="fp-chk" style={{ alignItems: 'flex-start' }}>
-                  <input type="checkbox" checked={isPicked(q)} onChange={() => toggle(q)} style={{ marginTop: 3 }} />
-                  <span style={{ fontSize: 13.5 }}>{q.text}</span>
-                </label>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="panel">
-        <div className="card-head"><h2 style={{ margin: 0 }}>Câu hỏi trong đề ({pickedList.length})</h2>
-          <button className="btn ghost sm" onClick={() => setEditing({ text: '', options: ['', ''], correct: 0 })}>➕ Thêm câu tự soạn</button>
+        <div className="seg" style={{ flexWrap: 'wrap', marginBottom: 12 }}>
+          <button type="button" className={`seg-btn ${qtab === 'bank' ? 'on' : ''}`} onClick={() => setQtab('bank')}>Ngân hàng câu hỏi</button>
+          <button type="button" className={`seg-btn ${qtab === 'chosen' ? 'on' : ''}`} onClick={() => setQtab('chosen')}>Câu hỏi trong đề ({pickedList.length})</button>
         </div>
-        {pickedList.length === 0 ? (
-          <p className="muted">Chưa có câu nào. Bốc từ ngân hàng ở trên, hoặc bấm "Thêm câu tự soạn". Câu nào cũng sửa / xoá được trước khi tạo đề.</p>
-        ) : (
-          <div className="pick-list" style={{ maxHeight: 460 }}>
-            {pickedList.map((q, i) => (
-              <div className="rv-q" key={q.id}>
-                <div className="rv-q-t" style={{ display: 'flex', gap: 8 }}>
-                  <span style={{ flex: 1 }}><b>Câu {i + 1}.</b> {q.text}{q.custom ? <span className="muted" style={{ fontSize: 11 }}> · tự soạn</span> : ''}</span>
-                  <span className="row-links" style={{ whiteSpace: 'nowrap' }}>
-                    <button onClick={() => setEditing(q)}>Sửa</button>
-                    <button className="danger" onClick={() => removeQ(q.id)}>Xoá</button>
-                  </span>
+
+        {qtab === 'bank' ? (
+          !bank ? <p className="muted">Đang tải ngân hàng câu hỏi…</p> : (
+            <>
+              <div className="row" style={{ alignItems: 'flex-end' }}>
+                <div className="field" style={{ flex: '1 1 200px' }}><label>Ngân hàng (theo cấp)</label>
+                  <select value={topicId} onChange={(e) => setTopicId(e.target.value)}>
+                    {bank.topics.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.count} câu)</option>)}
+                  </select>
                 </div>
-                {(q.options || []).map((opt, idx) => (
-                  <div key={idx} className={`rv-opt ${idx === q.correct ? 'correct' : ''}`}>
-                    <b>{LETTERS[idx]}.</b> {opt}{idx === q.correct && <span className="rv-tag ok"> đáp án</span>}
+                <div className="field" style={{ flex: '0 0 100px' }}><label>Số câu bốc</label><input type="number" min="1" value={n} onChange={(e) => setN(e.target.value)} /></div>
+                <div className="field" style={{ flex: '1 1 auto' }}><button className="btn ghost" style={{ width: '100%' }} onClick={pickRandom}>🎲 Bốc ngẫu nhiên</button></div>
+                <div className="field" style={{ flex: '1 1 auto' }}><button className="btn ghost" style={{ width: '100%' }} onClick={clearTopic}>Bỏ chọn cấp này</button></div>
+              </div>
+              <div className="pick-list" style={{ maxHeight: '52vh' }}>
+                {(topic?.questions || []).map((q) => (
+                  <label key={q.id} className="fp-chk" style={{ alignItems: 'flex-start' }}>
+                    <input type="checkbox" checked={isPicked(q)} onChange={() => toggle(q)} style={{ marginTop: 3 }} />
+                    <span style={{ fontSize: 13.5 }}>{q.text}</span>
+                  </label>
+                ))}
+              </div>
+            </>
+          )
+        ) : (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+              <button className="btn ghost sm" onClick={() => setEditing({ text: '', options: ['', ''], correct: 0 })}>➕ Thêm câu tự soạn</button>
+            </div>
+            {pickedList.length === 0 ? (
+              <p className="muted">Chưa có câu nào. Sang tab <b>Ngân hàng câu hỏi</b> để bốc, hoặc bấm "Thêm câu tự soạn". Câu nào cũng sửa / xoá được trước khi tạo đề.</p>
+            ) : (
+              <div className="pick-list" style={{ maxHeight: '56vh' }}>
+                {pickedList.map((q, i) => (
+                  <div className="rv-q" key={q.id}>
+                    <div className="rv-q-t" style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                      <span style={{ flex: 1, minWidth: 0 }}><b>Câu {i + 1}.</b> {q.text}{q.custom ? <span className="muted" style={{ fontSize: 11 }}> · tự soạn</span> : ''}</span>
+                      <span className="row-links" style={{ whiteSpace: 'nowrap' }}>
+                        <button onClick={() => setEditing(q)}>Sửa</button>
+                        <button className="danger" onClick={() => removeQ(q.id)}>Xoá</button>
+                      </span>
+                    </div>
+                    {(q.options || []).map((opt, idx) => (
+                      <div key={idx} className={`rv-opt ${idx === q.correct ? 'correct' : ''}`}>
+                        <b>{LETTERS[idx]}.</b> {opt}{idx === q.correct && <span className="rv-tag ok"> đáp án</span>}
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
 
@@ -227,16 +233,18 @@ function QuestionEditor({ init, onSave, onClose }) {
         <h2 style={{ marginTop: 0 }}>{init.id ? 'Sửa câu hỏi' : 'Thêm câu hỏi'}</h2>
         <div className="field"><label>Nội dung câu hỏi *</label>
           <textarea rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="VD: Bí tích nào Chúa Giêsu lập trong bữa Tiệc Ly?" /></div>
-        <div className="field"><label>Các đáp án <span className="muted" style={{ fontWeight: 400 }}>— chọn ô tròn ở đáp án ĐÚNG</span></label></div>
+        <div className="field" style={{ marginBottom: 6 }}><label>Các đáp án <span className="muted" style={{ fontWeight: 400 }}>— chấm ô tròn ở đáp án ĐÚNG</span></label></div>
         {options.map((o, i) => (
-          <div key={i} className="row" style={{ alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <input type="radio" name="correct" checked={correct === i} onChange={() => setCorrect(i)} title="Đáp án đúng" />
-            <b style={{ width: 18 }}>{LETTERS[i]}.</b>
-            <input style={{ flex: 1 }} value={o} onChange={(e) => setOpt(i, e.target.value)} placeholder={`Đáp án ${LETTERS[i]}`} />
-            {options.length > 2 && <button className="btn ghost sm" onClick={() => rmOpt(i)} title="Bỏ đáp án">✕</button>}
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <input type="radio" name="correct" checked={correct === i} onChange={() => setCorrect(i)} title="Đặt làm đáp án đúng" style={{ flex: '0 0 auto', width: 18, height: 18, margin: 0, cursor: 'pointer' }} />
+            <b style={{ flex: '0 0 22px' }}>{LETTERS[i]}.</b>
+            <input style={{ flex: '1 1 auto', minWidth: 0 }} value={o} onChange={(e) => setOpt(i, e.target.value)} placeholder={`Đáp án ${LETTERS[i]}`} />
+            {options.length > 2
+              ? <button type="button" onClick={() => rmOpt(i)} title="Bỏ đáp án" style={{ flex: '0 0 auto', width: 34, height: 34, border: '1px solid var(--border,#d1d5db)', borderRadius: 8, background: 'transparent', color: '#dc2626', cursor: 'pointer', fontSize: 15, lineHeight: 1 }}>✕</button>
+              : <span style={{ flex: '0 0 34px' }} />}
           </div>
         ))}
-        {options.length < 6 && <button className="btn ghost sm" onClick={addOpt}>+ Thêm đáp án</button>}
+        {options.length < 6 && <button className="btn ghost sm" type="button" onClick={addOpt} style={{ marginTop: 2 }}>+ Thêm đáp án</button>}
         <div className="modal-actions">
           <button className="btn ghost" onClick={onClose}>Huỷ</button>
           <button className="btn" onClick={save}>Lưu câu</button>
