@@ -42,7 +42,14 @@ h1, h2, h3, .brand { font-family: inherit; letter-spacing: -0.022em; }
   top: 0;
   height: 100vh;
   border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
 }
+.sidebar .brand { flex-shrink: 0; }
+/* menu chiếm phần giữa & cuộn nếu dài; card khuyến mãi + góp ý ghim đáy */
+.sidebar nav { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+.side-foot { flex-shrink: 0; margin-top: 12px; }
+.side-foot > .upgrade-card, .side-foot > .side-card { margin-top: 0; }
 .sidebar .brand {
   display: flex; align-items: center; gap: 10px;
   font-size: 17px; font-weight: 700; color: var(--heading);
@@ -996,7 +1003,8 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 #sec-overview, #sec-parishes, #sec-orders, #sec-payments, #sec-codes, #sec-tiers { scroll-margin-top: 76px; }
 .pager { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 14px 0 2px; }
 .plan-card .pc-badge { display: inline-block; background: rgba(255,255,255,.22); color: #fff; font-weight: 700; font-size: 12.5px; padding: 3px 12px; border-radius: 999px; margin-bottom: 10px; }
-.plan-card .pc-feats { color: #fff; opacity: .93; font-size: 12px; line-height: 1.8; text-align: left; margin-bottom: 12px; }
+.plan-card .pc-feats { color: #fff; opacity: .93; font-size: 12px; line-height: 1.5; text-align: left; margin-bottom: 12px; }
+.plan-card .pc-feats > div { padding-left: 1.15em; text-indent: -1.15em; margin: 5px 0; }
 .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
 .store-card { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; background: var(--surface, #fff); }
 .store-card.owned { border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }

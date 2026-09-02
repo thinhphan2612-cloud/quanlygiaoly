@@ -144,6 +144,7 @@ export default function Layout({ children }) {
             </div>
           )}
         </nav>
+        <div className="side-foot">
         {(sa || user?.role === 'teacher') ? null : !pro ? (
           <div className="upgrade-card" onClick={() => setPricing(true)}>
             <div className="emoji">🚀</div>
@@ -154,14 +155,15 @@ export default function Layout({ children }) {
           <div className="side-card plan-card">
             <div className="pc-badge">✦ Gói {planName(plan)}</div>
             <div className="pc-feats">
-              ✓ Không giới hạn lớp &amp; giáo lý viên<br />
-              ✓ Điểm danh · điểm số · thi đua<br />
-              ✓ Chứng chỉ · lưu trữ · game
+              <div>✓ Không giới hạn lớp &amp; giáo lý viên</div>
+              <div>✓ Điểm danh · điểm số · thi đua</div>
+              <div>✓ Chứng chỉ · lưu trữ · game</div>
             </div>
             <button className="btn-w" onClick={() => setPricing(true)}>Xem gói &amp; nâng cấp</button>
           </div>
         )}
         <button className="feedback-link" onClick={() => setFeedback(true)}>💬 Góp ý / liên hệ tác giả</button>
+        </div>
       </aside>
       {navOpen && <div className="nav-backdrop" onClick={() => setNavOpen(false)} />}
 
