@@ -774,6 +774,29 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .pro-tier:last-child { border-bottom: none; }
 .pro-tier b { color: var(--primary); white-space: nowrap; }
 
+/* ---------- Pricing modal (thiết kế lại) ---------- */
+.pricing-cur { display: flex; align-items: center; gap: 8px; background: var(--primary-soft); color: var(--primary); border-radius: 12px; padding: 10px 14px; font-size: 13.5px; margin-bottom: 16px; }
+.pricing-cur .pc-dot { font-size: 10px; }
+.pricing-cur b { color: var(--heading); }
+.tier-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(184px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.tier-card { position: relative; border: 1px solid var(--border); border-radius: 14px; padding: 16px 14px; display: flex; flex-direction: column; background: var(--panel); }
+.tier-card.cur { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,.18); background: var(--primary-soft); }
+.tier-card .tc-name { font-weight: 700; font-size: 15px; color: var(--heading); }
+.tier-card .tc-range { color: var(--muted); font-size: 12.5px; min-height: 17px; }
+.tier-card .tc-price { font-size: 20px; font-weight: 800; color: var(--heading); margin: 10px 0 12px; line-height: 1.1; }
+.tier-card .tc-price small { font-size: 11.5px; font-weight: 500; color: var(--muted); }
+.tier-card .tc-price.free { color: #15803d; }
+.tier-card button { margin-top: auto; width: 100%; }
+.tier-card .tc-cur { margin-top: auto; text-align: center; font-weight: 700; color: var(--primary); font-size: 13px; padding: 8px; border: 1px dashed var(--primary); border-radius: 10px; }
+.tier-card .tc-note { margin-top: auto; text-align: center; color: var(--muted); font-size: 12.5px; padding: 8px; }
+.tc-badge { position: absolute; top: -9px; left: 14px; background: var(--primary); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+.tc-badge.pop { background: #f59e0b; }
+.pro-benefits { border-top: 1px solid var(--border); padding-top: 16px; }
+.pro-benefits .pb-title { font-weight: 700; margin-bottom: 10px; font-size: 14px; color: var(--heading); }
+.pro-benefits .pb-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 5px 18px; font-size: 13px; }
+.pro-benefits .pb-list li { color: var(--muted); line-height: 1.5; padding-left: 20px; position: relative; }
+.pro-benefits .pb-list li::before { content: '✓'; position: absolute; left: 0; color: var(--primary); font-weight: 700; }
+
 /* ---------- Tiện ích mở rộng (entitlement) ---------- */
 .ext-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
 .ext-card { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; }

@@ -13,7 +13,6 @@ const qrUrl = (amount, order) =>
   `https://img.vietqr.io/image/${BANK.bin}-${BANK.acc}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(order)}&accountName=${encodeURIComponent(BANK.name)}`;
 
 export default function PricingModal({ current = 'free', onClose }) {
-  const currentKey = isPro(current) ? 'pro' : 'free';
   const { user } = useAuth();
   const { parish } = useParish();
   const [msg, setMsg] = useState('');
@@ -30,7 +29,14 @@ export default function PricingModal({ current = 'free', onClose }) {
 
   useEffect(() => { api.get('/upgrade/tiers').then((r) => setTiers(r.data)).catch(() => {}); }, []);
   const proFeatures = PLANS.find((p) => p.key === 'pro')?.features || [];
-  const freePlan = PLANS.find((p) => p.key === 'free');
+  const isFreeNow = !isPro(current);
+  const curMax = parish?.plan_max_classes ?? null;
+  const isCurTier = (t) => isPro(current) && curMax != null && t.max_classes === curMax;
+  const curTier = tiers.find(isCurTier);
+  const curLabel = isFreeNow
+    ? 'Khởi động — miễn phí (1 lớp)'
+    : curTier ? curTier.label : (curMax ? `Pro — tối đa ${curMax} lớp` : 'Pro — không giới hạn lớp');
+  const splitLabel = (lbl) => { const [a, ...rest] = String(lbl || '').split('—'); return [a.trim(), rest.join('—').trim()]; };
 
   const discountAmount = (price) =>
     !disc ? 0 : disc.kind === 'percent' ? Math.floor((price * disc.value) / 100) : Math.min(disc.value, price);
@@ -75,35 +81,49 @@ export default function PricingModal({ current = 'free', onClose }) {
         {step === 'choose' && (
           <>
             <h2 style={{ marginTop: 0 }}>Các gói dịch vụ</h2>
-            <p className="muted" style={{ marginTop: 0 }}>
-              Tính theo <b>giáo xứ</b>, mỗi <b>niên khóa</b>. Gói Pro chia bậc theo số lớp để công bằng với quy mô.
+            <p className="muted" style={{ marginTop: 0, marginBottom: 12 }}>
+              Tính theo <b>giáo xứ</b>, mỗi <b>niên khóa</b>. Gói Pro chia mức theo số lớp cho công bằng với quy mô.
             </p>
-            <div className="pricing-grid two">
-              <div className={`price-card ${currentKey === 'free' ? 'current' : ''}`}>
-                <div className="price-name">{freePlan?.name || 'Khởi động'}</div>
-                <div className="price-amount">Miễn phí</div>
-                <ul className="price-feats">{(freePlan?.features || []).map((f, i) => <li key={i}>✓ {f}</li>)}</ul>
-                {currentKey === 'free' && <div className="price-current-badge">Gói hiện tại</div>}
+
+            <div className="pricing-cur">
+              <span className="pc-dot">●</span> Gói hiện tại của bạn: <b>{curLabel}</b>
+            </div>
+
+            <div className="tier-cards">
+              <div className={`tier-card ${isFreeNow ? 'cur' : ''}`}>
+                {isFreeNow && <span className="tc-badge">Gói hiện tại</span>}
+                <div className="tc-name">Khởi động</div>
+                <div className="tc-range">Miễn phí · quản lý 1 lớp</div>
+                <div className="tc-price free">Miễn phí</div>
+                {isFreeNow
+                  ? <div className="tc-cur">Đang dùng</div>
+                  : <div className="tc-note">Mức cơ bản</div>}
               </div>
 
-              <div className="price-card featured">
-                <div className="price-tag">Khuyên dùng</div>
-                <div className="price-name">Pro (trọn gói)</div>
-                <div className="price-amount" style={{ fontSize: 18 }}>Theo quy mô<span className="price-period">/niên khóa</span></div>
-                <div className="pro-tiers">
-                  {tiers.map((t) => (
-                    <div className="pro-tier" key={t.id}>
-                      <span>{t.label}</span>
-                      {t.price == null
-                        ? <button className="btn ghost sm" onClick={() => { setTier(t); setStep('pay'); }}>Liên hệ</button>
-                        : <button className="btn sm" onClick={() => pickTier(t)}>{vnd(t.price)} · Chọn</button>}
-                    </div>
-                  ))}
-                  {tiers.length === 0 && <div className="muted" style={{ fontSize: 13 }}>Đang tải bảng giá…</div>}
-                </div>
-                <ul className="price-feats">{proFeatures.map((f, i) => <li key={i}>✓ {f}</li>)}</ul>
-              </div>
+              {tiers.map((t, i) => {
+                const [tname, trange] = splitLabel(t.label);
+                const cur = isCurTier(t);
+                return (
+                  <div className={`tier-card ${cur ? 'cur' : ''}`} key={t.id}>
+                    {cur ? <span className="tc-badge">Gói hiện tại</span>
+                      : i === 1 ? <span className="tc-badge pop">Phổ biến</span> : null}
+                    <div className="tc-name">{tname}</div>
+                    <div className="tc-range">{trange || ' '}</div>
+                    <div className="tc-price">{t.price == null ? 'Liên hệ' : vnd(t.price)}{t.price != null && <small> / niên khóa</small>}</div>
+                    {cur ? <div className="tc-cur">Đang dùng</div>
+                      : t.price == null ? <button className="btn ghost" onClick={() => { setTier(t); setStep('pay'); }}>Liên hệ tư vấn</button>
+                        : <button className="btn" onClick={() => pickTier(t)}>Chọn mức này</button>}
+                  </div>
+                );
+              })}
+              {tiers.length === 0 && <div className="muted" style={{ fontSize: 13, gridColumn: '1 / -1' }}>Đang tải bảng giá…</div>}
             </div>
+
+            <div className="pro-benefits">
+              <div className="pb-title">Mọi mức Pro đều gồm:</div>
+              <ul className="pb-list">{proFeatures.map((f, i) => <li key={i}>{f}</li>)}</ul>
+            </div>
+
             <div className="modal-actions"><button className="btn ghost" onClick={onClose}>Đóng</button></div>
           </>
         )}
