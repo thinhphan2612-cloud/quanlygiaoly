@@ -904,7 +904,7 @@ async function handle(method, rawUrl, body = {}) {
           await supabase.from('school_years').update({ is_current: false }).eq('parish_id', pid);
           await supabase.from('school_years').update({ is_current: true }).eq('id', syId);
           const { data: p } = await supabase.from('parishes').select('settings').eq('id', pid).maybeSingle();
-          await supabase.from('parishes').update({ settings: { ...(p?.settings || {}), current_school_year: nextYear } }).eq('id', pid);
+          await supabase.from('parishes').update({ settings: { ...(p?.settings || {}), current_school_year: nextYear, promotion_open: false } }).eq('id', pid);
         }
       }
       return ok({ promoted, stayed, graduated, new_year: nextYear });
@@ -954,6 +954,15 @@ async function handle(method, rawUrl, body = {}) {
       }
       if (error) return fail(400, error.message);
       return ok(data);
+    }
+    // GLV rút yêu cầu đã gửi (chỉ khi Admin CHƯA duyệt).
+    if (seg[0] === 'class-review' && seg[1] && method === 'delete') {
+      const { data: r } = await supabase.from('class_reviews').select('id, status').eq('class_id', seg[1]).maybeSingle();
+      if (!r) return ok({ ok: true });
+      if (r.status === 'approved') return fail(400, 'Đơn đã được Admin duyệt, không thể hủy.');
+      const { error } = await supabase.from('class_reviews').delete().eq('class_id', seg[1]);
+      if (error) return fail(400, error.message);
+      return ok({ ok: true });
     }
     // Admin: danh sách các lớp đang hoạt động + trạng thái đơn (cho trang Tổng quan).
     if (path === '/reviews-pending' && method === 'get') {

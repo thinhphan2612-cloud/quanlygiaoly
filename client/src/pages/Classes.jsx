@@ -42,8 +42,9 @@ export default function Classes() {
   const navigate = useNavigate();
   const isAdmin = user?.role === 'admin';
   const isTeacher = user?.role === 'teacher';
-  const { parish } = useParish();
+  const { parish, reload: reloadParish } = useParish();
   const isFree = !isPro(parish?.plan || 'free');
+  const promotionOpen = !!parish?.settings?.promotion_open; // cổng xét lên lớp (lớp chính quy)
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [allStudents, setAllStudents] = useState([]);
@@ -64,6 +65,20 @@ export default function Classes() {
     api.get('/reviews-pending').then((r) => {
       const m = {}; (r.data || []).forEach((x) => { m[x.class_id] = x; }); setRev2(m);
     }).catch(() => {});
+  }
+  // Admin mở/đóng kỳ xét lên lớp (toàn xứ, áp cho lớp chính quy).
+  async function togglePromotion() {
+    const open = !promotionOpen;
+    try {
+      await api.put('/parish', { settings: { ...(parish?.settings || {}), promotion_open: open } });
+      reloadParish();
+    } catch (e) { alert(e.response?.data?.error || 'Không đổi được trạng thái kỳ xét'); }
+  }
+  // GLV rút lại yêu cầu đã gửi (khi Admin chưa duyệt).
+  async function cancelReview(c) {
+    if (!confirm(`Hủy gửi duyệt lớp "${c.name}"? Lớp sẽ được rút khỏi danh sách chờ của Admin.`)) return;
+    try { await api.delete(`/class-review/${c.id}`); loadReviews(); }
+    catch (e) { alert(e.response?.data?.error || 'Hủy gửi thất bại'); }
   }
   useEffect(() => {
     load();
@@ -322,6 +337,12 @@ export default function Classes() {
         <div className="toolbar">
           {!reached && <button className="btn" onClick={openCreate}>+ Thêm lớp</button>}
           {!isFree && <button className="btn ghost" onClick={openOrder} disabled={classes.length < 2}>⚙ Cài đặt lớp học</button>}
+          {!isFree && (
+            <button className={`btn ${promotionOpen ? 'danger' : ''} ghost`} onClick={togglePromotion} title="Mở để các lớp chính quy gửi kết quả lên lớp / ở lại cho bạn duyệt">
+              {promotionOpen ? '🔒 Đóng kỳ xét lên lớp' : '📢 Mở kỳ xét lên lớp'}
+            </button>
+          )}
+          {!isFree && promotionOpen && <span className="muted" style={{ fontSize: 12, alignSelf: 'center' }}>Đang mở — các lớp chính quy có thể gửi kết quả để bạn duyệt.</span>}
           {reached && (
             <span className="muted" style={{ fontSize: 13 }}>
               {isFree
@@ -363,7 +384,14 @@ export default function Classes() {
                 {showActions && (
                   <td style={{ whiteSpace: 'nowrap' }}>
                     <button className="btn ghost sm" onClick={() => openSac(c)}>✝ Ghi bí tích</button>{' '}
-                    {rev2[c.id]?.status !== 'approved' && <button className="btn ghost sm" onClick={() => openReview(c)}>🏁 Kết thúc lớp</button>}{' '}
+                    {(() => {
+                      const st = rev2[c.id]?.status;
+                      const canSubmit = c.kind === 'external' || promotionOpen; // chính quy: chờ Admin mở cổng
+                      if (st === 'approved') return null;
+                      if (st === 'submitted') return <><button className="btn ghost sm" onClick={() => cancelReview(c)}>↩ Hủy gửi</button>{' '}</>;
+                      if (canSubmit) return <><button className="btn ghost sm" onClick={() => openReview(c)}>{st === 'revision' ? '🏁 Gửi lại' : '🏁 Kết thúc lớp'}</button>{' '}</>;
+                      return null;
+                    })()}
                     {isAdmin && <><button className="btn ghost sm" onClick={() => openEdit(c)}>Sửa</button>{' '}
                       <button className="btn danger sm" onClick={() => remove(c)}>Xóa</button></>}
                   </td>
