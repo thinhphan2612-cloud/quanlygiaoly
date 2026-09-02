@@ -185,14 +185,14 @@ html,body{width:100%;height:100%}
 .sign .sig-gap{height:7cqw}
 .sign .pr-name{font-weight:400}
 /* Hôn nhân */
-.m-org{position:absolute;top:6%;left:9%;font-weight:700;font-size:1.7cqw;line-height:1.3;text-transform:uppercase;z-index:2}
-.m-quote{position:absolute;top:6%;right:9%;text-align:right;font-weight:700;font-size:1.55cqw;line-height:1.35;max-width:32%;z-index:2}
-.m-title{font-size:4.2cqw;margin:0 0 1.4cqw}
-.m-cert{font-size:2.15cqw;margin-bottom:1.4cqw}
-.m-name{font-family:'PlayfairSC',serif;font-size:3.3cqw;margin-bottom:.8cqw}
-.m-line{font-size:2cqw;margin:.5cqw 0}
-.m-parents{display:flex;justify-content:space-between;width:88%;font-size:2.2cqw;font-family:'PlayfairSC',serif;margin:1cqw 0}
-.m-sign{margin-top:auto;align-self:flex-end;text-align:right;font-size:1.9cqw;line-height:1.5}
+.m-org{position:absolute;top:7%;left:9.5%;font-weight:700;font-size:1.7cqw;line-height:1.35;text-transform:uppercase;z-index:2}
+.m-quote{position:absolute;top:7%;right:9.5%;text-align:right;font-weight:700;font-size:1.55cqw;line-height:1.4;max-width:31%;z-index:2}
+.m-title{font-size:4.5cqw;margin:0 0 2.4cqw}
+.m-cert{font-size:2.3cqw;margin-bottom:2.6cqw}
+.m-name{font-family:'PlayfairSC',serif;font-size:3.6cqw;margin-bottom:1.4cqw}
+.m-line{font-size:2.15cqw;margin:1.1cqw 0}
+.m-parents{display:flex;justify-content:space-between;gap:4cqw;width:92%;font-size:2cqw;font-family:'PlayfairSC',serif;margin:2cqw 0}
+.m-sign{margin-top:auto;align-self:flex-end;text-align:center;font-size:1.95cqw;line-height:1.55}
 .m-sign .sig{height:7cqw;margin:.3cqw 0 0 auto;display:block}
 /* Huynh trưởng */
 .s-org{position:absolute;top:8%;left:9%;font-weight:700;font-size:1.5cqw;line-height:1.3;text-transform:uppercase;max-width:34%;z-index:2}
