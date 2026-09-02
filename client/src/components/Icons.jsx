@@ -62,6 +62,10 @@ export const IconExam = (p) => (
 export const IconStore = (p) => (
   <svg {...base} {...p}><path d="M4 8h16l-1 3.5a3 3 0 0 1-3 2.5H8a3 3 0 0 1-3-2.5z" /><path d="M4 8 6 4h12l2 4" /><path d="M6 14v6h12v-6" /></svg>
 );
+// Icon mở link ngoài (external link)
+export const IconExt = (p) => (
+  <svg {...base} {...p}><path d="M14 5h5v5" /><path d="M19 5l-8 8" /><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" /></svg>
+);
 // Icon "sửa ảnh": khung ảnh + bút chì
 export const IconEditImage = (p) => (
   <svg {...base} {...p}>

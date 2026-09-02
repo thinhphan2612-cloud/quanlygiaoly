@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
+import { IconExt } from '../components/Icons.jsx';
 
 const STORE_URL = 'https://ephatastore.com';
 
@@ -70,7 +71,7 @@ export default function Games() {
     <div>
       <div className="att-head">
         <h1 style={{ margin: 0 }}>Game học giáo lý</h1>
-        <a className="btn" href={STORE_URL} target="_blank" rel="noopener noreferrer">+ Thêm game từ Ephata Store ↗</a>
+        <a className="btn btn-ext" href={STORE_URL} target="_blank" rel="noopener noreferrer">Thêm game từ Ephata Store <IconExt /></a>
       </div>
       <p className="muted" style={{ marginTop: -6 }}>
         Game mặc định có sẵn cho mọi tài khoản. Muốn thêm game riêng, chọn ở <b>Ephata Store</b> rồi bấm "Thêm vào Giáo Lý Số".
@@ -110,7 +111,7 @@ export default function Games() {
             <div className="game-frame-head">
               <span>{playing.icon || '◈'} {playing.title}</span>
               <div style={{ display: 'flex', gap: 8 }}>
-                {(gameRel(playing) == null || swReady) && <a className="btn ghost sm" href={frameSrc(playing)} target="_blank" rel="noopener noreferrer">Mở tab mới ↗</a>}
+                {(gameRel(playing) == null || swReady) && <a className="btn ghost sm btn-ext" href={frameSrc(playing)} target="_blank" rel="noopener noreferrer">Mở tab mới <IconExt /></a>}
                 <button className="btn ghost sm" onClick={() => setPlaying(null)}>Đóng ✕</button>
               </div>
             </div>

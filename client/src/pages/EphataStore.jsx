@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
+import { IconExt } from '../components/Icons.jsx';
 
 const STORE_URL = 'https://ephatastore.com';
 
@@ -22,7 +23,7 @@ export default function EphataStore() {
     <div>
       <div className="att-head" style={{ alignItems: 'center' }}>
         <h1 style={{ margin: 0 }}>Ephata Store</h1>
-        <a className="btn" href={STORE_URL} target="_blank" rel="noopener noreferrer">🔑 Đăng nhập Ephata Store ↗</a>
+        <a className="btn btn-ext" href={STORE_URL} target="_blank" rel="noopener noreferrer">Đăng nhập Ephata Store <IconExt /></a>
       </div>
       <p className="muted" style={{ marginTop: -6 }}>
         Kho ứng dụng &amp; tiện ích Công giáo. Đăng nhập bằng <b>chính tài khoản Giáo Lý Số</b> của bạn — tài khoản tự liên kết. Tính năng đã mua / thêm sẽ hiện tại đây để dùng ngay trong ứng dụng.
@@ -43,7 +44,7 @@ export default function EphataStore() {
                     <div className="sc-foot">
                       <span className="plan-badge pro">Đã kích hoạt</span>
                       {f.kind === 'hosted'
-                        ? <a className="btn ghost sm" href={STORE_URL} target="_blank" rel="noopener noreferrer">Mở ↗</a>
+                        ? <a className="btn ghost sm btn-ext" href={STORE_URL} target="_blank" rel="noopener noreferrer">Mở <IconExt /></a>
                         : <span className="muted" style={{ fontSize: 12 }}>Dùng trong ứng dụng</span>}
                     </div>
                   </div>
@@ -62,7 +63,7 @@ export default function EphataStore() {
                     {f.description && <div className="sc-desc">{f.description}</div>}
                     <div className="sc-foot">
                       {f.price && <span className="muted" style={{ fontSize: 13 }}>{f.price}</span>}
-                      <a className="btn sm" href={STORE_URL} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto' }}>Xem ↗</a>
+                      <a className="btn sm btn-ext" href={STORE_URL} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto' }}>Xem <IconExt /></a>
                     </div>
                   </div>
                 ))}
