@@ -759,11 +759,14 @@ function DefaultGamesManager() {
       const SB_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || SB_ANON;
+      // Mỗi lần tải lên vào 1 thư mục phiên bản riêng -> URL đổi theo mỗi bản, tránh
+      // trình duyệt chạy bản cũ đã cache khi nâng cấp game. (Xoá game xoá cả slug.)
+      const ver = Date.now().toString(36);
       let done = 0;
       for (const p of entries) {
         const rel = p.slice(baseDir.length);
         const ab = await zip.files[p].async('arraybuffer');
-        const dest = `${slug}/${rel}`.split('/').map(encodeURIComponent).join('/');
+        const dest = `${slug}/${ver}/${rel}`.split('/').map(encodeURIComponent).join('/');
         const res = await fetch(`${SB_URL}/storage/v1/object/default-games/${dest}`, {
           method: 'POST',
           headers: {
@@ -781,7 +784,7 @@ function DefaultGamesManager() {
         }
         done++; setBusy(`Đang tải lên… ${done}/${entries.length}`);
       }
-      const { data: pub } = supabase.storage.from('default-games').getPublicUrl(`${slug}/index.html`);
+      const { data: pub } = supabase.storage.from('default-games').getPublicUrl(`${slug}/${ver}/index.html`);
       let thumbUrl = null;
       if (thumbFile) {
         setBusy('Đang tải thumbnail…');
