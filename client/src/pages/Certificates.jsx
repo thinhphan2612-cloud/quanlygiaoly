@@ -96,11 +96,14 @@ export default function Certificates() {
     setSelFrame((cur) => (frames.some((f) => f.url === cur) ? cur : (frames[0]?.url || '')));
   }, [frames]);
 
-  const selFrameObj = frames.find((f) => f.url === selFrame) || null;
+  // Khung THỰC SỰ dùng cho loại hiện tại: nếu selFrame (state) chưa kịp cập nhật
+  // sau khi đổi loại thì lấy khung đầu của loại -> tránh ghép nhầm frame loại khác.
+  const effFrame = frames.some((f) => f.url === selFrame) ? selFrame : (frames[0]?.url || '');
+  const selFrameObj = frames.find((f) => f.url === effFrame) || null;
   useEffect(() => {
     const ins = (selFrameObj?.builtin ? parish?.settings?.cert_insets?.[selFrameObj.id] : selFrameObj?.inset) || {};
     setInsetDraft({ top: ins.top || 0, right: ins.right || 0, bottom: ins.bottom || 0, left: ins.left || 0 });
-  }, [selFrame, customFrames, parish]); // eslint-disable-line
+  }, [effFrame, customFrames, parish]); // eslint-disable-line
   async function saveInset() {
     if (!selFrameObj) return;
     setSavingInset(true);
@@ -126,8 +129,8 @@ export default function Certificates() {
     const ex = isMerit
       ? { ...extra, merit_title: meritTitle, merit_reason: meritReason, class_name: cls.name, year: cls.year }
       : extra;
-    return certPageHtml({ type: kind, frame: selFrame, inset: insetDraft, parish: parishForCert, students: [st], extra: ex });
-  }, [kind, selFrame, insetDraft, parish, priestName, extra, meritTitle, meritReason, students, picked, cls, isMerit]);
+    return certPageHtml({ type: kind, frame: effFrame, inset: insetDraft, parish: parishForCert, students: [st], extra: ex });
+  }, [kind, effFrame, insetDraft, parish, priestName, extra, meritTitle, meritReason, students, picked, cls, isMerit]);
 
   async function uploadFrame(file) {
     if (!file || !parish?.id) return;
@@ -183,7 +186,7 @@ export default function Certificates() {
     const ex = isMerit
       ? { ...extra, merit_title: meritTitle, merit_reason: meritReason, class_name: cls.name, year: cls.year }
       : extra;
-    printCert({ type: kind, frame: selFrame, inset: insetDraft, parish: parishForCert, students: sel, extra: ex });
+    printCert({ type: kind, frame: effFrame, inset: insetDraft, parish: parishForCert, students: sel, extra: ex });
     setMsg('Đang lưu vào hồ sơ…');
     await logCert(sel, issueDate);
     setMsg(`Đã cấp & lưu vào hồ sơ ${sel.length} em (xem lại ở hồ sơ học viên → mục Chứng chỉ).`);
@@ -208,7 +211,7 @@ export default function Certificates() {
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start' }}>
                 {frames.map((f) => {
                   const land = (CERT_ORIENT[kind] || 'portrait') === 'landscape';
-                  const on = selFrame === f.url;
+                  const on = effFrame === f.url;
                   const box = { position: 'relative', width: land ? 132 : 86, cursor: 'pointer' };
                   const imgBox = { width: '100%', height: land ? 94 : 122, border: on ? '2px solid var(--brand,#2563eb)' : '1px solid var(--border,#d1d5db)', borderRadius: 6, boxShadow: on ? '0 0 0 2px rgba(37,99,235,.25)' : 'none', background: '#fff', overflow: 'hidden', display: 'flex' };
                   return (
