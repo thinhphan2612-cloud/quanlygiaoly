@@ -43,9 +43,7 @@ export default function EphataStore() {
                     {f.description && <div className="sc-desc">{f.description}</div>}
                     <div className="sc-foot">
                       <span className="plan-badge pro">Đã kích hoạt</span>
-                      {f.kind === 'hosted'
-                        ? <a className="btn ghost sm btn-ext" href={STORE_URL} target="_blank" rel="noopener noreferrer">Mở <IconExt /></a>
-                        : <span className="muted" style={{ fontSize: 12 }}>Dùng trong ứng dụng</span>}
+                      <span className="muted" style={{ fontSize: 12 }}>Dùng ngay trong ứng dụng</span>
                     </div>
                   </div>
                 ))}
