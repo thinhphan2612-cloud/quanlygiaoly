@@ -146,7 +146,7 @@ function meritHtml({ parish, student: s, extra = {}, frame, inset }) {
     <div class="area" style="${areaStyle(inset)}">
     <div class="k-org">${esc((parish?.diocese || '').toUpperCase())}${parish?.name ? '<br>GIÁO XỨ ' + esc(nameUp) : ''}</div>
     <div class="k-quote"><i>${esc(extra.quote || '“Lời Chúa là ngọn đèn soi cho con bước, là Ánh Sáng dẫn đường con đi”')}</i><br><b>(Tv 119, 105)</b></div>
-    <div class="content" style="top:19%;left:8%;right:8%;bottom:6%;align-items:center;text-align:center">
+    <div class="content" style="top:26%;left:8%;right:8%;bottom:6%;align-items:center;text-align:center">
       <div class="k-title">${esc(extra.merit_title || 'GIẤY KHEN')}</div>
       <div class="k-sub">LINH MỤC QUẢN XỨ ${esc(nameUp)}</div>
       <div class="k-sub2">TẶNG KHEN GIÁO LÝ SINH</div>
@@ -208,8 +208,8 @@ html,body{width:100%;height:100%}
 .s-sign{text-align:right;line-height:1.5}
 .s-sign .sig{height:6cqw;margin:.3cqw 0 0 auto;display:block}
 /* Giấy khen */
-.k-org{position:absolute;top:15%;left:7.5%;font-weight:700;font-size:1.65cqw;line-height:1.4;z-index:2;max-width:30%}
-.k-quote{position:absolute;top:15%;right:9%;text-align:right;font-style:italic;font-size:1.45cqw;line-height:1.4;max-width:27%;z-index:2}
+.k-org{position:absolute;top:11%;left:7.5%;font-weight:700;font-size:1.65cqw;line-height:1.4;z-index:2;max-width:30%}
+.k-quote{position:absolute;top:11%;right:9%;text-align:right;font-style:italic;font-size:1.45cqw;line-height:1.4;max-width:27%;z-index:2}
 .k-title{font-family:'Fahkwang',sans-serif;font-weight:700;color:#c00000;font-size:4cqw;line-height:1.1;letter-spacing:.3cqw;margin-bottom:.5cqw}
 .k-sub{color:#1b3fae;font-weight:700;font-size:2.5cqw;line-height:1.2}
 .k-sub2{color:#1b3fae;font-weight:700;font-size:2.05cqw;margin-bottom:1cqw}
