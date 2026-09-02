@@ -180,6 +180,8 @@ export default function Admin() {
         <button className="btn ghost" onClick={load}>↻ Tải lại</button>
       </div>
 
+      <LoadMonitor />
+
       <div className="admin-kpis" id="sec-overview">
         <div className="panel kpi"><div className="n">{stats.total}</div><div className="l">Giáo xứ</div></div>
         <div className="panel kpi"><div className="n" style={{ color: '#15803d' }}>{stats.proActive}</div><div className="l">Pro còn hạn</div></div>
@@ -627,6 +629,78 @@ function PaymentModal({ parish, onClose, onSave }) {
           <button className="btn" onClick={() => (Number(pay.amount) > 0 ? onSave(pay) : alert('Nhập số tiền'))}>Lưu</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ---------------- Giám sát tải hệ thống (đèn báo sớm) ---------------- */
+// Ngưỡng vàng/đỏ — CHỈNH theo compute Supabase đang dùng.
+const MON = { takersWarn: 400, takersRed: 600, latWarn: 300, latRed: 800, pollMs: 30000 };
+const LVL_COLOR = ['#15803d', '#a8641b', '#b91c1c'];
+const LVL_TEXT = ['Ổn định', 'Tải cao', 'Nguy cơ quá tải'];
+
+function LoadMonitor() {
+  const [s, setS] = useState(null);
+  const [lat, setLat] = useState(null);
+  const [err, setErr] = useState('');
+
+  useEffect(() => {
+    let live = true;
+    const tick = async () => {
+      const t0 = performance.now();
+      const { data, error } = await supabase.rpc('load_stats');
+      const ms = Math.round(performance.now() - t0);
+      if (!live) return;
+      if (error) { setErr(error.message || 'Không đọc được chỉ số'); }
+      else { setErr(''); setS(data); setLat(ms); }
+    };
+    tick();
+    const id = setInterval(() => { if (document.visibilityState === 'visible') tick(); }, MON.pollMs);
+    const onVis = () => { if (document.visibilityState === 'visible') tick(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => { live = false; clearInterval(id); document.removeEventListener('visibilitychange', onVis); };
+  }, []);
+
+  const taking = s?.taking || 0;
+  const lvlT = taking >= MON.takersRed ? 2 : taking >= MON.takersWarn ? 1 : 0;
+  const lvlL = lat == null ? 0 : lat >= MON.latRed ? 2 : lat >= MON.latWarn ? 1 : 0;
+  const lvl = Math.max(lvlT, lvlL);
+  const color = LVL_COLOR[lvl];
+
+  if (err && /function .*load_stats.* does not exist|Could not find the function/i.test(err)) {
+    return (
+      <div className="panel" style={{ borderLeft: '4px solid #a8641b' }}>
+        <b>Giám sát tải:</b> chưa cài. Chạy <code>supabase/migration_load_monitor.sql</code> để bật đèn báo.
+      </div>
+    );
+  }
+
+  return (
+    <div className="panel" id="sec-load" style={{ borderLeft: `4px solid ${color}` }}>
+      <div className="card-head" style={{ gap: 10, flexWrap: 'wrap' }}>
+        <h2 style={{ margin: 0 }}>Giám sát tải (thi online)</h2>
+        <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600, color }}>
+          <span style={{ width: 10, height: 10, borderRadius: '50%', background: color, display: 'inline-block' }} />
+          {LVL_TEXT[lvl]}
+        </span>
+      </div>
+      <div className="admin-kpis" style={{ marginTop: 4 }}>
+        <div className="panel kpi"><div className="n" style={{ color: LVL_COLOR[lvlT] }}>{taking}</div><div className="l">Đang thi</div></div>
+        <div className="panel kpi"><div className="n">{s?.waiting ?? '—'}</div><div className="l">Đang chờ mở</div></div>
+        <div className="panel kpi"><div className="n">{s?.open_exams ?? '—'}</div><div className="l">Đề đang mở</div></div>
+        <div className="panel kpi"><div className="n" style={{ color: LVL_COLOR[lvlL] }}>{lat == null ? '—' : lat + 'ms'}</div><div className="l">Độ trễ máy chủ</div></div>
+      </div>
+      {lvl >= 1 && (
+        <p className="muted" style={{ fontSize: 13, marginTop: 8, color }}>
+          {lvl === 2
+            ? '⚠ Tải đang ở mức nguy cơ. Nên nâng compute Supabase (Small → Medium) ngay, hoặc giãn lịch thi.'
+            : 'Tải đang cao. Theo dõi sát; nếu tiếp tục tăng thì cân nhắc nâng compute trước buổi thi.'}
+        </p>
+      )}
+      <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+        Ngưỡng: vàng {MON.takersWarn} / đỏ {MON.takersRed} em · độ trễ vàng {MON.latWarn}ms / đỏ {MON.latRed}ms.
+        Cảnh báo nền (khi không mở trang) tự gửi qua chuông khi vượt ngưỡng đỏ.
+      </p>
     </div>
   );
 }
