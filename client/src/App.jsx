@@ -42,6 +42,13 @@ function RequirePro({ children }) {
   return children;
 }
 
+// Chặn giáo lý viên vào trang chỉ dành cho admin quản lý (kể cả gõ URL trực tiếp).
+function RequireAdmin({ children }) {
+  const { user } = useAuth();
+  if (user && user.role !== 'admin' && !isSuperAdmin(user)) return <Navigate to="/" replace />;
+  return children;
+}
+
 // Trang chủ: super-admin vào thẳng bảng quản trị hệ thống (không có giáo xứ)
 function Home() {
   const { user } = useAuth();
@@ -65,7 +72,7 @@ export default function App() {
       <Route path="/teachers" element={<Protected><RequirePro><Teachers /></RequirePro></Protected>} />
       <Route path="/attendance" element={<Protected><Attendance /></Protected>} />
       <Route path="/grades" element={<Protected><Grades /></Protected>} />
-      <Route path="/certificates" element={<Protected><RequirePro><Certificates /></RequirePro></Protected>} />
+      <Route path="/certificates" element={<Protected><RequirePro><RequireAdmin><Certificates /></RequireAdmin></RequirePro></Protected>} />
       <Route path="/exams" element={<Protected><RequirePro><Exams /></RequirePro></Protected>} />
       <Route path="/random" element={<Protected><RandomPicker /></Protected>} />
       <Route path="/games" element={<Protected><Games /></Protected>} />

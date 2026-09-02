@@ -22,7 +22,7 @@ const nav = [
   { to: '/classes', label: 'Lớp học', Icon: IconClass },
   { to: '/attendance', label: 'Điểm danh', Icon: IconCheck },
   { to: '/grades', label: 'Điểm số', Icon: IconGrades },
-  { to: '/certificates', label: 'Chứng chỉ', Icon: IconCert, proOnly: true },
+  { to: '/certificates', label: 'Chứng chỉ', Icon: IconCert, adminOnly: true, proOnly: true },
   { to: '/exams', label: 'Đề thi', Icon: IconExam, proOnly: true },
   { to: '/random', label: 'Chọn trả bài', Icon: IconDice },
   { to: '/games', label: 'Game học', Icon: IconGame },
