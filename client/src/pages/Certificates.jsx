@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { supabase } from '../supabase';
-import { printCert, BUILTIN_FRAMES, CERT_ORIENT } from '../lib/certTemplates';
+import { printCert, certPageHtml, BUILTIN_FRAMES, CERT_ORIENT } from '../lib/certTemplates';
 import { fileToPngBlob } from '../lib/img';
 
 const TYPES = [
@@ -35,6 +35,8 @@ export default function Certificates() {
   const [customFrames, setCustomFrames] = useState([]);
   const [selFrame, setSelFrame] = useState('');
   const [frameBusy, setFrameBusy] = useState(false);
+  const [insetDraft, setInsetDraft] = useState({ top: 0, right: 0, bottom: 0, left: 0 });
+  const [savingInset, setSavingInset] = useState(false);
   const loadFrames = () => api.get('/cert-frames').then((r) => setCustomFrames(r.data || [])).catch(() => setCustomFrames([]));
   useEffect(() => { loadFrames(); }, []);
 
@@ -94,6 +96,31 @@ export default function Certificates() {
     setSelFrame((cur) => (frames.some((f) => f.url === cur) ? cur : (frames[0]?.url || '')));
   }, [frames]);
 
+  const selFrameObj = frames.find((f) => f.url === selFrame) || null;
+  const isCustomFrame = !!selFrameObj && !selFrameObj.builtin;
+  useEffect(() => {
+    const ins = selFrameObj?.inset || {};
+    setInsetDraft({ top: ins.top || 0, right: ins.right || 0, bottom: ins.bottom || 0, left: ins.left || 0 });
+  }, [selFrame, customFrames]); // eslint-disable-line
+  async function saveInset() {
+    if (!isCustomFrame) return;
+    setSavingInset(true);
+    try { await api.put(`/cert-frames/${selFrameObj.id}`, { inset: insetDraft }); await loadFrames(); }
+    catch (e) { alert(e.response?.data?.error || 'Lưu vị trí thất bại'); }
+    finally { setSavingInset(false); }
+  }
+  // HTML xem trước (1 tờ) — cập nhật theo loại/khung/lề/nội dung.
+  const previewSrc = useMemo(() => {
+    if (!kind || isMerit === undefined) return '';
+    const parishForCert = { ...parish, priest_name: priestName, priest_signature: parish?.settings?.priest_signature };
+    const st = students.filter((s) => picked.includes(s.id))[0] || students[0]
+      || { saint_name: 'Tên Thánh', full_name: 'Nguyễn Văn A', birth_date: '2015-01-01' };
+    const ex = isMerit
+      ? { ...extra, merit_title: meritTitle, merit_reason: meritReason, class_name: cls.name, year: cls.year }
+      : extra;
+    return certPageHtml({ type: kind, frame: selFrame, inset: insetDraft, parish: parishForCert, students: [st], extra: ex });
+  }, [kind, selFrame, insetDraft, parish, priestName, extra, meritTitle, meritReason, students, picked, cls, isMerit]);
+
   async function uploadFrame(file) {
     if (!file || !parish?.id) return;
     if (customCount >= 2) { alert('Mỗi loại chỉ được thêm tối đa 2 khung tùy chỉnh (chưa tính khung mặc định).'); return; }
@@ -148,7 +175,7 @@ export default function Certificates() {
     const ex = isMerit
       ? { ...extra, merit_title: meritTitle, merit_reason: meritReason, class_name: cls.name, year: cls.year }
       : extra;
-    printCert({ type: kind, frame: selFrame, parish: parishForCert, students: sel, extra: ex });
+    printCert({ type: kind, frame: selFrame, inset: insetDraft, parish: parishForCert, students: sel, extra: ex });
     setMsg('Đang lưu vào hồ sơ…');
     await logCert(sel, issueDate);
     setMsg(`Đã cấp & lưu vào hồ sơ ${sel.length} em (xem lại ở hồ sơ học viên → mục Chứng chỉ).`);
@@ -195,6 +222,31 @@ export default function Certificates() {
               </div>
               {isAdmin && <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>Khung bạn thêm (đánh dấu •) áp dụng cho <b>mọi GLV</b> trong giáo xứ — tối đa 2 khung/loại, ngoài khung mặc định.</p>}
             </div>
+
+            <div className="field">
+              <label>Xem trước</label>
+              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                <iframe title="Xem trước chứng chỉ" srcDoc={previewSrc}
+                  style={{ flex: '1 1 380px', minWidth: 260, height: (CERT_ORIENT[kind] || 'portrait') === 'landscape' ? 300 : 420, border: '1px solid var(--border,#d1d5db)', borderRadius: 8, background: '#fff' }} />
+                <div style={{ flex: '0 0 210px', minWidth: 190 }}>
+                  <div className="fp-label" style={{ marginBottom: 4 }}>Căn vị trí nội dung</div>
+                  <p className="muted" style={{ fontSize: 12, marginTop: 0, marginBottom: 8 }}>Nếu chữ tràn/đè lên viền khung, tăng lề để kéo toàn bộ nội dung vào trong ô trống (đơn vị: % của tờ).</p>
+                  {[['top', 'Lề trên'], ['bottom', 'Lề dưới'], ['left', 'Lề trái'], ['right', 'Lề phải']].map(([k, lb]) => (
+                    <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <label style={{ width: 60, fontSize: 13 }}>{lb}</label>
+                      <input type="number" step="0.5" min="0" value={insetDraft[k]} disabled={!isCustomFrame}
+                        onChange={(e) => setInsetDraft((d) => ({ ...d, [k]: Number(e.target.value) || 0 }))} style={{ width: 88 }} />
+                    </div>
+                  ))}
+                  {isCustomFrame ? (
+                    <button className="btn ghost sm" onClick={saveInset} disabled={savingInset} style={{ marginTop: 4 }}>{savingInset ? 'Đang lưu…' : '💾 Lưu vị trí cho khung này'}</button>
+                  ) : (
+                    <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>Khung mặc định đã căn sẵn. Chỉ căn được với khung admin tự tải lên.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="row">
               <div className="field" style={{ flex: 1 }}><label>Người ký (Linh mục / Trưởng ban)</label><input value={priestName} onChange={(e) => setPriestName(e.target.value)} placeholder="VD: Phêrô Nguyễn Văn An" /></div>
               <div className="field" style={{ flex: 1 }}><label>Nơi cấp</label><input value={extra.place} onChange={setE('place')} placeholder="VD: Hòa Khánh" /></div>

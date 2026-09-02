@@ -26,12 +26,19 @@ const parentName = (saint, name) => [saint, name].filter(Boolean).join(' ').trim
 // dòng "nhãn: giá trị (đậm)"
 const row = (label, value) => `<div class="r"><span class="lb">${esc(label)}</span> <b>${esc(value || '')}</b></div>`;
 
+// "Vùng nội dung" = ô trống bên trong khung. inset {top,right,bottom,left} theo % của
+// tờ; inset 0 = phủ toàn tờ (giữ nguyên thiết kế). Khung viền dày -> tăng inset để cả
+// nội dung co vào ô trống (mọi cỡ chữ/vị trí đều theo cqw của .area nên scale theo).
+const DEFAULT_INSET = { top: 0, right: 0, bottom: 0, left: 0 };
+const areaStyle = (ins) => { const i = { ...DEFAULT_INSET, ...(ins || {}) }; return `top:${i.top}%;left:${i.left}%;right:${i.right}%;bottom:${i.bottom}%`; };
+
 // ---------- Rửa Tội & Thêm Sức (khổ dọc) ----------
-function baptismHtml({ parish, student: s, extra = {}, frame }) {
+function baptismHtml({ parish, student: s, extra = {}, frame, inset }) {
   const place = extra.place || parish?.name || '';
   return `
   <div class="cert portrait">
     <img class="frame" src="${frame}" alt="">
+    <div class="area" style="${areaStyle(inset)}">
     <div class="content" style="top:6.5%;left:12.5%;right:12.5%;bottom:5%">
       <div class="org">${esc(parish?.diocese || '')}<br>${esc(parish?.name ? 'Giáo xứ ' + parish.name.replace(/^Giáo xứ\s*/i, '') : '')}</div>
       <div class="title2">CHỨNG CHỈ<br>RỬA TỘI VÀ THÊM SỨC</div>
@@ -65,16 +72,18 @@ function baptismHtml({ parish, student: s, extra = {}, frame }) {
         <div class="pr-name">${esc(parish?.priest_name || '')}</div>
       </div>
     </div>
+    </div>
   </div>`;
 }
 
 // ---------- Giáo Lý Hôn Nhân (khổ ngang) ----------
-function marriageHtml({ parish, student: s, extra = {}, frame }) {
+function marriageHtml({ parish, student: s, extra = {}, frame, inset }) {
   const place = extra.place || parish?.name || '';
   const gx = parish?.name ? 'Giáo xứ ' + parish.name.replace(/^Giáo xứ\s*/i, '') : '';
   return `
   <div class="cert landscape">
     <img class="frame" src="${frame}" alt="">
+    <div class="area" style="${areaStyle(inset)}">
     <div class="m-org">${esc(parish?.diocese || '')}<br>${esc(gx)}</div>
     <div class="m-quote"><i>${esc(extra.quote || '“Sự gì Thiên Chúa kết hợp, loài người không được phân ly”')}</i><br><b>(Mc 10,9)</b></div>
     <div class="content" style="top:24%;left:9%;right:9%;bottom:6%;align-items:center;text-align:center">
@@ -91,16 +100,18 @@ function marriageHtml({ parish, student: s, extra = {}, frame }) {
         <div>${esc(parish?.priest_name || '')}</div>
       </div>
     </div>
+    </div>
   </div>`;
 }
 
 // ---------- Huynh Trưởng (khổ ngang) ----------
-function scoutHtml({ parish, student: s, extra = {}, frame }) {
+function scoutHtml({ parish, student: s, extra = {}, frame, inset }) {
   const place = extra.place || parish?.name || '';
   const org2 = extra.org2 || 'Ban Giáo lý & Mục vụ Thiếu nhi';
   return `
   <div class="cert landscape">
     <img class="frame" src="${frame}" alt="">
+    <div class="area" style="${areaStyle(inset)}">
     <div class="s-org">${esc(parish?.diocese || '')}<br>${esc(org2)}</div>
     <div class="content" style="top:15.5%;left:11%;right:11%;bottom:6%;align-items:center;text-align:center">
       <div class="title2 s-title">CHỨNG CHỈ HUYNH TRƯỞNG</div>
@@ -121,16 +132,18 @@ function scoutHtml({ parish, student: s, extra = {}, frame }) {
         </div>
       </div>
     </div>
+    </div>
   </div>`;
 }
 
 // ---------- Giấy khen (khổ ngang) ----------
-function meritHtml({ parish, student: s, extra = {}, frame }) {
+function meritHtml({ parish, student: s, extra = {}, frame, inset }) {
   const place = extra.place || parish?.name || '';
   const nameUp = (parish?.name || '').replace(/^Giáo xứ\s*/i, '').toUpperCase();
   return `
   <div class="cert landscape">
     <img class="frame" src="${frame}" alt="">
+    <div class="area" style="${areaStyle(inset)}">
     <div class="k-org">${esc((parish?.diocese || '').toUpperCase())}${parish?.name ? '<br>GIÁO XỨ ' + esc(nameUp) : ''}</div>
     <div class="k-quote"><i>${esc(extra.quote || '“Lời Chúa là ngọn đèn soi cho con bước, là Ánh Sáng dẫn đường con đi”')}</i><br><b>(Tv 119, 105)</b></div>
     <div class="content" style="top:19%;left:8%;right:8%;bottom:6%;align-items:center;text-align:center">
@@ -148,16 +161,18 @@ function meritHtml({ parish, student: s, extra = {}, frame }) {
         <div>${esc(parish?.priest_name || '')}</div>
       </div>
     </div>
+    </div>
   </div>`;
 }
 
 const STYLE = `
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%}
-.cert{position:relative;width:100%;overflow:hidden;font-family:'Fahkwang',serif;color:#1a1a1a;container-type:size}
+.cert{position:relative;width:100%;overflow:hidden;font-family:'Fahkwang',serif;color:#1a1a1a}
 .cert.portrait{aspect-ratio:2475/3500}
 .cert.landscape{aspect-ratio:4000/2828}
 .frame{position:absolute;inset:0;width:100%;height:100%;display:block}
+.area{position:absolute;container-type:size}
 .content{position:absolute;display:flex;flex-direction:column}
 .org{font-weight:700;font-size:1.75cqw;line-height:1.3;text-transform:uppercase}
 .title2{font-family:'PlayfairSC',serif;font-weight:700;color:#c00000;text-align:center;font-size:3.7cqw;line-height:1.15;margin:1.8cqw 0 2cqw}
@@ -238,11 +253,11 @@ body{background:#f0f0f0}
 }
 
 // Kết xuất HTML cho 1 chứng chỉ (type = loại render, frame = URL khung được chọn)
-export function certPageHtml({ type = 'baptism', frame, parish, students = [], extra = {} }) {
+export function certPageHtml({ type = 'baptism', frame, inset, parish, students = [], extra = {} }) {
   const r = RENDERERS[type] || RENDERERS.baptism;
   const fr = frame || BUILTIN_FRAMES[type]?.[0]?.url;
   const list = students.length ? students : [{}];
-  const inner = list.map((s) => r.render({ parish, student: s, extra, frame: fr })).join('');
+  const inner = list.map((s) => r.render({ parish, student: s, extra, frame: fr, inset })).join('');
   return pageHtml(inner, r.orient);
 }
 

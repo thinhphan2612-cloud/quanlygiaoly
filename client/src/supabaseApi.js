@@ -1166,6 +1166,14 @@ async function handle(method, rawUrl, body = {}) {
       if (error) return fail(400, error.message);
       return ok(data);
     }
+    if (seg[0] === 'cert-frames' && seg[1] && method === 'put') {
+      const patch = {};
+      if ('inset' in body) patch.inset = body.inset;
+      if ('name' in body) patch.name = body.name;
+      const { data, error } = await supabase.from('cert_frames').update(patch).eq('id', seg[1]).select().single();
+      if (error) { if (/inset/i.test(error.message || '')) return fail(400, 'Chưa chạy migration cert_frame_inset'); return fail(400, error.message); }
+      return ok(data);
+    }
     if (seg[0] === 'cert-frames' && seg[1] && method === 'delete') {
       const { error } = await supabase.from('cert_frames').delete().eq('id', seg[1]);
       if (error) return fail(400, error.message);
