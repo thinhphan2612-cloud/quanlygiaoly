@@ -7,9 +7,7 @@ import { printCert, BUILTIN_FRAMES, CERT_ORIENT } from '../lib/certTemplates';
 import { fileToPngBlob } from '../lib/img';
 
 const TYPES = [
-  { key: 'baptism', label: 'Rửa Tội & Thêm Sức' },
   { key: 'marriage', label: 'Giáo Lý Hôn Nhân' },
-  { key: 'scout', label: 'Huynh Trưởng' },
   { key: 'merit', label: 'Giấy khen' },
 ];
 const todayStr = () => { const d = new Date(); const p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
@@ -21,7 +19,7 @@ export default function Certificates() {
   const [archYears, setArchYears] = useState([]);
   const [year, setYear] = useState('');
   const [classes, setClasses] = useState([]);
-  const [kind, setKind] = useState('baptism');
+  const [kind, setKind] = useState('marriage');
   const [classId, setClassId] = useState('');
   const [students, setStudents] = useState([]);
   const [picked, setPicked] = useState([]);
@@ -88,7 +86,6 @@ export default function Certificates() {
   const toggle = (id) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   const toggleAll = () => setPicked(allPicked ? [] : students.map((s) => s.id));
   const isMerit = kind === 'merit';
-  const isBaptism = kind === 'baptism';
   const frames = useMemo(() => [
     ...(BUILTIN_FRAMES[kind] || []).map((f) => ({ ...f, builtin: true })),
     ...customFrames.filter((f) => f.type === kind).map((f) => ({ ...f, builtin: false })),
@@ -126,12 +123,9 @@ export default function Certificates() {
   }
 
   const [msg, setMsg] = useState('');
-  const BATCH_KEYS = ['baptism_date', 'baptism_church', 'baptism_book_no', 'baptism_priest', 'confirmation_date', 'confirmation_church', 'confirmation_bishop', 'confirmation_godparent', 'confirmation_book_no'];
 
   function certLogName() {
     if (kind === 'marriage') return 'Chứng chỉ Giáo lý Hôn nhân';
-    if (kind === 'scout') return 'Chứng chỉ Huynh Trưởng' + (extra.level ? ` cấp ${extra.level}` : '');
-    if (kind === 'baptism' || kind === 'baptism2') return 'Chứng chỉ Rửa Tội & Thêm Sức';
     if (isMerit) return (meritTitle || 'Giấy khen').trim();
     return 'Chứng chỉ';
   }
@@ -156,12 +150,6 @@ export default function Certificates() {
     } else {
       const parishForCert = { ...parish, priest_name: priestName, priest_signature: parish?.settings?.priest_signature };
       printCert({ type: kind, frame: selFrame, parish: parishForCert, students: sel, extra });
-      // Rửa Tội & Thêm Sức: áp thông tin chung -> ghi vào hồ sơ từng em
-      if (isBaptism) {
-        const patch = {};
-        BATCH_KEYS.forEach((k) => { if (extra[k]) patch[k] = extra[k]; });
-        if (Object.keys(patch).length) await Promise.all(sel.map((s) => api.put(`/students/${s.id}`, patch).catch(() => {})));
-      }
     }
     setMsg('Đang lưu vào hồ sơ…');
     await logCert(sel, issueDate);
@@ -226,42 +214,8 @@ export default function Certificates() {
                 <div className="field" style={{ flex: 2 }}><label>Dòng chứng nhận</label><input value={extra.certify_line || ''} onChange={setE('certify_line')} placeholder="VD: Linh mục Giáo xứ Nam Tây chứng nhận" /></div>
               </div>
             )}
-            {kind === 'scout' && (
-              <>
-                <div className="row">
-                  <div className="field" style={{ flex: 2 }}><label>Ban tổ chức</label><input value={extra.org2 || ''} onChange={setE('org2')} placeholder="Ban Giáo lý & Mục vụ Thiếu nhi" /></div>
-                  <div className="field" style={{ flex: 1 }}><label>Giáo họ</label><input value={extra.giao_ho || ''} onChange={setE('giao_ho')} /></div>
-                </div>
-                <div className="row">
-                  <div className="field" style={{ flex: 2 }}><label>Sa mạc tại</label><input value={extra.samac || ''} onChange={setE('samac')} placeholder="Tên/địa điểm sa mạc" /></div>
-                  <div className="field" style={{ flex: '0 0 90px' }}><label>Cấp</label><input value={extra.level} onChange={setE('level')} placeholder="I" /></div>
-                  <div className="field" style={{ flex: '0 0 160px' }}><label>Ngày khai mạc</label><input type="date" value={extra.open_date || ''} onChange={setE('open_date')} /></div>
-                  <div className="field" style={{ flex: '0 0 120px' }}><label>Vào sổ số</label><input value={extra.sono || ''} onChange={setE('sono')} /></div>
-                </div>
-              </>
-            )}
-            {isBaptism && (
-              <div className="panel" style={{ background: 'var(--surface-2, #f8fafc)', padding: 12, margin: '4px 0' }}>
-                <div className="fp-label" style={{ marginBottom: 6 }}>Thông tin chung cho cả lớp <span className="muted" style={{ fontWeight: 400 }}>— điền 1 lần, áp cho mọi em được chọn &amp; tự lưu vào hồ sơ. Để trống thì dùng dữ liệu riêng của từng em.</span></div>
-                <div className="row">
-                  <div className="field"><label>Đã Rửa Tội ngày</label><input type="date" value={extra.baptism_date || ''} onChange={setE('baptism_date')} /></div>
-                  <div className="field"><label>Nhà thờ Rửa Tội</label><input value={extra.baptism_church || ''} onChange={setE('baptism_church')} /></div>
-                  <div className="field"><label>Trích sổ Rửa Tội</label><input value={extra.baptism_book_no || ''} onChange={setE('baptism_book_no')} /></div>
-                  <div className="field"><label>Do Linh mục</label><input value={extra.baptism_priest || ''} onChange={setE('baptism_priest')} /></div>
-                </div>
-                <div className="row">
-                  <div className="field"><label>Đã Thêm Sức ngày</label><input type="date" value={extra.confirmation_date || ''} onChange={setE('confirmation_date')} /></div>
-                  <div className="field"><label>Nhà thờ Thêm Sức</label><input value={extra.confirmation_church || ''} onChange={setE('confirmation_church')} /></div>
-                  <div className="field"><label>Do Đức Giám mục</label><input value={extra.confirmation_bishop || ''} onChange={setE('confirmation_bishop')} /></div>
-                </div>
-                <div className="row">
-                  <div className="field"><label>Người đỡ đầu Thêm Sức</label><input value={extra.confirmation_godparent || ''} onChange={setE('confirmation_godparent')} /></div>
-                  <div className="field"><label>Trích sổ Thêm Sức</label><input value={extra.confirmation_book_no || ''} onChange={setE('confirmation_book_no')} /></div>
-                </div>
-              </div>
-            )}
             <p className="muted" style={{ fontSize: 12, marginTop: -2 }}>
-              Tên, ngày sinh, cha mẹ, nơi sinh… lấy từ <b>hồ sơ từng em</b> (Học viên → hồ sơ → "Chi tiết cho chứng chỉ"). Các trường chung ở trên áp cho cả lớp. Người ký &amp; chữ ký lấy từ Cài đặt giáo xứ.
+              Tên, ngày sinh, cha mẹ, nơi sinh… lấy từ <b>hồ sơ từng em</b>. Người ký &amp; chữ ký lấy từ Cài đặt giáo xứ.
             </p>
           </>
         )}

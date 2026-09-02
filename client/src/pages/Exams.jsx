@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api';
 import QRCode from 'qrcode';
 import { exportXlsx, fileSlug } from '../lib/exportUtils';
+import { printExamPaper } from '../lib/examPaper';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const KINDS = [{ v: '15p', l: '15 phút' }, { v: '1tiet', l: '1 tiết' }, { v: 'hocky', l: 'Học kỳ' }, { v: 'khac', l: 'Khác' }];
@@ -67,6 +68,7 @@ function ExamBuilder({ classes, onDone, onCancel }) {
   const [picked, setPicked] = useState({});    // qid -> question
   const [err, setErr] = useState('');
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(null); // câu đang sửa / thêm mới
 
   useEffect(() => {
     fetch('/exam-question-bank.json').then((r) => r.json()).then((b) => {
@@ -86,6 +88,14 @@ function ExamBuilder({ classes, onDone, onCancel }) {
     setPicked((p) => { const c = { ...p }; add.forEach((q) => { c[q.id] = { ...q, _topic: topicId }; }); return c; });
   }
   function clearTopic() { setPicked((p) => { const c = { ...p }; (topic?.questions || []).forEach((q) => delete c[q.id]); return c; }); }
+  function saveQuestion(q) {
+    setPicked((p) => {
+      const id = q.id || ('c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5));
+      return { ...p, [id]: { ...q, id } };
+    });
+    setEditing(null);
+  }
+  function removeQ(id) { setPicked((p) => { const c = { ...p }; delete c[id]; return c; }); }
 
   async function save() {
     setErr('');
@@ -155,10 +165,82 @@ function ExamBuilder({ classes, onDone, onCancel }) {
         )}
       </div>
 
+      <div className="panel">
+        <div className="card-head"><h2 style={{ margin: 0 }}>Câu hỏi trong đề ({pickedList.length})</h2>
+          <button className="btn ghost sm" onClick={() => setEditing({ text: '', options: ['', ''], correct: 0 })}>➕ Thêm câu tự soạn</button>
+        </div>
+        {pickedList.length === 0 ? (
+          <p className="muted">Chưa có câu nào. Bốc từ ngân hàng ở trên, hoặc bấm "Thêm câu tự soạn". Câu nào cũng sửa / xoá được trước khi tạo đề.</p>
+        ) : (
+          <div className="pick-list" style={{ maxHeight: 460 }}>
+            {pickedList.map((q, i) => (
+              <div className="rv-q" key={q.id}>
+                <div className="rv-q-t" style={{ display: 'flex', gap: 8 }}>
+                  <span style={{ flex: 1 }}><b>Câu {i + 1}.</b> {q.text}{q.custom ? <span className="muted" style={{ fontSize: 11 }}> · tự soạn</span> : ''}</span>
+                  <span className="row-links" style={{ whiteSpace: 'nowrap' }}>
+                    <button onClick={() => setEditing(q)}>Sửa</button>
+                    <button className="danger" onClick={() => removeQ(q.id)}>Xoá</button>
+                  </span>
+                </div>
+                {(q.options || []).map((opt, idx) => (
+                  <div key={idx} className={`rv-opt ${idx === q.correct ? 'correct' : ''}`}>
+                    <b>{LETTERS[idx]}.</b> {opt}{idx === q.correct && <span className="rv-tag ok"> đáp án</span>}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {err && <div className="error">{err}</div>}
       <div className="modal-actions">
         <button className="btn ghost" onClick={onCancel}>Huỷ</button>
         <button className="btn" onClick={save} disabled={saving}>{saving ? 'Đang tạo…' : `Tạo đề (${pickedList.length} câu)`}</button>
+      </div>
+
+      {editing && <QuestionEditor init={editing} onSave={saveQuestion} onClose={() => setEditing(null)} />}
+    </div>
+  );
+}
+
+/* ---------------- Soạn / sửa 1 câu hỏi ---------------- */
+function QuestionEditor({ init, onSave, onClose }) {
+  const [text, setText] = useState(init.text || '');
+  const [options, setOptions] = useState(init.options?.length ? [...init.options] : ['', '']);
+  const [correct, setCorrect] = useState(init.correct ?? 0);
+  const setOpt = (i, v) => setOptions((o) => o.map((x, j) => (j === i ? v : x)));
+  const addOpt = () => setOptions((o) => (o.length < 6 ? [...o, ''] : o));
+  function rmOpt(i) {
+    setOptions((o) => (o.length <= 2 ? o : o.filter((_, j) => j !== i)));
+    setCorrect((c) => (i < c ? c - 1 : i === c ? 0 : c));
+  }
+  function save() {
+    const opts = options.map((s) => s.trim()).filter(Boolean);
+    if (!text.trim()) return alert('Nhập nội dung câu hỏi');
+    if (opts.length < 2) return alert('Cần ít nhất 2 đáp án');
+    onSave({ id: init.id, text: text.trim(), options: opts, correct: Math.min(correct, opts.length - 1), custom: true });
+  }
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal wide" onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ marginTop: 0 }}>{init.id ? 'Sửa câu hỏi' : 'Thêm câu hỏi'}</h2>
+        <div className="field"><label>Nội dung câu hỏi *</label>
+          <textarea rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="VD: Bí tích nào Chúa Giêsu lập trong bữa Tiệc Ly?" /></div>
+        <div className="field"><label>Các đáp án <span className="muted" style={{ fontWeight: 400 }}>— chọn ô tròn ở đáp án ĐÚNG</span></label></div>
+        {options.map((o, i) => (
+          <div key={i} className="row" style={{ alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <input type="radio" name="correct" checked={correct === i} onChange={() => setCorrect(i)} title="Đáp án đúng" />
+            <b style={{ width: 18 }}>{LETTERS[i]}.</b>
+            <input style={{ flex: 1 }} value={o} onChange={(e) => setOpt(i, e.target.value)} placeholder={`Đáp án ${LETTERS[i]}`} />
+            {options.length > 2 && <button className="btn ghost sm" onClick={() => rmOpt(i)} title="Bỏ đáp án">✕</button>}
+          </div>
+        ))}
+        {options.length < 6 && <button className="btn ghost sm" onClick={addOpt}>+ Thêm đáp án</button>}
+        <div className="modal-actions">
+          <button className="btn ghost" onClick={onClose}>Huỷ</button>
+          <button className="btn" onClick={save}>Lưu câu</button>
+        </div>
       </div>
     </div>
   );
@@ -235,6 +317,13 @@ function ExamRoom({ examId, onBack }) {
         <button className="btn ghost" onClick={onBack}>← Danh sách đề</button>
       </div>
       <p className="muted" style={{ marginTop: -6 }}>Lớp: <b>{exam.class_name || '—'}</b> · {kindLabel(exam.kind)} (×{exam.weight}) · {exam.questions?.length || 0} câu · {exam.duration_min ? `${exam.duration_min} phút` : 'không giới hạn giờ'}</p>
+      {(exam.questions?.length > 0) && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+          <button className="btn ghost sm" onClick={() => printExamPaper(exam, 'student')}>🖨 In đề (học viên)</button>
+          <button className="btn ghost sm" onClick={() => printExamPaper(exam, 'key')}>🖨 In đáp án (GLV)</button>
+          <span className="muted" style={{ fontSize: 12, alignSelf: 'center' }}>Chọn "Lưu thành PDF" trong hộp thoại in để tải về in giấy.</span>
+        </div>
+      )}
 
       <div className="dash-grid">
         <div className="dash-col">
