@@ -1077,6 +1077,10 @@ async function handle(method, rawUrl, body = {}) {
         .select('feature_key, status, source, expires_at').eq('status', 'active');
       if (error) return fail(400, error.message);
       const keys = (data || []).filter((r) => !r.expires_at || r.expires_at > nowIso).map((r) => r.feature_key);
+      // Tính năng ĐI KÈM gói Pro (không cần mua): đề thi & giấy khen.
+      const { data: p } = await supabase.from('parishes').select('plan, plan_expires_at').eq('id', pid).maybeSingle();
+      const proNow = p && p.plan === 'pro' && (!p.plan_expires_at || p.plan_expires_at > nowIso);
+      if (proNow) for (const k of ['exam', 'certificate']) if (!keys.includes(k)) keys.push(k);
       return ok({ keys, rows: data || [] });
     }
 
