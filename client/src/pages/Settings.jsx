@@ -184,12 +184,15 @@ export default function Settings() {
         <div className="field" style={{ maxWidth: 280 }}>
           <label>Gói hiện tại</label>
           <div style={{ fontWeight: 600, fontSize: 16 }}>
-            {isPro(parish.plan) ? 'Pro (trọn gói, không giới hạn lớp)' : 'Khởi động (miễn phí — 1 lớp)'}
+            {isPro(parish.plan)
+              ? (parish.plan_max_classes ? `Pro — tối đa ${parish.plan_max_classes} lớp` : 'Pro — không giới hạn lớp')
+              : 'Khởi động (miễn phí — 1 lớp)'}
           </div>
         </div>
         <p className="muted" style={{ fontSize: 12 }}>
-          Gói Khởi động chỉ quản lý 1 lớp. Nâng lên Pro để mở khóa không giới hạn lớp + toàn bộ tính năng —
-          liên hệ tác giả để thanh toán (chuyển khoản / VietQR) và được kích hoạt.
+          {isPro(parish.plan)
+            ? <>Gói Pro tính theo quy mô số lớp{parish.plan_max_classes ? ` (mức hiện tại: tối đa ${parish.plan_max_classes} lớp)` : ' (mức không giới hạn)'}. Cần thêm lớp / đổi mức: liên hệ tác giả để nâng mức.</>
+            : <>Gói Khởi động chỉ quản lý 1 lớp. Nâng lên Pro (chia mức theo số lớp: nhỏ / vừa / lớn) để mở khóa nhiều lớp + toàn bộ tính năng — liên hệ tác giả để thanh toán (chuyển khoản / VietQR) và được kích hoạt.</>}
         </p>
       </div>
 

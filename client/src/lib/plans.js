@@ -23,7 +23,7 @@ export const PLANS = [
   {
     key: 'pro', name: 'Pro (trọn gói)', price: 'Theo quy mô', period: '/niên khóa', tag: 'Khuyên dùng',
     features: [
-      'Không giới hạn số lớp & giáo lý viên',
+      'Nhiều lớp theo mức gói (nhỏ / vừa / lớn) & không giới hạn giáo lý viên',
       'Nhiều giáo lý viên phối hợp trên mỗi lớp',
       'Hồ sơ học viên trọn đời: cá nhân, cha mẹ, người đỡ đầu',
       'Theo dõi bí tích: Rửa Tội · Rước Lễ · Thêm Sức',

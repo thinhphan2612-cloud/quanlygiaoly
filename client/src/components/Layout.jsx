@@ -155,7 +155,7 @@ export default function Layout({ children }) {
           <div className="side-card plan-card">
             <div className="pc-badge">✦ Gói {planName(plan)}</div>
             <div className="pc-feats">
-              <div>✓ Không giới hạn lớp &amp; giáo lý viên</div>
+              <div>✓ {parish?.plan_max_classes ? `Tối đa ${parish.plan_max_classes} lớp` : 'Không giới hạn lớp'} &amp; nhiều giáo lý viên</div>
               <div>✓ Điểm danh · điểm số · thi đua</div>
               <div>✓ Chứng chỉ · lưu trữ · game</div>
             </div>
