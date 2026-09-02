@@ -4,15 +4,18 @@ import api from '../api';
 const STORE_URL = 'https://ephatastore.com';
 
 // Supabase Storage ép mọi .html thành text/plain (chặn host HTML) -> game không
-// chạy khi mở thẳng URL Storage. Ta cho iframe trỏ vào proxy cùng origin
-// (/api/game/...) — proxy trả đúng content-type nên mọi trang/asset render đúng
-// và điều hướng nội bộ (vd trang biên soạn câu hỏi) hoạt động.
+// chạy khi mở thẳng URL Storage. Ta cho iframe trỏ vào /game-proxy/... do Service
+// Worker phục vụ với ĐÚNG content-type (mọi trang/asset render đúng, điều hướng
+// nội bộ như trang biên soạn câu hỏi hoạt động). Chạy client-side nên độc lập host.
 const STORAGE_MARK = '/storage/v1/object/public/default-games/';
-function gameSrc(playUrl) {
-  if (typeof playUrl !== 'string') return playUrl;
+function gameRel(playUrl) {
+  if (typeof playUrl !== 'string') return null;
   const i = playUrl.indexOf(STORAGE_MARK);
-  if (i >= 0) return '/api/game/' + playUrl.slice(i + STORAGE_MARK.length);
-  return playUrl; // game builtin (bundle Vercel) hoặc đã là đường proxy
+  return i >= 0 ? playUrl.slice(i + STORAGE_MARK.length) : null;
+}
+function gameSrc(playUrl) {
+  const rel = gameRel(playUrl);
+  return rel == null ? playUrl /* builtin bundle */ : '/game-proxy/' + rel;
 }
 
 export default function Games() {
@@ -20,6 +23,7 @@ export default function Games() {
   const [myGames, setMyGames] = useState([]);
   const [playing, setPlaying] = useState(null); // game đang chơi (iframe)
   const [loading, setLoading] = useState(true);
+  const [swReady, setSwReady] = useState(() => typeof navigator !== 'undefined' && !!navigator.serviceWorker?.controller);
 
   function loadAll() {
     Promise.all([
@@ -28,6 +32,15 @@ export default function Games() {
     ]).then(([d, m]) => { setDefaults(d); setMyGames(m); }).finally(() => setLoading(false));
   }
   useEffect(() => { loadAll(); }, []);
+
+  // Đăng ký Service Worker phục vụ game; chờ sẵn sàng mới nạp game host trên Storage.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.register('/game-sw.js')
+      .then(() => navigator.serviceWorker.ready)
+      .then(() => setSwReady(true))
+      .catch(() => {});
+  }, []);
 
   async function removeMine(g) {
     if (!confirm(`Gỡ liên kết "${g.title}" khỏi kho game của bạn?`)) return;
@@ -95,11 +108,13 @@ export default function Games() {
             <div className="game-frame-head">
               <span>{playing.icon || '◈'} {playing.title}</span>
               <div style={{ display: 'flex', gap: 8 }}>
-                <a className="btn ghost sm" href={gameSrc(playing.play_url)} target="_blank" rel="noopener noreferrer">Mở tab mới ↗</a>
+                {(gameRel(playing.play_url) == null || swReady) && <a className="btn ghost sm" href={gameSrc(playing.play_url)} target="_blank" rel="noopener noreferrer">Mở tab mới ↗</a>}
                 <button className="btn ghost sm" onClick={() => setPlaying(null)}>Đóng ✕</button>
               </div>
             </div>
-            <iframe className="game-frame" src={gameSrc(playing.play_url)} title={playing.title} allow="fullscreen; autoplay; gamepad" />
+            {gameRel(playing.play_url) != null && !swReady
+              ? <div className="game-frame" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span className="muted">Đang chuẩn bị game…</span></div>
+              : <iframe className="game-frame" src={gameSrc(playing.play_url)} title={playing.title} allow="fullscreen; autoplay; gamepad" />}
           </div>
         </div>
       )}
