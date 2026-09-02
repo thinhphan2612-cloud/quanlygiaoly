@@ -753,16 +753,32 @@ function DefaultGamesManager() {
       const baseDir = indexPath.slice(0, indexPath.toLowerCase().lastIndexOf('index.html'));
       const slug = slugify(title);
       const entries = Object.keys(zip.files).filter((p) => p.startsWith(baseDir) && !zip.files[p].dir);
+      // Gọi thẳng REST Storage để TỰ đặt Content-Type (supabase-js .upload bỏ qua
+      // header này -> file bị lưu text/plain, .html/.css/.js không chạy trong iframe).
+      const SB_URL = import.meta.env.VITE_SUPABASE_URL;
+      const SB_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || SB_ANON;
       let done = 0;
       for (const p of entries) {
         const rel = p.slice(baseDir.length);
-        // Đặt ĐÚNG content-type: supabase-js chỉ set header content-type khi body
-        // là ArrayBuffer (nhánh Blob/FormData bỏ qua option -> server mặc định
-        // text/plain, khiến .html/.css/.js không chạy trong iframe + nosniff).
         const ab = await zip.files[p].async('arraybuffer');
-        const { error } = await supabase.storage.from('default-games')
-          .upload(`${slug}/${rel}`, ab, { upsert: true, contentType: mimeOf(rel) });
-        if (error) throw new Error('Tải lên Storage lỗi: ' + error.message + ' (đã tạo bucket default-games + policy chưa?)');
+        const dest = `${slug}/${rel}`.split('/').map(encodeURIComponent).join('/');
+        const res = await fetch(`${SB_URL}/storage/v1/object/default-games/${dest}`, {
+          method: 'POST',
+          headers: {
+            apikey: SB_ANON,
+            Authorization: `Bearer ${token}`,
+            'x-upsert': 'true',
+            'content-type': mimeOf(rel),
+            'cache-control': 'max-age=3600',
+          },
+          body: ab,
+        });
+        if (!res.ok) {
+          const t = await res.text().catch(() => '');
+          throw new Error(`Tải lên Storage lỗi ${res.status}: ${t} (đã tạo bucket default-games + policy chưa?)`);
+        }
         done++; setBusy(`Đang tải lên… ${done}/${entries.length}`);
       }
       const { data: pub } = supabase.storage.from('default-games').getPublicUrl(`${slug}/index.html`);
