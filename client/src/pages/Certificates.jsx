@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../api';
+import { useAuth } from '../auth.jsx';
+import { supabase } from '../supabase';
 import { exportCertificates } from '../lib/certificate';
-import { printCert } from '../lib/certTemplates';
+import { printCert, BUILTIN_FRAMES, CERT_ORIENT } from '../lib/certTemplates';
+import { fileToPngBlob } from '../lib/img';
 
 const TYPES = [
-  { key: 'baptism', label: 'Rửa Tội & Thêm Sức (1)' },
-  { key: 'baptism2', label: 'Rửa Tội & Thêm Sức (2)' },
+  { key: 'baptism', label: 'Rửa Tội & Thêm Sức' },
   { key: 'marriage', label: 'Giáo Lý Hôn Nhân' },
   { key: 'scout', label: 'Huynh Trưởng' },
   { key: 'merit', label: 'Giấy khen' },
@@ -30,6 +32,14 @@ export default function Certificates() {
   const [priestName, setPriestName] = useState('');
   const [extra, setExtra] = useState({ place: '', issue_date: todayStr(), role: 'Anh', level: 'I' });
   const setE = (k) => (e) => setExtra((x) => ({ ...x, [k]: e.target.value }));
+  // Khung (frame) chứng chỉ
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+  const [customFrames, setCustomFrames] = useState([]);
+  const [selFrame, setSelFrame] = useState('');
+  const [frameBusy, setFrameBusy] = useState(false);
+  const loadFrames = () => api.get('/cert-frames').then((r) => setCustomFrames(r.data || [])).catch(() => setCustomFrames([]));
+  useEffect(() => { loadFrames(); }, []);
 
   useEffect(() => {
     api.get('/parish').then((r) => {
@@ -78,7 +88,43 @@ export default function Certificates() {
   const toggle = (id) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   const toggleAll = () => setPicked(allPicked ? [] : students.map((s) => s.id));
   const isMerit = kind === 'merit';
-  const isBaptism = kind === 'baptism' || kind === 'baptism2';
+  const isBaptism = kind === 'baptism';
+  const frames = useMemo(() => [
+    ...(BUILTIN_FRAMES[kind] || []).map((f) => ({ ...f, builtin: true })),
+    ...customFrames.filter((f) => f.type === kind).map((f) => ({ ...f, builtin: false })),
+  ], [kind, customFrames]);
+  const customCount = frames.filter((f) => !f.builtin).length;
+  useEffect(() => {
+    setSelFrame((cur) => (frames.some((f) => f.url === cur) ? cur : (frames[0]?.url || '')));
+  }, [frames]);
+
+  async function uploadFrame(file) {
+    if (!file || !parish?.id) return;
+    if (customCount >= 2) { alert('Mỗi loại chỉ được thêm tối đa 2 khung tùy chỉnh (chưa tính khung mặc định).'); return; }
+    setFrameBusy(true);
+    try {
+      const blob = await fileToPngBlob(file, 2000);
+      const path = `${parish.id}/${kind}/${Date.now()}.png`;
+      const up = await supabase.storage.from('cert-frames').upload(path, blob, { upsert: true, contentType: 'image/png' });
+      if (up.error) throw new Error(up.error.message);
+      const pub = supabase.storage.from('cert-frames').getPublicUrl(path).data.publicUrl;
+      await api.post('/cert-frames', { type: kind, name: (file.name || 'Khung').replace(/\.[^.]+$/, '').slice(0, 40) || 'Khung', url: pub });
+      await loadFrames();
+      setSelFrame(pub);
+    } catch (e) {
+      alert('Tải khung thất bại: ' + (e.message || e) + '\n(Đã chạy migration cert_frames & tạo bucket "cert-frames" chưa?)');
+    } finally { setFrameBusy(false); }
+  }
+  async function delFrame(f) {
+    if (!confirm(`Xoá khung "${f.name}"?`)) return;
+    try {
+      await api.delete(`/cert-frames/${f.id}`);
+      const p = (f.url || '').split('/cert-frames/')[1];
+      if (p) await supabase.storage.from('cert-frames').remove([decodeURIComponent(p)]).catch(() => {});
+      await loadFrames();
+    } catch (e) { alert('Không xoá được: ' + (e.message || e)); }
+  }
+
   const [msg, setMsg] = useState('');
   const BATCH_KEYS = ['baptism_date', 'baptism_church', 'baptism_book_no', 'baptism_priest', 'confirmation_date', 'confirmation_church', 'confirmation_bishop', 'confirmation_godparent', 'confirmation_book_no'];
 
@@ -109,7 +155,7 @@ export default function Certificates() {
       exportCertificates({ parish, students: sel, kind: 'merit', merit: { title: meritTitle, reason: meritReason, className: cls.name, year: cls.year } });
     } else {
       const parishForCert = { ...parish, priest_name: priestName, priest_signature: parish?.settings?.priest_signature };
-      printCert({ template: kind, parish: parishForCert, students: sel, extra });
+      printCert({ type: kind, frame: selFrame, parish: parishForCert, students: sel, extra });
       // Rửa Tội & Thêm Sức: áp thông tin chung -> ghi vào hồ sơ từng em
       if (isBaptism) {
         const patch = {};
@@ -142,6 +188,33 @@ export default function Certificates() {
           </div>
         ) : (
           <>
+            <div className="field">
+              <label>Khung chứng chỉ {frames.length > 1 && <span className="muted" style={{ fontWeight: 400 }}>— chọn mẫu khung muốn dùng</span>}</label>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                {frames.map((f) => {
+                  const land = (CERT_ORIENT[kind] || 'portrait') === 'landscape';
+                  const on = selFrame === f.url;
+                  const box = { position: 'relative', width: land ? 132 : 86, cursor: 'pointer' };
+                  const imgBox = { width: '100%', height: land ? 94 : 122, border: on ? '2px solid var(--brand,#2563eb)' : '1px solid var(--border,#d1d5db)', borderRadius: 6, boxShadow: on ? '0 0 0 2px rgba(37,99,235,.25)' : 'none', background: '#fff', overflow: 'hidden', display: 'flex' };
+                  return (
+                    <div key={f.url} style={box} onClick={() => setSelFrame(f.url)} title={f.name}>
+                      <div style={imgBox}><img src={f.url} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>
+                      <div className="muted" style={{ fontSize: 11, marginTop: 3, textAlign: 'center', lineHeight: 1.2 }}>{f.name}{f.builtin ? '' : ' •'}</div>
+                      {isAdmin && !f.builtin && (
+                        <button type="button" onClick={(e) => { e.stopPropagation(); delFrame(f); }} title="Xoá khung" style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', lineHeight: '18px', padding: 0, fontSize: 14 }}>×</button>
+                      )}
+                    </div>
+                  );
+                })}
+                {isAdmin && customCount < 2 && (
+                  <label style={{ width: (CERT_ORIENT[kind] || 'portrait') === 'landscape' ? 132 : 86, height: (CERT_ORIENT[kind] || 'portrait') === 'landscape' ? 94 : 122, border: '1px dashed var(--border,#94a3b8)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', cursor: 'pointer', color: 'var(--muted,#64748b)', fontSize: 12 }}>
+                    <input type="file" accept="image/*" hidden disabled={frameBusy} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; uploadFrame(f); }} />
+                    <span>{frameBusy ? '⏳ Đang tải…' : <>＋<br />Thêm khung</>}</span>
+                  </label>
+                )}
+              </div>
+              {isAdmin && <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>Khung bạn thêm (đánh dấu •) áp dụng cho <b>mọi GLV</b> trong giáo xứ — tối đa 2 khung/loại, ngoài khung mặc định.</p>}
+            </div>
             <div className="row">
               <div className="field" style={{ flex: 1 }}><label>Người ký (Linh mục / Trưởng ban)</label><input value={priestName} onChange={(e) => setPriestName(e.target.value)} placeholder="VD: Phêrô Nguyễn Văn An" /></div>
               <div className="field" style={{ flex: 1 }}><label>Nơi cấp</label><input value={extra.place} onChange={setE('place')} placeholder="VD: Hòa Khánh" /></div>

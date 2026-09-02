@@ -1153,6 +1153,25 @@ async function handle(method, rawUrl, body = {}) {
       return ok({ ok: true });
     }
 
+    // ---------------- khung chứng chỉ tùy chỉnh (admin quản lý) ----------------
+    if (path === '/cert-frames' && method === 'get') {
+      const { data, error } = await supabase.from('cert_frames').select('*').order('created_at');
+      if (error) { if (/cert_frames/i.test(error.message || '')) return ok([]); return fail(400, error.message); }
+      return ok(data || []);
+    }
+    if (path === '/cert-frames' && method === 'post') {
+      if (!body.type || !body.url) return fail(400, 'Thiếu loại hoặc ảnh khung');
+      const { data, error } = await supabase.from('cert_frames')
+        .insert({ parish_id: pid, type: body.type, name: body.name || 'Khung tùy chỉnh', url: body.url }).select().single();
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
+    if (seg[0] === 'cert-frames' && seg[1] && method === 'delete') {
+      const { error } = await supabase.from('cert_frames').delete().eq('id', seg[1]);
+      if (error) return fail(400, error.message);
+      return ok({ ok: true });
+    }
+
     // ---------------- thi online (GLV) ----------------
     if (path === '/exams' && method === 'get') {
       const { data: exams, error } = await supabase.from('exams')

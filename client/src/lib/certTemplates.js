@@ -167,12 +167,22 @@ html,body{width:100%;height:100%}
 .s-sign .sig{height:6cqw;margin:.3cqw 0 0 auto;display:block}
 `;
 
-const TEMPLATES = {
-  baptism: { render: baptismHtml, frame: '/certs/frame-baptism-1.png', orient: 'portrait', label: 'Rửa Tội & Thêm Sức (mẫu 1)' },
-  baptism2: { render: baptismHtml, frame: '/certs/frame-baptism-2.png', orient: 'portrait', label: 'Rửa Tội & Thêm Sức (mẫu 2)' },
-  marriage: { render: marriageHtml, frame: '/certs/frame-marriage.png', orient: 'landscape', label: 'Giáo Lý Hôn Nhân' },
-  scout: { render: scoutHtml, frame: '/certs/frame-scout.png', orient: 'landscape', label: 'Huynh Trưởng' },
+// Loại chứng chỉ (cách render) — độc lập với KHUNG (ảnh nền có thể chọn/tùy chỉnh).
+const RENDERERS = {
+  baptism: { render: baptismHtml, orient: 'portrait' },
+  marriage: { render: marriageHtml, orient: 'landscape' },
+  scout: { render: scoutHtml, orient: 'landscape' },
 };
+// Khung dựng sẵn theo loại (user chọn; admin có thể thêm khung tùy chỉnh).
+export const BUILTIN_FRAMES = {
+  baptism: [
+    { id: 'bt1', name: 'Cổ điển (viền lá)', url: '/certs/frame-baptism-1.png' },
+    { id: 'bt2', name: 'Hoa văn góc', url: '/certs/frame-baptism-2.png' },
+  ],
+  marriage: [{ id: 'mr1', name: 'Chuẩn', url: '/certs/frame-marriage.png' }],
+  scout: [{ id: 'sc1', name: 'Chuẩn', url: '/certs/frame-scout.png' }],
+};
+export const CERT_ORIENT = { baptism: 'portrait', marriage: 'landscape', scout: 'landscape' };
 
 function pageHtml(inner, orient) {
   const size = orient === 'landscape' ? 'A4 landscape' : 'A4 portrait';
@@ -184,12 +194,13 @@ body{background:#f0f0f0}
 </style></head><body>${inner}</body></html>`;
 }
 
-// Kết xuất HTML cho 1 chứng chỉ (để xem trước hoặc in)
-export function certPageHtml({ template = 'baptism', parish, students = [], extra = {} }) {
-  const t = TEMPLATES[template] || TEMPLATES.baptism;
+// Kết xuất HTML cho 1 chứng chỉ (type = loại render, frame = URL khung được chọn)
+export function certPageHtml({ type = 'baptism', frame, parish, students = [], extra = {} }) {
+  const r = RENDERERS[type] || RENDERERS.baptism;
+  const fr = frame || BUILTIN_FRAMES[type]?.[0]?.url;
   const list = students.length ? students : [{}];
-  const inner = list.map((s) => t.render({ parish, student: s, extra, frame: t.frame })).join('');
-  return pageHtml(inner, t.orient);
+  const inner = list.map((s) => r.render({ parish, student: s, extra, frame: fr })).join('');
+  return pageHtml(inner, r.orient);
 }
 
 // In ra PDF qua iframe ẩn (trình duyệt render tiếng Việt + font chuẩn)
@@ -212,5 +223,3 @@ export function printCert(opts) {
   Promise.all([imgReady, fontsReady]).then(() => setTimeout(go, 250));
   setTimeout(go, 8000); // phòng hờ nếu có ảnh không tải được
 }
-
-export { TEMPLATES };
