@@ -253,6 +253,7 @@ Deno.serve(async (req) => {
       const patch: Record<string, unknown> = {};
       if (body?.label !== undefined) patch.label = body.label;
       if (body?.price !== undefined) patch.price = body.price === '' || body.price == null ? null : Number(body.price);
+      if (body?.max_classes !== undefined) patch.max_classes = body.max_classes === '' || body.max_classes == null ? null : Number(body.max_classes);
       const { error } = await admin.from('plan_tiers').update(patch).eq('id', id);
       if (error) return json({ error: error.message }, 400);
       return json({ ok: true });

@@ -446,7 +446,7 @@ export default function Admin() {
         <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>Để trống ô giá = "Liên hệ" (không tạo QR).</p>
       </div>
 
-      {editing && <ActivateModal parish={editing} onClose={() => setEditing(null)} onConfirm={(exp, payment, maxCls) => setPlan(editing, 'pro', exp, payment, maxCls)} />}
+      {editing && <ActivateModal parish={editing} tiers={tiers} onClose={() => setEditing(null)} onConfirm={(exp, payment, maxCls) => setPlan(editing, 'pro', exp, payment, maxCls)} />}
       {editParish && <EditParishModal parish={editParish} onClose={() => setEditParish(null)} onSave={(patch) => saveParish(editParish, patch)} />}
       {payParish && <PaymentModal parish={payParish} onClose={() => setPayParish(null)} onSave={(payment) => addPayment(payParish, payment)} />}
       {payingOrder && <OrderPaidModal order={payingOrder} onClose={() => setPayingOrder(null)} onConfirm={(exp) => markOrderPaid(payingOrder, exp)} />}
@@ -483,13 +483,16 @@ function GrantModal({ lead, onClose, onConfirm }) {
 function TierRow({ tier, onSave }) {
   const [label, setLabel] = useState(tier.label || '');
   const [price, setPrice] = useState(tier.price ?? '');
-  const dirty = label !== (tier.label || '') || String(price) !== String(tier.price ?? '');
+  const [maxCls, setMaxCls] = useState(tier.max_classes ?? '');
+  const dirty = label !== (tier.label || '') || String(price) !== String(tier.price ?? '') || String(maxCls) !== String(tier.max_classes ?? '');
   return (
     <div className="tier-row">
       <input value={label} onChange={(e) => setLabel(e.target.value)} style={{ flex: 1, minWidth: 180 }} />
       <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Liên hệ" style={{ width: 130 }} />
       <span className="muted" style={{ fontSize: 12 }}>đ/niên khóa</span>
-      <button className="btn sm" disabled={!dirty} onClick={() => onSave({ label: label.trim(), price: price === '' ? null : Number(price) })}>Lưu</button>
+      <input type="number" min="1" value={maxCls} onChange={(e) => setMaxCls(e.target.value)} placeholder="∞" title="Số lớp tối đa (để trống = không giới hạn)" style={{ width: 80 }} />
+      <span className="muted" style={{ fontSize: 12 }}>lớp tối đa</span>
+      <button className="btn sm" disabled={!dirty} onClick={() => onSave({ label: label.trim(), price: price === '' ? null : Number(price), max_classes: maxCls === '' ? null : Number(maxCls) })}>Lưu</button>
     </div>
   );
 }
@@ -577,10 +580,15 @@ function PaymentFields({ pay, set }) {
 
 const emptyPay = () => ({ amount: '', method: 'bank', paid_at: new Date().toISOString().slice(0, 10), discount_code: '', note: '' });
 
-function ActivateModal({ parish, onClose, onConfirm }) {
+function ActivateModal({ parish, tiers, onClose, onConfirm }) {
   const [exp, setExp] = useState(parish.plan_expires_at ? parish.plan_expires_at.slice(0, 10) : suggestExpiry());
   const [pay, setPay] = useState(emptyPay());
-  // Mức: 5 (nhỏ) / 12 (vừa) / '' (lớn = không giới hạn). Mặc định theo mức hiện tại.
+  // Mức đọc từ bảng giá (plan_tiers.max_classes). value = số lớp tối đa ('' = không giới hạn).
+  const tierOpts = (tiers && tiers.length ? tiers : [
+    { id: 1, label: 'Giáo xứ nhỏ — tối đa 5 lớp', max_classes: 5 },
+    { id: 2, label: 'Giáo xứ vừa — tối đa 12 lớp', max_classes: 12 },
+    { id: 3, label: 'Giáo xứ lớn — không giới hạn', max_classes: null },
+  ]);
   const [maxCls, setMaxCls] = useState(parish.plan_max_classes ? String(parish.plan_max_classes) : '');
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -594,9 +602,7 @@ function ActivateModal({ parish, onClose, onConfirm }) {
           <div className="field" style={{ flex: 1 }}>
             <label>Mức gói (giới hạn số lớp)</label>
             <select value={maxCls} onChange={(e) => setMaxCls(e.target.value)}>
-              <option value="5">Giáo xứ nhỏ — tối đa 5 lớp</option>
-              <option value="12">Giáo xứ vừa — tối đa 12 lớp</option>
-              <option value="">Giáo xứ lớn — không giới hạn</option>
+              {tierOpts.map((t) => <option key={t.id} value={t.max_classes == null ? '' : String(t.max_classes)}>{t.label}</option>)}
             </select>
           </div>
         </div>
