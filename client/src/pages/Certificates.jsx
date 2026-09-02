@@ -82,26 +82,45 @@ export default function Certificates() {
   const [msg, setMsg] = useState('');
   const BATCH_KEYS = ['baptism_date', 'baptism_church', 'baptism_book_no', 'baptism_priest', 'confirmation_date', 'confirmation_church', 'confirmation_bishop', 'confirmation_godparent', 'confirmation_book_no'];
 
+  function certLogName() {
+    if (kind === 'marriage') return 'Chứng chỉ Giáo lý Hôn nhân';
+    if (kind === 'scout') return 'Chứng chỉ Huynh Trưởng' + (extra.level ? ` cấp ${extra.level}` : '');
+    if (kind === 'baptism' || kind === 'baptism2') return 'Chứng chỉ Rửa Tội & Thêm Sức';
+    if (isMerit) return (meritTitle || 'Giấy khen').trim();
+    return 'Chứng chỉ';
+  }
+  // Ghi lịch sử cấp chứng chỉ vào hồ sơ (certificates jsonb) — xem lại được kể cả sau khi ra trường.
+  async function logCert(sel, date) {
+    const name = certLogName();
+    await Promise.all(sel.map((s) => {
+      const list = Array.isArray(s.certificates) ? [...s.certificates] : [];
+      const i = list.findIndex((c) => c && c.name === name);
+      const entry = { name, date };
+      if (i >= 0) list[i] = entry; else list.push(entry);
+      return api.put(`/students/${s.id}`, { certificates: list }).then(() => { s.certificates = list; }).catch(() => {});
+    }));
+  }
+
   async function issue() {
     const sel = students.filter((s) => picked.includes(s.id));
     if (!sel.length) { alert('Chưa chọn học viên nào'); return; }
+    const issueDate = extra.issue_date || todayStr();
     if (isMerit) {
       exportCertificates({ parish, students: sel, kind: 'merit', merit: { title: meritTitle, reason: meritReason, className: cls.name, year: cls.year } });
-      return;
-    }
-    const parishForCert = { ...parish, priest_name: priestName, priest_signature: parish?.settings?.priest_signature };
-    printCert({ template: kind, parish: parishForCert, students: sel, extra });
-    // Áp thông tin chung -> tự ghi vào hồ sơ từng em (chỉ các trường đã điền)
-    if (isBaptism) {
-      const patch = {};
-      BATCH_KEYS.forEach((k) => { if (extra[k]) patch[k] = extra[k]; });
-      if (Object.keys(patch).length) {
-        setMsg('Đang lưu thông tin chung vào hồ sơ…');
-        await Promise.all(sel.map((s) => api.put(`/students/${s.id}`, patch).catch(() => {})));
-        setMsg(`Đã lưu thông tin chung vào hồ sơ ${sel.length} em.`);
-        setTimeout(() => setMsg(''), 4000);
+    } else {
+      const parishForCert = { ...parish, priest_name: priestName, priest_signature: parish?.settings?.priest_signature };
+      printCert({ template: kind, parish: parishForCert, students: sel, extra });
+      // Rửa Tội & Thêm Sức: áp thông tin chung -> ghi vào hồ sơ từng em
+      if (isBaptism) {
+        const patch = {};
+        BATCH_KEYS.forEach((k) => { if (extra[k]) patch[k] = extra[k]; });
+        if (Object.keys(patch).length) await Promise.all(sel.map((s) => api.put(`/students/${s.id}`, patch).catch(() => {})));
       }
     }
+    setMsg('Đang lưu vào hồ sơ…');
+    await logCert(sel, issueDate);
+    setMsg(`Đã cấp & lưu vào hồ sơ ${sel.length} em (xem lại ở hồ sơ học viên → mục Chứng chỉ).`);
+    setTimeout(() => setMsg(''), 5000);
   }
 
   return (
