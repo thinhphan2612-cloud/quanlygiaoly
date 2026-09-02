@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { supabase } from '../supabase';
-import { exportCertificates } from '../lib/certificate';
 import { printCert, BUILTIN_FRAMES, CERT_ORIENT } from '../lib/certTemplates';
 import { fileToPngBlob } from '../lib/img';
 
@@ -145,12 +144,11 @@ export default function Certificates() {
     const sel = students.filter((s) => picked.includes(s.id));
     if (!sel.length) { alert('Chưa chọn học viên nào'); return; }
     const issueDate = extra.issue_date || todayStr();
-    if (isMerit) {
-      exportCertificates({ parish, students: sel, kind: 'merit', merit: { title: meritTitle, reason: meritReason, className: cls.name, year: cls.year } });
-    } else {
-      const parishForCert = { ...parish, priest_name: priestName, priest_signature: parish?.settings?.priest_signature };
-      printCert({ type: kind, frame: selFrame, parish: parishForCert, students: sel, extra });
-    }
+    const parishForCert = { ...parish, priest_name: priestName, priest_signature: parish?.settings?.priest_signature };
+    const ex = isMerit
+      ? { ...extra, merit_title: meritTitle, merit_reason: meritReason, class_name: cls.name, year: cls.year }
+      : extra;
+    printCert({ type: kind, frame: selFrame, parish: parishForCert, students: sel, extra: ex });
     setMsg('Đang lưu vào hồ sơ…');
     await logCert(sel, issueDate);
     setMsg(`Đã cấp & lưu vào hồ sơ ${sel.length} em (xem lại ở hồ sơ học viên → mục Chứng chỉ).`);
@@ -169,13 +167,7 @@ export default function Certificates() {
           </div>
         </div>
 
-        {isMerit ? (
-          <div className="row">
-            <div className="field" style={{ flex: 1 }}><label>Tiêu đề</label><input value={meritTitle} onChange={(e) => setMeritTitle(e.target.value)} placeholder="GIẤY KHEN" /></div>
-            <div className="field" style={{ flex: 2 }}><label>Nội dung khen</label><input value={meritReason} onChange={(e) => setMeritReason(e.target.value)} placeholder="VD: đạt thành tích xuất sắc trong học tập giáo lý" /></div>
-          </div>
-        ) : (
-          <>
+        <>
             <div className="field">
               <label>Khung chứng chỉ {frames.length > 1 && <span className="muted" style={{ fontWeight: 400 }}>— chọn mẫu khung muốn dùng</span>}</label>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start' }}>
@@ -214,11 +206,19 @@ export default function Certificates() {
                 <div className="field" style={{ flex: 2 }}><label>Dòng chứng nhận</label><input value={extra.certify_line || ''} onChange={setE('certify_line')} placeholder="VD: Linh mục Giáo xứ Nam Tây chứng nhận" /></div>
               </div>
             )}
+            {isMerit && (
+              <div className="row">
+                <div className="field" style={{ flex: 1 }}><label>Tiêu đề</label><input value={meritTitle} onChange={(e) => setMeritTitle(e.target.value)} placeholder="GIẤY KHEN" /></div>
+                <div className="field" style={{ flex: '0 0 150px' }}><label>Vị thứ</label><input value={extra.rank || ''} onChange={setE('rank')} placeholder="VD: Nhất" /></div>
+                <div className="field" style={{ flex: 2 }}><label>Nội dung khen</label><input value={meritReason} onChange={(e) => setMeritReason(e.target.value)} placeholder="Đã chuyên chăm học giáo lý và siêng năng tham dự Thánh Lễ" /></div>
+              </div>
+            )}
             <p className="muted" style={{ fontSize: 12, marginTop: -2 }}>
-              Tên, ngày sinh, cha mẹ, nơi sinh… lấy từ <b>hồ sơ từng em</b>. Người ký &amp; chữ ký lấy từ Cài đặt giáo xứ.
+              {isMerit
+                ? <>Lớp &amp; năm học lấy theo lớp đang chọn; tên học viên lấy từ hồ sơ. Người ký &amp; chữ ký lấy từ Cài đặt giáo xứ.</>
+                : <>Tên, ngày sinh, cha mẹ, nơi sinh… lấy từ <b>hồ sơ từng em</b>. Người ký &amp; chữ ký lấy từ Cài đặt giáo xứ.</>}
             </p>
           </>
-        )}
 
         <div className="row">
           <div className="field" style={{ flex: 1 }}><label>Niên khóa</label>

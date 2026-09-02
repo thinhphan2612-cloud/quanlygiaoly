@@ -124,6 +124,33 @@ function scoutHtml({ parish, student: s, extra = {}, frame }) {
   </div>`;
 }
 
+// ---------- Giấy khen (khổ ngang) ----------
+function meritHtml({ parish, student: s, extra = {}, frame }) {
+  const place = extra.place || parish?.name || '';
+  const nameUp = (parish?.name || '').replace(/^Giáo xứ\s*/i, '').toUpperCase();
+  return `
+  <div class="cert landscape">
+    <img class="frame" src="${frame}" alt="">
+    <div class="k-org">${esc((parish?.diocese || '').toUpperCase())}${parish?.name ? '<br>GIÁO XỨ ' + esc(nameUp) : ''}</div>
+    <div class="k-quote"><i>${esc(extra.quote || '“Lời Chúa là ngọn đèn soi cho con bước, là Ánh Sáng dẫn đường con đi”')}</i><br><b>(Tv 119, 105)</b></div>
+    <div class="content" style="top:19%;left:8%;right:8%;bottom:6%;align-items:center;text-align:center">
+      <div class="k-title">${esc(extra.merit_title || 'GIẤY KHEN')}</div>
+      <div class="k-sub">LINH MỤC QUẢN XỨ ${esc(nameUp)}</div>
+      <div class="k-sub2">TẶNG KHEN GIÁO LÝ SINH</div>
+      <div class="k-name">${esc(fullName(s))}</div>
+      <div class="k-fields"><span><span class="k-lb">LỚP:</span> <b>${esc(extra.class_name || '')}</b></span><span><span class="k-lb">VỊ THỨ:</span> <b>${esc(extra.rank || '')}</b></span></div>
+      <div class="k-reason">${esc((extra.merit_reason || 'Đã chuyên chăm học giáo lý và siêng năng tham dự Thánh Lễ').toUpperCase())}</div>
+      ${extra.year ? `<div class="k-year">NĂM HỌC: ${esc(extra.year)}</div>` : ''}
+      <div class="k-sign">
+        <div>${esc(place)}, ${dmyLong(extra.issue_date)}</div>
+        <div>Linh mục quản xứ</div>
+        ${parish?.priest_signature ? `<img class="sig" src="${parish.priest_signature}">` : '<div class="sig-gap"></div>'}
+        <div>${esc(parish?.priest_name || '')}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
 const STYLE = `
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%}
@@ -165,6 +192,20 @@ html,body{width:100%;height:100%}
 .s-sono{font-weight:700}
 .s-sign{text-align:right;line-height:1.5}
 .s-sign .sig{height:6cqw;margin:.3cqw 0 0 auto;display:block}
+/* Giấy khen */
+.k-org{position:absolute;top:15%;left:7.5%;font-weight:700;font-size:1.65cqw;line-height:1.4;z-index:2;max-width:30%}
+.k-quote{position:absolute;top:15%;right:9%;text-align:right;font-style:italic;font-size:1.45cqw;line-height:1.4;max-width:27%;z-index:2}
+.k-title{font-family:'Fahkwang',sans-serif;font-weight:700;color:#c00000;font-size:4cqw;line-height:1.1;letter-spacing:.3cqw;margin-bottom:.5cqw}
+.k-sub{color:#1b3fae;font-weight:700;font-size:2.5cqw;line-height:1.2}
+.k-sub2{color:#1b3fae;font-weight:700;font-size:2.05cqw;margin-bottom:1cqw}
+.k-name{font-family:'PlayfairSC',serif;font-weight:700;font-size:3.5cqw;margin:.3cqw 0 1.1cqw}
+.k-fields{display:flex;gap:6cqw;font-size:2.1cqw;margin-bottom:1cqw}
+.k-lb{color:#1b3fae;font-weight:700}
+.k-reason{color:#c00000;font-weight:700;font-size:2.05cqw;line-height:1.35;max-width:86%}
+.k-year{color:#c00000;font-weight:700;font-size:2.05cqw;margin-top:.4cqw}
+.k-sign{margin-top:auto;align-self:flex-end;text-align:center;font-size:1.9cqw;line-height:1.5}
+.k-sign .sig{height:6.5cqw;margin:.3cqw auto 0;display:block}
+.k-sign .sig-gap{height:6cqw}
 `;
 
 // Loại chứng chỉ (cách render) — độc lập với KHUNG (ảnh nền có thể chọn/tùy chỉnh).
@@ -172,6 +213,7 @@ const RENDERERS = {
   baptism: { render: baptismHtml, orient: 'portrait' },
   marriage: { render: marriageHtml, orient: 'landscape' },
   scout: { render: scoutHtml, orient: 'landscape' },
+  merit: { render: meritHtml, orient: 'landscape' },
 };
 // Khung dựng sẵn theo loại (user chọn; admin có thể thêm khung tùy chỉnh).
 export const BUILTIN_FRAMES = {
@@ -181,8 +223,9 @@ export const BUILTIN_FRAMES = {
   ],
   marriage: [{ id: 'mr1', name: 'Chuẩn', url: '/certs/frame-marriage.png' }],
   scout: [{ id: 'sc1', name: 'Chuẩn', url: '/certs/frame-scout.png' }],
+  merit: [{ id: 'mrt1', name: 'Chuẩn', url: '/certs/frame-merit.jpg' }],
 };
-export const CERT_ORIENT = { baptism: 'portrait', marriage: 'landscape', scout: 'landscape' };
+export const CERT_ORIENT = { baptism: 'portrait', marriage: 'landscape', scout: 'landscape', merit: 'landscape' };
 
 function pageHtml(inner, orient) {
   const size = orient === 'landscape' ? 'A4 landscape' : 'A4 portrait';
