@@ -198,11 +198,19 @@ export function printCert(opts) {
   const iframe = document.createElement('iframe');
   Object.assign(iframe.style, { position: 'fixed', right: '0', bottom: '0', width: '0', height: '0', border: '0' });
   document.body.appendChild(iframe);
-  const doc = iframe.contentWindow.document; doc.open(); doc.write(html); doc.close();
-  const go = () => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => document.body.removeChild(iframe), 1500); };
-  // đợi font + ảnh frame tải xong
-  if (iframe.contentWindow.document.fonts?.ready) iframe.contentWindow.document.fonts.ready.then(() => setTimeout(go, 400));
-  else setTimeout(go, 800);
+  const win = iframe.contentWindow;
+  const doc = win.document; doc.open(); doc.write(html); doc.close();
+  let done = false;
+  const go = () => {
+    if (done) return; done = true;
+    win.focus(); win.print(); setTimeout(() => document.body.removeChild(iframe), 1500);
+  };
+  // ĐỢI cả font VÀ ảnh frame tải xong mới in (frame nặng, nếu in sớm sẽ mất khung).
+  const imgs = [...doc.images];
+  const imgReady = Promise.all(imgs.map((img) => (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise((r) => { img.onload = r; img.onerror = r; })));
+  const fontsReady = doc.fonts?.ready || Promise.resolve();
+  Promise.all([imgReady, fontsReady]).then(() => setTimeout(go, 250));
+  setTimeout(go, 8000); // phòng hờ nếu có ảnh không tải được
 }
 
 export { TEMPLATES };
