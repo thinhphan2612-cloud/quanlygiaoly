@@ -8,14 +8,16 @@ const STORE_URL = 'https://ephatastore.com';
 // Worker phục vụ với ĐÚNG content-type (mọi trang/asset render đúng, điều hướng
 // nội bộ như trang biên soạn câu hỏi hoạt động). Chạy client-side nên độc lập host.
 const STORAGE_MARK = '/storage/v1/object/public/default-games/';
-function gameRel(playUrl) {
-  if (typeof playUrl !== 'string') return null;
-  const i = playUrl.indexOf(STORAGE_MARK);
-  return i >= 0 ? playUrl.slice(i + STORAGE_MARK.length) : null;
+// CHỈ áp cho game mặc định host trên bucket default-games của MÌNH. Game Ephata
+// Store (source 'ephata', host trên store) luôn giữ nguyên play_url -> không đụng.
+function gameRel(g) {
+  if (!g || g.source === 'ephata' || typeof g.play_url !== 'string') return null;
+  const i = g.play_url.indexOf(STORAGE_MARK);
+  return i >= 0 ? g.play_url.slice(i + STORAGE_MARK.length) : null;
 }
-function gameSrc(playUrl) {
-  const rel = gameRel(playUrl);
-  return rel == null ? playUrl /* builtin bundle */ : '/game-proxy/' + rel;
+function frameSrc(g) {
+  const rel = gameRel(g);
+  return rel == null ? g?.play_url : '/game-proxy/' + rel;
 }
 
 export default function Games() {
@@ -108,13 +110,13 @@ export default function Games() {
             <div className="game-frame-head">
               <span>{playing.icon || '◈'} {playing.title}</span>
               <div style={{ display: 'flex', gap: 8 }}>
-                {(gameRel(playing.play_url) == null || swReady) && <a className="btn ghost sm" href={gameSrc(playing.play_url)} target="_blank" rel="noopener noreferrer">Mở tab mới ↗</a>}
+                {(gameRel(playing) == null || swReady) && <a className="btn ghost sm" href={frameSrc(playing)} target="_blank" rel="noopener noreferrer">Mở tab mới ↗</a>}
                 <button className="btn ghost sm" onClick={() => setPlaying(null)}>Đóng ✕</button>
               </div>
             </div>
-            {gameRel(playing.play_url) != null && !swReady
+            {gameRel(playing) != null && !swReady
               ? <div className="game-frame" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span className="muted">Đang chuẩn bị game…</span></div>
-              : <iframe className="game-frame" src={gameSrc(playing.play_url)} title={playing.title} allow="fullscreen; autoplay; gamepad" />}
+              : <iframe className="game-frame" src={frameSrc(playing)} title={playing.title} allow="fullscreen; autoplay; gamepad" />}
           </div>
         </div>
       )}
