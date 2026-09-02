@@ -791,11 +791,11 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .tier-card .tc-note { margin-top: auto; text-align: center; color: var(--muted); font-size: 12.5px; padding: 8px; }
 .tc-badge { position: absolute; top: -9px; left: 14px; background: var(--primary); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
 .tc-badge.pop { background: #f59e0b; }
-.pro-benefits { border-top: 1px solid var(--border); padding-top: 16px; }
-.pro-benefits .pb-title { font-weight: 700; margin-bottom: 10px; font-size: 14px; color: var(--heading); }
-.pro-benefits .pb-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 5px 18px; font-size: 13px; }
-.pro-benefits .pb-list li { color: var(--muted); line-height: 1.5; padding-left: 20px; position: relative; }
-.pro-benefits .pb-list li::before { content: '✓'; position: absolute; left: 0; color: var(--primary); font-weight: 700; }
+.pro-benefits { background: var(--primary-soft); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+.pro-benefits .pb-title { font-weight: 800; margin-bottom: 10px; font-size: 14px; color: var(--primary); }
+.pro-benefits .pb-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px 18px; font-size: 13px; }
+.pro-benefits .pb-list li { color: var(--heading); font-weight: 500; line-height: 1.5; padding-left: 21px; position: relative; }
+.pro-benefits .pb-list li::before { content: '✓'; position: absolute; left: 0; color: var(--primary); font-weight: 800; }
 
 /* ---------- Tiện ích mở rộng (entitlement) ---------- */
 .ext-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
