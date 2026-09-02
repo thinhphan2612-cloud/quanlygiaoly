@@ -86,7 +86,7 @@ function marriageHtml({ parish, student: s, extra = {}, frame, inset }) {
     <div class="area" style="${areaStyle(inset)}">
     <div class="m-org">${esc(parish?.diocese || '')}<br>${esc(gx)}</div>
     <div class="m-quote"><i>${esc(extra.quote || '“Sự gì Thiên Chúa kết hợp, loài người không được phân ly”')}</i><br><b>(Mc 10,9)</b></div>
-    <div class="content" style="top:24%;left:9%;right:9%;bottom:6%;align-items:center;text-align:center">
+    <div class="content" style="top:22%;left:9%;right:9%;bottom:9%;align-items:center;text-align:center">
       <div class="title2 m-title">CHỨNG CHỈ GIÁO LÝ HÔN NHÂN</div>
       <div class="m-cert"><b>${esc(extra.certify_line || ('Linh mục ' + gx + ' chứng nhận'))}</b></div>
       <div class="m-name">${esc(extra.role || 'Anh')}: ${esc(fullName(s))}</div>
@@ -187,13 +187,13 @@ html,body{width:100%;height:100%}
 /* Hôn nhân */
 .m-org{position:absolute;top:7%;left:9.5%;font-weight:700;font-size:1.7cqw;line-height:1.35;text-transform:uppercase;z-index:2}
 .m-quote{position:absolute;top:7%;right:9.5%;text-align:right;font-weight:700;font-size:1.55cqw;line-height:1.4;max-width:31%;z-index:2}
-.m-title{font-size:4.5cqw;margin:0 0 2.4cqw}
-.m-cert{font-size:2.3cqw;margin-bottom:2.6cqw}
-.m-name{font-family:'PlayfairSC',serif;font-size:3.6cqw;margin-bottom:1.4cqw}
-.m-line{font-size:2.15cqw;margin:1.1cqw 0}
-.m-parents{display:flex;justify-content:space-between;gap:4cqw;width:92%;font-size:2cqw;font-family:'PlayfairSC',serif;margin:2cqw 0}
-.m-sign{margin-top:auto;align-self:flex-end;text-align:center;font-size:1.95cqw;line-height:1.55}
-.m-sign .sig{height:7cqw;margin:.3cqw 0 0 auto;display:block}
+.m-title{font-size:4.3cqw;margin:0 0 1.6cqw}
+.m-cert{font-size:2.25cqw;margin-bottom:1.6cqw}
+.m-name{font-family:'PlayfairSC',serif;font-size:3.4cqw;margin-bottom:.9cqw}
+.m-line{font-size:2.1cqw;margin:.6cqw 0}
+.m-parents{display:flex;justify-content:space-between;gap:4cqw;width:92%;font-size:2cqw;font-family:'PlayfairSC',serif;margin:1.3cqw 0}
+.m-sign{margin-top:auto;align-self:flex-end;text-align:center;font-size:1.9cqw;line-height:1.5}
+.m-sign .sig{height:5.5cqw;margin:.3cqw auto 0;display:block}
 /* Huynh trưởng */
 .s-org{position:absolute;top:8%;left:9%;font-weight:700;font-size:1.5cqw;line-height:1.3;text-transform:uppercase;max-width:34%;z-index:2}
 .s-title{color:#c00000;font-size:3.6cqw;margin:0}
