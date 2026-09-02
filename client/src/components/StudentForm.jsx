@@ -60,6 +60,26 @@ export default function StudentForm({ form, setForm, classes }) {
         <div className="field"><label>Ngày thêm sức</label><input type="date" value={F('confirmation_date')} onChange={set('confirmation_date')} /></div>
       </div>
 
+      <div className="form-section">Chi tiết cho chứng chỉ Rửa Tội &amp; Thêm Sức</div>
+      <div className="row">
+        <div className="field"><label>Nơi sinh</label><input value={F('birth_place')} onChange={set('birth_place')} /></div>
+        <div className="field"><label>Nguyên quán</label><input value={F('origin_place')} onChange={set('origin_place')} /></div>
+        <div className="field"><label>Trú quán</label><input value={F('residence')} onChange={set('residence')} /></div>
+      </div>
+      <div className="row">
+        <div className="field"><label>Nhà thờ Rửa Tội</label><input value={F('baptism_church')} onChange={set('baptism_church')} /></div>
+        <div className="field"><label>Số trích sổ Rửa Tội</label><input value={F('baptism_book_no')} onChange={set('baptism_book_no')} /></div>
+        <div className="field"><label>Linh mục Rửa Tội</label><input value={F('baptism_priest')} onChange={set('baptism_priest')} /></div>
+      </div>
+      <div className="row">
+        <div className="field"><label>Nhà thờ Thêm Sức</label><input value={F('confirmation_church')} onChange={set('confirmation_church')} /></div>
+        <div className="field"><label>Giám mục Thêm Sức</label><input value={F('confirmation_bishop')} onChange={set('confirmation_bishop')} /></div>
+      </div>
+      <div className="row">
+        <div className="field"><label>Người đỡ đầu Thêm Sức</label><input value={F('confirmation_godparent')} onChange={set('confirmation_godparent')} /></div>
+        <div className="field"><label>Số trích sổ Thêm Sức</label><input value={F('confirmation_book_no')} onChange={set('confirmation_book_no')} /></div>
+      </div>
+
       <div className="form-section">Chứng chỉ / khóa hoàn thành</div>
       <datalist id="cert-suggest">{CERT_SUGGESTIONS.map((s) => <option key={s} value={s} />)}</datalist>
       {certs.map((c, i) => (

@@ -6,7 +6,7 @@ import { ACCENTS, applyTheme, loadTheme } from '../theme.js';
 import { isPro } from '../lib/plans';
 import { useEntitlements } from '../entitlements.jsx';
 import { useParish } from '../parish.jsx';
-import { fileToDataUrl } from '../lib/img';
+import { fileToDataUrl, fileToDataUrlWide } from '../lib/img';
 
 // Trang cài đặt quản lý của admin: giáo xứ, năm học, lên lớp cuối năm,
 // tùy chọn bật/tắt, danh sách học viên đã ra trường.
@@ -14,7 +14,7 @@ export default function Settings() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { parish, saveParish: ctxSave, reload: reloadParish } = useParish();
-  const [pInfo, setPInfo] = useState({ name: '', diocese: '' });
+  const [pInfo, setPInfo] = useState({ name: '', diocese: '', priest: '' });
   const [years, setYears] = useState([]);
   const [newYear, setNewYear] = useState('');
   const [msg, setMsg] = useState('');
@@ -33,7 +33,7 @@ export default function Settings() {
   }
   useEffect(() => { loadAll(); }, []);
   // Đồng bộ ô nhập tên/giáo phận khi tải xong thông tin giáo xứ
-  useEffect(() => { if (parish) setPInfo({ name: parish.name || '', diocese: parish.diocese || '' }); }, [parish?.id]);
+  useEffect(() => { if (parish) setPInfo({ name: parish.name || '', diocese: parish.diocese || '', priest: parish.settings?.priest_name || '' }); }, [parish?.id]);
 
   if (user?.role !== 'admin') return <div className="muted">Chỉ quản trị viên được truy cập cài đặt.</div>;
   if (!parish) return <div className="muted">Đang tải...</div>;
@@ -55,6 +55,11 @@ export default function Settings() {
   async function uploadLogo(e) {
     const file = e.target.files?.[0]; if (!file) return;
     try { const url = await fileToDataUrl(file); await saveParish({ logo_url: url }); }
+    catch { fail('Không đọc được ảnh'); }
+  }
+  async function uploadSig(e) {
+    const file = e.target.files?.[0]; if (!file) return;
+    try { const url = await fileToDataUrlWide(file, 640); await saveParish({ settings: { ...settings, priest_signature: url } }); }
     catch { fail('Không đọc được ảnh'); }
   }
 
@@ -133,8 +138,23 @@ export default function Settings() {
             </div>
           </div>
         </div>
+        <div className="form-section" style={{ marginTop: 14 }}>Chữ ký in trên chứng chỉ</div>
+        <div className="field">
+          <label>Tên người ký (Linh mục quản xứ)</label>
+          <input value={pInfo.priest} onChange={(e) => setPInfo({ ...pInfo, priest: e.target.value })} placeholder="VD: Phêrô Nguyễn Văn An" />
+        </div>
+        <div className="field" style={{ marginTop: 4 }}>
+          <label>Ảnh chữ ký (nền trong, in phía trên tên)</label>
+          <div className="logo-upload">
+            {settings.priest_signature ? <img src={settings.priest_signature} alt="chữ ký" style={{ height: 56, maxWidth: 200, objectFit: 'contain', background: '#fff', borderRadius: 8, padding: 4 }} /> : <div className="muted" style={{ fontSize: 13 }}>Chưa có chữ ký</div>}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <label className="btn ghost sm" style={{ cursor: 'pointer' }}>Tải chữ ký<input type="file" accept="image/*" onChange={uploadSig} style={{ display: 'none' }} /></label>
+              {settings.priest_signature && <button className="btn ghost sm" onClick={() => saveParish({ settings: { ...settings, priest_signature: null } })}>Xóa</button>}
+            </div>
+          </div>
+        </div>
         <div style={{ marginTop: 8 }}>
-          <button className="btn" onClick={() => saveParish({ name: pInfo.name, diocese: pInfo.diocese })}>Lưu thông tin giáo xứ</button>
+          <button className="btn" onClick={() => saveParish({ name: pInfo.name, diocese: pInfo.diocese, settings: { ...settings, priest_name: pInfo.priest } })}>Lưu thông tin giáo xứ</button>
         </div>
       </div>
 

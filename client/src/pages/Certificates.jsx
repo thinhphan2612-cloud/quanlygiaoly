@@ -35,7 +35,7 @@ export default function Certificates() {
     api.get('/parish').then((r) => {
       setParish(r.data);
       setExtra((x) => ({ ...x, place: x.place || r.data?.name || '' }));
-      setPriestName((p) => p || r.data?.priest_name || '');
+      setPriestName((p) => p || r.data?.settings?.priest_name || '');
     }).catch(() => {});
   }, []);
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function Certificates() {
       exportCertificates({ parish, students: sel, kind: 'merit', merit: { title: meritTitle, reason: meritReason, className: cls.name, year: cls.year } });
       return;
     }
-    const parishForCert = { ...parish, priest_name: priestName, priest_signature: parish?.priest_signature };
+    const parishForCert = { ...parish, priest_name: priestName, priest_signature: parish?.settings?.priest_signature };
     printCert({ template: kind, parish: parishForCert, students: sel, extra });
   }
 
@@ -135,7 +135,7 @@ export default function Certificates() {
               </>
             )}
             <p className="muted" style={{ fontSize: 12, marginTop: -2 }}>
-              Tên, ngày sinh, cha mẹ, ngày rửa tội/thêm sức lấy từ hồ sơ học viên. Các trường hồ sơ chưa có (nơi sinh, nhà thờ, số trích sổ…) sẽ để trống để điền tay — sẽ bổ sung vào hồ sơ ở bước sau.
+              Mọi thông tin (tên, ngày sinh, cha mẹ, nơi sinh, nhà thờ, số trích sổ, ngày rửa tội/thêm sức…) lấy từ <b>hồ sơ học viên</b> — nhập ở Học viên → hồ sơ → mục "Chi tiết cho chứng chỉ". Người ký &amp; chữ ký lấy từ Cài đặt giáo xứ.
             </p>
           </>
         )}

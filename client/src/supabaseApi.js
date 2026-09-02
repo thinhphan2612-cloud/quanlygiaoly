@@ -76,7 +76,12 @@ const STUDENT_FIELDS = [
   'student_phone', 'address', 'class_id', 'notes', 'position', 'sacrament', 'avatar_url',
   'father_saint', 'father_name', 'father_phone', 'mother_saint', 'mother_name', 'mother_phone',
   'godparent_name', 'baptism_date', 'first_communion_date', 'confirmation_date', 'certificates',
+  'birth_place', 'origin_place', 'residence', 'baptism_church', 'baptism_book_no', 'baptism_priest',
+  'confirmation_church', 'confirmation_bishop', 'confirmation_godparent', 'confirmation_book_no',
 ];
+// Trường chi tiết chứng chỉ (mới) — bỏ ra nếu DB chưa chạy migration để không vỡ lưu hồ sơ.
+const CERT_EXTRA = ['birth_place', 'origin_place', 'residence', 'baptism_church', 'baptism_book_no', 'baptism_priest', 'confirmation_church', 'confirmation_bishop', 'confirmation_godparent', 'confirmation_book_no'];
+const isMissingCol = (e) => /column .* does not exist|could not find/i.test(e?.message || '');
 function cleanStudent(body) {
   const out = {};
   for (const k of STUDENT_FIELDS) if (body[k] !== undefined) out[k] = nn(body[k]);
@@ -327,8 +332,12 @@ async function handle(method, rawUrl, body = {}) {
     }
     if (path === '/students' && method === 'post') {
       if (!body.full_name) return fail(400, 'Thiếu họ tên học viên');
-      const { data, error } = await supabase.from('students')
-        .insert({ parish_id: pid, ...cleanStudent(body) }).select('*, classes(name)').single();
+      const row = { parish_id: pid, ...cleanStudent(body) };
+      let { data, error } = await supabase.from('students').insert(row).select('*, classes(name)').single();
+      if (error && isMissingCol(error)) {
+        CERT_EXTRA.forEach((k) => delete row[k]);
+        ({ data, error } = await supabase.from('students').insert(row).select('*, classes(name)').single());
+      }
       if (error) return fail(400, error.message);
       return ok({ ...data, class_name: data.classes?.name || null });
     }
@@ -350,8 +359,12 @@ async function handle(method, rawUrl, body = {}) {
       return ok(data);
     }
     if (seg[0] === 'students' && seg[1] && method === 'put') {
-      const { data, error } = await supabase.from('students')
-        .update(cleanStudent(body)).eq('id', seg[1]).select('*, classes(name)').single();
+      const patch = cleanStudent(body);
+      let { data, error } = await supabase.from('students').update(patch).eq('id', seg[1]).select('*, classes(name)').single();
+      if (error && isMissingCol(error)) {
+        CERT_EXTRA.forEach((k) => delete patch[k]);
+        ({ data, error } = await supabase.from('students').update(patch).eq('id', seg[1]).select('*, classes(name)').single());
+      }
       if (error) return fail(400, error.message);
       return ok({ ...data, class_name: data.classes?.name || null });
     }
