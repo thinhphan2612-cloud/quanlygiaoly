@@ -63,6 +63,7 @@ export default function ExamTake() {
       resumedRef.current = true;
       (async () => {
         const { data: beg } = await supabase.rpc('exam_begin', { p_attempt_id: attempt.id });
+        if (beg?.leave_count) setLeaveCount(beg.leave_count); // hiện lại cảnh báo sau khi iOS reload
         if (beg?.submitted) { setScoreData({ score: beg.score, correct: beg.correct, total: beg.total }); setSubmitted(true); }
         const { data: qs } = await supabase.rpc('exam_take', { p_code: code });
         setDisplayQs(buildDisplay(qs || [], attempt.id));
@@ -98,12 +99,17 @@ export default function ExamTake() {
 
   // Chống gian lận: khi đang làm bài, chặn bôi đen/copy/cut/chuột phải để không sao chép câu hỏi ra ngoài.
   const taking = !!(attempt && exam && exam.status === 'started' && displayQs && !submitted && !revealed);
-  const [leftWarn, setLeftWarn] = useState(false);
+  const [leaveCount, setLeaveCount] = useState(0);
   useEffect(() => {
     if (!taking) return;
     const block = (e) => e.preventDefault();
-    // Rời màn hình (đổi app/tab, chụp màn hình…) -> ghi nhận + cảnh báo.
-    const onHide = () => { if (document.visibilityState === 'hidden') { supabase.rpc('exam_leave', { p_attempt_id: attempt.id }).catch(() => {}); setLeftWarn(true); } };
+    // Rời màn hình (đổi app/tab…) -> ghi nhận trên server + cập nhật số lần.
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') {
+        setLeaveCount((c) => c + 1); // hiện ngay
+        supabase.rpc('exam_leave', { p_attempt_id: attempt.id }).then(({ data }) => { if (typeof data === 'number') setLeaveCount(data); }).catch(() => {});
+      }
+    };
     document.addEventListener('copy', block);
     document.addEventListener('cut', block);
     document.addEventListener('contextmenu', block);
@@ -206,7 +212,7 @@ export default function ExamTake() {
       <div className="exam-wrap">
         <div className="exam-paper exam-noselect">
           <div className="exam-head"><h1>{exam.title}</h1><p className="muted">Họ tên: <b>{attempt.name}</b> · Lớp {exam.class_name}</p></div>
-          {leftWarn && <div className="exam-warn">⚠ Con vừa rời khỏi màn hình thi. Vui lòng ở lại trang cho đến khi nộp — mỗi lần rời màn hình đều được ghi lại cho giáo lý viên.</div>}
+          {leaveCount > 0 && <div className="exam-warn">⚠ Con đã rời khỏi màn hình thi <b>{leaveCount} lần</b>. Vui lòng ở lại trang cho đến khi nộp — mỗi lần rời màn hình đều được ghi lại cho giáo lý viên.</div>}
           {displayQs.map((q, i) => (
             <div className="exam-q" id={'q-' + q.id} key={q.id}>
               <div className={`exam-q-text ${showMissing && answers[q.id] == null ? 'miss' : ''}`}><b>Câu {i + 1}.</b> {q.text}</div>
