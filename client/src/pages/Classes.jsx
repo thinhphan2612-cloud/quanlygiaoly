@@ -315,15 +315,23 @@ export default function Classes() {
   return (
     <div>
       <h1>Quản lý lớp học</h1>
-      {isAdmin && (
+      {isAdmin && (() => {
+        const maxClasses = isFree ? 1 : (parish?.plan_max_classes || null); // null = không giới hạn
+        const reached = maxClasses != null && classes.length >= maxClasses;
+        return (
         <div className="toolbar">
-          {!(isFree && classes.length >= 1) && <button className="btn" onClick={openCreate}>+ Thêm lớp</button>}
+          {!reached && <button className="btn" onClick={openCreate}>+ Thêm lớp</button>}
           {!isFree && <button className="btn ghost" onClick={openOrder} disabled={classes.length < 2}>⚙ Cài đặt lớp học</button>}
-          {isFree && classes.length >= 1 && (
-            <span className="muted" style={{ fontSize: 13 }}>Gói Khởi động quản lý 1 lớp — muốn dùng tiếp thì sửa lại lớp hiện có. Nâng lên Pro để thêm lớp không giới hạn.</span>
+          {reached && (
+            <span className="muted" style={{ fontSize: 13 }}>
+              {isFree
+                ? 'Gói Khởi động quản lý 1 lớp — muốn dùng tiếp thì sửa lại lớp hiện có. Nâng lên Pro để thêm lớp.'
+                : `Đã đạt tối đa ${maxClasses} lớp của mức gói hiện tại. Nâng mức gói (liên hệ tác giả) để thêm lớp.`}
+            </span>
           )}
         </div>
-      )}
+        );
+      })()}
 
       <div className="seg" style={{ marginBottom: 14, maxWidth: 460 }}>
         <button className={`seg-btn ${tab === 'catechism' ? 'on' : ''}`} onClick={() => setTab('catechism')}>Giáo lý chính quy</button>

@@ -87,9 +87,9 @@ export default function Admin() {
       .sort((a, b) => a.dleft - b.dleft),
     [rows]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function setPlan(parish, plan, plan_expires_at, payment) {
+  async function setPlan(parish, plan, plan_expires_at, payment, plan_max_classes) {
     try {
-      await api.post('/admin/set-plan', { parish_id: parish.id, plan, plan_expires_at });
+      await api.post('/admin/set-plan', { parish_id: parish.id, plan, plan_expires_at, plan_max_classes: plan_max_classes ?? null });
       if (payment && Number(payment.amount) > 0) {
         await api.post('/admin/payment', { parish_id: parish.id, ...payment });
       }
@@ -314,6 +314,7 @@ export default function Admin() {
                           <>
                             <span className={`plan-badge ${expired ? 'expired' : 'pro'}`}>{expired ? 'Pro hết hạn' : 'PRO'}</span>
                             <div className="muted" style={{ fontSize: 11 }}>đến {fmtDate(p.plan_expires_at)}</div>
+                            <div className="muted" style={{ fontSize: 11 }}>{p.plan_max_classes ? `≤ ${p.plan_max_classes} lớp` : 'không giới hạn lớp'}</div>
                           </>
                         ) : (
                           <span className="plan-badge free">Khởi động</span>
@@ -445,7 +446,7 @@ export default function Admin() {
         <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>Để trống ô giá = "Liên hệ" (không tạo QR).</p>
       </div>
 
-      {editing && <ActivateModal parish={editing} onClose={() => setEditing(null)} onConfirm={(exp, payment) => setPlan(editing, 'pro', exp, payment)} />}
+      {editing && <ActivateModal parish={editing} onClose={() => setEditing(null)} onConfirm={(exp, payment, maxCls) => setPlan(editing, 'pro', exp, payment, maxCls)} />}
       {editParish && <EditParishModal parish={editParish} onClose={() => setEditParish(null)} onSave={(patch) => saveParish(editParish, patch)} />}
       {payParish && <PaymentModal parish={payParish} onClose={() => setPayParish(null)} onSave={(payment) => addPayment(payParish, payment)} />}
       {payingOrder && <OrderPaidModal order={payingOrder} onClose={() => setPayingOrder(null)} onConfirm={(exp) => markOrderPaid(payingOrder, exp)} />}
@@ -579,20 +580,32 @@ const emptyPay = () => ({ amount: '', method: 'bank', paid_at: new Date().toISOS
 function ActivateModal({ parish, onClose, onConfirm }) {
   const [exp, setExp] = useState(parish.plan_expires_at ? parish.plan_expires_at.slice(0, 10) : suggestExpiry());
   const [pay, setPay] = useState(emptyPay());
+  // Mức: 5 (nhỏ) / 12 (vừa) / '' (lớn = không giới hạn). Mặc định theo mức hiện tại.
+  const [maxCls, setMaxCls] = useState(parish.plan_max_classes ? String(parish.plan_max_classes) : '');
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal wide" onClick={(e) => e.stopPropagation()}>
         <h2 style={{ marginTop: 0 }}>Kích hoạt / gia hạn Pro — {parish.name}</h2>
-        <div className="field">
-          <label>Hạn gói (đến hết ngày)</label>
-          <input type="date" value={exp} onChange={(e) => setExp(e.target.value)} />
-          <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>Để trống nếu muốn Pro không giới hạn thời gian.</p>
+        <div className="row">
+          <div className="field" style={{ flex: '0 0 200px' }}>
+            <label>Hạn gói (đến hết ngày)</label>
+            <input type="date" value={exp} onChange={(e) => setExp(e.target.value)} />
+          </div>
+          <div className="field" style={{ flex: 1 }}>
+            <label>Mức gói (giới hạn số lớp)</label>
+            <select value={maxCls} onChange={(e) => setMaxCls(e.target.value)}>
+              <option value="5">Giáo xứ nhỏ — tối đa 5 lớp</option>
+              <option value="12">Giáo xứ vừa — tối đa 12 lớp</option>
+              <option value="">Giáo xứ lớn — không giới hạn</option>
+            </select>
+          </div>
         </div>
+        <p className="muted" style={{ fontSize: 12, marginTop: -4 }}>Để trống hạn = Pro không giới hạn thời gian. Mức quyết định số lớp tối đa giáo xứ được tạo.</p>
         <div className="form-section">Ghi nhận thanh toán (nhập số tiền để lưu vào sổ; để trống nếu không ghi)</div>
         <PaymentFields pay={pay} set={setPay} />
         <div className="modal-actions">
           <button className="btn ghost" onClick={onClose}>Hủy</button>
-          <button className="btn" onClick={() => onConfirm(exp || null, pay)}>Kích hoạt Pro</button>
+          <button className="btn" onClick={() => onConfirm(exp || null, pay, maxCls === '' ? null : Number(maxCls))}>Kích hoạt Pro</button>
         </div>
       </div>
     </div>

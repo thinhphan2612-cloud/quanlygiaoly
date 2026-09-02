@@ -710,7 +710,7 @@ async function handle(method, rawUrl, body = {}) {
       const r = await adminCall('list'); if (r.error) return fail(r.status, r.error); return ok(r.data.parishes || []);
     }
     if (path === '/admin/set-plan' && method === 'post') {
-      const r = await adminCall('set-plan', { parish_id: body.parish_id, plan: body.plan, plan_expires_at: nn(body.plan_expires_at) });
+      const r = await adminCall('set-plan', { parish_id: body.parish_id, plan: body.plan, plan_expires_at: nn(body.plan_expires_at), plan_max_classes: body.plan_max_classes ?? null });
       if (r.error) return fail(r.status, r.error); return ok(r.data);
     }
     if (path === '/admin/update-parish' && method === 'post') {

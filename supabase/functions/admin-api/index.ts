@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     // -------- liệt kê tất cả giáo xứ + số liệu --------
     if (action === 'list') {
       const [parishesR, profilesR, classesR, studentsR] = await Promise.all([
-        admin.from('parishes').select('id, name, diocese, plan, plan_expires_at, created_at'),
+        admin.from('parishes').select('id, name, diocese, plan, plan_expires_at, plan_max_classes, created_at'),
         admin.from('profiles').select('id, parish_id, role, full_name, email'),
         admin.from('classes').select('parish_id, graduated'),
         admin.from('students').select('parish_id, graduated'),
@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
           diocese: p.diocese || '',
           plan: p.plan === 'free' ? 'free' : 'pro',
           plan_expires_at: p.plan_expires_at || null,
+          plan_max_classes: p.plan_max_classes ?? null,
           created_at: p.created_at,
           classes: classCount[p.id] || 0,
           students: studentCount[p.id] || 0,
@@ -98,10 +99,12 @@ Deno.serve(async (req) => {
       const plan = body?.plan === 'pro' ? 'pro' : 'free';
       if (!parishId) return json({ error: 'Thiếu parish_id' }, 400);
       const expires = plan === 'pro' ? (body?.plan_expires_at || null) : null;
+      // Giới hạn số lớp theo mức Pro (null = không giới hạn). Free -> null (mặc định 1 lớp do trigger).
+      const maxClasses = plan === 'pro' ? (body?.plan_max_classes ?? null) : null;
       const { data, error } = await admin.from('parishes')
-        .update({ plan, plan_expires_at: expires })
+        .update({ plan, plan_expires_at: expires, plan_max_classes: maxClasses })
         .eq('id', parishId)
-        .select('id, plan, plan_expires_at')
+        .select('id, plan, plan_expires_at, plan_max_classes')
         .single();
       if (error) return json({ error: error.message }, 400);
       return json({ ok: true, parish: data });
@@ -185,8 +188,14 @@ Deno.serve(async (req) => {
       if (e0 || !o) return json({ error: 'Không tìm thấy đơn' }, 400);
       const expires = body?.plan_expires_at || null;
       if (o.parish_id) {
+        // Suy giới hạn số lớp từ mức của đơn (null = không giới hạn).
+        let maxClasses: number | null = null;
+        if (o.tier_id) {
+          const { data: t } = await admin.from('plan_tiers').select('max_classes').eq('id', o.tier_id).maybeSingle();
+          maxClasses = t?.max_classes ?? null;
+        }
         const { error: e1 } = await admin.from('parishes')
-          .update({ plan: 'pro', plan_expires_at: expires }).eq('id', o.parish_id);
+          .update({ plan: 'pro', plan_expires_at: expires, plan_max_classes: maxClasses }).eq('id', o.parish_id);
         if (e1) return json({ error: e1.message }, 400);
       }
       await admin.from('plan_orders').update({ status: 'paid' }).eq('id', id);
