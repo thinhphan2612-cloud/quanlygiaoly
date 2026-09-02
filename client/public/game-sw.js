@@ -25,13 +25,13 @@ self.addEventListener('fetch', (e) => {
     try {
       const range = e.request.headers.get('range');
       const r = await fetch(`${SUPA}/storage/v1/object/public/default-games/${rel}`, range ? { headers: { range } } : {});
-      const body = await r.arrayBuffer();
-      const h = new Headers();
+      // Giữ NGUYÊN header của Supabase (status 200/206, Content-Range, Content-Length,
+      // Accept-Ranges) để video/audio tua & phát đúng; chỉ ép lại Content-Type (vì
+      // Supabase trả text/plain cho .html). Stream thẳng body, không buffer.
+      const h = new Headers(r.headers);
       h.set('Content-Type', mimeOf(rel));
-      h.set('Cache-Control', 'public, max-age=300');
-      const cr = r.headers.get('content-range'); if (cr) h.set('Content-Range', cr);
-      const ar = r.headers.get('accept-ranges'); if (ar) h.set('Accept-Ranges', ar);
-      return new Response(body, { status: r.status, headers: h });
+      h.delete('content-encoding'); // Storage trả raw; xoá phòng hờ để không giải mã 2 lần
+      return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
     } catch (err) {
       return new Response('proxy error', { status: 502 });
     }
