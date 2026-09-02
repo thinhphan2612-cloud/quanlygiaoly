@@ -97,16 +97,24 @@ export default function Certificates() {
   }, [frames]);
 
   const selFrameObj = frames.find((f) => f.url === selFrame) || null;
-  const isCustomFrame = !!selFrameObj && !selFrameObj.builtin;
   useEffect(() => {
-    const ins = selFrameObj?.inset || {};
+    const ins = (selFrameObj?.builtin ? parish?.settings?.cert_insets?.[selFrameObj.id] : selFrameObj?.inset) || {};
     setInsetDraft({ top: ins.top || 0, right: ins.right || 0, bottom: ins.bottom || 0, left: ins.left || 0 });
-  }, [selFrame, customFrames]); // eslint-disable-line
+  }, [selFrame, customFrames, parish]); // eslint-disable-line
   async function saveInset() {
-    if (!isCustomFrame) return;
+    if (!selFrameObj) return;
     setSavingInset(true);
-    try { await api.put(`/cert-frames/${selFrameObj.id}`, { inset: insetDraft }); await loadFrames(); }
-    catch (e) { alert(e.response?.data?.error || 'Lưu vị trí thất bại'); }
+    try {
+      if (selFrameObj.builtin) {
+        const settings = { ...(parish?.settings || {}), cert_insets: { ...(parish?.settings?.cert_insets || {}), [selFrameObj.id]: insetDraft } };
+        await api.put('/parish', { settings });
+        const r = await api.get('/parish'); setParish(r.data);
+      } else {
+        await api.put(`/cert-frames/${selFrameObj.id}`, { inset: insetDraft });
+        await loadFrames();
+      }
+      setMsg('Đã lưu vị trí cho khung này.'); setTimeout(() => setMsg(''), 3000);
+    } catch (e) { alert(e.response?.data?.error || 'Lưu vị trí thất bại'); }
     finally { setSavingInset(false); }
   }
   // HTML xem trước (1 tờ) — cập nhật theo loại/khung/lề/nội dung.
@@ -225,24 +233,23 @@ export default function Certificates() {
 
             <div className="field">
               <label>Xem trước</label>
-              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                <iframe title="Xem trước chứng chỉ" srcDoc={previewSrc}
-                  style={{ flex: '1 1 380px', minWidth: 260, height: (CERT_ORIENT[kind] || 'portrait') === 'landscape' ? 300 : 420, border: '1px solid var(--border,#d1d5db)', borderRadius: 8, background: '#fff' }} />
-                <div style={{ flex: '0 0 210px', minWidth: 190 }}>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                <div style={{ flex: '1 1 360px', maxWidth: (CERT_ORIENT[kind] || 'portrait') === 'landscape' ? 600 : 440 }}>
+                  <iframe title="Xem trước chứng chỉ" srcDoc={previewSrc} scrolling="no"
+                    style={{ width: '100%', aspectRatio: (CERT_ORIENT[kind] || 'portrait') === 'landscape' ? '4000 / 2828' : '2475 / 3500', border: '1px solid var(--border,#d1d5db)', borderRadius: 8, background: '#fff', display: 'block' }} />
+                </div>
+                <div style={{ flex: '0 0 220px', minWidth: 200 }}>
                   <div className="fp-label" style={{ marginBottom: 4 }}>Căn vị trí nội dung</div>
-                  <p className="muted" style={{ fontSize: 12, marginTop: 0, marginBottom: 8 }}>Nếu chữ tràn/đè lên viền khung, tăng lề để kéo toàn bộ nội dung vào trong ô trống (đơn vị: % của tờ).</p>
+                  <p className="muted" style={{ fontSize: 12, marginTop: 0, marginBottom: 8 }}>Nếu chữ tràn/đè viền, tăng lề để kéo nội dung vào trong ô trống (đơn vị: % của tờ). Xem trước cập nhật ngay.</p>
                   {[['top', 'Lề trên'], ['bottom', 'Lề dưới'], ['left', 'Lề trái'], ['right', 'Lề phải']].map(([k, lb]) => (
                     <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                       <label style={{ width: 60, fontSize: 13 }}>{lb}</label>
-                      <input type="number" step="0.5" min="0" value={insetDraft[k]} disabled={!isCustomFrame}
+                      <input type="number" step="0.5" value={insetDraft[k]}
                         onChange={(e) => setInsetDraft((d) => ({ ...d, [k]: Number(e.target.value) || 0 }))} style={{ width: 88 }} />
                     </div>
                   ))}
-                  {isCustomFrame ? (
-                    <button className="btn ghost sm" onClick={saveInset} disabled={savingInset} style={{ marginTop: 4 }}>{savingInset ? 'Đang lưu…' : '💾 Lưu vị trí cho khung này'}</button>
-                  ) : (
-                    <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>Khung mặc định đã căn sẵn. Chỉ căn được với khung admin tự tải lên.</p>
-                  )}
+                  <button className="btn ghost sm" onClick={saveInset} disabled={savingInset} style={{ marginTop: 4 }}>{savingInset ? 'Đang lưu…' : '💾 Lưu vị trí cho khung này'}</button>
+                  <p className="muted" style={{ fontSize: 11, marginTop: 6 }}>Lưu để mọi GLV in ra khớp{selFrameObj?.builtin ? ' (áp cho khung mặc định của giáo xứ bạn)' : ''}.</p>
                 </div>
               </div>
             </div>
