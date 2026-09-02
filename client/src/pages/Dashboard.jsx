@@ -2,6 +2,7 @@ import { useEffect, useState, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
+import { useParish } from '../parish.jsx';
 import { useRealtime } from '../realtime.jsx';
 import Donut from '../components/Donut.jsx';
 import { LeaderboardTable } from '../components/Leaderboard.jsx';
@@ -173,6 +174,55 @@ function ClassReviews() {
   );
 }
 
+// GLV: trạng thái chốt lớp của CÁC LỚP MÌNH — nhắc khi cổng mở + báo duyệt / cần xem lại.
+function ClassReviewsGLV() {
+  const { parish } = useParish();
+  const promotionOpen = !!parish?.settings?.promotion_open;
+  const [rows, setRows] = useState(null);
+  const load = () => api.get('/reviews-pending').then((r) => setRows(r.data)).catch(() => setRows([]));
+  useEffect(() => { load(); }, []);
+  const rev = useRealtime(['class_reviews', 'classes']);
+  useEffect(() => { if (rev) load(); }, [rev]); // eslint-disable-line
+  if (!rows) return null;
+  const relevant = (rows || []).filter((r) =>
+    r.status === 'submitted' || r.status === 'approved' || r.status === 'revision'
+    || (r.status === 'none' && (r.kind === 'external' || promotionOpen)));
+  if (relevant.length === 0) return null;
+  const statusChip = (r) => {
+    if (r.status === 'submitted') return <span className="tag-chip" style={{ background: '#fef9c3', color: '#854d0e' }}>⏳ Chờ Admin duyệt</span>;
+    if (r.status === 'approved') return <span className="tag-chip" style={{ background: '#dcfce7', color: '#15803d' }}>✓ Đã duyệt</span>;
+    if (r.status === 'revision') return <span className="tag-chip" style={{ background: '#fee2e2', color: '#b91c1c' }}>↩ Cần xem lại</span>;
+    return <span className="muted" style={{ fontSize: 12 }}>Chưa gửi</span>;
+  };
+  return (
+    <div className="panel" style={{ marginBottom: 18 }}>
+      <div className="card-head"><h2>🏁 Chốt lớp cuối năm</h2></div>
+      {promotionOpen && (
+        <div className="info-box" style={{ marginBottom: 10 }}>
+          📢 Ban giáo lý đã <b>mở kỳ xét lên lớp</b>. Vào <b>Lớp học</b> → bấm <b>🏁 Kết thúc lớp</b> để gửi kết quả (lên lớp / ở lại) cho từng lớp chính quy của bạn.
+        </div>
+      )}
+      <div className="table-scroll"><table>
+        <thead><tr><th>Lớp</th><th>Loại</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+          {relevant.map((r) => (
+            <Fragment key={r.class_id}>
+              <tr>
+                <td>{r.class_name}{r.is_graduation && ' 🎓'}</td>
+                <td className="muted">{r.kind === 'external' ? 'Ngoài HT' : 'Chính quy'}</td>
+                <td>{statusChip(r)}</td>
+              </tr>
+              {r.status === 'revision' && r.admin_note && (
+                <tr><td colSpan={3}><div className="note-box err" style={{ margin: '2px 0 6px' }}>↩ Admin yêu cầu xem lại: {r.admin_note}</div></td></tr>
+              )}
+            </Fragment>
+          ))}
+        </tbody>
+      </table></div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -242,7 +292,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {isAdmin && <ClassReviews />}
+      {isAdmin ? <ClassReviews /> : <ClassReviewsGLV />}
 
       {/* Biểu đồ điểm danh theo tuần */}
       <div className="panel" style={{ marginBottom: 18 }}>
