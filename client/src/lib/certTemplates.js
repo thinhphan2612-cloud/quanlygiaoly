@@ -43,7 +43,7 @@ function baptismHtml({ parish, student: s, extra = {}, frame }) {
         ${row('Và bà:', parentName(s?.mother_saint, s?.mother_name))}
         ${row('Nguyên quán:', extra.origin_place || s?.origin_place)}
         ${row('Trú quán:', extra.residence || s?.residence)}
-        ${row('Đã được Rửa Tội ngày:', dmy(s?.baptism_date))}
+        ${row('Đã được Rửa Tội ngày:', dmy(extra.baptism_date || s?.baptism_date))}
         ${row('Tại Nhà thờ:', extra.baptism_church || s?.baptism_church)}
         ${row('Trích sổ Rửa Tội, số:', extra.baptism_book_no || s?.baptism_book_no)}
         ${row('Do Linh mục:', extra.baptism_priest || s?.baptism_priest)}
@@ -52,7 +52,7 @@ function baptismHtml({ parish, student: s, extra = {}, frame }) {
       </div>
       <div class="divider">❖</div>
       <div class="rows">
-        ${row('Đã được Thêm Sức ngày:', dmy(s?.confirmation_date))}
+        ${row('Đã được Thêm Sức ngày:', dmy(extra.confirmation_date || s?.confirmation_date))}
         ${row('Tại Nhà thờ:', extra.confirmation_church || s?.confirmation_church)}
         ${row('Do Đức Giám mục:', extra.confirmation_bishop || s?.confirmation_bishop)}
         ${row('Người đỡ đầu:', extra.confirmation_godparent || s?.confirmation_godparent)}

@@ -78,8 +78,11 @@ export default function Certificates() {
   const toggle = (id) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   const toggleAll = () => setPicked(allPicked ? [] : students.map((s) => s.id));
   const isMerit = kind === 'merit';
+  const isBaptism = kind === 'baptism' || kind === 'baptism2';
+  const [msg, setMsg] = useState('');
+  const BATCH_KEYS = ['baptism_date', 'baptism_church', 'baptism_book_no', 'baptism_priest', 'confirmation_date', 'confirmation_church', 'confirmation_bishop', 'confirmation_godparent', 'confirmation_book_no'];
 
-  function issue() {
+  async function issue() {
     const sel = students.filter((s) => picked.includes(s.id));
     if (!sel.length) { alert('Chưa chọn học viên nào'); return; }
     if (isMerit) {
@@ -88,6 +91,17 @@ export default function Certificates() {
     }
     const parishForCert = { ...parish, priest_name: priestName, priest_signature: parish?.settings?.priest_signature };
     printCert({ template: kind, parish: parishForCert, students: sel, extra });
+    // Áp thông tin chung -> tự ghi vào hồ sơ từng em (chỉ các trường đã điền)
+    if (isBaptism) {
+      const patch = {};
+      BATCH_KEYS.forEach((k) => { if (extra[k]) patch[k] = extra[k]; });
+      if (Object.keys(patch).length) {
+        setMsg('Đang lưu thông tin chung vào hồ sơ…');
+        await Promise.all(sel.map((s) => api.put(`/students/${s.id}`, patch).catch(() => {})));
+        setMsg(`Đã lưu thông tin chung vào hồ sơ ${sel.length} em.`);
+        setTimeout(() => setMsg(''), 4000);
+      }
+    }
   }
 
   return (
@@ -134,8 +148,28 @@ export default function Certificates() {
                 </div>
               </>
             )}
+            {isBaptism && (
+              <div className="panel" style={{ background: 'var(--surface-2, #f8fafc)', padding: 12, margin: '4px 0' }}>
+                <div className="fp-label" style={{ marginBottom: 6 }}>Thông tin chung cho cả lớp <span className="muted" style={{ fontWeight: 400 }}>— điền 1 lần, áp cho mọi em được chọn &amp; tự lưu vào hồ sơ. Để trống thì dùng dữ liệu riêng của từng em.</span></div>
+                <div className="row">
+                  <div className="field"><label>Đã Rửa Tội ngày</label><input type="date" value={extra.baptism_date || ''} onChange={setE('baptism_date')} /></div>
+                  <div className="field"><label>Nhà thờ Rửa Tội</label><input value={extra.baptism_church || ''} onChange={setE('baptism_church')} /></div>
+                  <div className="field"><label>Trích sổ Rửa Tội</label><input value={extra.baptism_book_no || ''} onChange={setE('baptism_book_no')} /></div>
+                  <div className="field"><label>Do Linh mục</label><input value={extra.baptism_priest || ''} onChange={setE('baptism_priest')} /></div>
+                </div>
+                <div className="row">
+                  <div className="field"><label>Đã Thêm Sức ngày</label><input type="date" value={extra.confirmation_date || ''} onChange={setE('confirmation_date')} /></div>
+                  <div className="field"><label>Nhà thờ Thêm Sức</label><input value={extra.confirmation_church || ''} onChange={setE('confirmation_church')} /></div>
+                  <div className="field"><label>Do Đức Giám mục</label><input value={extra.confirmation_bishop || ''} onChange={setE('confirmation_bishop')} /></div>
+                </div>
+                <div className="row">
+                  <div className="field"><label>Người đỡ đầu Thêm Sức</label><input value={extra.confirmation_godparent || ''} onChange={setE('confirmation_godparent')} /></div>
+                  <div className="field"><label>Trích sổ Thêm Sức</label><input value={extra.confirmation_book_no || ''} onChange={setE('confirmation_book_no')} /></div>
+                </div>
+              </div>
+            )}
             <p className="muted" style={{ fontSize: 12, marginTop: -2 }}>
-              Mọi thông tin (tên, ngày sinh, cha mẹ, nơi sinh, nhà thờ, số trích sổ, ngày rửa tội/thêm sức…) lấy từ <b>hồ sơ học viên</b> — nhập ở Học viên → hồ sơ → mục "Chi tiết cho chứng chỉ". Người ký &amp; chữ ký lấy từ Cài đặt giáo xứ.
+              Tên, ngày sinh, cha mẹ, nơi sinh… lấy từ <b>hồ sơ từng em</b> (Học viên → hồ sơ → "Chi tiết cho chứng chỉ"). Các trường chung ở trên áp cho cả lớp. Người ký &amp; chữ ký lấy từ Cài đặt giáo xứ.
             </p>
           </>
         )}
@@ -180,6 +214,7 @@ export default function Certificates() {
 
         <div style={{ marginTop: 16 }}>
           <button className="btn" onClick={issue} disabled={!picked.length}>🖨 Xuất {picked.length > 1 ? `${picked.length} tờ` : 'chứng chỉ'} (PDF)</button>
+          {msg && <div className="info-box" style={{ marginTop: 8 }}>{msg}</div>}
           <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>Chọn "Lưu thành PDF" trong hộp thoại in. Mỗi học viên một trang.</p>
         </div>
       </div>
