@@ -756,7 +756,11 @@ function DefaultGamesManager() {
       let done = 0;
       for (const p of entries) {
         const rel = p.slice(baseDir.length);
-        const blob = await zip.files[p].async('blob');
+        // Gán ĐÚNG content-type qua blob.type: supabase-js bỏ qua option contentType
+        // khi body là Blob -> server đọc từ blob.type. JSZip .async('blob') cho type ''
+        // nên server mặc định text/plain khiến .html/.css/.js không chạy trong iframe.
+        const ab = await zip.files[p].async('arraybuffer');
+        const blob = new Blob([ab], { type: mimeOf(rel) });
         const { error } = await supabase.storage.from('default-games')
           .upload(`${slug}/${rel}`, blob, { upsert: true, contentType: mimeOf(rel) });
         if (error) throw new Error('Tải lên Storage lỗi: ' + error.message + ' (đã tạo bucket default-games + policy chưa?)');
