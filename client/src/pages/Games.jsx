@@ -3,22 +3,22 @@ import api from '../api';
 
 const STORE_URL = 'https://ephatastore.com';
 
-// Game host trên Supabase Storage: index.html bị Supabase ép về text/plain +
-// nosniff (chặn host HTML) nên KHÔNG render khi iframe trỏ src thẳng. Cách chạy:
-// fetch nội dung HTML rồi nạp bằng srcdoc, chèn <base href> để CSS/JS/ảnh (được
-// Storage phục vụ đúng type) tải theo đường dẫn tương đối.
-const isStorageGame = (u) => typeof u === 'string' && u.includes('/storage/v1/object/public/');
-function injectBase(html, base) {
-  const tag = `<base href="${base}">`;
-  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (m) => m + tag);
-  return tag + html;
+// Supabase Storage ép mọi .html thành text/plain (chặn host HTML) -> game không
+// chạy khi mở thẳng URL Storage. Ta cho iframe trỏ vào proxy cùng origin
+// (/api/game/...) — proxy trả đúng content-type nên mọi trang/asset render đúng
+// và điều hướng nội bộ (vd trang biên soạn câu hỏi) hoạt động.
+const STORAGE_MARK = '/storage/v1/object/public/default-games/';
+function gameSrc(playUrl) {
+  if (typeof playUrl !== 'string') return playUrl;
+  const i = playUrl.indexOf(STORAGE_MARK);
+  if (i >= 0) return '/api/game/' + playUrl.slice(i + STORAGE_MARK.length);
+  return playUrl; // game builtin (bundle Vercel) hoặc đã là đường proxy
 }
 
 export default function Games() {
   const [defaults, setDefaults] = useState([]);
   const [myGames, setMyGames] = useState([]);
   const [playing, setPlaying] = useState(null); // game đang chơi (iframe)
-  const [gameDoc, setGameDoc] = useState(null);  // srcdoc cho game host trên Storage
   const [loading, setLoading] = useState(true);
 
   function loadAll() {
@@ -28,26 +28,6 @@ export default function Games() {
     ]).then(([d, m]) => { setDefaults(d); setMyGames(m); }).finally(() => setLoading(false));
   }
   useEffect(() => { loadAll(); }, []);
-
-  // Nạp nội dung HTML cho game host trên Storage (dùng srcdoc + <base href>).
-  useEffect(() => {
-    setGameDoc(null);
-    if (!playing || !isStorageGame(playing.play_url)) return;
-    const base = playing.play_url.slice(0, playing.play_url.lastIndexOf('/') + 1);
-    let alive = true;
-    fetch(playing.play_url)
-      .then((r) => r.text())
-      .then((html) => { if (alive) setGameDoc(injectBase(html, base)); })
-      .catch(() => { if (alive) setGameDoc('<p style="font-family:sans-serif;padding:16px">Không tải được game.</p>'); });
-    return () => { alive = false; };
-  }, [playing]);
-
-  function openGameTab() {
-    if (!gameDoc) return;
-    const url = URL.createObjectURL(new Blob([gameDoc], { type: 'text/html' }));
-    window.open(url, '_blank', 'noopener');
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
-  }
 
   async function removeMine(g) {
     if (!confirm(`Gỡ liên kết "${g.title}" khỏi kho game của bạn?`)) return;
@@ -115,15 +95,11 @@ export default function Games() {
             <div className="game-frame-head">
               <span>{playing.icon || '◈'} {playing.title}</span>
               <div style={{ display: 'flex', gap: 8 }}>
-                {isStorageGame(playing.play_url)
-                  ? <button className="btn ghost sm" onClick={openGameTab} disabled={!gameDoc}>Mở tab mới ↗</button>
-                  : <a className="btn ghost sm" href={playing.play_url} target="_blank" rel="noopener noreferrer">Mở tab mới ↗</a>}
+                <a className="btn ghost sm" href={gameSrc(playing.play_url)} target="_blank" rel="noopener noreferrer">Mở tab mới ↗</a>
                 <button className="btn ghost sm" onClick={() => setPlaying(null)}>Đóng ✕</button>
               </div>
             </div>
-            {isStorageGame(playing.play_url)
-              ? <iframe className="game-frame" srcDoc={gameDoc || '<p style="font-family:sans-serif;padding:16px">Đang tải game…</p>'} title={playing.title} allow="fullscreen; autoplay; gamepad" />
-              : <iframe className="game-frame" src={playing.play_url} title={playing.title} allow="fullscreen; autoplay; gamepad" />}
+            <iframe className="game-frame" src={gameSrc(playing.play_url)} title={playing.title} allow="fullscreen; autoplay; gamepad" />
           </div>
         </div>
       )}
