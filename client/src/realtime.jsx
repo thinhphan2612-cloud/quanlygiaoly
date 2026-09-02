@@ -1,51 +1,28 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from './supabase';
-import { useAuth } from './auth.jsx';
 
-// Nghe thay đổi Postgres (Supabase Realtime) và tăng "rev" theo từng bảng.
-// Trang nào cần đồng bộ tức thời thì dùng useRealtime([...bảng]) làm dependency để tải lại.
-const TABLES = [
-  'students', 'classes', 'grades', 'grade_columns', 'attendance',
-  'spiritual_records', 'spiritual_tasks', 'class_teachers', 'transactions',
-  'school_years', 'notifications', 'profiles',
-];
-const RealtimeCtx = createContext({});
+// Đồng bộ dữ liệu giữa các trang.
+// TRƯỚC: mỗi client mở 1 websocket Supabase Realtime nghe 12 bảng -> đụng trần
+// ~500-1000 kết nối đồng thời + fan-out RLS khi đông. Nay BỎ websocket, thay bằng
+// polling nhẹ: phát 1 "tick" mỗi 60s (chỉ khi tab đang mở) và tick ngay khi user
+// quay lại tab. Trang nào dùng useRealtime([...]) làm dependency sẽ tự tải lại theo
+// nhịp này -> gần như tức thì, chịu được nghìn user, không giữ kết nối thường trực.
+const POLL_MS = 60000;
+const RealtimeCtx = createContext(0);
 
 export function RealtimeProvider({ children }) {
-  const { user } = useAuth();
-  const [revs, setRevs] = useState({});
-
+  const [tick, setTick] = useState(0);
   useEffect(() => {
-    if (!user) { setRevs({}); return; }
-    let ch;
-    let active = true;
-    (async () => {
-      // Gắn token cho socket realtime, nếu không RLS coi như anonymous và bỏ hết sự kiện
-      const { data } = await supabase.auth.getSession();
-      if (data?.session) supabase.realtime.setAuth(data.session.access_token);
-      if (!active) return;
-      ch = supabase.channel('rt-main');
-      TABLES.forEach((t) => {
-        ch.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => {
-          setRevs((r) => ({ ...r, [t]: (r[t] || 0) + 1 }));
-        });
-      });
-      ch.subscribe();
-    })();
-    // cập nhật token khi Supabase làm mới phiên
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) supabase.realtime.setAuth(session.access_token);
-    });
-    return () => { active = false; if (ch) supabase.removeChannel(ch); sub.subscription.unsubscribe(); };
-  }, [user?.id]);
-
-  return <RealtimeCtx.Provider value={revs}>{children}</RealtimeCtx.Provider>;
+    const bump = () => setTick((t) => t + 1);
+    const timer = setInterval(() => { if (document.visibilityState === 'visible') bump(); }, POLL_MS);
+    const onVis = () => { if (document.visibilityState === 'visible') bump(); }; // quay lại tab -> cập nhật ngay
+    document.addEventListener('visibilitychange', onVis);
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', onVis); };
+  }, []);
+  return <RealtimeCtx.Provider value={tick}>{children}</RealtimeCtx.Provider>;
 }
 
-// Trả về 1 số thay đổi mỗi khi một trong các bảng được truyền vào có cập nhật.
-export function useRealtime(tables = []) {
-  const revs = useContext(RealtimeCtx);
-  let sum = 0;
-  for (const t of tables) sum += revs[t] || 0;
-  return sum;
+// Giữ NGUYÊN chữ ký cũ (tham số bảng bỏ qua) để các trang không phải sửa.
+// Trả về số tăng theo nhịp polling -> dùng làm dependency của useEffect để refetch.
+export function useRealtime(_tables = []) {
+  return useContext(RealtimeCtx);
 }
