@@ -249,7 +249,6 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
 .zfab-body{padding:14px 16px}
 .zfab-body a{display:flex;align-items:center;gap:8px;padding:11px 13px;border-radius:12px;text-decoration:none;font-weight:600;font-size:14.5px;margin-bottom:8px}
 .zfab-zalo{background:#eaf3ff;color:#0068ff}
-.zfab-call{background:#eafaf0;color:#127a3e}
 .zfab-or{text-align:center;color:var(--muted);font-size:12.5px;margin:6px 0 10px}
 .zfab-body input,.zfab-body textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font:inherit;font-size:14px;margin-bottom:8px;background:#fff;color:var(--ink)}
 .zfab-send{width:100%;background:#0068ff;color:#fff;border:none;border-radius:10px;padding:10px;font:inherit;font-weight:600;cursor:pointer}
@@ -709,8 +708,7 @@ function copyPromoCode(btn){
   <div class="zfab-panel">
     <div class="zfab-head">Liên hệ &amp; hỗ trợ <button class="zfab-x" type="button" onclick="toggleZfab(false)">✕</button></div>
     <div class="zfab-body">
-      <a class="zfab-zalo" href="https://zalo.me/0964013126" target="_blank" rel="noopener">💬 Chat Zalo · 0964 013 126</a>
-      <a class="zfab-call" href="tel:0964013126">☎ Gọi · 0964 013 126</a>
+      <a class="zfab-zalo" href="https://zalo.me/0964013126" target="_blank" rel="noopener"><svg width="27" height="27" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="11" fill="#0068FF"/><text x="24" y="32" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-style="italic" font-size="18" fill="#fff">Zalo</text></svg>Chat với chúng tôi qua Zalo</a>
       <div class="zfab-or">— hoặc gửi tin nhắn —</div>
       <form id="zfabForm" onsubmit="return sendZfab(event)">
         <input name="name" placeholder="Tên của bạn">
