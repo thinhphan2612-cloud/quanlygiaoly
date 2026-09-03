@@ -23,7 +23,7 @@ const superEmails = (Deno.env.get('SUPERADMIN_EMAILS') || '')
 // Gửi email chào mừng khi giáo xứ được kích hoạt / gia hạn Pro — gửi TỪ Gmail
 // (support.giaolyso@gmail.com) qua SMTP + App Password. Tự bỏ qua nếu chưa cấu
 // hình GMAIL_USER/GMAIL_APP_PASSWORD -> KHÔNG chặn việc kích hoạt.
-async function sendProEmail(admin: any, parishId: string, opts: { expires?: string | null; maxClasses?: number | null }) {
+async function sendProEmail(admin: any, parishId: string, opts: { expires?: string | null; maxClasses?: number | null }, kind: 'welcome' | 'renew' = 'welcome') {
   try {
     const gmailUser = Deno.env.get('GMAIL_USER');
     const gmailPass = Deno.env.get('GMAIL_APP_PASSWORD');
@@ -39,6 +39,12 @@ async function sendProEmail(admin: any, parishId: string, opts: { expires?: stri
     const who = prof.full_name || 'Quý Cha / Quý Thầy Cô';
     const limitTxt = opts.maxClasses ? `tối đa <b>${opts.maxClasses} lớp</b>` : '<b>không giới hạn lớp</b>';
     const expTxt = opts.expires ? `đến hết ngày <b>${new Date(opts.expires).toLocaleDateString('vi-VN')}</b>` : '<b>không giới hạn thời gian</b>';
+    const isRenew = kind === 'renew';
+    const title = isRenew ? 'Gia hạn gói Pro thành công 🎉' : `Chào mừng ${pname} lên gói Pro! 🎉`;
+    const intro = isRenew
+      ? `Giáo xứ <b>${pname}</b> đã được <b>gia hạn gói Pro</b> trên Giáo Lý Số:`
+      : `Giáo xứ <b>${pname}</b> đã được kích hoạt <b>gói Pro</b> trên Giáo Lý Số:`;
+    const subject = isRenew ? `Gia hạn gói Pro thành công — ${pname}` : `Chào mừng ${pname} lên gói Pro — Giáo Lý Số`;
     const html = `
       <div style="background:#f4f6fb;padding:28px 12px;font-family:Arial,Helvetica,sans-serif">
         <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden">
@@ -46,9 +52,9 @@ async function sendProEmail(admin: any, parishId: string, opts: { expires?: stri
             <img src="https://app.giaoly.com.vn/logo-full.png" alt="Giáo Lý Số" height="38" style="height:38px;display:inline-block" />
           </div>
           <div style="padding:26px 30px;color:#1f2937;line-height:1.6">
-            <h2 style="color:#2563eb;margin:0 0 12px;font-size:20px">Chào mừng ${pname} lên gói Pro! 🎉</h2>
+            <h2 style="color:#2563eb;margin:0 0 12px;font-size:20px">${title}</h2>
             <p style="margin:0 0 12px">Kính gửi ${who},</p>
-            <p style="margin:0 0 14px">Giáo xứ <b>${pname}</b> đã được kích hoạt <b>gói Pro</b> trên Giáo Lý Số:</p>
+            <p style="margin:0 0 14px">${intro}</p>
             <table style="width:100%;border-collapse:collapse;margin:0 0 16px;font-size:14px">
               <tr><td style="padding:8px 0;color:#6b7280">Quy mô</td><td style="padding:8px 0;text-align:right">${limitTxt}</td></tr>
               <tr><td style="padding:8px 0;color:#6b7280;border-top:1px solid #eef2f7">Hiệu lực</td><td style="padding:8px 0;text-align:right;border-top:1px solid #eef2f7">${expTxt}</td></tr>
@@ -68,8 +74,8 @@ async function sendProEmail(admin: any, parishId: string, opts: { expires?: stri
     await client.send({
       from: `Giáo Lý Số <${gmailUser}>`,
       to,
-      subject: `Chào mừng ${pname} lên gói Pro — Giáo Lý Số`,
-      content: `Kính gửi ${who}, giáo xứ ${pname} đã được kích hoạt gói Pro trên Giáo Lý Số. Vào ứng dụng: ${appUrl}`,
+      subject,
+      content: `Kính gửi ${who}, giáo xứ ${pname} đã được ${isRenew ? 'gia hạn' : 'kích hoạt'} gói Pro trên Giáo Lý Số. Vào ứng dụng: ${appUrl}`,
       html,
     });
     await client.close();
@@ -158,13 +164,14 @@ Deno.serve(async (req) => {
       const expires = plan === 'pro' ? (body?.plan_expires_at || null) : null;
       // Giới hạn số lớp theo mức Pro (null = không giới hạn). Free -> null (mặc định 1 lớp do trigger).
       const maxClasses = plan === 'pro' ? (body?.plan_max_classes ?? null) : null;
+      const { data: prev } = await admin.from('parishes').select('plan').eq('id', parishId).maybeSingle();
       const { data, error } = await admin.from('parishes')
         .update({ plan, plan_expires_at: expires, plan_max_classes: maxClasses })
         .eq('id', parishId)
         .select('id, plan, plan_expires_at, plan_max_classes')
         .single();
       if (error) return json({ error: error.message }, 400);
-      if (plan === 'pro') await sendProEmail(admin, parishId, { expires, maxClasses });
+      if (plan === 'pro') await sendProEmail(admin, parishId, { expires, maxClasses }, prev?.plan === 'pro' ? 'renew' : 'welcome');
       return json({ ok: true, parish: data });
     }
 
@@ -252,10 +259,11 @@ Deno.serve(async (req) => {
           const { data: t } = await admin.from('plan_tiers').select('max_classes').eq('id', o.tier_id).maybeSingle();
           maxClasses = t?.max_classes ?? null;
         }
+        const { data: prevP } = await admin.from('parishes').select('plan').eq('id', o.parish_id).maybeSingle();
         const { error: e1 } = await admin.from('parishes')
           .update({ plan: 'pro', plan_expires_at: expires, plan_max_classes: maxClasses }).eq('id', o.parish_id);
         if (e1) return json({ error: e1.message }, 400);
-        await sendProEmail(admin, o.parish_id, { expires, maxClasses });
+        await sendProEmail(admin, o.parish_id, { expires, maxClasses }, prevP?.plan === 'pro' ? 'renew' : 'welcome');
       }
       await admin.from('plan_orders').update({ status: 'paid' }).eq('id', id);
       await admin.from('payments').insert({
