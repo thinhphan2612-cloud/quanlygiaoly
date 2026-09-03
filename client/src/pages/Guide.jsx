@@ -260,7 +260,7 @@ export default function Guide() {
     <div className="guide-wrap">
       <div className="guide-head">
         <h1>Hướng dẫn sử dụng</h1>
-        <p className="muted">Giới thiệu các chức năng và quy trình vận hành của Giáo Lý Số cho gói Pro. Gõ từ khóa để tìm nhanh (không cần dấu).</p>
+        <p className="muted">Giới thiệu các chức năng và quy trình vận hành của Giáo Lý Số. Mục có nhãn <b>PRO</b> là tính năng của gói Pro. Gõ từ khóa để tìm nhanh (không cần dấu).</p>
         <div className="guide-search">
           <IconSearch />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm chức năng… vd: điểm danh, thi online, chứng chỉ, lên lớp" autoFocus />

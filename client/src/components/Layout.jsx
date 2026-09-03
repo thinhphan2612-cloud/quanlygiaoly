@@ -29,7 +29,7 @@ const nav = [
   { to: '/store', label: 'Ephata Store', Icon: IconStore },
   { to: '/audit', label: 'Thu chi', Icon: IconMoney, proOnly: true },
   { to: '/archive', label: 'Lưu trữ', Icon: IconArchive, adminOnly: true, proOnly: true },
-  { to: '/guide', label: 'Hướng dẫn sử dụng', Icon: IconGuide, proOnly: true },
+  { to: '/guide', label: 'Hướng dẫn sử dụng', Icon: IconGuide },
   { to: '/notify', label: 'Thông báo', Icon: IconBell, adminOnly: true, proOnly: true },
   { to: '/admin', label: 'Quản trị hệ thống', Icon: IconMoney, superOnly: true },
 ];
