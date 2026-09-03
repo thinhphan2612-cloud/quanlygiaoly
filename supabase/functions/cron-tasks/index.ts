@@ -2,17 +2,42 @@
 // 10 ngày hết hạn. Bảo vệ bằng header x-cron-secret == CRON_SECRET.
 // Deploy: npx supabase functions deploy cron-tasks --no-verify-jwt --project-ref <ref>
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 
-async function sendGmail(to: string, subject: string, html: string, text: string) {
-  const user = Deno.env.get('GMAIL_USER');
-  const pass = Deno.env.get('GMAIL_APP_PASSWORD');
+// Encode tiêu đề UTF-8 -> RFC 2047 base64 encoded-words (ASCII hợp lệ).
+function mimeWord(s: string): string {
+  if (/^[\x20-\x7E]*$/.test(s) && !s.includes('=?')) return s;
+  const enc = new TextEncoder(); const words: string[] = []; let buf: number[] = [];
+  const flush = () => { if (buf.length) { words.push(`=?UTF-8?B?${btoa(String.fromCharCode(...buf))}?=`); buf = []; } };
+  for (const ch of s) { const b = Array.from(enc.encode(ch)); if (buf.length + b.length > 39) flush(); buf.push(...b); }
+  flush(); return words.join('\r\n ');
+}
+
+// Gửi email HTML qua SMTP thô (Deno TLS) — không dùng denomailer (dựng MIME hỏng -> Gmail hiện raw).
+async function sendGmail(to: string, subject: string, html: string, _text: string) {
+  const user = Deno.env.get('GMAIL_USER'); const pass = Deno.env.get('GMAIL_APP_PASSWORD');
   if (!user || !pass) return false;
-  const client = new SMTPClient({
-    connection: { hostname: 'smtp.gmail.com', port: 465, tls: true, auth: { username: user, password: pass } },
-  });
-  await client.send({ from: `Giáo Lý Số <${user}>`, to, subject, content: text, html });
-  await client.close();
+  const conn = await Deno.connectTls({ hostname: 'smtp.gmail.com', port: 465 });
+  const E = new TextEncoder(), D = new TextDecoder();
+  const read = async (): Promise<string> => {
+    const b = new Uint8Array(8192); let out = '';
+    while (true) { const n = await conn.read(b); if (n === null) break; out += D.decode(b.subarray(0, n));
+      const last = out.trimEnd().split(/\r?\n/).pop() || ''; if (/^\d{3} /.test(last)) break; }
+    return out;
+  };
+  const cmd = async (s: string) => { await conn.write(E.encode(s + '\r\n')); return await read(); };
+  const b64 = (s: string) => { const by = E.encode(s); let bin = ''; for (const x of by) bin += String.fromCharCode(x); return btoa(bin); };
+  const b64wrap = (s: string) => (b64(s).match(/.{1,76}/g) || []).join('\r\n');
+  try {
+    await read(); await cmd('EHLO giaoly'); await cmd('AUTH LOGIN'); await cmd(b64(user));
+    const rp = await cmd(b64(pass)); if (!/^235/.test(rp.trimStart())) throw new Error('AUTH: ' + rp);
+    await cmd(`MAIL FROM:<${user}>`); await cmd(`RCPT TO:<${to}>`);
+    const rd = await cmd('DATA'); if (!/^354/.test(rd.trimStart())) throw new Error('DATA: ' + rd);
+    const headers = [`From: Giao Ly So <${user}>`, `To: <${to}>`, `Subject: ${mimeWord(subject)}`,
+      `MIME-Version: 1.0`, `Content-Type: text/html; charset="UTF-8"`, `Content-Transfer-Encoding: base64`].join('\r\n');
+    await conn.write(E.encode(headers + '\r\n\r\n' + b64wrap(html) + '\r\n.\r\n'));
+    const fin = await read(); if (!/^250/.test(fin.trimStart())) throw new Error('SEND: ' + fin);
+    await cmd('QUIT');
+  } finally { try { conn.close(); } catch (_e) { /* ignore */ } }
   return true;
 }
 
