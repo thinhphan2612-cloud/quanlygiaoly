@@ -757,6 +757,8 @@ async function handle(method, rawUrl, body = {}) {
     if (path === '/upgrade/redeem' && method === 'post') {
       const { data, error } = await supabase.rpc('redeem_pro_code', { p_code: (body.code || '').trim() });
       if (error) return fail(400, error.message);
+      // Gửi email chào mừng Pro (best-effort, không chặn kết quả redeem)
+      try { supabase.functions.invoke('redeem-welcome', { body: {} }); } catch (_e) { /* bỏ qua */ }
       return ok(data);
     }
     // Số lượt còn lại của 1 mã (cho đếm ngược).
