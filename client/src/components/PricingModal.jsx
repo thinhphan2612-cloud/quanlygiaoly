@@ -53,7 +53,18 @@ export default function PricingModal({ current = 'free', onClose }) {
     try {
       const r = await api.get('/upgrade/discount?code=' + encodeURIComponent(c));
       if (r.data) { setDisc(r.data); setCodeMsg('✓ Đã áp dụng mã giảm giá'); }
-      else { setDisc(null); setCodeMsg('Mã không hợp lệ hoặc đã hết hạn'); }
+      else {
+        setDisc(null);
+        // Có thể là mã nâng Pro MIỄN PHÍ (pro_free) — nhập nhầm ô; hướng dẫn dùng đúng chỗ.
+        let hint = 'Mã không hợp lệ hoặc đã hết hạn';
+        try {
+          const rr = await api.get('/upgrade/code-remaining?code=' + encodeURIComponent(c));
+          if (rr.data && rr.data.kind === 'pro_free' && rr.data.active) {
+            hint = 'Đây là mã nâng Pro miễn phí — bấm “← Quay lại” rồi nhập ở ô “🎁 Có mã khuyến mãi?”.';
+          }
+        } catch { /* bỏ qua */ }
+        setCodeMsg(hint);
+      }
     } catch { setDisc(null); setCodeMsg('Không kiểm tra được mã'); }
     finally { setChecking(false); }
   }
@@ -71,7 +82,8 @@ export default function PricingModal({ current = 'free', onClose }) {
   async function pay() {
     setBusy(true);
     try {
-      const r = await api.post('/upgrade/order', { tier_id: tier.id, code: code.trim() || null });
+      // Chỉ gửi mã khi đã áp dụng hợp lệ (disc). Tránh dính mã sai/không hợp lệ vào đơn.
+      const r = await api.post('/upgrade/order', { tier_id: tier.id, code: disc ? code.trim() : null });
       setOrder(r.data); setStep('qr');
     } catch (e) { alert(e.response?.data?.error || 'Không tạo được đơn'); }
     finally { setBusy(false); }
