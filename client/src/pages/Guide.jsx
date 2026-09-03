@@ -284,7 +284,7 @@ export default function Guide() {
           )}
 
           {filtered.map((s) => (
-            <section className="gd-card" id={'gd-' + s.id} key={s.id}>
+            <section className={`gd-card${activeId === s.id ? ' active' : ''}`} id={'gd-' + s.id} key={s.id}>
               <div className="gd-card-head">
                 <h2>{s.title}</h2>
                 <span className="gd-badges">
