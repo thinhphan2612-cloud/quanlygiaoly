@@ -3,6 +3,7 @@
 // rồi dùng service_role để đọc TẤT CẢ giáo xứ và bật/tắt gói Pro thủ công.
 // Actions: { action: 'list' } | { action: 'set-plan', parish_id, plan, plan_expires_at }
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -19,13 +20,14 @@ function json(body: unknown, status = 200) {
 const superEmails = (Deno.env.get('SUPERADMIN_EMAILS') || '')
   .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
 
-// Gửi email chào mừng khi giáo xứ được kích hoạt / gia hạn Pro.
-// Tự bỏ qua nếu chưa cấu hình RESEND_API_KEY -> KHÔNG chặn việc kích hoạt.
+// Gửi email chào mừng khi giáo xứ được kích hoạt / gia hạn Pro — gửi TỪ Gmail
+// (support.giaolyso@gmail.com) qua SMTP + App Password. Tự bỏ qua nếu chưa cấu
+// hình GMAIL_USER/GMAIL_APP_PASSWORD -> KHÔNG chặn việc kích hoạt.
 async function sendProEmail(admin: any, parishId: string, opts: { expires?: string | null; maxClasses?: number | null }) {
   try {
-    const key = Deno.env.get('RESEND_API_KEY');
-    if (!key || !parishId) return;
-    const from = Deno.env.get('MAIL_FROM') || 'Giáo Lý Số <support@giaoly.com.vn>';
+    const gmailUser = Deno.env.get('GMAIL_USER');
+    const gmailPass = Deno.env.get('GMAIL_APP_PASSWORD');
+    if (!gmailUser || !gmailPass || !parishId) return;
     const appUrl = Deno.env.get('APP_URL') || 'https://app.giaoly.com.vn';
     const { data: prof } = await admin.from('profiles').select('id, full_name').eq('parish_id', parishId).eq('role', 'admin').limit(1).maybeSingle();
     if (!prof) return;
@@ -51,11 +53,17 @@ async function sendProEmail(admin: any, parishId: string, opts: { expires?: stri
         <p style="color:#6b7280;font-size:13px">Xin Chúa chúc lành cho việc dạy giáo lý của giáo xứ. Cần hỗ trợ, xin phản hồi email này.</p>
         <p style="color:#6b7280;font-size:13px">— Đội ngũ Giáo Lý Số</p>
       </div>`;
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to, subject: `Chào mừng ${pname} lên gói Pro — Giáo Lý Số`, html }),
+    const client = new SMTPClient({
+      connection: { hostname: 'smtp.gmail.com', port: 465, tls: true, auth: { username: gmailUser, password: gmailPass } },
     });
+    await client.send({
+      from: `Giáo Lý Số <${gmailUser}>`,
+      to,
+      subject: `Chào mừng ${pname} lên gói Pro — Giáo Lý Số`,
+      content: `Kính gửi ${who}, giáo xứ ${pname} đã được kích hoạt gói Pro trên Giáo Lý Số. Vào ứng dụng: ${appUrl}`,
+      html,
+    });
+    await client.close();
   } catch (_e) { /* lỗi gửi mail không được chặn kích hoạt */ }
 }
 
