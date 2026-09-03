@@ -730,7 +730,10 @@ function b2sMin(){ document.getElementById('b2s').classList.add('hide'); documen
 function b2sOpen(){ document.getElementById('b2s').classList.remove('hide'); document.getElementById('b2sMini').classList.remove('show'); }
 function toggleZfab(force){ const z=document.getElementById('zfab'); const open = force===undefined ? !z.classList.contains('open') : force; z.classList.toggle('open', open); }
 function sendZfab(e){ e.preventDefault(); const f=e.target; const st=document.getElementById('zfabStatus');
-  saveLead('Liên hệ', { name:f.name.value, phone:f.phone.value, note:'[Zalo/Landing] '+f.msg.value });
+  const name=f.name.value, phone=f.phone.value, msg=f.msg.value;
+  saveLead('Liên hệ', { name, phone, note:'[Zalo/Landing] '+msg });
+  // Gửi email về hộp hỗ trợ qua Edge Function (không chặn UI)
+  fetch(SB_URL+'/functions/v1/lead-notify',{method:'POST',headers:{'Content-Type':'application/json',apikey:SB_ANON,Authorization:'Bearer '+SB_ANON},body:JSON.stringify({name,phone,msg,source:'Landing / Zalo FAB'})}).catch(()=>{});
   st.textContent='✓ Đã gửi! Chúng tôi sẽ liên hệ sớm.'; st.style.color='#127a3e'; f.reset();
   setTimeout(()=>{ st.textContent=''; toggleZfab(false); }, 2600); return false; }
 // Đếm ngược số mã back-to-school (đọc từ trang quản trị / DB)
