@@ -21,6 +21,7 @@ import Certificates from './pages/Certificates.jsx';
 import EphataStore from './pages/EphataStore.jsx';
 import Exams from './pages/Exams.jsx';
 import ExamTake from './pages/ExamTake.jsx';
+import Guide from './pages/Guide.jsx';
 import { isSuperAdmin } from './lib/superadmin';
 import { useParish } from './parish.jsx';
 import { isPro } from './lib/plans';
@@ -79,6 +80,7 @@ export default function App() {
       <Route path="/store" element={<Protected><EphataStore /></Protected>} />
       <Route path="/settings" element={<Protected><Settings /></Protected>} />
       <Route path="/archive" element={<Protected><RequirePro><Archive /></RequirePro></Protected>} />
+      <Route path="/guide" element={<Protected><RequirePro><Guide /></RequirePro></Protected>} />
       <Route path="/audit" element={<Protected><RequirePro><Audit /></RequirePro></Protected>} />
       <Route path="/notify" element={<Protected><RequirePro><Notify /></RequirePro></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />

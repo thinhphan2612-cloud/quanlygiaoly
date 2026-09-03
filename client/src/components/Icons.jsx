@@ -54,6 +54,10 @@ export const IconArchive = (p) => (
 export const IconCert = (p) => (
   <svg {...base} {...p}><circle cx="12" cy="9" r="5" /><path d="m8.5 13.5-1.5 6 5-2.5 5 2.5-1.5-6" /><path d="m10 9 1.4 1.4 3-3" /></svg>
 );
+// Icon hướng dẫn sử dụng (sách mở + dấu hỏi)
+export const IconGuide = (p) => (
+  <svg {...base} {...p}><path d="M12 6.5C10.5 5 8 4.5 4 5v13c4-.5 6.5 0 8 1.5 1.5-1.5 4-2 8-1.5V5c-4-.5-6.5 0-8 1.5Z" /><path d="M12 6.5V20" /><path d="M10.4 11.2a1.6 1.6 0 1 1 2.3 1.6c-.6.4-.9.7-.9 1.3" /><path d="M11.8 15.6v0" /></svg>
+);
 // Icon đề thi (giấy + dấu tích)
 export const IconExam = (p) => (
   <svg {...base} {...p}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /><path d="m9.5 13.5 1.5 1.5 3-3" /></svg>

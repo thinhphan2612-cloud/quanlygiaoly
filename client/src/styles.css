@@ -1066,3 +1066,38 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .promo-close:hover { background: #f1f5f9; }
 @keyframes promoFade { from { opacity: 0; } to { opacity: 1; } }
 @media (max-width: 480px) { .promo-close { top: -10px; right: -10px; width: 32px; height: 32px; } }
+
+/* ===== Hướng dẫn sử dụng (Guide / Wiki) ===== */
+.guide-wrap { max-width: 1100px; margin: 0 auto; }
+.guide-head h1 { margin: 0 0 4px; font-size: 26px; }
+.guide-head .muted { margin: 0 0 16px; max-width: 720px; }
+.guide-search { position: relative; display: flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--border); border-radius: 999px; padding: 10px 16px; box-shadow: var(--shadow-sm); max-width: 640px; }
+.guide-search svg { color: var(--muted); flex-shrink: 0; }
+.guide-search input { flex: 1; border: none; outline: none; background: transparent; font-size: 15px; color: var(--text); }
+.gd-clear { border: none; background: var(--primary-soft); color: var(--primary); width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; line-height: 1; flex-shrink: 0; }
+.guide-body { display: grid; grid-template-columns: 232px 1fr; gap: 24px; margin-top: 22px; align-items: start; }
+.guide-toc { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 2px; }
+.gd-toc-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 4px 10px 8px; }
+.guide-toc button { text-align: left; border: none; background: transparent; color: var(--text); padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13.5px; line-height: 1.35; }
+.guide-toc button:hover { background: var(--primary-soft); color: var(--primary); }
+.guide-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.gd-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; box-shadow: var(--shadow-sm); scroll-margin-top: 16px; }
+.gd-card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.gd-emoji { font-size: 22px; line-height: 1; }
+.gd-card-head h2 { margin: 0; font-size: 19px; flex: 1; min-width: 160px; }
+.gd-badges { display: flex; gap: 6px; }
+.gd-badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); white-space: nowrap; }
+.gd-badge.admin { background: #fff4e5; color: #b45309; }
+.gd-badge.pro { background: #fde8e8; color: #c0392b; }
+.gd-summary { margin: 12px 0 4px; color: var(--text); line-height: 1.6; }
+.gd-sub { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 14px 0 6px; }
+.gd-steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 7px; }
+.gd-steps li { line-height: 1.6; color: var(--text); }
+.gd-tip { margin-top: 12px; background: var(--primary-soft); border-left: 3px solid var(--primary); border-radius: 8px; padding: 10px 14px; font-size: 13.5px; line-height: 1.55; color: var(--text); }
+.gd-foot { margin-top: 6px; padding: 16px 20px; text-align: center; color: var(--muted); font-size: 13.5px; border-top: 1px dashed var(--border); }
+@media (max-width: 820px) {
+  .guide-body { grid-template-columns: 1fr; }
+  .guide-toc { position: static; flex-direction: row; flex-wrap: wrap; gap: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .gd-toc-title { width: 100%; padding: 0 0 4px; }
+  .guide-toc button { background: var(--primary-soft); color: var(--primary); padding: 6px 10px; font-size: 12.5px; }
+}
