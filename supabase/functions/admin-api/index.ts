@@ -19,6 +19,46 @@ function json(body: unknown, status = 200) {
 const superEmails = (Deno.env.get('SUPERADMIN_EMAILS') || '')
   .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
 
+// Gửi email chào mừng khi giáo xứ được kích hoạt / gia hạn Pro.
+// Tự bỏ qua nếu chưa cấu hình RESEND_API_KEY -> KHÔNG chặn việc kích hoạt.
+async function sendProEmail(admin: any, parishId: string, opts: { expires?: string | null; maxClasses?: number | null }) {
+  try {
+    const key = Deno.env.get('RESEND_API_KEY');
+    if (!key || !parishId) return;
+    const from = Deno.env.get('MAIL_FROM') || 'Giáo Lý Số <support@giaoly.com.vn>';
+    const appUrl = Deno.env.get('APP_URL') || 'https://app.giaoly.com.vn';
+    const { data: prof } = await admin.from('profiles').select('id, full_name').eq('parish_id', parishId).eq('role', 'admin').limit(1).maybeSingle();
+    if (!prof) return;
+    const { data: uu } = await admin.auth.admin.getUserById(prof.id);
+    const to = uu?.user?.email;
+    if (!to) return;
+    const { data: par } = await admin.from('parishes').select('name').eq('id', parishId).maybeSingle();
+    const pname = par?.name || 'Giáo xứ';
+    const who = prof.full_name || 'Quý Cha / Quý Thầy Cô';
+    const limitTxt = opts.maxClasses ? `tối đa <b>${opts.maxClasses} lớp</b>` : '<b>không giới hạn lớp</b>';
+    const expTxt = opts.expires ? `đến hết ngày <b>${new Date(opts.expires).toLocaleDateString('vi-VN')}</b>` : '<b>không giới hạn thời gian</b>';
+    const html = `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1f2937;line-height:1.6">
+        <h2 style="color:#2563eb;margin:0 0 8px">Chào mừng ${pname} lên gói Pro! 🎉</h2>
+        <p>Kính gửi ${who},</p>
+        <p>Giáo xứ <b>${pname}</b> đã được kích hoạt <b>gói Pro</b> trên Giáo Lý Số:</p>
+        <ul style="padding-left:18px">
+          <li>Quy mô: ${limitTxt}</li>
+          <li>Hiệu lực: ${expTxt}</li>
+        </ul>
+        <p>Toàn bộ tính năng Pro đã mở khóa: không giới hạn giáo lý viên, xuất chứng chỉ, thi online, điểm số &amp; thi đua, lưu trữ niên khóa, game học giáo lý…</p>
+        <p style="margin:22px 0"><a href="${appUrl}" style="background:#2563eb;color:#fff;text-decoration:none;padding:11px 22px;border-radius:10px;font-weight:600;display:inline-block">Vào ứng dụng</a></p>
+        <p style="color:#6b7280;font-size:13px">Xin Chúa chúc lành cho việc dạy giáo lý của giáo xứ. Cần hỗ trợ, xin phản hồi email này.</p>
+        <p style="color:#6b7280;font-size:13px">— Đội ngũ Giáo Lý Số</p>
+      </div>`;
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to, subject: `Chào mừng ${pname} lên gói Pro — Giáo Lý Số`, html }),
+    });
+  } catch (_e) { /* lỗi gửi mail không được chặn kích hoạt */ }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   try {
@@ -107,6 +147,7 @@ Deno.serve(async (req) => {
         .select('id, plan, plan_expires_at, plan_max_classes')
         .single();
       if (error) return json({ error: error.message }, 400);
+      if (plan === 'pro') await sendProEmail(admin, parishId, { expires, maxClasses });
       return json({ ok: true, parish: data });
     }
 
@@ -197,6 +238,7 @@ Deno.serve(async (req) => {
         const { error: e1 } = await admin.from('parishes')
           .update({ plan: 'pro', plan_expires_at: expires, plan_max_classes: maxClasses }).eq('id', o.parish_id);
         if (e1) return json({ error: e1.message }, 400);
+        await sendProEmail(admin, o.parish_id, { expires, maxClasses });
       }
       await admin.from('plan_orders').update({ status: 'paid' }).eq('id', id);
       await admin.from('payments').insert({
