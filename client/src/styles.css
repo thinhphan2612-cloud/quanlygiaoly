@@ -1076,20 +1076,21 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .guide-search input { flex: 1; border: none; outline: none; background: transparent; font-size: 15px; color: var(--text); }
 .gd-clear { border: none; background: var(--primary-soft); color: var(--primary); width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; line-height: 1; flex-shrink: 0; }
 .guide-body { display: grid; grid-template-columns: 232px 1fr; gap: 24px; margin-top: 22px; align-items: start; }
-.guide-toc { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 2px; }
+.guide-toc { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 2px; }
 .gd-toc-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 4px 10px 8px; }
 .guide-toc button { text-align: left; border: none; background: transparent; color: var(--text); padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13.5px; line-height: 1.35; }
 .guide-toc button:hover { background: var(--primary-soft); color: var(--primary); }
+.guide-toc button.active { background: var(--primary-soft); color: var(--primary); font-weight: 700; box-shadow: inset 3px 0 0 var(--primary); }
 .guide-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-.gd-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; box-shadow: var(--shadow-sm); scroll-margin-top: 16px; }
+.gd-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; box-shadow: var(--shadow-sm); scroll-margin-top: 90px; }
 .gd-card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.gd-emoji { font-size: 22px; line-height: 1; }
 .gd-card-head h2 { margin: 0; font-size: 19px; flex: 1; min-width: 160px; }
 .gd-badges { display: flex; gap: 6px; }
 .gd-badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); white-space: nowrap; }
 .gd-badge.admin { background: #fff4e5; color: #b45309; }
 .gd-badge.pro { background: #fde8e8; color: #c0392b; }
-.gd-summary { margin: 12px 0 4px; color: var(--text); line-height: 1.6; }
+.gd-summary { margin: 12px 0 4px; color: var(--text); line-height: 1.7; }
+.gd-ui { display: inline-block; padding: 1px 9px; margin: 1px 1px; border: 1px solid var(--border); border-radius: 7px; background: var(--primary-soft); color: var(--primary); font-weight: 600; font-size: .93em; box-shadow: var(--shadow-sm); }
 .gd-sub { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 14px 0 6px; }
 .gd-steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 7px; }
 .gd-steps li { line-height: 1.6; color: var(--text); }
