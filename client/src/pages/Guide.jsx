@@ -156,11 +156,12 @@ const GUIDE = [
     tips: ['Tính năng đã sở hữu sẽ hiển thị “Đã kích hoạt”.'],
   },
   {
-    id: 'thuchi', title: 'Thu chi', roles: ['admin'], pro: true,
-    tags: 'thu chi kiểm toán quỹ tài chính sổ sách thống kê tiền',
-    summary: 'Ghi và theo dõi các khoản thu chi của ban giáo lý; kiểm toán minh bạch. Chỉ quản trị dùng được.',
+    id: 'thuchi', title: 'Thu chi', roles: ['admin', 'teacher'], pro: true,
+    tags: 'thu chi kiểm toán quỹ tài chính sổ sách thống kê tiền lớp phụ trách',
+    summary: 'Ghi và theo dõi các khoản thu chi, kiểm toán minh bạch. Giáo lý viên quản lý thu chi cho lớp mình phụ trách; quản trị xem toàn giáo xứ.',
     steps: [
       'Vào “Thu chi”, thêm khoản thu hoặc chi kèm nội dung, số tiền, ngày.',
+      'Giáo lý viên ghi thu chi cho lớp mình phụ trách; quản trị ghi khoản chung của giáo xứ và xem tổng hợp toàn bộ (lọc theo từng lớp).',
       'Xem tổng hợp số dư và lịch sử để đối soát.',
     ],
     tips: ['Ghi ngay khi phát sinh để cuối kỳ không phải nhớ lại.'],
