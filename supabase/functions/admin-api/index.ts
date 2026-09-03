@@ -40,18 +40,27 @@ async function sendProEmail(admin: any, parishId: string, opts: { expires?: stri
     const limitTxt = opts.maxClasses ? `tối đa <b>${opts.maxClasses} lớp</b>` : '<b>không giới hạn lớp</b>';
     const expTxt = opts.expires ? `đến hết ngày <b>${new Date(opts.expires).toLocaleDateString('vi-VN')}</b>` : '<b>không giới hạn thời gian</b>';
     const html = `
-      <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1f2937;line-height:1.6">
-        <h2 style="color:#2563eb;margin:0 0 8px">Chào mừng ${pname} lên gói Pro! 🎉</h2>
-        <p>Kính gửi ${who},</p>
-        <p>Giáo xứ <b>${pname}</b> đã được kích hoạt <b>gói Pro</b> trên Giáo Lý Số:</p>
-        <ul style="padding-left:18px">
-          <li>Quy mô: ${limitTxt}</li>
-          <li>Hiệu lực: ${expTxt}</li>
-        </ul>
-        <p>Toàn bộ tính năng Pro đã mở khóa: không giới hạn giáo lý viên, xuất chứng chỉ, thi online, điểm số &amp; thi đua, lưu trữ niên khóa, game học giáo lý…</p>
-        <p style="margin:22px 0"><a href="${appUrl}" style="background:#2563eb;color:#fff;text-decoration:none;padding:11px 22px;border-radius:10px;font-weight:600;display:inline-block">Vào ứng dụng</a></p>
-        <p style="color:#6b7280;font-size:13px">Xin Chúa chúc lành cho việc dạy giáo lý của giáo xứ. Cần hỗ trợ, xin phản hồi email này.</p>
-        <p style="color:#6b7280;font-size:13px">— Đội ngũ Giáo Lý Số</p>
+      <div style="background:#f4f6fb;padding:28px 12px;font-family:Arial,Helvetica,sans-serif">
+        <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden">
+          <div style="background:#2563eb;padding:20px 28px;text-align:center">
+            <img src="https://app.giaoly.com.vn/logo-full.png" alt="Giáo Lý Số" height="38" style="height:38px;display:inline-block" />
+          </div>
+          <div style="padding:26px 30px;color:#1f2937;line-height:1.6">
+            <h2 style="color:#2563eb;margin:0 0 12px;font-size:20px">Chào mừng ${pname} lên gói Pro! 🎉</h2>
+            <p style="margin:0 0 12px">Kính gửi ${who},</p>
+            <p style="margin:0 0 14px">Giáo xứ <b>${pname}</b> đã được kích hoạt <b>gói Pro</b> trên Giáo Lý Số:</p>
+            <table style="width:100%;border-collapse:collapse;margin:0 0 16px;font-size:14px">
+              <tr><td style="padding:8px 0;color:#6b7280">Quy mô</td><td style="padding:8px 0;text-align:right">${limitTxt}</td></tr>
+              <tr><td style="padding:8px 0;color:#6b7280;border-top:1px solid #eef2f7">Hiệu lực</td><td style="padding:8px 0;text-align:right;border-top:1px solid #eef2f7">${expTxt}</td></tr>
+            </table>
+            <p style="margin:0 0 20px">Toàn bộ tính năng Pro đã mở khóa: không giới hạn giáo lý viên, xuất chứng chỉ, thi online, điểm số &amp; thi đua, lưu trữ niên khóa, game học giáo lý…</p>
+            <p style="text-align:center;margin:0"><a href="${appUrl}" style="background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:10px;font-weight:600;display:inline-block">Vào ứng dụng</a></p>
+          </div>
+          <div style="padding:18px 30px;border-top:1px solid #eef2f7;color:#6b7280;font-size:12.5px;line-height:1.6">
+            Xin Chúa chúc lành cho việc dạy giáo lý của giáo xứ. Cần hỗ trợ, xin phản hồi email này.<br>
+            <b style="color:#374151">Giáo Lý Số</b> · ${gmailUser}
+          </div>
+        </div>
       </div>`;
     const client = new SMTPClient({
       connection: { hostname: 'smtp.gmail.com', port: 465, tls: true, auth: { username: gmailUser, password: gmailPass } },
