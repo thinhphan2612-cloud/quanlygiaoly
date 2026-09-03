@@ -293,10 +293,13 @@ Deno.serve(async (req) => {
     if (action === 'code-save') {
       const code = (body?.code || '').trim().toUpperCase();
       if (!code) return json({ error: 'Thiếu mã' }, 400);
+      const kind = ['amount', 'percent', 'pro_free'].includes(body?.kind) ? body.kind : 'percent';
       const row = {
         code,
-        kind: body?.kind === 'amount' ? 'amount' : 'percent',
-        value: Number(body?.value) || 0,
+        kind,
+        value: kind === 'pro_free' ? 0 : (Number(body?.value) || 0),
+        free_months: kind === 'pro_free' ? (Number(body?.free_months) || 3) : null,
+        tier_id: kind === 'pro_free' ? (Number(body?.tier_id) || null) : null,
         expires_at: body?.expires_at || null,
         max_uses: body?.max_uses === '' || body?.max_uses == null ? null : Number(body.max_uses),
         active: body?.active !== false,

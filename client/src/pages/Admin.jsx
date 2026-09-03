@@ -411,7 +411,7 @@ export default function Admin() {
       <div className="panel" id="sec-codes">
         <div className="card-head" style={{ gap: 12, flexWrap: 'wrap' }}>
           <h2 style={{ margin: 0 }}>Mã giảm giá</h2>
-          <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => setEditCode({ code: '', kind: 'percent', value: '', expires_at: '', max_uses: '', active: true, note: '' })}>+ Tạo mã</button>
+          <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => setEditCode({ code: '', kind: 'percent', value: '', free_months: 3, tier_id: '', expires_at: '', max_uses: '', active: true, note: '' })}>+ Tạo mã</button>
         </div>
         {codes.length === 0 ? <p className="muted">Chưa có mã giảm giá.</p> : (
           <div style={{ overflowX: 'auto' }}>
@@ -421,7 +421,7 @@ export default function Admin() {
                 {codes.map((c) => (
                   <tr key={c.code}>
                     <td style={{ fontWeight: 600 }}>{c.code}</td>
-                    <td>{c.kind === 'percent' ? c.value + '%' : fmtVnd(c.value)}</td>
+                    <td>{c.kind === 'pro_free' ? `Pro ${c.free_months || 3} tháng` : c.kind === 'percent' ? c.value + '%' : fmtVnd(c.value)}</td>
                     <td className="muted" style={{ fontSize: 12 }}>{c.expires_at ? fmtDate(c.expires_at) : 'Không hạn'}</td>
                     <td style={{ textAlign: 'center' }}>{c.used_count}{c.max_uses ? ' / ' + c.max_uses : ''}</td>
                     <td>{c.active ? <span className="plan-badge pro">Bật</span> : <span className="plan-badge free">Tắt</span>}</td>
@@ -450,7 +450,7 @@ export default function Admin() {
       {editParish && <EditParishModal parish={editParish} onClose={() => setEditParish(null)} onSave={(patch) => saveParish(editParish, patch)} />}
       {payParish && <PaymentModal parish={payParish} onClose={() => setPayParish(null)} onSave={(payment) => addPayment(payParish, payment)} />}
       {payingOrder && <OrderPaidModal order={payingOrder} onClose={() => setPayingOrder(null)} onConfirm={(exp) => markOrderPaid(payingOrder, exp)} />}
-      {editCode && <CodeModal code={editCode} onClose={() => setEditCode(null)} onSave={saveCode} />}
+      {editCode && <CodeModal code={editCode} tiers={tiers} onClose={() => setEditCode(null)} onSave={saveCode} />}
       {grantLead && <GrantModal lead={grantLead} onClose={() => setGrantLead(null)} onConfirm={(form) => grantAccount(grantLead, form)} />}
     </div>
   );
@@ -517,22 +517,34 @@ function OrderPaidModal({ order, onClose, onConfirm }) {
   );
 }
 
-function CodeModal({ code, onClose, onSave }) {
+function CodeModal({ code, tiers, onClose, onSave }) {
   const [c, setC] = useState(code);
   const isNew = !code.code;
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal wide" onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ marginTop: 0 }}>{isNew ? 'Tạo mã giảm giá' : `Sửa mã ${code.code}`}</h2>
+        <h2 style={{ marginTop: 0 }}>{isNew ? 'Tạo mã khuyến mãi' : `Sửa mã ${code.code}`}</h2>
         <div className="row">
           <div className="field" style={{ flex: 1 }}><label>Mã</label>
-            <input value={c.code} disabled={!isNew} onChange={(e) => setC({ ...c, code: e.target.value.toUpperCase() })} placeholder="VD: HE2026" /></div>
+            <input value={c.code} disabled={!isNew} onChange={(e) => setC({ ...c, code: e.target.value.toUpperCase() })} placeholder="VD: BACKTOSCHOOL" /></div>
           <div className="field"><label>Kiểu</label>
             <select value={c.kind} onChange={(e) => setC({ ...c, kind: e.target.value })}>
-              <option value="percent">Giảm %</option><option value="amount">Giảm số tiền</option>
+              <option value="percent">Giảm %</option><option value="amount">Giảm số tiền</option><option value="pro_free">Miễn phí Pro (tháng)</option>
             </select></div>
-          <div className="field"><label>Giá trị</label>
-            <input type="number" value={c.value} onChange={(e) => setC({ ...c, value: e.target.value })} placeholder={c.kind === 'percent' ? '10' : '200000'} /></div>
+          {c.kind === 'pro_free' ? (
+            <>
+              <div className="field"><label>Số tháng miễn phí</label>
+                <input type="number" min="1" value={c.free_months ?? 3} onChange={(e) => setC({ ...c, free_months: e.target.value })} placeholder="3" /></div>
+              <div className="field"><label>Mức Pro áp dụng</label>
+                <select value={c.tier_id ?? ''} onChange={(e) => setC({ ...c, tier_id: e.target.value })}>
+                  <option value="">— Chọn mức —</option>
+                  {(tiers || []).map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                </select></div>
+            </>
+          ) : (
+            <div className="field"><label>Giá trị</label>
+              <input type="number" value={c.value} onChange={(e) => setC({ ...c, value: e.target.value })} placeholder={c.kind === 'percent' ? '10' : '200000'} /></div>
+          )}
         </div>
         <div className="row">
           <div className="field"><label>Hạn dùng (để trống = không hạn)</label>

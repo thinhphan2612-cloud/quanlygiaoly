@@ -753,6 +753,18 @@ async function handle(method, rawUrl, body = {}) {
       if (data?.error) return fail(400, data.error);
       return ok(data);
     }
+    // Đổi mã Pro miễn phí -> kích hoạt Pro cho giáo xứ (chỉ admin).
+    if (path === '/upgrade/redeem' && method === 'post') {
+      const { data, error } = await supabase.rpc('redeem_pro_code', { p_code: (body.code || '').trim() });
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
+    // Số lượt còn lại của 1 mã (cho đếm ngược).
+    if (path === '/upgrade/code-remaining' && method === 'get') {
+      const { data, error } = await supabase.rpc('code_remaining', { p_code: q.code || '' });
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
 
     // ---------------- super-admin Đợt 3: đơn / mã giảm giá / giá gói ----------------
     if (path === '/admin/orders' && method === 'get') {

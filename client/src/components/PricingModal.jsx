@@ -14,7 +14,10 @@ const qrUrl = (amount, order) =>
 
 export default function PricingModal({ current = 'free', onClose }) {
   const { user } = useAuth();
-  const { parish } = useParish();
+  const { parish, reload: reloadParish } = useParish();
+  const [redeemCode, setRedeemCode] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
+  const [redeemMsg, setRedeemMsg] = useState('');
   const [msg, setMsg] = useState('');
   const [sent, setSent] = useState(false);
   const [tiers, setTiers] = useState([]);
@@ -74,6 +77,21 @@ export default function PricingModal({ current = 'free', onClose }) {
     finally { setBusy(false); }
   }
 
+  async function redeemFree() {
+    const c = redeemCode.trim();
+    if (!c) return;
+    setRedeeming(true); setRedeemMsg('');
+    try {
+      const r = await api.post('/upgrade/redeem', { code: c });
+      const d = r.data || {};
+      setRedeemMsg(`✓ Đã kích hoạt Pro miễn phí ${d.months || ''} tháng${d.tier_label ? ' · ' + d.tier_label : ''}! Đang tải lại…`);
+      reloadParish();
+      setTimeout(() => onClose(), 1800);
+    } catch (e) {
+      setRedeemMsg('✗ ' + (e.response?.data?.error || 'Mã không hợp lệ'));
+    } finally { setRedeeming(false); }
+  }
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal wide" onClick={(e) => e.stopPropagation()}>
@@ -122,6 +140,15 @@ export default function PricingModal({ current = 'free', onClose }) {
             <div className="pro-benefits">
               <div className="pb-title">Mọi mức Pro đều gồm:</div>
               <ul className="pb-list">{proFeatures.map((f, i) => <li key={i}>{f}</li>)}</ul>
+            </div>
+
+            <div style={{ marginTop: 16, background: 'var(--primary-soft)', border: '1px dashed var(--primary)', borderRadius: 12, padding: '12px 14px' }}>
+              <div className="fp-label" style={{ marginBottom: 6 }}>🎁 Có mã khuyến mãi? (nâng Pro miễn phí)</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input value={redeemCode} onChange={(e) => setRedeemCode(e.target.value.toUpperCase())} placeholder="Nhập mã, vd BACKTOSCHOOL" style={{ flex: 1, minWidth: 180 }} />
+                <button className="btn" onClick={redeemFree} disabled={redeeming || !redeemCode.trim()}>{redeeming ? 'Đang áp dụng…' : 'Áp dụng mã'}</button>
+              </div>
+              {redeemMsg && <p style={{ fontSize: 13, marginTop: 8, marginBottom: 0, fontWeight: 600, color: redeemMsg.startsWith('✓') ? '#15803d' : '#c0392b' }}>{redeemMsg}</p>}
             </div>
 
             <div className="modal-actions"><button className="btn ghost" onClick={onClose}>Đóng</button></div>
