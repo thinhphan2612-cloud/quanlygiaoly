@@ -220,22 +220,40 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
 .promo-copy:hover{opacity:.92}
 .lp-status.ok{color:#1a7f4b}.lp-status.err{color:#c0392b}
 
-/* ===== Section: Chi phí quá rẻ ===== */
-.cheap{padding:56px 0}
-.cheap-box{background:linear-gradient(135deg,#FFF7E9,#FDEBD0);border:1px solid rgba(180,129,60,.28);border-radius:26px;padding:44px 30px;text-align:center;box-shadow:0 20px 60px rgba(180,129,60,.12)}
+/* ===== Vùng đặc biệt: Back to School ===== */
+.special-zone{position:relative;background:linear-gradient(180deg,#e4f1ff 0%,#eef7ff 50%,#f6f1e7 100%);overflow:hidden}
+.bunting-band{height:76px;background:url('assets/bunting_band.jpg') center/cover no-repeat}
+@media(max-width:640px){.bunting-band{height:50px}}
+
+/* Chi phí quá rẻ */
+.cheap{padding:34px 0 42px}
+.cheap-box{position:relative;overflow:hidden;text-align:center;border-radius:24px;padding:46px 34px;
+ background:repeating-linear-gradient(180deg,transparent 0 33px,rgba(110,165,225,.16) 33px 34px),linear-gradient(180deg,#fffdf7,#fff9ee);
+ border:1px solid rgba(180,129,60,.24);box-shadow:0 22px 60px rgba(70,120,190,.15)}
 .cheap-eyebrow{display:inline-block;background:var(--primary);color:#fff;font-family:'Oswald',sans-serif;font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:14px;padding:6px 18px;border-radius:999px;transform:rotate(-2deg);box-shadow:0 8px 20px rgba(243,69,67,.3)}
-.cheap-h{font-family:'Oswald',sans-serif;font-weight:800;font-size:clamp(30px,5.4vw,50px);margin:16px 0 6px;color:var(--ink);line-height:1.08}
+.cheap-h{font-family:'Oswald',sans-serif;font-weight:800;font-size:clamp(30px,5.4vw,50px);margin:16px 0 6px;color:var(--ink);line-height:1.08;position:relative;z-index:1}
 .cheap-h span{color:var(--primary)}
-.cheap-sub{color:var(--muted);font-size:17px;max-width:620px;margin:0 auto 22px}
-.cheap-points{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
-.cheap-points>div{background:#fff;border:1px solid rgba(46,39,33,.1);border-radius:14px;padding:12px 18px;font-size:14.5px;font-weight:600;color:var(--ink)}
-/* ===== Section: điểm nổi bật ===== */
-.hl{padding:20px 0 60px}
-.hl-h{font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(24px,3.8vw,34px);text-align:center;color:var(--ink);margin:0 0 28px}
+.cheap-sub{color:var(--muted);font-size:17px;max-width:620px;margin:0 auto 22px;position:relative;z-index:1}
+.cheap-points{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;position:relative;z-index:1}
+.cheap-points>div{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid rgba(46,39,33,.1);border-radius:14px;padding:12px 18px;font-size:14.5px;font-weight:600;color:var(--ink)}
+.cheap-points>div::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.cheap-points>div:nth-child(1)::before{background:#F34543}
+.cheap-points>div:nth-child(2)::before{background:#2f9e57}
+.cheap-points>div:nth-child(3)::before{background:#0068ff}
+.cheap-deco{position:absolute;z-index:0;pointer-events:none;filter:drop-shadow(0 8px 14px rgba(0,0,0,.12))}
+.cheap-deco.a{width:92px;top:-12px;left:-16px;transform:rotate(-13deg)}
+.cheap-deco.b{width:104px;bottom:-22px;right:-14px;transform:rotate(11deg)}
+@media(max-width:720px){.cheap-deco{display:none}}
+
+/* Điểm nổi bật */
+.hl{padding:6px 0 64px}
+.hl-h{font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(24px,3.8vw,34px);text-align:center;color:var(--ink);margin:0 0 30px}
 .hl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 @media(max-width:820px){.hl-grid{grid-template-columns:1fr}}
-.hl-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:26px 22px;box-shadow:0 10px 30px rgba(0,0,0,.05)}
-.hl-card .hl-ic{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#FFF0E6,#FDE2CE);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:14px}
+.hl-card{text-align:center;background:#fff;border:1px solid rgba(110,160,215,.28);border-radius:20px;padding:30px 22px 26px;box-shadow:0 14px 34px rgba(70,120,190,.13);transition:transform .2s}
+.hl-card:hover{transform:translateY(-4px)}
+.hl-mascot{width:90px;height:90px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 15px;border:4px solid #fff;background:#eaf4ff;box-shadow:0 8px 20px rgba(0,0,0,.15);transition:transform .2s}
+.hl-card:hover .hl-mascot{transform:scale(1.06) rotate(-3deg)}
 .hl-card h3{font-family:'Oswald',sans-serif;font-weight:700;font-size:19px;margin:0 0 8px;color:var(--ink)}
 .hl-card p{color:var(--muted);font-size:14.5px;line-height:1.6;margin:0}
 /* ===== Zalo FAB ===== */
@@ -404,32 +422,38 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
  </div>
 </section>
 
-<!-- GÓI DỊCH VỤ -->
-<section class="cheap" id="cheap">
- <div class="container">
-  <div class="cheap-box">
-   <div class="cheap-eyebrow">Chi phí quá rẻ!</div>
-   <h2 class="cheap-h">Chỉ từ <span>20.000đ</span> / lớp / tháng</h2>
-   <p class="cheap-sub">Rẻ hơn một ly cà phê — cho cả một lớp giáo lý dùng trọn vẹn mọi tính năng suốt cả tháng, tính theo niên khóa.</p>
-   <div class="cheap-points">
-    <div>☕ Bằng khoảng một ly cà phê mỗi tháng cho mỗi lớp</div>
-    <div>👥 Chia cho cả lớp: mỗi em chỉ vài trăm đồng/tháng</div>
-    <div>✓ Không phí ẩn · không giới hạn giáo lý viên</div>
+<!-- ===== VÙNG ĐẶC BIỆT: Back to School ===== -->
+<div class="special-zone">
+ <div class="bunting-band"></div>
+
+ <section class="cheap" id="cheap">
+  <div class="container">
+   <div class="cheap-box">
+    <img class="cheap-deco a" src="assets/m-crayon.png" alt="">
+    <img class="cheap-deco b" src="assets/m-flask.png" alt="">
+    <div class="cheap-eyebrow">Chi phí quá rẻ!</div>
+    <h2 class="cheap-h">Chỉ từ <span>20.000đ</span> / lớp / tháng</h2>
+    <p class="cheap-sub">Rẻ hơn một ly cà phê — cho cả một lớp giáo lý dùng trọn vẹn mọi tính năng suốt cả tháng, tính theo niên khóa.</p>
+    <div class="cheap-points">
+     <div>Bằng khoảng một ly cà phê mỗi tháng cho mỗi lớp</div>
+     <div>Chia cho cả lớp: mỗi em chỉ vài trăm đồng/tháng</div>
+     <div>Không phí ẩn · không giới hạn giáo lý viên</div>
+    </div>
    </div>
   </div>
- </div>
-</section>
+ </section>
 
-<section class="hl" id="highlights">
- <div class="container">
-  <h2 class="hl-h">Vận hành cả giáo xứ trên một hệ thống</h2>
-  <div class="hl-grid">
-   <div class="hl-card"><div class="hl-ic">👤</div><h3>Cha sở toàn quyền</h3><p>Tự tạo tài khoản cho từng Giáo lý viên, xếp vào dạy và quản lý đúng lớp được phân bổ — mỗi người chỉ thấy phần việc của mình.</p></div>
-   <div class="hl-card"><div class="hl-ic">📝</div><h3>Thi online · điểm tự động</h3><p>Cho học viên thi trắc nghiệm online, hệ thống tự chấm và cập nhật thẳng vào bảng điểm — không cần ghi chú bằng tay.</p></div>
-   <div class="hl-card"><div class="hl-ic">🎮</div><h3>Game giáo lý</h3><p>Bộ game học giáo lý được biên soạn sẵn, hoặc tự tạo nội dung câu hỏi cho riêng lớp mình.</p></div>
+ <section class="hl" id="highlights">
+  <div class="container">
+   <h2 class="hl-h">Vận hành cả giáo xứ trên một hệ thống</h2>
+   <div class="hl-grid">
+    <div class="hl-card"><img class="hl-mascot" src="assets/m-book.png" alt=""><h3>Cha sở toàn quyền</h3><p>Tự tạo tài khoản cho từng Giáo lý viên, xếp vào dạy và quản lý đúng lớp được phân bổ — mỗi người chỉ thấy phần việc của mình.</p></div>
+    <div class="hl-card"><img class="hl-mascot" src="assets/m-pencil.png" alt=""><h3>Thi online · điểm tự động</h3><p>Cho học viên thi trắc nghiệm online, hệ thống tự chấm và cập nhật thẳng vào bảng điểm — không cần ghi chú bằng tay.</p></div>
+    <div class="hl-card"><img class="hl-mascot" src="assets/m-eraser.png" alt=""><h3>Game giáo lý</h3><p>Bộ game học giáo lý được biên soạn sẵn, hoặc tự tạo nội dung câu hỏi cho riêng lớp mình.</p></div>
+   </div>
   </div>
- </div>
-</section>
+ </section>
+</div>
 
 <section class="plans" id="pricing">
  <div class="container">
