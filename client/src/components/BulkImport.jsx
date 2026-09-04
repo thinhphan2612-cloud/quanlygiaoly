@@ -102,7 +102,7 @@ export default function BulkImport({ classes, onClose, onDone }) {
           rows={5}
           value={text}
           onChange={(e) => previewText(e.target.value)}
-          placeholder={'Dán từ Excel hoặc gõ trực tiếp, ví dụ:\nPhêrô Nguyễn Văn An, 26/12/2015, Nam, Giuse Nguyễn Văn Bố, 0901234567, Maria Trần Thị Mẹ, 0908765432, , , 20/01/2016, , , 123 Đường ABC, Ghi chú'}
+          placeholder={'Dán từ Excel hoặc gõ trực tiếp (tên thánh và họ tên ở 2 ô riêng), ví dụ:\nPhêrô, Nguyễn Văn An, 26/12/2015, Nam, , , , Giuse, Nguyễn Văn Bố, 0901234567, Maria, Trần Thị Mẹ, 0908765432, …'}
         />
 
         {rows.length > 0 && (
