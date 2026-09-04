@@ -1,26 +1,6 @@
 // Tiện ích phân tích danh sách học viên nhập hàng loạt (dán, CSV, hoặc Excel).
-// Thứ tự cột (khớp mô hình học viên hiện tại):
-//   1 Tên thánh và họ tên   2 Ngày sinh   3 Giới tính
-//   4 Tên thánh & họ tên cha 5 SĐT cha     6 Tên thánh & họ tên mẹ  7 SĐT mẹ
-//   8 Người đỡ đầu          9 SĐT học viên
-//   10 Rửa tội  11 Rước lễ  12 Thêm sức   13 Địa chỉ   14 Ghi chú
-
-export const COLUMNS = [
-  'Tên thánh và họ tên',
-  'Ngày sinh (dd/mm/yyyy)',
-  'Giới tính (Nam/Nữ)',
-  'Tên thánh & họ tên cha',
-  'SĐT cha',
-  'Tên thánh & họ tên mẹ',
-  'SĐT mẹ',
-  'Người đỡ đầu',
-  'SĐT học viên',
-  'Ngày rửa tội',
-  'Ngày rước lễ',
-  'Ngày thêm sức',
-  'Địa chỉ',
-  'Ghi chú',
-];
+// Cột khai báo theo FIELDS bên dưới (khớp mô hình học viên hiện tại). Các cột chi tiết
+// chứng chỉ để trống được — có thể điền sau ở form từng em.
 
 // Tên thánh nhiều chữ (khớp trước để ưu tiên chuỗi dài hơn)
 const SAINTS_MULTI = [
@@ -51,14 +31,14 @@ export function splitSaintName(combined) {
   const nameLower = lower(name);
   for (const saint of SAINTS_MULTI) {
     if (nameLower.startsWith(lower(saint) + ' ')) {
-      return { saint_name: name.slice(saint.length).trim() ? saint : '', full_name: name.slice(saint.length).trim() };
+      return { saint: name.slice(saint.length).trim() ? saint : '', rest: name.slice(saint.length).trim() };
     }
   }
   const firstWord = name.split(' ')[0] || '';
   if (SAINTS_SINGLE.some((s) => lower(s) === lower(firstWord)) && name.includes(' ')) {
-    return { saint_name: firstWord, full_name: name.slice(firstWord.length).trim() };
+    return { saint: firstWord, rest: name.slice(firstWord.length).trim() };
   }
-  return { saint_name: '', full_name: name };
+  return { saint: '', rest: name };
 }
 
 // Chuẩn hóa giới tính về 'Nam' / 'Nữ' (để trống nếu không rõ)
@@ -78,8 +58,39 @@ export function normalizeDate(raw) {
   if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
   m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/); // dd/mm/yyyy
   if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
-  return s; // giữ nguyên nếu không nhận dạng được
+  return s;
 }
+
+// Khai báo cột theo thứ tự. kind: 'name'|'father'|'mother' -> tự tách tên thánh thành 2 trường.
+// t: 'date'|'gender' -> chuẩn hóa. Còn lại lưu thẳng vào key.
+const FIELDS = [
+  { h: 'Tên thánh và họ tên', kind: 'name', keys: ['saint_name', 'full_name'] },
+  { h: 'Ngày sinh (dd/mm/yyyy)', k: 'birth_date', t: 'date' },
+  { h: 'Giới tính (Nam/Nữ)', k: 'gender', t: 'gender' },
+  { h: 'Nơi sinh', k: 'birth_place' },
+  { h: 'Nguyên quán', k: 'origin_place' },
+  { h: 'Trú quán', k: 'residence' },
+  { h: 'Tên thánh & họ tên cha', kind: 'name', keys: ['father_saint', 'father_name'] },
+  { h: 'SĐT cha', k: 'father_phone' },
+  { h: 'Tên thánh & họ tên mẹ', kind: 'name', keys: ['mother_saint', 'mother_name'] },
+  { h: 'SĐT mẹ', k: 'mother_phone' },
+  { h: 'Người đỡ đầu', k: 'godparent_name' },
+  { h: 'SĐT học viên', k: 'student_phone' },
+  { h: 'Ngày rửa tội', k: 'baptism_date', t: 'date' },
+  { h: 'Nhà thờ Rửa Tội', k: 'baptism_church' },
+  { h: 'Số trích sổ Rửa Tội', k: 'baptism_book_no' },
+  { h: 'Linh mục Rửa Tội', k: 'baptism_priest' },
+  { h: 'Ngày rước lễ', k: 'first_communion_date', t: 'date' },
+  { h: 'Ngày thêm sức', k: 'confirmation_date', t: 'date' },
+  { h: 'Nhà thờ Thêm Sức', k: 'confirmation_church' },
+  { h: 'Giám mục Thêm Sức', k: 'confirmation_bishop' },
+  { h: 'Người đỡ đầu Thêm Sức', k: 'confirmation_godparent' },
+  { h: 'Số trích sổ Thêm Sức', k: 'confirmation_book_no' },
+  { h: 'Địa chỉ', k: 'address' },
+  { h: 'Ghi chú', k: 'notes' },
+];
+
+export const COLUMNS = FIELDS.map((f) => f.h);
 
 // Tách một dòng text: ưu tiên Tab (dán từ Excel), nếu không thì CSV có xử lý dấu ngoặc kép
 function splitLine(line) {
@@ -105,35 +116,24 @@ function splitLine(line) {
 // True nếu dòng là tiêu đề (bỏ qua khi nhập)
 function isHeader(cells) {
   const a = lower(cells[0]);
-  return a.includes('tên thánh') || a === lower(COLUMNS[0]) || a.includes('họ tên') || a.includes('họ và tên');
+  return a.includes('tên thánh') || a.includes('họ tên') || a.includes('họ và tên');
 }
 
 // Một mảng ô -> object học viên
 export function parseRow(cells) {
-  const c = (i) => norm(cells[i] || '');
-  const stu = splitSaintName(cells[0] || '');
-  const dad = splitSaintName(cells[3] || '');
-  const mom = splitSaintName(cells[5] || '');
-  return {
-    saint_name: stu.saint_name,
-    full_name: stu.full_name,
-    birth_date: normalizeDate(cells[1] || ''),
-    gender: normalizeGender(cells[2] || ''),
-    father_saint: dad.saint_name,
-    father_name: dad.full_name,
-    father_phone: c(4),
-    mother_saint: mom.saint_name,
-    mother_name: mom.full_name,
-    mother_phone: c(6),
-    godparent_name: c(7),
-    student_phone: c(8),
-    baptism_date: normalizeDate(cells[9] || ''),
-    first_communion_date: normalizeDate(cells[10] || ''),
-    confirmation_date: normalizeDate(cells[11] || ''),
-    address: c(12),
-    notes: c(13),
-    _valid: !!stu.full_name,
-  };
+  const row = {};
+  FIELDS.forEach((f, i) => {
+    const raw = cells[i] == null ? '' : cells[i];
+    if (f.kind === 'name') {
+      const { saint, rest } = splitSaintName(raw);
+      row[f.keys[0]] = saint;
+      row[f.keys[1]] = rest;
+    } else if (f.t === 'date') row[f.k] = normalizeDate(raw);
+    else if (f.t === 'gender') row[f.k] = normalizeGender(raw);
+    else row[f.k] = norm(raw);
+  });
+  row._valid = !!row.full_name;
+  return row;
 }
 
 // Phân tích text (dán / CSV) -> mảng object học viên
@@ -154,18 +154,24 @@ export function parseAoa(aoa) {
   const rows = [];
   for (const arr of (aoa || [])) {
     const cells = (arr || []).map((v) => norm(v));
-    if (!cells.some(Boolean)) continue; // dòng trống
+    if (!cells.some(Boolean)) continue;
     if (isHeader(cells)) continue;
     rows.push(parseRow(cells));
   }
   return rows;
 }
 
-// Bảng mẫu (tiêu đề + ví dụ) dùng cho file Excel/CSV
+// Bảng mẫu (tiêu đề + ví dụ) dùng cho file Excel. Cột chi tiết chứng chỉ để trống ở dòng 2.
 export function templateAoa() {
   return [
     COLUMNS,
-    ['Phêrô Nguyễn Văn An', '26/12/2015', 'Nam', 'Giuse Nguyễn Văn Bố', '0901234567', 'Maria Trần Thị Mẹ', '0908765432', 'Gioan Trần Văn C', '', '20/01/2016', '', '', '123 Đường ABC, Phường 5', 'Ghi chú mẫu'],
-    ['Maria Trần Thị Bình', '05/03/2016', 'Nữ', 'Phêrô Trần Văn Cha', '0912345678', '', '', '', '', '', '', '', '45 Đường XYZ', ''],
+    ['Phêrô Nguyễn Văn An', '26/12/2015', 'Nam', 'Bệnh viện Từ Dũ', 'Nam Định', 'TP.HCM',
+      'Giuse Nguyễn Văn Bố', '0901234567', 'Maria Trần Thị Mẹ', '0908765432', 'Gioan Trần Văn C', '',
+      '20/01/2016', 'Nhà thờ Chính Tòa', 'Q1/S15', 'Lm. Giuse Nguyễn A', '', '', '', '', '', '',
+      '123 Đường ABC, Phường 5', 'Ghi chú mẫu'],
+    ['Maria Trần Thị Bình', '05/03/2016', 'Nữ', '', '', '',
+      'Phêrô Trần Văn Cha', '0912345678', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '',
+      '45 Đường XYZ', ''],
   ];
 }

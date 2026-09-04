@@ -348,7 +348,11 @@ async function handle(method, rawUrl, body = {}) {
       const rows = valid.map((s) => ({
         parish_id: pid, ...cleanStudent({ ...s, class_id: body.class_id || s.class_id || '' }),
       }));
-      const { error } = await supabase.from('students').insert(rows);
+      let { error } = await supabase.from('students').insert(rows);
+      if (error && isMissingCol(error)) {
+        const stripped = rows.map((r) => { const x = { ...r }; CERT_EXTRA.forEach((k) => delete x[k]); return x; });
+        ({ error } = await supabase.from('students').insert(stripped));
+      }
       if (error) return fail(400, error.message);
       return ok({ count: valid.length, skipped: list.length - valid.length });
     }
