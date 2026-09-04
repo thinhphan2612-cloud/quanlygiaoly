@@ -1133,3 +1133,7 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
   .topbar-exp.soon { background: #fff7ed; color: #b45309; }
   .topbar-exp.exp { background: #fef2f2; color: #b91c1c; }
 }
+
+.zalo-link { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; margin-top: 4px; padding: 8px; border-radius: 10px; text-decoration: none; color: #0068ff; font-size: 13px; font-weight: 600; }
+.zalo-link svg { flex-shrink: 0; border-radius: 5px; }
+.zalo-link:hover { background: #eaf3ff; }

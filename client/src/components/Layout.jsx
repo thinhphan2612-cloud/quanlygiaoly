@@ -175,6 +175,10 @@ export default function Layout({ children }) {
           </div>
         )}
         <button className="feedback-link" onClick={() => setFeedback(true)}>💬 Góp ý / liên hệ tác giả</button>
+        <a className="zalo-link" href="https://zalo.me/0964013126" target="_blank" rel="noopener noreferrer">
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="11" fill="#0068FF" /><text x="24" y="32" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-style="italic" font-size="18" fill="#fff">Zalo</text></svg>
+          <span>Zalo hỗ trợ · 0964 013 126</span>
+        </a>
         </div>
       </aside>
       {navOpen && <div className="nav-backdrop" onClick={() => setNavOpen(false)} />}
