@@ -257,7 +257,7 @@ Deno.serve(async (req) => {
     // -------- đơn chờ thanh toán --------
     if (action === 'orders-list') {
       let q = admin.from('plan_orders')
-        .select('id, order_code, parish_id, tier_label, base_amount, discount_code, discount_amount, final_amount, status, created_at, parishes(name)')
+        .select('id, order_code, parish_id, tier_label, base_amount, discount_code, discount_amount, credit_amount, final_amount, status, created_at, parishes(name)')
         .order('created_at', { ascending: false }).limit(500);
       if (body?.status) q = q.eq('status', body.status);
       const { data, error } = await q;
@@ -265,6 +265,7 @@ Deno.serve(async (req) => {
       const orders = (data || []).map((o: any) => ({
         id: o.id, order_code: o.order_code, parish_id: o.parish_id, tier_label: o.tier_label,
         base_amount: o.base_amount, discount_code: o.discount_code, discount_amount: o.discount_amount,
+        credit_amount: o.credit_amount || 0,
         final_amount: o.final_amount, status: o.status, created_at: o.created_at,
         parish_name: o.parishes?.name || '(đã xoá)',
       }));
@@ -285,12 +286,10 @@ Deno.serve(async (req) => {
           maxClasses = t?.max_classes ?? null;
         }
         const { data: prevP } = await admin.from('parishes').select('plan, plan_expires_at, settings').eq('id', o.parish_id).maybeSingle();
-        // HẠN CỘNG DỒN: mỗi đơn = +1 niên khóa (12 tháng) cộng vào hạn hiện tại (nếu còn hạn),
-        // nếu không truyền ngày cụ thể. Đổi mức lớp vẫn giữ nguyên thời gian đã có.
+        // HẠN MỚI (kiểu Apple): chu kỳ 365 ngày (12 tháng) tính TỪ HÔM NAY. Không cộng dồn
+        // thời gian — phần còn thừa của gói cũ đã được khấu trừ bằng tiền (credit) khi tạo đơn.
         if (!expires) {
-          const nowMs = Date.now();
-          const cur = prevP?.plan === 'pro' && prevP?.plan_expires_at ? new Date(prevP.plan_expires_at).getTime() : 0;
-          const base = new Date(Math.max(nowMs, cur));
+          const base = new Date();
           base.setMonth(base.getMonth() + 12);
           expires = base.toISOString();
         }

@@ -44,6 +44,15 @@ export default function PricingModal({ current = 'free', onClose }) {
   const discountAmount = (price) =>
     !disc ? 0 : disc.kind === 'percent' ? Math.floor((price * disc.value) / 100) : Math.min(disc.value, price);
 
+  // Credit (kiểu Apple): nếu đang Pro còn hạn -> khấu trừ TIỀN phần còn thừa của gói hiện tại.
+  const curExp = parish?.plan_expires_at ? new Date(parish.plan_expires_at) : null;
+  const curPlanTier = tiers.find((t) => (t.max_classes ?? null) === (parish?.plan_max_classes ?? null) && t.price != null);
+  const proCredit = (isPro(current) && curExp && curExp.getTime() > Date.now() && curPlanTier)
+    ? Math.floor(curPlanTier.price * Math.min(365, (curExp.getTime() - Date.now()) / 86400000) / 365)
+    : 0;
+  const curDaysLeft = curExp ? Math.max(0, Math.ceil((curExp.getTime() - Date.now()) / 86400000)) : 0;
+  const payable = (price) => Math.max(0, price - discountAmount(price) - proCredit);
+
   function pickTier(t) { setTier(t); setCode(''); setDisc(null); setCodeMsg(''); setStep('pay'); }
 
   async function applyCode() {
@@ -171,10 +180,12 @@ export default function PricingModal({ current = 'free', onClose }) {
           <>
             <h2 style={{ marginTop: 0 }}>Nâng cấp Pro — {tier.label}</h2>
             <div className="pay-summary">
-              <div className="row"><span>Giá gói</span><b>{vnd(tier.price)}</b></div>
+              <div className="row"><span>Giá gói (1 năm)</span><b>{vnd(tier.price)}</b></div>
               {disc && <div className="row" style={{ color: '#15803d' }}><span>Giảm ({disc.kind === 'percent' ? disc.value + '%' : vnd(disc.value)})</span><b>-{vnd(discountAmount(tier.price))}</b></div>}
-              <div className="row total"><span>Thanh toán</span><b>{vnd(tier.price - discountAmount(tier.price))}</b></div>
+              {proCredit > 0 && <div className="row" style={{ color: '#15803d' }}><span>Trừ credit gói hiện tại (còn {curDaysLeft} ngày)</span><b>-{vnd(proCredit)}</b></div>}
+              <div className="row total"><span>Thanh toán</span><b>{vnd(payable(tier.price))}</b></div>
             </div>
+            {proCredit > 0 && <p className="muted" style={{ fontSize: 12, marginTop: -4 }}>Gia hạn/đổi gói bắt đầu chu kỳ 1 năm mới từ hôm nay; phần còn thừa của gói cũ đã được quy đổi thành tiền trừ vào trên.</p>}
             <div className="field">
               <label>Mã giảm giá (nếu có)</label>
               <div style={{ display: 'flex', gap: 8 }}>
