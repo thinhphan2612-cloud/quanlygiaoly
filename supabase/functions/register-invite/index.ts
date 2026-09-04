@@ -24,6 +24,18 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
       { auth: { persistSession: false, autoRefreshToken: false } });
 
+    // Hạn mức theo IP: tối đa RATE_MAX lời mời / RATE_MIN phút. Fail-open nếu bảng chưa có.
+    const RATE_MAX = 6, RATE_MIN = 60;
+    const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim()
+      || req.headers.get('cf-connecting-ip') || 'unknown';
+    try {
+      const since = new Date(Date.now() - RATE_MIN * 60000).toISOString();
+      const { count, error: cErr } = await admin.from('register_invites')
+        .select('*', { count: 'exact', head: true }).eq('ip', ip).gte('created_at', since);
+      if (!cErr && (count ?? 0) >= RATE_MAX) return json({ rate: true }, 429);
+      if (!cErr) await admin.from('register_invites').insert({ ip, email });
+    } catch (_e) { /* bảng chưa tạo -> bỏ qua giới hạn */ }
+
     const redirectTo = (Deno.env.get('APP_URL') || 'https://app.giaoly.com.vn') + '/set-password';
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
       data: { full_name: fullName, parish_name: parishName, diocese: String(body?.diocese || '').trim() },

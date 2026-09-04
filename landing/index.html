@@ -634,7 +634,8 @@ document.querySelectorAll('.lp-card form').forEach(f=>{
    const r=await fetch(SB_URL+'/functions/v1/register-invite',{method:'POST',headers:{'Content-Type':'application/json',apikey:SB_ANON,Authorization:'Bearer '+SB_ANON},
     body:JSON.stringify({name:d.name,parish:d.parish,email:d.email,phone:d.phone,note:d.note})});
    const j=await r.json();
-   if(j.already){st.className='lp-status err';st.textContent='Email này đã được dùng để đăng ký rồi. Vui lòng đăng nhập, hoặc dùng email khác.';}
+   if(j.rate){st.className='lp-status err';st.textContent='Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau ít phút.';}
+   else if(j.already){st.className='lp-status err';st.textContent='Email này đã được dùng để đăng ký rồi. Vui lòng đăng nhập, hoặc dùng email khác.';}
    else if(j.ok){st.className='lp-status ok';st.textContent='Đã gửi! Vui lòng kiểm tra hộp thư đến của bạn — email mời tạo tài khoản truy cập đang được gửi tới (nhớ kiểm tra cả mục Spam/Quảng cáo).';f.reset();}
    else{st.className='lp-status err';st.textContent='Có lỗi khi tạo lời mời, vui lòng thử lại hoặc liên hệ hỗ trợ.';}
   }catch(err){st.className='lp-status err';st.textContent='Lỗi kết nối, vui lòng thử lại.';}
