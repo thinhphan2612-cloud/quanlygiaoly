@@ -244,6 +244,11 @@ export default function Layout({ children }) {
                   <div className="ac-name">{user?.full_name || 'Tài khoản'}</div>
                   <div className="ac-role">{user?.role === 'admin' ? 'Quản trị viên' : 'Giáo lý viên'}</div>
                   <div className="ac-email">{user?.email}</div>
+                  {pro && planExp && (
+                    <div className={`ac-plan ${expired ? 'exp' : expSoon ? 'soon' : ''}`}>
+                      Gói {planName(plan)} · {expired ? `Hết hạn ${fmtD(planExp)}` : `Hạn đến ${fmtD(planExp)}`}
+                    </div>
+                  )}
 
                   <div className="ac-actions">
                     {user?.role === 'admin' && (

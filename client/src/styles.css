@@ -1121,3 +1121,7 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .lock-card > p { color: var(--muted); margin: 0 0 14px; line-height: 1.6; }
 .lock-warn { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.55; text-align: left; margin: 0 0 16px; }
 .lock-help { display: block; margin: 14px auto 0; border: none; background: transparent; color: var(--primary); cursor: pointer; font-size: 13.5px; }
+
+.ac-plan { margin: 8px auto 0; font-size: 12.5px; font-weight: 600; color: var(--primary); background: var(--primary-soft); padding: 5px 12px; border-radius: 999px; display: inline-block; }
+.ac-plan.soon { color: #b45309; background: #fff7ed; }
+.ac-plan.exp { color: #b91c1c; background: #fef2f2; }
