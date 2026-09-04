@@ -269,9 +269,13 @@ export default function Admin() {
                     </td>
                     <td>{l.parish_name || '—'}</td>
                     <td className="muted" style={{ fontSize: 12, maxWidth: 220 }}>{l.note || ''}</td>
-                    <td>{l.status === 'granted' ? <span style={{ color: '#15803d', fontSize: 12 }}>Đã cấp ✓</span> : l.status === 'archived' ? <span className="muted" style={{ fontSize: 12 }}>Đã lưu</span> : <span style={{ color: '#a8641b', fontSize: 12 }}>Mới</span>}</td>
+                    <td>{l.kind === 'register'
+                      ? <span style={{ color: '#15803d', fontSize: 12 }}>Đã gửi email mời (tự động) ✓</span>
+                      : l.status === 'granted' ? <span style={{ color: '#15803d', fontSize: 12 }}>Đã cấp ✓</span>
+                        : l.status === 'archived' ? <span className="muted" style={{ fontSize: 12 }}>Đã lưu</span>
+                          : <span style={{ color: '#a8641b', fontSize: 12 }}>Mới</span>}</td>
                     <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
-                      {l.status !== 'granted' && <button className="btn sm" disabled={!l.email} onClick={() => setGrantLead(l)}>Cấp tài khoản</button>}
+                      {l.kind !== 'register' && l.status !== 'granted' && <button className="btn sm" disabled={!l.email} onClick={() => setGrantLead(l)}>Cấp tài khoản</button>}
                       <div className="row-links">
                         {l.status === 'new' && <button onClick={() => setLeadStatus(l, 'archived')}>Lưu</button>}
                         <button className="danger" onClick={() => deleteLead(l)}>Xoá</button>
