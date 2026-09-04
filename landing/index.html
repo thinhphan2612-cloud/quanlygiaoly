@@ -602,7 +602,6 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
 
 <script>
 const APP='https://app.giaoly.com.vn';
-const CONTACT_EMAIL='support.giaolyso@gmail.com';
 const FORM_KEY='93c36314-d9bf-48d7-bc43-3224e8180076'; /* Web3Forms access key -> gửi email tự động về support.giaolyso@gmail.com */
 /* Ghi đơn vào Supabase (leads) để hiện ở trang Quản trị. Anon key công khai; RLS chỉ cho INSERT. */
 const SB_URL='https://jznntxlixctjwxqxatxs.supabase.co';
@@ -620,25 +619,28 @@ document.querySelectorAll('.lp-card form').forEach(f=>{
   const d=Object.fromEntries(new FormData(f).entries());
   saveLead(kind,d);
   st.className='lp-status';st.textContent='';
-  if(FORM_KEY){
-   btn.disabled=true;btn.textContent='Đang gửi...';
-   try{
-    const r=await fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},
-     body:JSON.stringify({access_key:FORM_KEY,subject:'['+kind+'] Giáo Lý Số — '+(d.name||''),from_name:d.name||'Khách',...d})});
-    const j=await r.json();
-    if(j.success){st.className='lp-status ok';st.textContent=kind==='Liên hệ'?'Đã gửi! Cảm ơn bạn, chúng tôi sẽ liên hệ sớm.':'Đã gửi! Vui lòng kiểm tra hộp thư đến của bạn — sẽ có email mời tạo tài khoản truy cập (nhớ kiểm tra cả mục Spam/Quảng cáo).';f.reset();}
-    else{st.className='lp-status err';st.textContent='Gửi thất bại, vui lòng thử lại hoặc email trực tiếp.';}
-   }catch(err){st.className='lp-status err';st.textContent='Lỗi kết nối, vui lòng thử lại.';}
-   btn.disabled=false;btn.textContent=kind==='Liên hệ'?'Gửi liên hệ':'Gửi đăng ký';
-  }else{
-   const body='Loại: '+kind+'%0D%0AHọ tên: '+enc(d.name)+'%0D%0AGiáo xứ: '+enc(d.parish)+'%0D%0AEmail: '+enc(d.email)+'%0D%0ASĐT: '+enc(d.phone)+'%0D%0ANội dung: '+enc(d.note);
-   window.location.href='mailto:'+CONTACT_EMAIL+'?subject='+encodeURIComponent('['+kind+'] Giáo Lý Số — '+(d.name||''))+'&body='+body;
-   st.className='lp-status ok';st.textContent='Đang mở ứng dụng email của bạn…';
+  btn.disabled=true;btn.textContent='Đang gửi...';
+  // Báo về hộp hỗ trợ (không chặn UI)
+  if(FORM_KEY){fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},
+    body:JSON.stringify({access_key:FORM_KEY,subject:'['+kind+'] Giáo Lý Số — '+(d.name||''),from_name:d.name||'Khách',...d})}).catch(()=>{});}
+
+  if(kind==='Liên hệ'){
+   st.className='lp-status ok';st.textContent='Đã gửi! Cảm ơn bạn, chúng tôi sẽ liên hệ sớm.';f.reset();
+   btn.disabled=false;btn.textContent='Gửi liên hệ';return;
   }
+
+  // Đăng ký: tự động gửi email mời tạo tài khoản (trùng email thì không gửi lại)
+  try{
+   const r=await fetch(SB_URL+'/functions/v1/register-invite',{method:'POST',headers:{'Content-Type':'application/json',apikey:SB_ANON,Authorization:'Bearer '+SB_ANON},
+    body:JSON.stringify({name:d.name,parish:d.parish,email:d.email,phone:d.phone,note:d.note})});
+   const j=await r.json();
+   if(j.already){st.className='lp-status err';st.textContent='Email này đã được dùng để đăng ký rồi. Vui lòng đăng nhập, hoặc dùng email khác.';}
+   else if(j.ok){st.className='lp-status ok';st.textContent='Đã gửi! Vui lòng kiểm tra hộp thư đến của bạn — email mời tạo tài khoản truy cập đang được gửi tới (nhớ kiểm tra cả mục Spam/Quảng cáo).';f.reset();}
+   else{st.className='lp-status err';st.textContent='Có lỗi khi tạo lời mời, vui lòng thử lại hoặc liên hệ hỗ trợ.';}
+  }catch(err){st.className='lp-status err';st.textContent='Lỗi kết nối, vui lòng thử lại.';}
+  btn.disabled=false;btn.textContent='Gửi đăng ký';
  });
 });
-function enc(v){return encodeURIComponent(v||'—');}
-
 /* FAQ accordion (mở 1 mục, đóng các mục khác) */
 document.querySelectorAll('.faq-q').forEach(q=>q.addEventListener('click',()=>{
  const it=q.closest('.faq-item');const wasOpen=it.classList.contains('open');
