@@ -58,6 +58,12 @@ export default function Admin() {
   function loadLeads() { api.get('/admin/leads').then((r) => setLeads(r.data)).catch(() => {}); }
   useEffect(() => { load(); }, []);
 
+  const overdue = useMemo(() =>
+    rows.filter((p) => p.plan === 'pro' && p.plan_expires_at && (Date.now() - new Date(p.plan_expires_at).getTime()) > 30 * 86400000)
+      .map((p) => ({ ...p, overdays: Math.floor((Date.now() - new Date(p.plan_expires_at).getTime()) / 86400000) }))
+      .sort((a, b) => b.overdays - a.overdays)
+  , [rows]);
+
   const filtered = useMemo(() => {
     const t = qText.trim().toLowerCase();
     if (!t) return rows;
@@ -119,6 +125,20 @@ export default function Admin() {
     if (!confirm(`XOÁ giáo xứ "${parish.name}"?\nToàn bộ lớp, học viên, tài khoản GLV của giáo xứ này sẽ bị xoá theo. Không thể hoàn tác.`)) return;
     try { await api.post('/admin/delete-parish', { parish_id: parish.id }); load(); }
     catch (e) { alert(e.response?.data?.error || 'Xoá thất bại'); }
+  }
+
+  // Dọn dữ liệu giáo xứ Pro quá hạn >30 ngày (xóa thủ công có kiểm soát, xác nhận 2 lớp).
+  async function purgeParish(p) {
+    const days = Math.floor((Date.now() - new Date(p.plan_expires_at).getTime()) / 86400000);
+    if (!confirm(
+      `XÓA TOÀN BỘ DỮ LIỆU giáo xứ "${p.name}"?\n\n`
+      + `Đã quá hạn ${days} ngày (hết hạn ${fmtDate(p.plan_expires_at)}).\n`
+      + `Sẽ xóa: ${p.classes || 0} lớp, ${p.students || 0} học viên, ${p.teachers || 0} GLV và toàn bộ dữ liệu liên quan.\n\n`
+      + `KHÔNG THỂ HOÀN TÁC. Chỉ xóa khi đã chắc chắn (và đã sao lưu nếu cần).`
+    )) return;
+    if (!confirm(`Xác nhận LẦN CUỐI: xóa vĩnh viễn dữ liệu giáo xứ "${p.name}"?`)) return;
+    try { await api.post('/admin/delete-parish', { parish_id: p.id }); load(); }
+    catch (e) { alert(e.response?.data?.error || 'Xóa thất bại'); }
   }
 
   async function addPayment(parish, payment) {
@@ -353,6 +373,32 @@ export default function Admin() {
         <p className="muted" style={{ fontSize: 12, marginTop: 12 }}>
           Thanh toán qua chuyển khoản / VietQR. Sau khi nhận đủ tiền, bấm <b>Kích hoạt Pro</b> và chọn hạn (cuối niên khóa).
         </p>
+      </div>
+
+      <div className="panel" id="sec-purge">
+        <div className="card-head"><h2 style={{ margin: 0 }}>🗑 Dọn dữ liệu giáo xứ quá hạn ({overdue.length})</h2></div>
+        <p className="muted" style={{ fontSize: 12, marginTop: 0 }}>
+          Giáo xứ gói Pro đã hết hạn <b>quá 30 ngày</b> — đủ điều kiện xóa dữ liệu theo chính sách. Duyệt từng giáo xứ rồi xóa thủ công (không tự động). Thao tác <b>không thể hoàn tác</b>.
+        </p>
+        {overdue.length === 0 ? <p className="muted">Không có giáo xứ nào quá hạn trên 30 ngày.</p> : (
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead><tr><th>Giáo xứ</th><th>Quản trị</th><th>Hết hạn</th><th>Quá hạn</th><th>Quy mô</th><th></th></tr></thead>
+              <tbody>
+                {overdue.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.name}</td>
+                    <td className="muted" style={{ fontSize: 12 }}>{p.admin_email || '—'}</td>
+                    <td>{fmtDate(p.plan_expires_at)}</td>
+                    <td><span style={{ color: '#b91c1c', fontWeight: 600 }}>{p.overdays} ngày</span></td>
+                    <td className="muted" style={{ fontSize: 12 }}>{p.classes || 0} lớp · {p.students || 0} HV · {p.teachers || 0} GLV</td>
+                    <td><button className="btn danger sm" onClick={() => purgeParish(p)}>Xóa dữ liệu</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="panel" id="sec-orders">

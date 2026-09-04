@@ -39,6 +39,7 @@ const ADMIN_SECTIONS = [
   { id: 'sec-overview', label: 'Tổng quan' },
   { id: 'sec-leads', label: 'Đơn liên hệ' },
   { id: 'sec-parishes', label: 'Giáo xứ' },
+  { id: 'sec-purge', label: 'Dọn dữ liệu quá hạn' },
   { id: 'sec-orders', label: 'Đơn chờ thanh toán' },
   { id: 'sec-payments', label: 'Sổ thanh toán' },
   { id: 'sec-codes', label: 'Mã giảm giá' },
