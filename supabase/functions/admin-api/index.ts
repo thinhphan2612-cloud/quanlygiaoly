@@ -276,7 +276,7 @@ Deno.serve(async (req) => {
       if (!id) return json({ error: 'Thiếu id' }, 400);
       const { data: o, error: e0 } = await admin.from('plan_orders').select('*').eq('id', id).single();
       if (e0 || !o) return json({ error: 'Không tìm thấy đơn' }, 400);
-      const expires = body?.plan_expires_at || null;
+      let expires = body?.plan_expires_at || null;
       if (o.parish_id) {
         // Suy giới hạn số lớp từ mức của đơn (null = không giới hạn).
         let maxClasses: number | null = null;
@@ -284,9 +284,21 @@ Deno.serve(async (req) => {
           const { data: t } = await admin.from('plan_tiers').select('max_classes').eq('id', o.tier_id).maybeSingle();
           maxClasses = t?.max_classes ?? null;
         }
-        const { data: prevP } = await admin.from('parishes').select('plan').eq('id', o.parish_id).maybeSingle();
+        const { data: prevP } = await admin.from('parishes').select('plan, plan_expires_at, settings').eq('id', o.parish_id).maybeSingle();
+        // HẠN CỘNG DỒN: mỗi đơn = +1 niên khóa (12 tháng) cộng vào hạn hiện tại (nếu còn hạn),
+        // nếu không truyền ngày cụ thể. Đổi mức lớp vẫn giữ nguyên thời gian đã có.
+        if (!expires) {
+          const nowMs = Date.now();
+          const cur = prevP?.plan === 'pro' && prevP?.plan_expires_at ? new Date(prevP.plan_expires_at).getTime() : 0;
+          const base = new Date(Math.max(nowMs, cur));
+          base.setMonth(base.getMonth() + 12);
+          expires = base.toISOString();
+        }
+        // Xóa cờ nhắc gia hạn để chu kỳ nhắc bắt đầu lại cho hạn mới.
+        const st = { ...(prevP?.settings || {}) };
+        delete st.renew_last_reminded; delete st.renew_reminded_for;
         const { error: e1 } = await admin.from('parishes')
-          .update({ plan: 'pro', plan_expires_at: expires, plan_max_classes: maxClasses }).eq('id', o.parish_id);
+          .update({ plan: 'pro', plan_expires_at: expires, plan_max_classes: maxClasses, settings: st }).eq('id', o.parish_id);
         if (e1) return json({ error: e1.message }, 400);
         await sendProEmail(admin, o.parish_id, { expires, maxClasses }, prevP?.plan === 'pro' ? 'renew' : 'welcome');
       }

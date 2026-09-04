@@ -35,25 +35,32 @@ Deno.serve(async (req) => {
       return json({ error: 'Chỉ quản trị viên được tạo tài khoản' }, 403);
     }
 
-    const { email, password, full_name } = await req.json();
+    const { email, password, full_name, role: reqRole } = await req.json();
+    const role = reqRole === 'admin' ? 'admin' : 'teacher';
     if (!email || !password) return json({ error: 'Cần email và mật khẩu' }, 400);
     if (String(password).length < 6) return json({ error: 'Mật khẩu tối thiểu 6 ký tự' }, 400);
+
+    // Thêm quản trị viên là tính năng gói Pro
+    if (role === 'admin') {
+      const { data: par } = await admin.from('parishes').select('plan').eq('id', caller.parish_id).maybeSingle();
+      if (par?.plan !== 'pro') return json({ error: 'Thêm quản trị viên chỉ dành cho gói Pro' }, 403);
+    }
 
     // Tạo tài khoản (đã xác nhận email sẵn)
     const { data: created, error: cerr } = await admin.auth.admin.createUser({
       email, password, email_confirm: true,
-      user_metadata: { full_name: full_name || '', parish_id: caller.parish_id, role: 'teacher' },
+      user_metadata: { full_name: full_name || '', parish_id: caller.parish_id, role },
     });
     if (cerr) return json({ error: cerr.message }, 400);
 
     // Tạo profile trực tiếp với parish_id đã xác thực
     const { error: perr } = await admin.from('profiles').insert({
-      id: created.user!.id, parish_id: caller.parish_id, role: 'teacher',
+      id: created.user!.id, parish_id: caller.parish_id, role,
       full_name: full_name || '', email,
     });
     if (perr) return json({ error: perr.message }, 400);
 
-    return json({ id: created.user!.id, email, full_name: full_name || '' });
+    return json({ id: created.user!.id, email, full_name: full_name || '', role });
   } catch (e) {
     return json({ error: String((e as Error)?.message || e) }, 500);
   }

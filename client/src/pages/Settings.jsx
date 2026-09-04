@@ -21,15 +21,35 @@ export default function Settings() {
   const [err, setErr] = useState('');
   const [theme, setTheme] = useState(loadTheme());
   const [features, setFeatures] = useState([]);
+  const [admins, setAdmins] = useState([]);
+  const [adminForm, setAdminForm] = useState({ email: '', password: '', full_name: '' });
+  const [addingAdmin, setAddingAdmin] = useState(false);
   const ent = useEntitlements();
 
   const settings = parish?.settings || {};
   const flag = (k) => settings[k] !== false; // mặc định ON
   const isFree = !isPro(parish?.plan || 'free');
 
+  function loadAdmins() {
+    api.get('/auth/users').then((r) => setAdmins((r.data || []).filter((u) => u.role === 'admin'))).catch(() => {});
+  }
   function loadAll() {
     api.get('/school-years').then((r) => setYears(r.data));
     api.get('/features').then((r) => setFeatures(r.data)).catch(() => {});
+    loadAdmins();
+  }
+
+  async function addAdmin() {
+    const f = adminForm;
+    if (!f.email.trim() || f.password.length < 6) { fail('Cần email và mật khẩu tối thiểu 6 ký tự'); return; }
+    setAddingAdmin(true);
+    try {
+      await api.post('/auth/users', { email: f.email.trim(), password: f.password, full_name: f.full_name.trim(), role: 'admin' });
+      setAdminForm({ email: '', password: '', full_name: '' });
+      loadAdmins();
+      flash('Đã thêm quản trị viên');
+    } catch (e) { fail(e.response?.data?.error || 'Thêm quản trị viên thất bại'); }
+    finally { setAddingAdmin(false); }
   }
   useEffect(() => { loadAll(); }, []);
   // Đồng bộ ô nhập tên/giáo phận khi tải xong thông tin giáo xứ
@@ -195,6 +215,40 @@ export default function Settings() {
             : <>Gói Khởi động chỉ quản lý 1 lớp. Nâng lên Pro (chia mức theo số lớp: nhỏ / vừa / lớn) để mở khóa nhiều lớp + toàn bộ tính năng — liên hệ tác giả để thanh toán (chuyển khoản / VietQR) và được kích hoạt.</>}
         </p>
       </div>
+
+      {/* Quản trị viên giáo xứ (Pro) */}
+      {!isFree && (
+        <div className="panel">
+          <div className="card-head"><h2>Quản trị viên giáo xứ</h2></div>
+          <p className="muted" style={{ marginTop: 0, fontSize: 13 }}>
+            Thêm quản trị viên khác cùng quản lý giáo xứ. Các quản trị viên có <b>quyền ngang nhau</b> (toàn quyền trên giáo xứ). Tính năng gói Pro.
+          </p>
+          <table>
+            <thead><tr><th>Họ tên</th><th>Email đăng nhập</th></tr></thead>
+            <tbody>
+              {admins.map((a) => (
+                <tr key={a.id}>
+                  <td>{a.full_name || '—'}{a.id === user.id && <span className="muted"> (bạn)</span>}</td>
+                  <td className="muted">{a.email}</td>
+                </tr>
+              ))}
+              {admins.length === 0 && <tr><td colSpan={2} className="muted">Chưa có</td></tr>}
+            </tbody>
+          </table>
+          <div className="form-section" style={{ marginTop: 14 }}>Thêm quản trị viên mới</div>
+          <div className="settings-grid">
+            <div className="field"><label>Họ tên</label>
+              <input value={adminForm.full_name} onChange={(e) => setAdminForm({ ...adminForm, full_name: e.target.value })} placeholder="VD: Giuse Nguyễn Văn A" /></div>
+            <div className="field"><label>Email đăng nhập</label>
+              <input type="email" value={adminForm.email} onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })} /></div>
+            <div className="field"><label>Mật khẩu tạm (≥ 6 ký tự)</label>
+              <input type="text" value={adminForm.password} onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })} placeholder="Người này nên đổi lại sau khi đăng nhập" /></div>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <button className="btn" onClick={addAdmin} disabled={addingAdmin}>{addingAdmin ? 'Đang thêm…' : '+ Thêm quản trị viên'}</button>
+          </div>
+        </div>
+      )}
 
       {/* Tiện ích mở rộng (kho tính năng) */}
       <div className="panel">

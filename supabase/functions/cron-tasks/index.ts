@@ -63,6 +63,30 @@ function reminderHtml(pname: string, who: string, dateStr: string, days: number,
   </div>`;
 }
 
+function expiredHtml(pname: string, who: string, expStr: string, purgeStr: string, daysToPurge: number, appUrl: string, gmailUser: string) {
+  return `
+  <div style="background:#f4f6fb;padding:28px 12px;font-family:Arial,Helvetica,sans-serif">
+    <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden">
+      <div style="background:#b91c1c;padding:20px 28px;text-align:center">
+        <img src="${appUrl}/logo-full.png" alt="Giáo Lý Số" height="38" style="height:38px;display:inline-block" />
+      </div>
+      <div style="padding:26px 30px;color:#1f2937;line-height:1.6">
+        <h2 style="color:#b91c1c;margin:0 0 12px;font-size:20px">Gói Pro đã hết hạn — nguy cơ mất dữ liệu ⚠️</h2>
+        <p style="margin:0 0 12px">Kính gửi ${who},</p>
+        <p style="margin:0 0 14px">Gói <b>Pro</b> của giáo xứ <b>${pname}</b> đã hết hạn vào <b>${expStr}</b>. Ứng dụng đang tạm khóa cho tới khi gia hạn.</p>
+        <p style="margin:0 0 14px;padding:12px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#991b1b">
+          Để bảo đảm an toàn, dữ liệu của giáo xứ sẽ được <b>xóa sau 30 ngày</b> kể từ ngày hết hạn — dự kiến từ <b>${purgeStr}</b> (còn <b>${daysToPurge} ngày</b>). Xin gia hạn, hoặc liên hệ hỗ trợ để sao lưu dữ liệu trước thời hạn.
+        </p>
+        <p style="text-align:center;margin:0"><a href="${appUrl}" style="background:#b91c1c;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:10px;font-weight:600;display:inline-block">Gia hạn ngay</a></p>
+      </div>
+      <div style="padding:18px 30px;border-top:1px solid #eef2f7;color:#6b7280;font-size:12.5px;line-height:1.6">
+        Cần hỗ trợ hoặc sao lưu dữ liệu, xin phản hồi email này.<br>
+        <b style="color:#374151">Giáo Lý Số</b> · ${gmailUser}
+      </div>
+    </div>
+  </div>`;
+}
+
 Deno.serve(async (req) => {
   const secret = Deno.env.get('CRON_SECRET') || '';
   if (!secret || req.headers.get('x-cron-secret') !== secret) {
@@ -76,30 +100,43 @@ Deno.serve(async (req) => {
   const appUrl = Deno.env.get('APP_URL') || 'https://app.giaoly.com.vn';
   const gmailUser = Deno.env.get('GMAIL_USER') || '';
   const now = new Date();
-  const in10 = new Date(now.getTime() + 10 * 86400000);
+  const from = new Date(now.getTime() - 30 * 86400000);   // đã hết hạn tối đa 30 ngày (còn trong hạn xóa)
+  const to30 = new Date(now.getTime() + 30 * 86400000);   // sắp hết hạn trong 30 ngày
 
-  // Giáo xứ Pro sắp hết hạn trong 10 ngày (và chưa qua hạn).
+  // Giáo xứ Pro trong cửa sổ nhắc: 30 ngày trước hạn -> 30 ngày sau hạn.
   const { data: parishes } = await admin.from('parishes')
     .select('id, name, plan, plan_expires_at, settings')
     .eq('plan', 'pro').not('plan_expires_at', 'is', null)
-    .gte('plan_expires_at', now.toISOString()).lte('plan_expires_at', in10.toISOString());
+    .gte('plan_expires_at', from.toISOString()).lte('plan_expires_at', to30.toISOString());
 
   let sent = 0;
   for (const p of (parishes || [])) {
-    if (p.settings?.renew_reminded_for === p.plan_expires_at) continue; // đã nhắc cho hạn này
+    // Nhịp 3 ngày/lần: bỏ qua nếu đã nhắc trong vòng 3 ngày.
+    const last = p.settings?.renew_last_reminded ? new Date(p.settings.renew_last_reminded) : null;
+    if (last && (now.getTime() - last.getTime()) < 3 * 86400000) continue;
+
     const { data: prof } = await admin.from('profiles').select('id, full_name').eq('parish_id', p.id).eq('role', 'admin').limit(1).maybeSingle();
     if (!prof) continue;
     const { data: uu } = await admin.auth.admin.getUserById(prof.id);
     const to = uu?.user?.email;
     if (!to) continue;
     const who = prof.full_name || 'Quý Cha / Quý Thầy Cô';
-    const dateStr = new Date(p.plan_expires_at).toLocaleDateString('vi-VN');
-    const days = Math.max(0, Math.ceil((new Date(p.plan_expires_at).getTime() - now.getTime()) / 86400000));
+    const exp = new Date(p.plan_expires_at);
+    const expStr = exp.toLocaleDateString('vi-VN');
+    const days = Math.ceil((exp.getTime() - now.getTime()) / 86400000);
     try {
-      await sendGmail(to, `Gói Pro sắp hết hạn (còn ${days} ngày) — ${p.name}`,
-        reminderHtml(p.name || 'Giáo xứ', who, dateStr, days, appUrl, gmailUser),
-        `Gói Pro của ${p.name} sẽ hết hạn ngày ${dateStr} (còn ${days} ngày). Xin gia hạn để không gián đoạn.`);
-      await admin.from('parishes').update({ settings: { ...(p.settings || {}), renew_reminded_for: p.plan_expires_at } }).eq('id', p.id);
+      if (days > 0) {
+        await sendGmail(to, `Gói Pro sắp hết hạn (còn ${days} ngày) — ${p.name}`,
+          reminderHtml(p.name || 'Giáo xứ', who, expStr, days, appUrl, gmailUser),
+          `Gói Pro của ${p.name} sẽ hết hạn ngày ${expStr} (còn ${days} ngày). Xin gia hạn để không gián đoạn.`);
+      } else {
+        const daysToPurge = Math.max(0, 30 + days); // days <= 0
+        const purgeStr = new Date(exp.getTime() + 30 * 86400000).toLocaleDateString('vi-VN');
+        await sendGmail(to, `Gói Pro đã hết hạn — dữ liệu sẽ bị xóa sau ${daysToPurge} ngày — ${p.name}`,
+          expiredHtml(p.name || 'Giáo xứ', who, expStr, purgeStr, daysToPurge, appUrl, gmailUser),
+          `Gói Pro của ${p.name} đã hết hạn ngày ${expStr}. Dữ liệu sẽ bị xóa sau ${daysToPurge} ngày. Xin gia hạn hoặc sao lưu.`);
+      }
+      await admin.from('parishes').update({ settings: { ...(p.settings || {}), renew_last_reminded: now.toISOString() } }).eq('id', p.id);
       sent++;
     } catch (_e) { /* bỏ qua giáo xứ lỗi, tiếp tục */ }
   }

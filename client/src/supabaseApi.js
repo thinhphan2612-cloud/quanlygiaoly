@@ -225,9 +225,9 @@ async function handle(method, rawUrl, body = {}) {
       return ok((data || []).map((u) => ({ ...u, username: u.email || '', classes: classesByTeacher[u.id] || [] })));
     }
     if (path === '/auth/users' && method === 'post') {
-      const { email, password, full_name } = body;
+      const { email, password, full_name, role } = body;
       if (!email || !password) return fail(400, 'Cần email và mật khẩu');
-      const { data, error } = await supabase.functions.invoke('create-teacher', { body: { email, password, full_name } });
+      const { data, error } = await supabase.functions.invoke('create-teacher', { body: { email, password, full_name, role: role === 'admin' ? 'admin' : 'teacher' } });
       if (error) {
         let msg = 'Tạo tài khoản thất bại (đã deploy Edge Function create-teacher chưa?)';
         try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch { /* noop */ }

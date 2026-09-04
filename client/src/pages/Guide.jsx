@@ -191,13 +191,14 @@ const GUIDE = [
   },
   {
     id: 'caidat', title: 'Cài đặt quản lý', roles: ['admin'],
-    tags: 'cài đặt settings thông tin giáo xứ logo giáo phận xét duyệt lớp niên khóa',
-    summary: 'Thông tin giáo xứ (tên, giáo phận, logo) và các thiết lập vận hành. Chỉ quản trị.',
+    tags: 'cài đặt settings thông tin giáo xứ logo giáo phận xét duyệt lớp niên khóa thêm quản trị viên admin',
+    summary: 'Thông tin giáo xứ (tên, giáo phận, logo), thêm quản trị viên và các thiết lập vận hành. Chỉ quản trị.',
     steps: [
       'Mở menu tài khoản (góc trên phải) → “Cài đặt quản lý”.',
       'Cập nhật tên giáo xứ, giáo phận, logo; các thiết lập niên khóa và kỳ xét duyệt lớp.',
+      'Gói Pro: mục “Quản trị viên giáo xứ” cho phép thêm quản trị viên khác — nhập họ tên, email và mật khẩu tạm. Các quản trị viên có quyền ngang nhau (toàn quyền trên giáo xứ).',
     ],
-    tips: ['Tên và logo ở đây xuất hiện trên đầu ứng dụng và trên chứng chỉ/giấy khen.'],
+    tips: ['Tên và logo ở đây xuất hiện trên đầu ứng dụng và trên chứng chỉ/giấy khen.', 'Nên cho quản trị viên mới đổi mật khẩu sau khi đăng nhập lần đầu.'],
   },
   {
     id: 'goi', title: 'Gói dịch vụ & Nâng cấp', roles: ['admin'],
@@ -210,6 +211,20 @@ const GUIDE = [
     ],
     tips: [
       'Ô “Mã giảm giá” ở bước thanh toán chỉ dành cho mã giảm %/giảm tiền. Mã nâng Pro miễn phí phải nhập ở ô “🎁 Có mã khuyến mãi?” ở bước chọn gói.',
+    ],
+  },
+  {
+    id: 'giahan', title: 'Gia hạn & chính sách dữ liệu', roles: ['admin'], pro: true,
+    tags: 'gia hạn hết hạn nhắc nhở cộng dồn khóa tài khoản mất dữ liệu xóa data sao lưu backup miễn trừ trách nhiệm chính sách',
+    summary: 'Cách hệ thống nhắc gia hạn, quy tắc cộng dồn thời gian, và chính sách dữ liệu khi gói Pro hết hạn mà không gia hạn.',
+    steps: [
+      'Nhắc trước hạn: từ 30 ngày trước khi hết hạn, hệ thống nhắc qua email và banner trong ứng dụng, lặp lại mỗi 3 ngày cho tới khi gia hạn. Hạn còn lại cũng hiển thị ngay cạnh ảnh đại diện.',
+      'Gia hạn mọi lúc — thời gian cộng dồn: gia hạn bất cứ khi nào, thời gian mới được cộng vào hạn còn lại (không mất phần chưa dùng). Đổi mức lớp (vd 5 lớp lên 12 lớp) vẫn giữ nguyên thời gian đã có.',
+      'Gia hạn: bấm nút “Gia hạn ngay” trên banner (hoặc “Xem gói & nâng cấp”) → hiện mã QR thanh toán; sau khi đối soát, Pro được kích hoạt và banner biến mất.',
+    ],
+    tips: [
+      'Nếu KHÔNG gia hạn: khi hết hạn, ứng dụng bị khóa bằng banner yêu cầu gia hạn. Dữ liệu giáo xứ sẽ bị xóa sau 30 ngày kể từ ngày hết hạn. Hãy gia hạn hoặc tải/sao lưu dữ liệu (xuất Excel/PDF, tải bản lưu trữ) trước thời hạn để tránh mất mát.',
+      'Miễn trừ trách nhiệm: Giáo Lý Số không chịu trách nhiệm về việc mất dữ liệu do giáo xứ không gia hạn đúng hạn hoặc không sao lưu dữ liệu kịp thời trong thời gian 30 ngày kể từ khi hết hạn.',
     ],
   },
 ];

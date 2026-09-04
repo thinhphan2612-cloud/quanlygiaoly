@@ -83,6 +83,16 @@ export default function Layout({ children }) {
   const sa = isSuperAdmin(user);
   const unread = notifs.filter((n) => !n.read).length;
   const parishName = parish?.name || 'Quản lý Giáo lý';
+  const [renewBarClosed, setRenewBarClosed] = useState(false);
+
+  // Trạng thái hạn gói Pro
+  const planExp = parish?.plan_expires_at ? new Date(parish.plan_expires_at) : null;
+  const daysLeft = planExp ? Math.ceil((planExp.getTime() - Date.now()) / 86400000) : null;
+  const expired = pro && planExp && daysLeft <= 0;          // đã hết hạn -> khóa
+  const expSoon = pro && planExp && daysLeft > 0 && daysLeft <= 30; // sắp hết hạn -> nhắc
+  const fmtD = (d) => new Date(d).toLocaleDateString('vi-VN');
+  const purgeDate = planExp ? fmtD(planExp.getTime() + 30 * 86400000) : '';
+  const canRenew = user?.role === 'admin';
 
   function loadNotifs() { api.get('/notifications').then((r) => setNotifs(r.data)).catch(() => {}); }
   useEffect(() => { loadNotifs(); const t = setInterval(loadNotifs, 60000); return () => clearInterval(t); }, []);
@@ -212,6 +222,11 @@ export default function Layout({ children }) {
             <div className="user-meta">
               <div className="name">{user?.full_name}</div>
               <div className="role">{user?.role === 'admin' ? 'Quản trị viên' : 'Giáo lý viên'}</div>
+              {pro && planExp && (
+                <div className={`plan-exp ${expired ? 'exp' : expSoon ? 'soon' : ''}`}>
+                  {expired ? `Hết hạn ${fmtD(planExp)}` : `Hạn: ${fmtD(planExp)}`}
+                </div>
+              )}
             </div>
             {menuOpen && (
               <>
@@ -243,10 +258,42 @@ export default function Layout({ children }) {
             )}
           </div>
         </header>
-        <main className="content">{children}</main>
+        <main className="content">
+          {expSoon && !renewBarClosed && !sa && (
+            <div className="renew-bar">
+              <span className="rb-ic">⏰</span>
+              <div className="rb-text">
+                Gói Pro của giáo xứ sẽ <b>hết hạn sau {daysLeft} ngày</b> (đến {fmtD(planExp)}).
+                Vui lòng gia hạn để không gián đoạn và <b>tránh mất dữ liệu</b>. Nên tải sao lưu dữ liệu để an toàn.
+              </div>
+              {canRenew && <button className="btn sm" onClick={() => setPricing(true)}>Gia hạn ngay</button>}
+              <button className="rb-x" aria-label="Đóng" onClick={() => setRenewBarClosed(true)}>✕</button>
+            </div>
+          )}
+          {children}
+        </main>
       </div>
 
       {pricing && <PricingModal current={plan} onClose={() => setPricing(false)} />}
+
+      {/* Khóa khi gói Pro đã hết hạn: chặn toàn ứng dụng cho tới khi gia hạn */}
+      {expired && !sa && (
+        <div className="lock-overlay">
+          <div className="lock-card">
+            <div className="lock-ic">🔒</div>
+            <h2>Gói Pro đã hết hạn</h2>
+            <p>Gói Pro của giáo xứ đã hết hạn vào <b>{fmtD(planExp)}</b>. Ứng dụng tạm khóa cho tới khi gia hạn.</p>
+            <div className="lock-warn">
+              ⚠️ Để bảo đảm an toàn, dữ liệu của giáo xứ sẽ được <b>xóa sau 30 ngày</b> kể từ ngày hết hạn
+              (dự kiến từ <b>{purgeDate}</b>) nếu không gia hạn. Vui lòng gia hạn hoặc liên hệ hỗ trợ để sao lưu dữ liệu.
+            </div>
+            {canRenew
+              ? <button className="btn" onClick={() => setPricing(true)}>Gia hạn ngay</button>
+              : <p className="muted" style={{ margin: 0 }}>Vui lòng liên hệ Cha sở / quản trị viên của giáo xứ để gia hạn.</p>}
+            <button className="lock-help" onClick={() => setFeedback(true)}>💬 Liên hệ hỗ trợ / sao lưu dữ liệu</button>
+          </div>
+        </div>
+      )}
 
       {/* Banner khuyến mãi cho user gói free (hiện mỗi lần tải trang, tắt bằng X hoặc nền) */}
       {!pro && !sa && promoOpen && (

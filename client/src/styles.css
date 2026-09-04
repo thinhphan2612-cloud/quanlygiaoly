@@ -1103,3 +1103,21 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
   .gd-toc-title { width: 100%; padding: 0 0 4px; }
   .guide-toc button { background: var(--primary-soft); color: var(--primary); padding: 6px 10px; font-size: 12.5px; }
 }
+
+/* ===== Hạn gói Pro: hiển thị cạnh avatar, thanh nhắc & khóa gia hạn ===== */
+.plan-exp { font-size: 11px; color: var(--muted); margin-top: 1px; line-height: 1.2; }
+.plan-exp.soon { color: #b45309; font-weight: 600; }
+.plan-exp.exp { color: #b91c1c; font-weight: 700; }
+
+.renew-bar { display: flex; align-items: center; gap: 12px; background: #fff7ed; border: 1px solid #fed7aa; color: #7c2d12; border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 16px; font-size: 13.5px; line-height: 1.5; }
+.renew-bar .rb-ic { font-size: 20px; flex-shrink: 0; }
+.renew-bar .rb-text { flex: 1; }
+.renew-bar .rb-x { border: none; background: transparent; color: #9a6a4a; cursor: pointer; font-size: 15px; flex-shrink: 0; }
+
+.lock-overlay { position: fixed; inset: 0; z-index: 48; background: rgba(15,23,42,.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.lock-card { background: var(--panel); border-radius: var(--radius); max-width: 460px; width: 100%; padding: 30px 28px; text-align: center; box-shadow: var(--shadow); }
+.lock-card .lock-ic { font-size: 40px; }
+.lock-card h2 { margin: 10px 0 8px; }
+.lock-card > p { color: var(--muted); margin: 0 0 14px; line-height: 1.6; }
+.lock-warn { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.55; text-align: left; margin: 0 0 16px; }
+.lock-help { display: block; margin: 14px auto 0; border: none; background: transparent; color: var(--primary); cursor: pointer; font-size: 13.5px; }

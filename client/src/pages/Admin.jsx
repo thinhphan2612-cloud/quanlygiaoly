@@ -14,6 +14,14 @@ function suggestExpiry() {
   const y = now.getMonth() >= 7 ? now.getFullYear() + 1 : now.getFullYear();
   return `${y}-07-31`;
 }
+// Gia hạn cộng dồn: nếu còn hạn ở tương lai -> mặc định cộng thêm 12 tháng vào hạn đó.
+function cumulativeExpiry(currentIso) {
+  if (!currentIso) return suggestExpiry();
+  const cur = new Date(currentIso);
+  if (isNaN(cur.getTime()) || cur.getTime() <= Date.now()) return suggestExpiry();
+  cur.setMonth(cur.getMonth() + 12);
+  return cur.toISOString().slice(0, 10);
+}
 
 export default function Admin() {
   const { user } = useAuth();
@@ -498,7 +506,7 @@ function TierRow({ tier, onSave }) {
 }
 
 function OrderPaidModal({ order, onClose, onConfirm }) {
-  const [exp, setExp] = useState(suggestExpiry());
+  const [exp, setExp] = useState(''); // để trống = cộng dồn +1 niên khóa (server tự tính)
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -507,7 +515,7 @@ function OrderPaidModal({ order, onClose, onConfirm }) {
           Đơn <b>{order.order_code}</b> · {order.parish_name} · <b>{fmtVnd(order.final_amount)}</b>{order.discount_code ? ` · mã ${order.discount_code}` : ''}.
           Kích hoạt Pro cho giáo xứ + ghi vào sổ thu.
         </p>
-        <div className="field"><label>Hạn gói (đến hết ngày)</label><input type="date" value={exp} onChange={(e) => setExp(e.target.value)} /></div>
+        <div className="field"><label>Hạn gói (để trống = cộng dồn +1 niên khóa vào hạn hiện tại)</label><input type="date" value={exp} onChange={(e) => setExp(e.target.value)} /></div>
         <div className="modal-actions">
           <button className="btn ghost" onClick={onClose}>Huỷ</button>
           <button className="btn" onClick={() => onConfirm(exp || null)}>Kích hoạt Pro</button>
@@ -593,7 +601,7 @@ function PaymentFields({ pay, set }) {
 const emptyPay = () => ({ amount: '', method: 'bank', paid_at: new Date().toISOString().slice(0, 10), discount_code: '', note: '' });
 
 function ActivateModal({ parish, tiers, onClose, onConfirm }) {
-  const [exp, setExp] = useState(parish.plan_expires_at ? parish.plan_expires_at.slice(0, 10) : suggestExpiry());
+  const [exp, setExp] = useState(cumulativeExpiry(parish.plan_expires_at));
   const [pay, setPay] = useState(emptyPay());
   // Mức đọc từ bảng giá (plan_tiers.max_classes). value = số lớp tối đa ('' = không giới hạn).
   const tierOpts = (tiers && tiers.length ? tiers : [
