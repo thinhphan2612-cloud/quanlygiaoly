@@ -617,7 +617,6 @@ document.querySelectorAll('.lp-card form').forEach(f=>{
   e.preventDefault();
   const kind=f.dataset.kind;const st=f.querySelector('.lp-status');const btn=f.querySelector('.lp-submit');
   const d=Object.fromEntries(new FormData(f).entries());
-  saveLead(kind,d);
   st.className='lp-status';st.textContent='';
   btn.disabled=true;btn.textContent='Đang gửi...';
   // Báo về hộp hỗ trợ (không chặn UI)
@@ -625,6 +624,7 @@ document.querySelectorAll('.lp-card form').forEach(f=>{
     body:JSON.stringify({access_key:FORM_KEY,subject:'['+kind+'] Giáo Lý Số — '+(d.name||''),from_name:d.name||'Khách',...d})}).catch(()=>{});}
 
   if(kind==='Liên hệ'){
+   saveLead('Liên hệ',d); // đơn liên hệ vẫn ghi trực tiếp; đơn đăng ký do register-invite tự ghi kèm trạng thái
    st.className='lp-status ok';st.textContent='Đã gửi! Cảm ơn bạn, chúng tôi sẽ liên hệ sớm.';f.reset();
    btn.disabled=false;btn.textContent='Gửi liên hệ';return;
   }

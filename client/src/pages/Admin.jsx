@@ -270,7 +270,9 @@ export default function Admin() {
                     <td>{l.parish_name || '—'}</td>
                     <td className="muted" style={{ fontSize: 12, maxWidth: 220 }}>{l.note || ''}</td>
                     <td>{l.kind === 'register'
-                      ? <span style={{ color: '#15803d', fontSize: 12 }}>Đã gửi email mời (tự động) ✓</span>
+                      ? (l.status === 'duplicate'
+                        ? <span style={{ color: '#b45309', fontSize: 12 }}>Email đã đăng ký (không gửi lại)</span>
+                        : <span style={{ color: '#15803d', fontSize: 12 }}>Đã gửi email mời (tự động) ✓</span>)
                       : l.status === 'granted' ? <span style={{ color: '#15803d', fontSize: 12 }}>Đã cấp ✓</span>
                         : l.status === 'archived' ? <span className="muted" style={{ fontSize: 12 }}>Đã lưu</span>
                           : <span style={{ color: '#a8641b', fontSize: 12 }}>Mới</span>}</td>

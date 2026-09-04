@@ -19,10 +19,18 @@ Deno.serve(async (req) => {
     const email = String(body?.email || '').trim().toLowerCase();
     const fullName = String(body?.name || '').trim().slice(0, 160);
     const parishName = String(body?.parish || '').trim().slice(0, 200);
+    const phone = String(body?.phone || '').trim().slice(0, 60);
+    const note = String(body?.note || '').trim().slice(0, 2000);
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: 'email-invalid' }, 400);
 
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
       { auth: { persistSession: false, autoRefreshToken: false } });
+
+    // Ghi đơn đăng ký vào leads kèm trạng thái kết quả (service role -> đặt status tự do).
+    const saveLead = (status: string) => admin.from('leads').insert({
+      kind: 'register', name: fullName || null, email, phone: phone || null,
+      parish_name: parishName || null, note: note || null, status,
+    }).then(() => {}, () => {});
 
     // Hạn mức theo IP: tối đa RATE_MAX lời mời / RATE_MIN phút. Fail-open nếu bảng chưa có.
     const RATE_MAX = 6, RATE_MIN = 60;
@@ -44,12 +52,15 @@ Deno.serve(async (req) => {
 
     if (error) {
       const msg = (error.message || '').toLowerCase();
-      // Email đã tồn tại -> không gửi lại
+      // Email đã tồn tại -> không gửi lại, ghi đơn dạng 'duplicate'
       if ((error as { code?: string }).code === 'email_exists' || /already|registered|exist/.test(msg)) {
+        await saveLead('duplicate');
         return json({ already: true });
       }
+      await saveLead('new'); // lỗi khác -> để admin xử lý tay
       return json({ error: error.message }, 400);
     }
+    await saveLead('invited'); // đã gửi email mời tự động
     return json({ ok: true, user_id: data?.user?.id, email });
   } catch (e) {
     return json({ error: String((e as Error)?.message || e) }, 500);
