@@ -219,7 +219,7 @@ const GUIDE = [
     summary: 'Cách hệ thống nhắc gia hạn, quy tắc cộng dồn thời gian, và chính sách dữ liệu khi gói Pro hết hạn mà không gia hạn.',
     steps: [
       'Nhắc trước hạn: từ 30 ngày trước khi hết hạn, hệ thống nhắc qua email và banner trong ứng dụng, lặp lại mỗi 3 ngày cho tới khi gia hạn. Hạn còn lại cũng hiển thị ngay cạnh ảnh đại diện.',
-      'Gia hạn mọi lúc — thời gian cộng dồn: gia hạn bất cứ khi nào, thời gian mới được cộng vào hạn còn lại (không mất phần chưa dùng). Đổi mức lớp (vd 5 lớp lên 12 lớp) vẫn giữ nguyên thời gian đã có.',
+'Gia hạn / đổi gói mọi lúc: bắt đầu một chu kỳ 1 năm mới tính từ hôm nay. Phần còn thừa của gói hiện tại được quy đổi thành tiền (credit) và trừ vào số phải trả — không mất phần chưa dùng. Ví dụ đang dùng gói nhỏ còn 6 tháng mà lên gói lớn hơn: chỉ trả phần chênh sau khi trừ credit.',
       'Gia hạn: bấm nút “Gia hạn ngay” trên banner (hoặc “Xem gói & nâng cấp”) → hiện mã QR thanh toán; sau khi đối soát, Pro được kích hoạt và banner biến mất.',
     ],
     tips: [
