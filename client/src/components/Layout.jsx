@@ -264,6 +264,11 @@ export default function Layout({ children }) {
             )}
           </div>
         </header>
+        {pro && planExp && !sa && (
+          <div className={`topbar-exp ${expired ? 'exp' : expSoon ? 'soon' : ''}`}>
+            Gói {planName(plan)} · {expired ? `đã hết hạn ${fmtD(planExp)}` : `hạn đến ${fmtD(planExp)}`}
+          </div>
+        )}
         <main className="content">
           {expSoon && !renewBarClosed && !sa && (
             <div className="renew-bar">
