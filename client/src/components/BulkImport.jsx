@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
+import * as XLSX from 'xlsx';
 import api from '../api';
-import { COLUMNS, parseStudents, templateCsv } from '../lib/parseStudents';
+import { COLUMNS, parseStudents, parseAoa, templateAoa } from '../lib/parseStudents';
 
 export default function BulkImport({ classes, onClose, onDone }) {
   const [text, setText] = useState('');
@@ -12,7 +13,7 @@ export default function BulkImport({ classes, onClose, onDone }) {
 
   const validCount = rows.filter((r) => r._valid).length;
 
-  function preview(t) {
+  function previewText(t) {
     setText(t);
     setError('');
     setRows(parseStudents(t));
@@ -21,19 +22,37 @@ export default function BulkImport({ classes, onClose, onDone }) {
   function onFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => preview(String(reader.result || ''));
-    reader.readAsText(file, 'utf-8');
+    setError('');
+    const name = (file.name || '').toLowerCase();
+    if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const wb = XLSX.read(reader.result, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+          setText('');
+          setRows(parseAoa(aoa));
+          if (!aoa.length) setError('File Excel trống');
+        } catch {
+          setError('Không đọc được file Excel. Vui lòng dùng đúng form mẫu.');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = () => previewText(String(reader.result || ''));
+      reader.readAsText(file, 'utf-8');
+    }
+    e.target.value = '';
   }
 
   function downloadTemplate() {
-    const blob = new Blob([templateCsv()], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'mau-nhap-hoc-vien.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    const ws = XLSX.utils.aoa_to_sheet(templateAoa());
+    ws['!cols'] = COLUMNS.map((h) => ({ wch: Math.max(14, h.length + 2) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Học viên');
+    XLSX.writeFile(wb, 'mau-nhap-hoc-vien.xlsx');
   }
 
   async function doImport() {
@@ -53,22 +72,25 @@ export default function BulkImport({ classes, onClose, onDone }) {
     }
   }
 
+  const dad = (r) => [r.father_saint, r.father_name].filter(Boolean).join(' ');
+  const mom = (r) => [r.mother_saint, r.mother_name].filter(Boolean).join(' ');
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" style={{ width: 760 }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal" style={{ width: 820 }} onClick={(e) => e.stopPropagation()}>
         <h2>Nhập học viên hàng loạt</h2>
 
         <p className="muted" style={{ fontSize: 13, marginTop: -6 }}>
-          Mỗi dòng một học viên, các cột theo thứ tự (ngăn cách bởi dấu phẩy hoặc Tab khi dán từ Excel):
+          Cách nhanh nhất: bấm <b>Tải form mẫu (Excel)</b>, điền vào file rồi <b>Tải lên</b>. Hoặc dán trực tiếp từ Excel (mỗi dòng một học viên) theo đúng thứ tự cột:
         </p>
         <div style={{ fontSize: 12.5, color: 'var(--primary)', background: 'var(--primary-soft)', padding: '8px 12px', borderRadius: 10, marginBottom: 12 }}>
           {COLUMNS.join('  •  ')}
         </div>
 
         <div className="toolbar" style={{ marginBottom: 12 }}>
-          <button className="btn ghost" onClick={downloadTemplate}>⬇ Tải form mẫu (CSV)</button>
-          <button className="btn ghost" onClick={() => fileRef.current?.click()}>📄 Tải lên file CSV</button>
-          <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={onFile} style={{ display: 'none' }} />
+          <button className="btn ghost" onClick={downloadTemplate}>⬇ Tải form mẫu (Excel)</button>
+          <button className="btn ghost" onClick={() => fileRef.current?.click()}>📄 Tải lên Excel / CSV</button>
+          <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv,text/csv" onChange={onFile} style={{ display: 'none' }} />
           <div className="grow" />
           <select value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 200 }}>
             <option value="">Xếp vào lớp... (tùy chọn)</option>
@@ -79,8 +101,8 @@ export default function BulkImport({ classes, onClose, onDone }) {
         <textarea
           rows={5}
           value={text}
-          onChange={(e) => preview(e.target.value)}
-          placeholder={'Phêrô Nguyễn Văn An, 26/12/2015, Nguyễn Văn Bố / Trần Thị Mẹ, 0901234567, , 123 Đường ABC, Ghi chú\nMaria Trần Thị Bình, 05/03/2016, Trần Văn Cha, 0912345678, , 45 Đường XYZ, '}
+          onChange={(e) => previewText(e.target.value)}
+          placeholder={'Dán từ Excel hoặc gõ trực tiếp, ví dụ:\nPhêrô Nguyễn Văn An, 26/12/2015, Nam, Giuse Nguyễn Văn Bố, 0901234567, Maria Trần Thị Mẹ, 0908765432, , , 20/01/2016, , , 123 Đường ABC, Ghi chú'}
         />
 
         {rows.length > 0 && (
@@ -91,10 +113,10 @@ export default function BulkImport({ classes, onClose, onDone }) {
                 <span style={{ color: 'var(--danger)' }}> · {rows.length - validCount} dòng thiếu họ tên sẽ bị bỏ qua</span>
               )}
             </div>
-            <div style={{ maxHeight: 220, overflow: 'auto', border: '1px solid var(--border)', borderRadius: 10 }}>
+            <div style={{ maxHeight: 240, overflow: 'auto', border: '1px solid var(--border)', borderRadius: 10 }}>
               <table>
                 <thead>
-                  <tr><th>Tên thánh</th><th>Họ tên</th><th>Ngày sinh</th><th>Phụ huynh</th><th>SĐT PH</th><th>SĐT HS</th><th>Địa chỉ</th></tr>
+                  <tr><th>Tên thánh</th><th>Họ tên</th><th>Ngày sinh</th><th>GT</th><th>Cha</th><th>Mẹ</th><th>SĐT</th><th>Bí tích (RT/RL/TS)</th><th>Địa chỉ</th></tr>
                 </thead>
                 <tbody>
                   {rows.map((r, i) => (
@@ -102,9 +124,11 @@ export default function BulkImport({ classes, onClose, onDone }) {
                       <td>{r.saint_name || '—'}</td>
                       <td>{r.full_name || <span style={{ color: 'var(--danger)' }}>(thiếu)</span>}</td>
                       <td>{r.birth_date || '—'}</td>
-                      <td>{r.parent_name || '—'}</td>
-                      <td>{r.parent_phone || '—'}</td>
-                      <td>{r.student_phone || '—'}</td>
+                      <td>{r.gender || '—'}</td>
+                      <td>{dad(r) || '—'}</td>
+                      <td>{mom(r) || '—'}</td>
+                      <td>{r.father_phone || r.mother_phone || r.student_phone || '—'}</td>
+                      <td>{[r.baptism_date, r.first_communion_date, r.confirmation_date].map((d) => d || '–').join(' / ')}</td>
                       <td>{r.address || '—'}</td>
                     </tr>
                   ))}
