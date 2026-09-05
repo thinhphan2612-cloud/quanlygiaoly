@@ -394,6 +394,25 @@ async function handle(method, rawUrl, body = {}) {
       }
       return ok({ moved: ids.length });
     }
+    // Nhân bản học viên sang lớp khác mà KHÔNG rời lớp cũ (1 em có mặt ở nhiều lớp).
+    // Tạo bản ghi mới ở lớp đích, giữ origin_id để liên kết cùng một con người.
+    if (path === '/students/copy' && method === 'post') {
+      const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : [];
+      const dest = nn(body.class_id);
+      if (!ids.length || !dest) return ok({ copied: 0 });
+      const { data: rows } = await supabase.from('students').select('*').in('id', ids);
+      const copies = (rows || []).map((s) => {
+        const o = { ...s };
+        delete o.id; delete o.created_at;
+        o.class_id = dest; o.origin_id = s.origin_id || s.id; o.graduated = false; o.prev_class_id = null;
+        return o;
+      });
+      if (copies.length) {
+        const { error } = await supabase.from('students').insert(copies);
+        if (error) return fail(400, error.message);
+      }
+      return ok({ copied: copies.length });
+    }
     // Trả học viên về lớp cũ (lớp gộp hè): class_id <- prev_class_id, xóa prev
     if (path === '/students/return' && method === 'post') {
       const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : [];
@@ -854,24 +873,24 @@ async function handle(method, rawUrl, body = {}) {
         .select('*').eq('parish_id', pid).eq('graduated', false).order('order_index');
       if (error) return fail(400, error.message);
       const active = classes || [];
-      // Chỉ lớp giáo lý CHÍNH QUY tham gia lên lớp; lớp ngoài hệ thống không đụng tới.
+      // Chỉ lớp giáo lý CHÍNH QUY tham gia lên lớp; lớp giáo lý ngoại thường không đụng tới.
       const chain = active.filter((c) => c.kind !== 'external').sort((a, b) => a.order_index - b.order_index);
-      if (!chain.length) return fail(400, 'Chưa có lớp giáo lý chính quy nào để lên lớp.');
+      if (!chain.length) return fail(400, 'Chưa có lớp giáo lý trong năm nào để lên lớp.');
 
       // CỔNG DUYỆT: chỉ các lớp GIÁO LÝ CHÍNH QUY phải có đơn review 'approved'.
-      // Lớp ngoài hệ thống duyệt RIÊNG (đóng ngay khi Admin duyệt), KHÔNG chặn kết thúc năm học.
+      // Lớp giáo lý ngoại thường duyệt RIÊNG (đóng ngay khi Admin duyệt), KHÔNG chặn kết thúc năm học.
       const { data: reviews } = await supabase.from('class_reviews')
         .select('class_id, status, decisions').eq('parish_id', pid);
       const revByClass = {}; (reviews || []).forEach((r) => { revByClass[r.class_id] = r; });
       const pending = chain.filter((c) => revByClass[c.id]?.status !== 'approved');
-      if (pending.length) return fail(400, `Còn ${pending.length} lớp chính quy chưa được duyệt: ${pending.map((c) => c.name).join(', ')}. Cần GLV gửi và Admin duyệt đủ các lớp chính quy trước khi kết thúc năm học.`);
+      if (pending.length) return fail(400, `Còn ${pending.length} lớp giáo lý trong năm chưa được duyệt: ${pending.map((c) => c.name).join(', ')}. Cần GLV gửi và Admin duyệt đủ các lớp giáo lý trong năm trước khi kết thúc năm học.`);
 
       const curYear = chain.map((c) => c.school_year).find(Boolean) || null;
       const nextYear = bumpYear(curYear);
       // Lớp tốt nghiệp = lớp gắn nhãn is_graduation; chưa gán thì lấy lớp bậc cao nhất theo thứ tự.
       const gradClass = chain.find((c) => c.is_graduation) || chain[chain.length - 1];
 
-      // 1) Tạo bộ lớp mới năm sau cho MỌI lớp chính quy (giữ tên + thứ tự + nhãn tốt nghiệp).
+      // 1) Tạo bộ lớp mới năm sau cho MỌI lớp giáo lý trong năm (giữ tên + thứ tự + nhãn tốt nghiệp).
       const newIdByOld = {};
       for (const c of chain) {
         const { data: nc, error: ce } = await supabase.from('classes').insert({
@@ -916,7 +935,7 @@ async function handle(method, rawUrl, body = {}) {
         if (ie) return fail(400, ie.message);
       }
 
-      // 3) Đóng băng năm cũ: CHỈ lớp giáo lý chính quy + học viên (lớp ngoài hệ thống giữ nguyên)
+      // 3) Đóng băng năm cũ: CHỈ lớp giáo lý trong năm + học viên (lớp giáo lý ngoại thường giữ nguyên)
       const oldClassIds = chain.map((c) => c.id);
       if (gradIds.length) await supabase.from('students').update({ grad_passed: true }).in('id', gradIds);
       await supabase.from('students').update({ graduated: true }).in('class_id', oldClassIds).eq('graduated', false);
@@ -937,7 +956,7 @@ async function handle(method, rawUrl, body = {}) {
       return ok({ promoted, stayed, graduated, new_year: nextYear });
     }
 
-    // ---------------- xét tốt nghiệp lớp ngoài hệ thống (hôn nhân/dự tòng) ----------------
+    // ---------------- xét tốt nghiệp lớp giáo lý ngoại thường (hôn nhân/dự tòng) ----------------
     // passed = danh sách id học viên tốt nghiệp. Đóng lớp & lưu trữ: mọi HV -> graduated,
     // grad_passed = true (tốt nghiệp) / false (không đạt).
     if (path === '/external-graduate' && method === 'post') {
@@ -1015,7 +1034,7 @@ async function handle(method, rawUrl, body = {}) {
       });
       return ok(rows);
     }
-    // Admin duyệt: lớp ngoài hệ thống -> đóng lớp ngay (grad_passed theo pass/fail); lớp chính quy -> chờ kết thúc năm.
+    // Admin duyệt: lớp giáo lý ngoại thường -> đóng lớp ngay (grad_passed theo pass/fail); lớp giáo lý trong năm -> chờ kết thúc năm.
     if (path === '/review-approve' && method === 'post') {
       const { data: r } = await supabase.from('class_reviews').select('*').eq('id', body.id).maybeSingle();
       if (!r) return fail(404, 'Không tìm thấy đơn');

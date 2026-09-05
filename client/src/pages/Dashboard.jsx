@@ -83,7 +83,7 @@ function ClassReviews() {
   const rev = useRealtime(['class_reviews', 'classes']);
   useEffect(() => { if (rev) load(); }, [rev]);
   if (!rows) return null; // chưa tải xong -> không render (tránh null.filter)
-  const cat = rows.filter((r) => r.kind !== 'external');            // lớp chính quy -> cổng cuối năm
+  const cat = rows.filter((r) => r.kind !== 'external');            // lớp giáo lý trong năm -> cổng cuối năm
   const ext = rows.filter((r) => r.kind === 'external' && r.status !== 'none'); // lớp ngoài -> duyệt riêng
   const catActive = cat.some((r) => r.status !== 'none');
   // Chỉ hiện khi đã có ít nhất 1 lớp được GLV chốt.
@@ -92,7 +92,7 @@ function ClassReviews() {
   const total = cat.length;
   const toggle = (id) => setOpen((o) => ({ ...o, [id]: !o[id] }));
   async function approve(r) {
-    if (!confirm(`Duyệt lớp "${r.class_name}"?` + (r.kind === 'external' ? '\nLớp ngoài hệ thống sẽ được đóng & chuyển vào Lưu trữ ngay.' : ''))) return;
+    if (!confirm(`Duyệt lớp "${r.class_name}"?` + (r.kind === 'external' ? '\nLớp giáo lý ngoại thường sẽ được đóng & chuyển vào Lưu trữ ngay.' : ''))) return;
     try { await api.post('/review-approve', { id: r.review_id }); load(); }
     catch (e) { alert(e.response?.data?.error || 'Thất bại'); }
   }
@@ -118,7 +118,7 @@ function ClassReviews() {
             ) : r.class_name}
             {r.is_graduation && ' 🎓'}
           </td>
-          <td className="muted">{r.kind === 'external' ? 'Ngoài HT' : 'Chính quy'}</td>
+          <td className="muted">{r.kind === 'external' ? 'Ngoại thường' : 'Trong năm'}</td>
           <td>{has ? <span className="link" onClick={() => toggle(r.class_id)}>{summary}</span> : summary}</td>
           <td className="muted">{r.submitted_by_name || '—'}</td>
           <td style={{ whiteSpace: 'nowrap' }}>
@@ -152,19 +152,19 @@ function ClassReviews() {
       {catActive && (
         <>
           <div className="card-head">
-            <h2>📋 Lớp chính quy chờ duyệt (cuối năm)</h2>
+            <h2>📋 Lớp giáo lý trong năm chờ duyệt (cuối năm)</h2>
             <span className="muted" style={{ fontSize: 13 }}>{approved}/{total} lớp đã duyệt</span>
           </div>
           {renderTable(cat)}
           {approved === total && total > 0 && (
-            <p className="muted" style={{ fontSize: 13, marginTop: 10 }}>✓ Tất cả lớp chính quy đã được duyệt, có thể "Kết thúc năm học & lên lớp" ở mục Cài đặt.</p>
+            <p className="muted" style={{ fontSize: 13, marginTop: 10 }}>✓ Tất cả lớp giáo lý trong năm đã được duyệt, có thể "Kết thúc năm học & lên lớp" ở mục Cài đặt.</p>
           )}
         </>
       )}
       {ext.length > 0 && (
         <div style={{ marginTop: catActive ? 20 : 0 }}>
           <div className="card-head">
-            <h2>🎓 Lớp ngoài hệ thống chờ duyệt</h2>
+            <h2>🎓 Lớp giáo lý ngoại thường chờ duyệt</h2>
             <span className="muted" style={{ fontSize: 13 }}>Duyệt riêng · không ảnh hưởng kết thúc năm học</span>
           </div>
           {renderTable(ext)}
@@ -199,7 +199,7 @@ function ClassReviewsGLV() {
       <div className="card-head"><h2>🏁 Chốt lớp cuối năm</h2></div>
       {promotionOpen && (
         <div className="info-box" style={{ marginBottom: 10 }}>
-          📢 Ban giáo lý đã <b>mở kỳ xét lên lớp</b>. Vào <b>Lớp học</b> → bấm <b>🏁 Kết thúc lớp</b> để gửi kết quả (lên lớp / ở lại) cho từng lớp chính quy của bạn.
+          📢 Ban giáo lý đã <b>mở kỳ xét lên lớp</b>. Vào <b>Lớp học</b> → bấm <b>🏁 Kết thúc lớp</b> để gửi kết quả (lên lớp / ở lại) cho từng lớp giáo lý trong năm của bạn.
         </div>
       )}
       <div className="table-scroll"><table>
@@ -209,7 +209,7 @@ function ClassReviewsGLV() {
             <Fragment key={r.class_id}>
               <tr>
                 <td>{r.class_name}{r.is_graduation && ' 🎓'}</td>
-                <td className="muted">{r.kind === 'external' ? 'Ngoài HT' : 'Chính quy'}</td>
+                <td className="muted">{r.kind === 'external' ? 'Ngoại thường' : 'Trong năm'}</td>
                 <td>{statusChip(r)}</td>
               </tr>
               {r.status === 'revision' && r.admin_note && (

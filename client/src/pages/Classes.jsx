@@ -12,7 +12,7 @@ import { byViName } from '../lib/viName';
 
 const empty = {
   mode: 'new', name: '', year: '', room: '', schedule: '', promotes: true, kind: 'catechism', is_graduation: false, teachers: [],
-  srcClasses: [], picked: [],
+  srcClasses: [], picked: [], leaveOld: false,
 };
 const SCHEDULES = ['Sáng', 'Chiều', 'Tối'];
 const SAC_RANK = { none: 0, baptism: 1, ruoc_le: 2, them_suc: 3 }; // Rửa tội -> Rước lễ -> Thêm Sức
@@ -44,7 +44,7 @@ export default function Classes() {
   const isTeacher = user?.role === 'teacher';
   const { parish, reload: reloadParish } = useParish();
   const isFree = !isPro(parish?.plan || 'free');
-  const promotionOpen = !!parish?.settings?.promotion_open; // cổng xét lên lớp (lớp chính quy)
+  const promotionOpen = !!parish?.settings?.promotion_open; // cổng xét lên lớp (lớp giáo lý trong năm)
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [allStudents, setAllStudents] = useState([]);
@@ -66,7 +66,7 @@ export default function Classes() {
       const m = {}; (r.data || []).forEach((x) => { m[x.class_id] = x; }); setRev2(m);
     }).catch(() => {});
   }
-  // Admin mở/đóng kỳ xét lên lớp (toàn xứ, áp cho lớp chính quy).
+  // Admin mở/đóng kỳ xét lên lớp (toàn xứ, áp cho lớp giáo lý trong năm).
   async function togglePromotion() {
     const open = !promotionOpen;
     try {
@@ -158,15 +158,19 @@ export default function Classes() {
       const r = await api.post('/classes', {
         name: modal.name, year: modal.year, room: modal.room, schedule: modal.schedule,
         kind: modal.kind, is_graduation: modal.kind === 'catechism' && !!modal.is_graduation,
-        teachers: modal.teachers, merged: modal.mode === 'from',
+        teachers: modal.teachers, merged: modal.mode === 'from' && !!modal.leaveOld,
         order_index: modal.kind === 'catechism' ? maxOrder + 1 : 0,
       });
       const newId = r.data.id;
-      // chuyển học viên (chế độ tạo từ có sẵn) — ghi nhớ lớp cũ để trả về sau
+      // Thêm học viên từ lớp có sẵn. Mặc định KHÔNG rời lớp cũ (nhân bản, 1 em ở nhiều lớp).
+      // Bật "rời lớp cũ" -> chuyển hẳn (ghi nhớ lớp cũ để trả về sau).
       if (modal.mode === 'from') {
         const visible = new Set(fromStudents.map((s) => s.id));
         const ids = modal.picked.filter((x) => visible.has(x));
-        if (ids.length) await api.post('/students/move', { ids, class_id: newId, remember: true });
+        if (ids.length) {
+          if (modal.leaveOld) await api.post('/students/move', { ids, class_id: newId, remember: true });
+          else await api.post('/students/copy', { ids, class_id: newId });
+        }
       }
       setModal(null); load();
       if (isAdmin) api.get('/students').then((res) => setAllStudents(res.data)).catch(() => {});
@@ -338,11 +342,11 @@ export default function Classes() {
           {!reached && <button className="btn" onClick={openCreate}>+ Thêm lớp</button>}
           {!isFree && <button className="btn ghost" onClick={openOrder} disabled={classes.length < 2}>⚙ Cài đặt lớp học</button>}
           {!isFree && (
-            <button className={`btn ${promotionOpen ? 'danger' : ''} ghost`} onClick={togglePromotion} title="Mở để các lớp chính quy gửi kết quả lên lớp / ở lại cho bạn duyệt">
+            <button className={`btn ${promotionOpen ? 'danger' : ''} ghost`} onClick={togglePromotion} title="Mở để các lớp giáo lý trong năm gửi kết quả lên lớp / ở lại cho bạn duyệt">
               {promotionOpen ? '🔒 Đóng kỳ xét lên lớp' : '📢 Mở kỳ xét lên lớp'}
             </button>
           )}
-          {!isFree && promotionOpen && <span className="muted" style={{ fontSize: 12, alignSelf: 'center' }}>Đang mở, các lớp chính quy có thể gửi kết quả để bạn duyệt.</span>}
+          {!isFree && promotionOpen && <span className="muted" style={{ fontSize: 12, alignSelf: 'center' }}>Đang mở, các lớp giáo lý trong năm có thể gửi kết quả để bạn duyệt.</span>}
           {reached && (
             <span className="muted" style={{ fontSize: 13 }}>
               {isFree
@@ -355,8 +359,8 @@ export default function Classes() {
       })()}
 
       <div className="seg" style={{ marginBottom: 14, maxWidth: 460 }}>
-        <button className={`seg-btn ${tab === 'catechism' ? 'on' : ''}`} onClick={() => setTab('catechism')}>Giáo lý chính quy</button>
-        <button className={`seg-btn ${tab === 'external' ? 'on' : ''}`} onClick={() => setTab('external')}>Ngoài hệ thống{externalCount ? ` (${externalCount})` : ''}</button>
+        <button className={`seg-btn ${tab === 'catechism' ? 'on' : ''}`} onClick={() => setTab('catechism')}>Lớp giáo lý trong năm</button>
+        <button className={`seg-btn ${tab === 'external' ? 'on' : ''}`} onClick={() => setTab('external')}>Lớp giáo lý ngoại thường{externalCount ? ` (${externalCount})` : ''}</button>
       </div>
 
       <div className="panel">
@@ -398,7 +402,7 @@ export default function Classes() {
                 )}
               </tr>
             ))}
-            {shown.length === 0 && <tr><td colSpan={colCount} className="muted">{tab === 'external' ? 'Chưa có lớp ngoài hệ thống (hôn nhân, dự tòng…).' : 'Chưa có lớp giáo lý chính quy nào.'}</td></tr>}
+            {shown.length === 0 && <tr><td colSpan={colCount} className="muted">{tab === 'external' ? 'Chưa có lớp giáo lý ngoại thường (hôn nhân, dự tòng…).' : 'Chưa có lớp giáo lý trong năm nào.'}</td></tr>}
           </tbody>
         </table>
       </div>
@@ -559,8 +563,8 @@ export default function Classes() {
                 <div className="field">
                   <label>Loại lớp</label>
                   <div className="seg">
-                    <button type="button" className={`seg-btn ${modal.kind === 'catechism' ? 'on' : ''}`} onClick={() => setModal({ ...modal, kind: 'catechism' })}>Giáo lý chính quy</button>
-                    <button type="button" className={`seg-btn ${modal.kind === 'external' ? 'on' : ''}`} onClick={() => setModal({ ...modal, kind: 'external', is_graduation: false })}>Ngoài hệ thống</button>
+                    <button type="button" className={`seg-btn ${modal.kind === 'catechism' ? 'on' : ''}`} onClick={() => setModal({ ...modal, kind: 'catechism' })}>Lớp giáo lý trong năm</button>
+                    <button type="button" className={`seg-btn ${modal.kind === 'external' ? 'on' : ''}`} onClick={() => setModal({ ...modal, kind: 'external', is_graduation: false })}>Lớp giáo lý ngoại thường</button>
                   </div>
                   <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
                     {modal.kind === 'external' ? 'Lớp hôn nhân / dự tòng…: học 1 khóa, tự xét tốt nghiệp, không lên lớp.' : 'Lớp cho học viên chính quy — nằm trong hệ thống lên lớp hằng năm.'}
@@ -619,7 +623,15 @@ export default function Classes() {
                     ))}
                     {fromStudents.length === 0 && <div className="muted" style={{ fontSize: 13 }}>Tích chọn lớp nguồn để hiện học viên.</div>}
                   </div>
-                  <p className="muted" style={{ fontSize: 12 }}>Học viên được chọn sẽ <b>chuyển sang lớp mới</b> (rời lớp cũ).</p>
+                  <label className="fp-chk" style={{ marginTop: 6 }}>
+                    <input type="checkbox" checked={!!modal.leaveOld} onChange={(e) => setModal({ ...modal, leaveOld: e.target.checked })} />
+                    <span>Cho học viên rời lớp cũ (chuyển hẳn sang lớp mới)</span>
+                  </label>
+                  <p className="muted" style={{ fontSize: 12 }}>
+                    {modal.leaveOld
+                      ? <>Học viên được chọn sẽ <b>chuyển hẳn sang lớp mới</b> và rời lớp cũ.</>
+                      : <>Mặc định: học viên <b>vẫn ở lớp cũ</b> và được thêm vào lớp mới (một em có thể ở nhiều lớp).</>}
+                  </p>
                 </div>
               )}
             </div>

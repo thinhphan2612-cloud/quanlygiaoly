@@ -156,8 +156,8 @@ export default function Archive() {
             </select>
             <select value={gradKind} onChange={(e) => setGradKind(e.target.value)}>
               <option value="">Tất cả loại lớp</option>
-              <option value="catechism">Giáo lý chính quy</option>
-              <option value="external">Ngoài hệ thống</option>
+              <option value="catechism">Lớp giáo lý trong năm</option>
+              <option value="external">Lớp giáo lý ngoại thường</option>
             </select>
             <input placeholder="Tìm theo tên…" value={gradSearch} onChange={(e) => setGradSearch(e.target.value)} style={{ minWidth: 180 }} />
           </div>
@@ -177,7 +177,7 @@ export default function Archive() {
                     <td><span className="link-name" onClick={() => navigate(`/students/${g.id}`)}>{g.full_name}</span></td>
                     <td>{g.year || '—'}</td>
                     <td className="muted">{g.class_name || '—'}</td>
-                    <td className="muted" style={{ fontSize: 12 }}>{g.kind === 'external' ? 'Ngoài hệ thống' : 'Giáo lý'}</td>
+                    <td className="muted" style={{ fontSize: 12 }}>{g.kind === 'external' ? 'Lớp giáo lý ngoại thường' : 'Trong năm'}</td>
                     <td>{g.passed
                       ? <span style={{ color: '#15803d', fontWeight: 600 }}>Tốt nghiệp ✓</span>
                       : <span style={{ color: '#b91c1c' }}>Không đạt</span>}</td>
