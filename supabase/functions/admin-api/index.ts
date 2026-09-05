@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
         admin.from('parishes').select('id, name, diocese, plan, plan_expires_at, plan_max_classes, created_at'),
         admin.from('profiles').select('id, parish_id, role, full_name, email'),
         admin.from('classes').select('parish_id, graduated'),
-        admin.from('students').select('parish_id, graduated'),
+        admin.from('students').select('parish_id, graduated, id, origin_id'),
       ]);
       if (parishesR.error) return json({ error: parishesR.error.message }, 400);
 
@@ -154,7 +154,16 @@ Deno.serve(async (req) => {
         return m;
       };
       const classCount = countBy(classes, 'parish_id', (c) => !c.graduated);
-      const studentCount = countBy(students, 'parish_id', (s) => !s.graduated);
+      // Đếm học viên gộp theo con người (origin_id): 1 em ở nhiều lớp chỉ tính 1 lần.
+      const studentCount: Record<string, number> = {};
+      {
+        const seen: Record<string, Set<string>> = {};
+        for (const s of students) {
+          if (s.graduated || !s.parish_id) continue;
+          (seen[s.parish_id] = seen[s.parish_id] || new Set()).add(s.origin_id || s.id);
+        }
+        for (const p in seen) studentCount[p] = seen[p].size;
+      }
       const teacherCount = countBy(profiles, 'parish_id', (p) => p.role === 'teacher');
       const adminByParish: Record<string, any> = {};
       for (const p of profiles) {

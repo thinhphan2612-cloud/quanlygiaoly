@@ -59,6 +59,7 @@ export default function Classes() {
   const [tab, setTab] = useState('catechism'); // 'catechism' | 'external'
   const [reviewModal, setReviewModal] = useState(null); // chốt lớp -> gửi Admin duyệt
   const [rev2, setRev2] = useState({}); // trạng thái đơn review theo class_id
+  const [addExisting, setAddExisting] = useState(null); // thêm học viên có sẵn vào lớp này
 
   function load() { api.get('/classes').then((r) => setClasses(r.data)); }
   function loadReviews() {
@@ -396,7 +397,8 @@ export default function Classes() {
                       if (canSubmit) return <><button className="btn ghost sm" onClick={() => openReview(c)}>{st === 'revision' ? '🏁 Gửi lại' : '🏁 Kết thúc lớp'}</button>{' '}</>;
                       return null;
                     })()}
-                    {isAdmin && <><button className="btn ghost sm" onClick={() => openEdit(c)}>Sửa</button>{' '}
+                    {isAdmin && <><button className="btn ghost sm" onClick={() => setAddExisting(c)}>+ HV có sẵn</button>{' '}
+                      <button className="btn ghost sm" onClick={() => openEdit(c)}>Sửa</button>{' '}
                       <button className="btn danger sm" onClick={() => remove(c)}>Xóa</button></>}
                   </td>
                 )}
@@ -645,6 +647,13 @@ export default function Classes() {
         </div>
       )}
 
+      {/* Thêm học viên có sẵn vào lớp này */}
+      {addExisting && (
+        <AddExistingModal target={addExisting} classes={classes} allStudents={allStudents}
+          onClose={() => setAddExisting(null)}
+          onDone={() => { setAddExisting(null); load(); api.get('/students').then((r) => setAllStudents(r.data)).catch(() => {}); }} />
+      )}
+
       {/* Modal sắp xếp thứ tự lớp */}
       {orderList && (
         <div className="modal-backdrop" onClick={() => setOrderList(null)}>
@@ -791,6 +800,74 @@ export default function Classes() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Modal: thêm học viên có sẵn (từ lớp khác) vào một lớp đã tồn tại.
+// Mặc định nhân bản (giữ lớp cũ); bật công tắc thì chuyển hẳn.
+function AddExistingModal({ target, classes, allStudents, onClose, onDone }) {
+  const [srcClasses, setSrcClasses] = useState([]);
+  const [picked, setPicked] = useState([]);
+  const [leaveOld, setLeaveOld] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const targetOrigins = new Set(allStudents.filter((s) => s.class_id === target.id).map((s) => s.origin_id || s.id));
+  const src = allStudents.filter((s) => srcClasses.includes(s.class_id) && s.class_id !== target.id && !targetOrigins.has(s.origin_id || s.id));
+  const toggleSrc = (id) => { setSrcClasses((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id])); setPicked([]); };
+  const togglePick = (id) => setPicked((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]));
+  const allP = src.length > 0 && src.every((s) => picked.includes(s.id));
+  async function add() {
+    const visible = new Set(src.map((s) => s.id));
+    const ids = picked.filter((x) => visible.has(x));
+    if (!ids.length) { setErr('Chưa chọn học viên nào'); return; }
+    setBusy(true); setErr('');
+    try {
+      if (leaveOld) await api.post('/students/move', { ids, class_id: target.id, remember: true });
+      else await api.post('/students/copy', { ids, class_id: target.id });
+      onDone();
+    } catch (e) { setErr(e.response?.data?.error || 'Thêm thất bại'); } finally { setBusy(false); }
+  }
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ marginTop: 0 }}>Thêm học viên có sẵn vào lớp {target.name}</h2>
+        <div className="fp-label">Lấy học viên từ lớp (tích nhiều lớp)</div>
+        <div className="fp-classes" style={{ marginBottom: 12 }}>
+          {classes.filter((c) => c.id !== target.id).map((c) => (
+            <label key={c.id} className="fp-chk">
+              <input type="checkbox" checked={srcClasses.includes(c.id)} onChange={() => toggleSrc(c.id)} />
+              <span>{c.name} ({c.student_count})</span>
+            </label>
+          ))}
+        </div>
+        <div className="fp-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span>Học viên ({picked.length}/{src.length})</span>
+          {src.length > 0 && <span className="link" onClick={() => setPicked(allP ? [] : src.map((s) => s.id))}>{allP ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}</span>}
+        </div>
+        <div className="pick-list">
+          {src.map((s) => (
+            <label key={s.id} className="fp-chk">
+              <input type="checkbox" checked={picked.includes(s.id)} onChange={() => togglePick(s.id)} />
+              <span>{s.saint_name ? s.saint_name + ' ' : ''}{s.full_name} <span className="muted">· {s.class_name}</span></span>
+            </label>
+          ))}
+          {src.length === 0 && <div className="muted" style={{ fontSize: 13 }}>Tích chọn lớp nguồn để hiện học viên (đã bỏ các em đã có trong lớp này).</div>}
+        </div>
+        <label className="fp-chk" style={{ marginTop: 6 }}>
+          <input type="checkbox" checked={leaveOld} onChange={(e) => setLeaveOld(e.target.checked)} />
+          <span>Cho học viên rời lớp cũ (chuyển hẳn sang lớp này)</span>
+        </label>
+        <p className="muted" style={{ fontSize: 12 }}>
+          {leaveOld ? <>Học viên được chọn sẽ <b>chuyển hẳn</b> sang lớp này và rời lớp cũ.</>
+            : <>Mặc định: học viên <b>vẫn ở lớp cũ</b> và được thêm vào lớp này (một em có thể ở nhiều lớp).</>}
+        </p>
+        {err && <div className="error">{err}</div>}
+        <div className="modal-actions">
+          <button className="btn ghost" onClick={onClose}>Hủy</button>
+          <button className="btn" onClick={add} disabled={busy}>{busy ? 'Đang thêm…' : 'Thêm vào lớp'}</button>
+        </div>
+      </div>
     </div>
   );
 }

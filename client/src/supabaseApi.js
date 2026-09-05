@@ -1408,13 +1408,13 @@ async function handle(method, rawUrl, body = {}) {
         classes = yc || [];
         const cids = classes.map((c) => c.id);
         const { data: ys } = await supabase.from('students')
-          .select('id, full_name, saint_name, class_id, avatar_url')
+          .select('id, origin_id, full_name, saint_name, class_id, avatar_url')
           .in('class_id', cids.length ? cids : ['00000000-0000-0000-0000-000000000000']);
         students = ys || [];
       } else {
         const [{ data: c1 }, { data: s1 }] = await Promise.all([
           supabase.from('classes').select('id, name').eq('graduated', false),
-          supabase.from('students').select('id, full_name, saint_name, class_id, avatar_url').eq('graduated', false),
+          supabase.from('students').select('id, origin_id, full_name, saint_name, class_id, avatar_url').eq('graduated', false),
         ]);
         classes = c1 || []; students = s1 || [];
       }
@@ -1452,7 +1452,7 @@ async function handle(method, rawUrl, body = {}) {
         .map(([wk, v]) => ({ label: wk.slice(8, 10) + '/' + wk.slice(5, 7), rate: v.total ? Math.round((v.present / v.total) * 100) : 0, present: v.present, total: v.total }));
       const S = students || [], C = classes || [], G = grades || [];
       const counts = {
-        students: S.length,
+        students: new Set(S.map((s) => s.origin_id || s.id)).size, // gộp theo con người (1 em nhiều lớp đếm 1 lần)
         classes: C.length,
         teachers: teacherCount,
         avgScore: G.length ? round1(G.reduce((a, g) => a + Number(g.score), 0) / G.length) : 0,
