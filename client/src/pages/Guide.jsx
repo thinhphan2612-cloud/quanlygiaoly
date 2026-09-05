@@ -205,7 +205,7 @@ const GUIDE = [
       'Lên lớp cho cả giáo xứ: khi tất cả lớp chính quy đã duyệt, vào “Cài đặt quản lý” bấm “Kết thúc năm học & lên lớp”. Hệ thống áp kết quả từng em: lên lớp thì chuyển lên bậc kế (điểm bắt đầu lại), ở lại thì giữ nguyên lớp; học viên lớp tốt nghiệp được lên lớp sẽ ra trường. Dữ liệu năm cũ đóng băng, tra cứu ở tab “Lưu trữ”.',
     ],
     tips: [
-      'Chỉ chạy “Kết thúc năm học & lên lớp” khi đã duyệt hết các lớp chính quy. Chưa đủ thì chưa nên chạy vì thao tác này chuyển toàn bộ học viên sang năm mới.',
+      'Chức năng “Kết thúc năm học & lên lớp” chỉ chạy khi đã duyệt hết các lớp chính quy. Nếu còn lớp chưa duyệt, hệ thống báo lỗi và liệt kê các lớp còn thiếu, chưa chuyển học viên sang năm mới.',
       'Lớp ngoài hệ thống (hôn nhân, dự tòng) được duyệt riêng và không ảnh hưởng tới việc lên lớp cuối năm.',
       'Trước khi lên lớp, nhớ gắn nhãn lớp tốt nghiệp ở trang “Lớp học” để hệ thống biết lớp nào ra trường.',
     ],
