@@ -3,7 +3,7 @@
 // Hỗ trợ xuất HÀNG LOẠT: nhiều học viên -> mỗi em một trang A4 trong cùng file in.
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const dashDate = (d) => (d ? d.split('-').reverse().join(' / ') : '…… / …… / ………');
+const dashDate = (d) => (d ? d.split('-').reverse().join('') : '');
 
 const KINDS = {
   baptism: { title: 'CHỨNG CHỈ RỬA TỘI', latin: 'Sacramentum Baptismi', verb: 'đã lãnh nhận Bí tích <b>Rửa Tội</b>', dateKey: 'baptism_date', showGodparent: true },
@@ -36,7 +36,7 @@ const STYLE = `
     .place { text-align: center; width: 80mm; font-style: italic; font-size: 14px; }`;
 
 function headHtml(parish) {
-  const parishName = parish?.name || '……………………………';
+  const parishName = parish?.name || '';
   const diocese = parish?.diocese || '';
   const logo = parish?.logo_url ? `<img class="logo" src="${parish.logo_url}" alt="logo" />` : '<div class="logo cross">✝</div>';
   return `<div class="head">${logo}${diocese ? `<div class="diocese">${esc(diocese)}</div>` : ''}<div class="parish">Giáo xứ ${esc(parishName)}</div></div>`;
@@ -54,9 +54,9 @@ function footHtml(parish) {
 // Một trang chứng chỉ bí tích
 function sacramentSheet(parish, student, K) {
   const fullName = ((student.saint_name ? student.saint_name + ' ' : '') + (student.full_name || '')).trim();
-  const father = [student.father_saint, student.father_name].filter(Boolean).join(' ') || student.parent_name || '………………………';
-  const mother = [student.mother_saint, student.mother_name].filter(Boolean).join(' ') || '………………………';
-  const parishName = parish?.name || '……………………………';
+  const father = [student.father_saint, student.father_name].filter(Boolean).join(' ') || student.parent_name || '';
+  const mother = [student.mother_saint, student.mother_name].filter(Boolean).join(' ') || '';
+  const parishName = parish?.name || '';
   return `<div class="sheet"><div class="frame">
     ${headHtml(parish)}
     <div class="title">${esc(K.title)}</div>
@@ -66,7 +66,7 @@ function sacramentSheet(parish, student, K) {
       <div class="name">${esc(fullName)}</div>
       Sinh ngày <span class="u">${dashDate(student.birth_date)}</span>${student.gender ? ` &nbsp;·&nbsp; Giới tính: <span class="u">${esc(student.gender)}</span>` : ''}<br/>
       Con ông <span class="u">${esc(father)}</span> và bà <span class="u">${esc(mother)}</span><br/>
-      ${K.showGodparent ? `Người đỡ đầu: <span class="u">${esc(student.godparent_name || '………………………')}</span><br/>` : ''}
+      ${K.showGodparent ? `Người đỡ đầu: <span class="u">${esc(student.godparent_name || '')}</span><br/>` : ''}
       ${K.verb} ngày <span class="u">${dashDate(student[K.dateKey])}</span><br/>
       tại giáo xứ <span class="u">${esc(parishName)}</span>.
     </div>
