@@ -22,15 +22,19 @@ function ui(text) {
 const GUIDE = [
   {
     id: 'batdau', title: 'Bắt đầu nhanh', roles: ['admin'],
-    tags: 'thiết lập cài đặt khởi tạo bắt đầu quickstart onboarding giáo xứ',
-    summary: 'Ba bước để một giáo xứ mới đi vào vận hành: “thiết lập thông tin” → “tạo lớp & phân giáo lý viên” → “thêm học viên”.',
+    tags: 'thiết lập cài đặt khởi tạo bắt đầu quickstart onboarding giáo xứ thứ tự lớp glv học viên',
+    summary: 'Thứ tự thiết lập một giáo xứ mới: “thông tin giáo xứ” → “tạo lớp” → “tạo giáo lý viên & gán lớp” → “nạp học viên theo từng lớp”.',
     steps: [
       'Vào “Cài đặt quản lý” (menu tài khoản góc trên phải): điền tên giáo xứ, giáo phận, tải logo. Logo và tên hiện trên đầu ứng dụng và trên chứng chỉ.',
-      'Vào “Giáo lý viên”: tạo tài khoản cho từng GLV rồi xếp họ vào lớp phụ trách (xem mục Giáo lý viên).',
-      'Vào “Lớp học”: tạo các lớp theo khối/ngành. Sau đó vào “Học viên” để thêm hoặc nhập danh sách học viên vào từng lớp.',
+      'Vào “Lớp học”: tạo TRƯỚC các lớp theo khối/ngành (vd Khai tâm, Rước lễ, Thêm sức…). Nên tạo đủ lớp rồi mới nạp học viên.',
+      'Vào “Giáo lý viên”: tạo tài khoản cho từng GLV rồi gán vào lớp phụ trách.',
+      'Vào “Học viên”: nạp học viên theo TỪNG LỚP — dùng “Nhập hàng loạt”, chọn đúng lớp cần nạp rồi tải file mẫu Excel đã điền lên (xem mục “Nhập học viên hàng loạt”).',
       'Xong phần khung, mỗi buổi học chỉ cần: “Điểm danh” → “Điểm số” → cuối năm “Lưu trữ” & lên lớp.',
     ],
-    tips: ['Nên hoàn tất Cài đặt (tên + logo) trước khi xuất chứng chỉ/giấy khen, vì các mẫu này lấy dữ liệu từ đó.'],
+    tips: [
+      'Tạo lớp trước rồi nạp học viên theo từng lớp — nhanh và gọn hơn nạp cả giáo xứ rồi chia lớp từng em.',
+      'Hoàn tất Cài đặt (tên + logo) trước khi xuất chứng chỉ/giấy khen, vì các mẫu lấy dữ liệu từ đó.',
+    ],
   },
   {
     id: 'tongquan', title: 'Tổng quan (Dashboard)', roles: ['admin', 'teacher'],
@@ -44,15 +48,32 @@ const GUIDE = [
   },
   {
     id: 'hocvien', title: 'Học viên', roles: ['admin', 'teacher'],
-    tags: 'học viên hồ sơ thêm sửa xóa ảnh gia đình bí tích rửa tội thêm sức import danh sách',
+    tags: 'học viên hồ sơ thêm sửa xóa ảnh gia đình bí tích rửa tội thêm sức import danh sách nhập hàng loạt',
     summary: 'Quản lý hồ sơ từng học viên: thông tin cá nhân, ảnh, gia đình và các bí tích đã lãnh nhận.',
     steps: [
       'Bấm “Thêm học viên”, điền họ tên, ngày sinh, lớp và các thông tin cần thiết. Có thể tải ảnh đại diện.',
+      'Có sẵn danh sách cả lớp? Dùng “Nhập hàng loạt” để nạp nhanh từ Excel (xem mục “Nhập học viên hàng loạt”).',
       'Mở hồ sơ chi tiết (bấm vào tên học viên) để cập nhật thông tin gia đình (cha, mẹ, người đỡ đầu) và các bí tích (rửa tội, thêm sức…).',
       'Dùng ô tìm kiếm và bộ lọc theo lớp để tra cứu nhanh.',
     ],
     tips: [
       'Thông tin gia đình & bí tích trong hồ sơ được dùng lại khi xuất chứng chỉ hôn nhân, nên nhập càng đầy đủ càng đỡ phải gõ lại.',
+    ],
+  },
+  {
+    id: 'nhaphangloat', title: 'Nhập học viên hàng loạt', roles: ['admin', 'teacher'],
+    tags: 'nhập hàng loạt import excel csv danh sách file mẫu tải lên dán nạp học viên theo lớp bulk',
+    summary: 'Nạp nhanh cả danh sách học viên từ Excel thay vì thêm từng em. Giáo xứ thường đã có sẵn danh sách nên đây là cách nhanh nhất. Nên tạo lớp trước rồi nạp theo từng lớp.',
+    steps: [
+      'Tạo lớp trước ở mục “Lớp học”. Nên tạo đủ các lớp rồi mới nạp học viên.',
+      'Vào “Học viên” → bấm “Nhập hàng loạt” → bấm “Tải form mẫu (Excel)”.',
+      'Mở file mẫu và điền danh sách: “Tên thánh” và “Họ và tên” ở 2 cột riêng, ngày sinh, giới tính, cha/mẹ… Các cột chi tiết chứng chỉ để trống, điền sau ở hồ sơ từng em.',
+      'Ở ô “Xếp vào lớp”, chọn đúng lớp cần nạp; rồi bấm “Tải lên Excel / CSV” chọn file vừa điền (hoặc dán trực tiếp từ Excel).',
+      'Xem bảng “Xem trước” để kiểm tra, rồi bấm “Nhập … học viên”. Làm lần lượt cho từng lớp.',
+    ],
+    tips: [
+      'Chọn lớp TRƯỚC khi nhập để cả danh sách vào đúng lớp — khỏi phải chia lớp từng em sau đó.',
+      'Mỗi lớp làm một đợt (một file, hoặc một lần dán) cho gọn và dễ kiểm tra.',
     ],
   },
   {
