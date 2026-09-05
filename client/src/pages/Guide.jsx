@@ -102,14 +102,21 @@ const GUIDE = [
   },
   {
     id: 'diemdanh', title: 'Điểm danh', roles: ['admin', 'teacher'],
-    tags: 'điểm danh vắng có mặt buổi học ghi chú việc thiêng liêng lễ thống kê tuần tháng',
-    summary: 'Điểm danh từng buổi học, ghi chú lý do vắng, và (gói Pro) theo dõi việc thiêng liêng của học viên.',
+    tags: 'điểm danh vắng có mặt trễ vắng có phép buổi học ghi chú lý do việc thiêng liêng đi lễ đọc kinh thống kê tuần tháng chuyên cần bỏ trạng thái xóa ngày',
+    summary: 'Điểm danh từng buổi theo lớp với bốn trạng thái, xem thống kê chuyên cần theo tuần hoặc tháng, và (gói Pro) theo dõi việc thiêng liêng của học viên.',
     steps: [
-      'Chọn lớp và buổi học, đánh dấu Có mặt / Vắng cho từng học viên. Có thể thêm ghi chú cho từng em.',
-      'Gói Pro: điểm danh thêm phần “việc thiêng liêng” (đi lễ, đọc kinh…) và có thống kê theo tuần/tháng.',
-      'Nếu bật chuông báo vắng, hệ thống tự tạo thông báo khi học viên vắng (xem mục Thông báo).',
+      'Chọn “lớp” và “ngày” ở đầu trang. Có hai tab: “Giáo lý” (điểm danh buổi học) và “Việc Thiêng liêng”. Có ba chế độ xem: “Ngày”, “Tuần”, “Tháng”.',
+      'Ở chế độ “Ngày”, mỗi học viên có bốn trạng thái: “Có mặt”, “Trễ”, “Vắng không phép”, “Vắng có phép”. Chọn “Vắng có phép” sẽ hiện ô nhập lý do nghỉ.',
+      'Bấm một trạng thái để chọn; bấm lại đúng trạng thái đó để bỏ chọn. Nút “Đánh dấu tất cả có mặt” đặt nhanh cả lớp, bấm lại thành “Bỏ đánh dấu tất cả”.',
+      'Bấm “Lưu điểm danh” để lưu. Em nào để trống trạng thái thì buổi đó của em coi như chưa điểm danh (không bị tính là có mặt). Nếu bỏ hết trạng thái rồi lưu thì ngày đó trở lại chưa điểm danh.',
+      'Chuyển sang “Tuần” hoặc “Tháng” để xem thống kê: tỷ lệ đi học trung bình, bảng lưới theo từng ngày, nhóm chuyên cần (đi học từ 80%) và nhóm cần nhắc nhở (dưới 50%). Vắng có phép không bị trừ vào tỷ lệ chuyên cần.',
+      'Tab “Việc Thiêng liêng” (gói Pro): bấm “Quản lý việc” để thêm các việc như đi lễ, đọc kinh, xưng tội; sau đó tích cho từng em theo ngày. Cũng có thống kê theo tuần và tháng.',
     ],
-    tips: ['Điểm danh đều đặn giúp phần thống kê và thi đua cuối kỳ chính xác, không phải cộng tay.'],
+    tips: [
+      'Xuất phiếu điểm danh hoặc bảng thống kê ra Excel hoặc PDF bằng nút ở góc bảng.',
+      'Điểm danh đều đặn giúp thống kê và thi đua cuối kỳ chính xác, không phải cộng tay.',
+      'Nếu quản trị bật chuông báo vắng, hệ thống tự tạo thông báo khi có học viên vắng (xem mục Thông báo).',
+    ],
   },
   {
     id: 'diemso', title: 'Điểm số', roles: ['admin', 'teacher'],
