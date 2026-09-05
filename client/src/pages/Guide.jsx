@@ -188,6 +188,23 @@ const GUIDE = [
     tips: ['Ghi ngay khi phát sinh để cuối kỳ không phải nhớ lại.'],
   },
   {
+    id: 'xetduyet', title: 'Kỳ xét duyệt lớp cuối năm', roles: ['admin', 'teacher'], pro: true,
+    tags: 'xét duyệt kỳ xét lên lớp chốt lớp cuối năm gửi duyệt cần xem lại phê duyệt kết thúc năm học quy trình',
+    summary: 'Quy trình cuối năm gồm bốn bước: quản trị mở kỳ xét lên lớp, mỗi giáo lý viên chốt lớp và gửi lên, quản trị duyệt từng lớp, khi tất cả lớp đã duyệt thì mới lên lớp cho cả giáo xứ.',
+    steps: [
+      'Quản trị mở kỳ: vào “Lớp học” bấm “📢 Mở kỳ xét lên lớp”. Khi mở, các lớp chính quy mới gửi kết quả lên được, có dòng “Đang mở” báo trạng thái. Bấm lại “🔒 Đóng kỳ xét lên lớp” để đóng.',
+      'Giáo lý viên chốt lớp: ở lớp mình phụ trách bấm “🏁 Kết thúc lớp”, chọn kết quả từng em (lên lớp hoặc ở lại; lớp ngoài thì đậu hoặc không đạt), rồi bấm “Gửi duyệt”. Lớp chuyển sang “Chờ duyệt”. Có thể sửa và gửi lại khi quản trị chưa duyệt.',
+      'Quản trị duyệt: vào “Tổng quan”, mục lớp chờ duyệt liệt kê các lớp đã gửi. Mỗi lớp bấm “Duyệt” để đồng ý, hoặc “Yêu cầu xem lại” kèm ghi chú để trả về cho giáo lý viên sửa. Trang hiện số “X/Y lớp đã duyệt”.',
+      'Giáo lý viên theo dõi: trên “Tổng quan” của giáo lý viên có mục chốt lớp cuối năm, hiện “Chờ duyệt”, “Đã duyệt”, hoặc “Cần xem lại” kèm ghi chú của quản trị. Nếu bị trả lại thì sửa rồi gửi lại.',
+      'Lên lớp cho cả giáo xứ: khi tất cả lớp chính quy đã duyệt, vào “Cài đặt quản lý” bấm “Kết thúc năm học & lên lớp”. Hệ thống áp kết quả từng em: lên lớp thì chuyển lên bậc kế (điểm bắt đầu lại), ở lại thì giữ nguyên lớp; học viên lớp tốt nghiệp được lên lớp sẽ ra trường. Dữ liệu năm cũ đóng băng, tra cứu ở tab “Lưu trữ”.',
+    ],
+    tips: [
+      'Chỉ chạy “Kết thúc năm học & lên lớp” khi đã duyệt hết các lớp chính quy. Chưa đủ thì chưa nên chạy vì thao tác này chuyển toàn bộ học viên sang năm mới.',
+      'Lớp ngoài hệ thống (hôn nhân, dự tòng) được duyệt riêng và không ảnh hưởng tới việc lên lớp cuối năm.',
+      'Trước khi lên lớp, nhớ gắn nhãn lớp tốt nghiệp ở trang “Lớp học” để hệ thống biết lớp nào ra trường.',
+    ],
+  },
+  {
     id: 'luutru', title: 'Lưu trữ niên khóa & Lên lớp', roles: ['admin'], pro: true,
     tags: 'lưu trữ niên khóa năm học lên lớp tự động kết thúc năm archive tốt nghiệp chuyển năm',
     summary: 'Cuối năm học: tự động cho học viên lên lớp và lưu trữ dữ liệu niên khóa cũ để tra cứu về sau. Chỉ quản trị dùng được.',
