@@ -26,11 +26,20 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
       { auth: { persistSession: false, autoRefreshToken: false } });
 
-    // Ghi đơn đăng ký vào leads kèm trạng thái kết quả (service role -> đặt status tự do).
-    const saveLead = (status: string) => admin.from('leads').insert({
-      kind: 'register', name: fullName || null, email, phone: phone || null,
-      parish_name: parishName || null, note: note || null, status,
-    }).then(() => {}, () => {});
+    // Ghi đơn đăng ký NGAY khi nhận, để admin không bao giờ sót (kể cả khi bị chặn tần suất
+    // hay lỗi ở bước sau). Các bước sau chỉ cập nhật trạng thái của chính đơn này.
+    let leadId: string | null = null;
+    try {
+      const { data: lead, error: lErr } = await admin.from('leads').insert({
+        kind: 'register', name: fullName || null, email, phone: phone || null,
+        parish_name: parishName || null, note: note || null, status: 'new',
+      }).select('id').single();
+      if (lErr) console.error('lead insert:', lErr.message);
+      leadId = lead?.id ?? null;
+    } catch (e) { console.error('lead insert threw:', e); }
+    const setLead = (status: string) => leadId
+      ? admin.from('leads').update({ status }).eq('id', leadId).then(() => {}, (e) => console.error('lead status:', e))
+      : Promise.resolve();
 
     // Hạn mức theo IP: tối đa RATE_MAX lời mời / RATE_MIN phút. Fail-open nếu bảng chưa có.
     const RATE_MAX = 6, RATE_MIN = 60;
@@ -40,7 +49,7 @@ Deno.serve(async (req) => {
       const since = new Date(Date.now() - RATE_MIN * 60000).toISOString();
       const { count, error: cErr } = await admin.from('register_invites')
         .select('*', { count: 'exact', head: true }).eq('ip', ip).gte('created_at', since);
-      if (!cErr && (count ?? 0) >= RATE_MAX) return json({ rate: true }, 429);
+      if (!cErr && (count ?? 0) >= RATE_MAX) { await setLead('rate'); return json({ rate: true }, 429); }
       if (!cErr) await admin.from('register_invites').insert({ ip, email });
     } catch (_e) { /* bảng chưa tạo -> bỏ qua giới hạn */ }
 
@@ -54,13 +63,13 @@ Deno.serve(async (req) => {
       const msg = (error.message || '').toLowerCase();
       // Email đã tồn tại -> không gửi lại, ghi đơn dạng 'duplicate'
       if ((error as { code?: string }).code === 'email_exists' || /already|registered|exist/.test(msg)) {
-        await saveLead('duplicate');
+        await setLead('duplicate');
         return json({ already: true });
       }
-      await saveLead('new'); // lỗi khác -> để admin xử lý tay
+      await setLead('new'); // lỗi khác -> để admin xử lý tay
       return json({ error: error.message }, 400);
     }
-    await saveLead('invited'); // đã gửi email mời tự động
+    await setLead('invited'); // đã gửi email mời tự động
     return json({ ok: true, user_id: data?.user?.id, email });
   } catch (e) {
     return json({ error: String((e as Error)?.message || e) }, 500);
