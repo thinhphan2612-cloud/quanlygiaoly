@@ -3,7 +3,9 @@ import api from '../api';
 import { exportXlsx, exportPdf, STT_COL, ATT_LABEL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 import Avatar from '../components/Avatar.jsx';
 
-const today = () => new Date().toISOString().slice(0, 10);
+// Ngày dạng YYYY-MM-DD theo giờ ĐỊA PHƯƠNG (không dùng toISOString vì lệch múi giờ).
+const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const today = () => ymd(new Date());
 const STATUSES = [
   { key: 'present', label: 'Có mặt' },
   { key: 'late', label: 'Trễ' },
@@ -19,14 +21,13 @@ function weekRange(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   const start = new Date(d); start.setDate(d.getDate() - d.getDay()); // Chủ nhật
   const end = new Date(start); end.setDate(start.getDate() + 6);
-  const iso = (x) => x.toISOString().slice(0, 10);
-  return { from: iso(start), to: iso(end) };
+  return { from: ymd(start), to: ymd(end) };
 }
 function monthRange(dateStr) {
   const from = dateStr.slice(0, 8) + '01';
   const d = new Date(dateStr + 'T00:00:00');
   const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-  return { from, to: last.toISOString().slice(0, 10) };
+  return { from, to: ymd(last) };
 }
 
 // Danh sách xếp hạng (chuyên cần nhất / cần nhắc nhở)
@@ -113,8 +114,13 @@ function GiaoLyDay({ classId, date, cls, parish }) {
   const markAll = (status) => { setRows((rs) => rs.map((r) => ({ ...r, status }))); setSaved(false); };
   const allPresent = rows.length > 0 && rows.every((r) => r.status === 'present');
   async function save() {
-    await api.post('/attendance', { date, records: rows.map((r) => ({ student_id: r.id, status: r.status || 'present', note: r.note || '' })) });
-    setSaved(true);
+    try {
+      // Gửi status thật (null khi bỏ trạng thái) -> backend xóa bản ghi ngày đó cho những em bị bỏ.
+      await api.post('/attendance', { date, records: rows.map((r) => ({ student_id: r.id, status: r.status || null, note: r.note || '' })) });
+      setSaved(true);
+    } catch (e) {
+      alert(e.response?.data?.error || 'Lưu điểm danh thất bại');
+    }
   }
   const attColumns = [
     STT_COL,
@@ -142,7 +148,7 @@ function GiaoLyDay({ classId, date, cls, parish }) {
               <td>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                   {STATUSES.map((s) => (
-                    <button key={s.key} className={`btn sm ${r.status === s.key ? '' : 'ghost'}`} onClick={() => setStatus(r.id, s.key)}>{s.label}</button>
+                    <button key={s.key} className={`btn sm ${r.status === s.key ? '' : 'ghost'}`} onClick={() => setStatus(r.id, r.status === s.key ? null : s.key)}>{s.label}</button>
                   ))}
                   {r.status === 'excused' && (
                     <input className="excuse-note" value={r.note || ''} onChange={(e) => setRowNote(r.id, e.target.value)} placeholder="Lý do nghỉ phép..." />

@@ -496,10 +496,19 @@ async function handle(method, rawUrl, body = {}) {
     if (path === '/attendance' && method === 'post') {
       const { date, records } = body;
       if (!date || !Array.isArray(records)) return fail(400, 'Cần date và danh sách records');
-      const rows = records.map((r) => ({ parish_id: pid, student_id: r.student_id, date, status: r.status, note: r.status === 'excused' ? (r.note || null) : null }));
-      const { error } = await supabase.from('attendance').upsert(rows, { onConflict: 'student_id,date' });
-      if (error) return fail(400, error.message);
-      return ok({ ok: true, count: records.length });
+      // Có trạng thái -> lưu; bỏ trạng thái (null) -> XÓA bản ghi ngày đó (coi như không điểm danh).
+      const toUpsert = records.filter((r) => r.status)
+        .map((r) => ({ parish_id: pid, student_id: r.student_id, date, status: r.status, note: r.status === 'excused' ? (r.note || null) : null }));
+      const toDelete = records.filter((r) => !r.status).map((r) => r.student_id);
+      if (toDelete.length) {
+        const { error: derr } = await supabase.from('attendance').delete().eq('date', date).in('student_id', toDelete);
+        if (derr) return fail(400, derr.message);
+      }
+      if (toUpsert.length) {
+        const { error } = await supabase.from('attendance').upsert(toUpsert, { onConflict: 'student_id,date' });
+        if (error) return fail(400, error.message);
+      }
+      return ok({ ok: true, saved: toUpsert.length, cleared: toDelete.length });
     }
 
     // ---------------- attendance theo khoảng (tuần/tháng) ----------------
