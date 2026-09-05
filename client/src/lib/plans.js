@@ -30,7 +30,7 @@ export const PLANS = [
       'Xuất chứng chỉ bí tích trang trọng (in / PDF)',
       'Điểm số theo hệ số, xếp hạng thi đua, xuất Excel / PDF',
       'Điểm danh việc thiêng liêng + thống kê tuần / tháng',
-      'Thông báo & chuông báo vắng tự động cho phụ huynh',
+      'Gửi thông báo tới giáo lý viên',
       'Kiểm toán thu chi quỹ lớp / giáo xứ',
       'Tự động lên lớp cuối năm & lưu trữ các niên khóa cũ',
       'Dashboard tổng quan: sĩ số, chuyên cần, bí tích',
