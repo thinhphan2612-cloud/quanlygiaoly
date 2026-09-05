@@ -207,7 +207,7 @@ export default function Certificates() {
 
         <>
             <div className="field">
-              <label>Khung chứng chỉ {frames.length > 1 && <span className="muted" style={{ fontWeight: 400 }}>— chọn mẫu khung muốn dùng</span>}</label>
+              <label>Khung chứng chỉ {frames.length > 1 && <span className="muted" style={{ fontWeight: 400 }}>(chọn mẫu khung muốn dùng)</span>}</label>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start' }}>
                 {frames.map((f) => {
                   const land = (CERT_ORIENT[kind] || 'portrait') === 'landscape';
@@ -285,13 +285,13 @@ export default function Certificates() {
         <div className="row">
           <div className="field" style={{ flex: 1 }}><label>Niên khóa</label>
             <select value={year} onChange={(e) => setYear(e.target.value)}>
-              {yearOptions.length === 0 && <option value="">— Chưa có —</option>}
+              {yearOptions.length === 0 && <option value="">Chưa có</option>}
               {yearOptions.map((y) => <option key={y.value} value={y.value}>Niên khóa {y.label}</option>)}
             </select>
           </div>
           <div className="field" style={{ flex: 1 }}><label>Lớp</label>
             <select value={classId} onChange={(e) => setClassId(e.target.value)} disabled={!classes.length}>
-              <option value="">— Chọn lớp —</option>
+              <option value="">Chọn lớp</option>
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>

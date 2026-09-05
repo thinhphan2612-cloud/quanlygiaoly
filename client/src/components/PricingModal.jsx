@@ -178,7 +178,7 @@ export default function PricingModal({ current = 'free', onClose }) {
 
         {step === 'pay' && tier && tier.price != null && (
           <>
-            <h2 style={{ marginTop: 0 }}>Nâng cấp Pro — {tier.label}</h2>
+            <h2 style={{ marginTop: 0 }}>Nâng cấp Pro: {tier.label}</h2>
             <div className="pay-summary">
               <div className="row"><span>Giá gói (1 năm)</span><b>{vnd(tier.price)}</b></div>
               {disc && <div className="row" style={{ color: '#15803d' }}><span>Giảm ({disc.kind === 'percent' ? disc.value + '%' : vnd(disc.value)})</span><b>-{vnd(discountAmount(tier.price))}</b></div>}
@@ -204,7 +204,7 @@ export default function PricingModal({ current = 'free', onClose }) {
         {step === 'pay' && tier && tier.price == null && (
           <>
             <h2 style={{ marginTop: 0 }}>{tier.label}</h2>
-            <p className="muted" style={{ marginTop: 0 }}>Giáo xứ quy mô lớn được báo giá riêng. Gửi lời nhắn cho chúng tôi — đội ngũ Giáo Lý Số sẽ liên hệ tư vấn &amp; kích hoạt.</p>
+            <p className="muted" style={{ marginTop: 0 }}>Giáo xứ quy mô lớn được báo giá riêng. Gửi lời nhắn cho chúng tôi. Đội ngũ Giáo Lý Số sẽ liên hệ tư vấn &amp; kích hoạt.</p>
             {sent ? (
               <div className="info-box">Đã gửi lời nhắn! Chúng tôi sẽ liên hệ với bạn sớm. Cảm ơn bạn.</div>
             ) : (

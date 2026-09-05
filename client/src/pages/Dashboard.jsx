@@ -157,7 +157,7 @@ function ClassReviews() {
           </div>
           {renderTable(cat)}
           {approved === total && total > 0 && (
-            <p className="muted" style={{ fontSize: 13, marginTop: 10 }}>✓ Tất cả lớp chính quy đã được duyệt — có thể "Kết thúc năm học & lên lớp" ở mục Cài đặt.</p>
+            <p className="muted" style={{ fontSize: 13, marginTop: 10 }}>✓ Tất cả lớp chính quy đã được duyệt, có thể "Kết thúc năm học & lên lớp" ở mục Cài đặt.</p>
           )}
         </>
       )}

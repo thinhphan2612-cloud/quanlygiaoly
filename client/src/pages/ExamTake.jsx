@@ -212,7 +212,7 @@ export default function ExamTake() {
       <div className="exam-wrap">
         <div className="exam-paper exam-noselect">
           <div className="exam-head"><h1>{exam.title}</h1><p className="muted">Họ tên: <b>{attempt.name}</b> · Lớp {exam.class_name}</p></div>
-          {leaveCount > 0 && <div className="exam-warn">⚠ Con đã rời khỏi màn hình thi <b>{leaveCount} lần</b>. Vui lòng ở lại trang cho đến khi nộp — mỗi lần rời màn hình đều được ghi lại cho giáo lý viên.</div>}
+          {leaveCount > 0 && <div className="exam-warn">⚠ Con đã rời khỏi màn hình thi <b>{leaveCount} lần</b>. Vui lòng ở lại trang cho đến khi nộp, mỗi lần rời màn hình đều được ghi lại cho giáo lý viên.</div>}
           {displayQs.map((q, i) => (
             <div className="exam-q" id={'q-' + q.id} key={q.id}>
               <div className={`exam-q-text ${showMissing && answers[q.id] == null ? 'miss' : ''}`}><b>Câu {i + 1}.</b> {q.text}</div>

@@ -57,7 +57,7 @@ export default function Audit() {
   async function remove(t) {
     if (!confirm('Xóa khoản này?')) return;
     try { await api.delete(`/transactions/${t.id}`); load(); }
-    catch (e) { alert(e.response?.data?.error || 'Không xóa được (khoản của lớp — admin chỉ xem).'); }
+    catch (e) { alert(e.response?.data?.error || 'Không xóa được (khoản của lớp, admin chỉ xem).'); }
   }
   // Admin không sửa/xóa khoản thuộc lớp
   const canDelete = (t) => !isAdmin || !t.class_id;
@@ -163,7 +163,7 @@ export default function Audit() {
             {shown.map((t) => (
               <tr key={t.id}>
                 <td>{t.date}</td>
-                <td>{t.content}{t.note ? <span className="muted"> — {t.note}</span> : ''}</td>
+                <td>{t.content}{t.note ? <span className="muted"> · {t.note}</span> : ''}</td>
                 <td>{t.class_name || <span className="muted">Chung</span>}</td>
                 <td style={{ textAlign: 'right', color: 'var(--success)' }}>{t.type === 'thu' ? fmt(t.amount) : ''}</td>
                 <td style={{ textAlign: 'right', color: 'var(--danger)' }}>{t.type === 'chi' ? fmt(t.amount) : ''}</td>

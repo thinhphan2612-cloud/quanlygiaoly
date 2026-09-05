@@ -64,7 +64,7 @@ export default function Archive() {
       const { students, columns, scores } = r.data;
       sheets.push({
         name: c.name,
-        title: `Bảng điểm — ${c.name}`,
+        title: `Bảng điểm: ${c.name}`,
         subtitle: exportSubtitle({ parish, cls: { name: c.name, year: y } }),
         columns: [
           STT_COL,
@@ -85,7 +85,7 @@ export default function Archive() {
   const dStudents = (detail?.students || []).filter((s) =>
     (s.full_name + ' ' + (s.saint_name || '')).toLowerCase().includes(search.toLowerCase()));
   const detailExport = detail && {
-    title: `Bảng điểm — ${detail.class?.name || ''}`,
+    title: `Bảng điểm: ${detail.class?.name || ''}`,
     subtitle: exportSubtitle({ parish, cls: detail.class }),
     columns: [
       STT_COL,

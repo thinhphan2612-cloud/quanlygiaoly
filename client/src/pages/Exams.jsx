@@ -118,10 +118,10 @@ function ExamBuilder({ classes, onDone, onCancel }) {
 
       <div className="panel">
         <div className="row">
-          <div className="field" style={{ flex: 2 }}><label>Tên đề *</label><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="VD: Kiểm tra 15 phút — Bài 5" /></div>
+          <div className="field" style={{ flex: 2 }}><label>Tên đề *</label><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="VD: Kiểm tra 15 phút Bài 5" /></div>
           <div className="field" style={{ flex: 1 }}><label>Lớp thi *</label>
             <select value={classId} onChange={(e) => setClassId(e.target.value)}>
-              <option value="">— Chọn lớp —</option>
+              <option value="">Chọn lớp</option>
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
@@ -233,7 +233,7 @@ function QuestionEditor({ init, onSave, onClose }) {
         <h2 style={{ marginTop: 0 }}>{init.id ? 'Sửa câu hỏi' : 'Thêm câu hỏi'}</h2>
         <div className="field"><label>Nội dung câu hỏi *</label>
           <textarea rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="VD: Bí tích nào Chúa Giêsu lập trong bữa Tiệc Ly?" /></div>
-        <div className="field" style={{ marginBottom: 6 }}><label>Các đáp án <span className="muted" style={{ fontWeight: 400 }}>— chấm ô tròn ở đáp án ĐÚNG</span></label></div>
+        <div className="field" style={{ marginBottom: 6 }}><label>Các đáp án <span className="muted" style={{ fontWeight: 400 }}>(chấm ô tròn ở đáp án ĐÚNG)</span></label></div>
         {options.map((o, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <input type="radio" name="correct" checked={correct === i} onChange={() => setCorrect(i)} title="Đặt làm đáp án đúng" style={{ flex: '0 0 auto', width: 18, height: 18, margin: 0, cursor: 'pointer' }} />
@@ -393,7 +393,7 @@ function ExamRoom({ examId, onBack }) {
       {reviewing && (
         <div className="modal-backdrop" onClick={() => setReviewing(null)}>
           <div className="modal wide" onClick={(e) => e.stopPropagation()}>
-            <div className="card-head"><h2 style={{ margin: 0 }}>Bài làm — {reviewing.student_name}</h2>
+            <div className="card-head"><h2 style={{ margin: 0 }}>Bài làm: {reviewing.student_name}</h2>
               <span className="muted">{reviewing.score}/10 · đúng {reviewing.correct_count}/{reviewing.total}</span></div>
             <div className="pick-list" style={{ maxHeight: '62vh' }}>
               {(exam.questions || []).map((q, i) => {

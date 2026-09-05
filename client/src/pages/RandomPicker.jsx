@@ -70,13 +70,13 @@ export default function RandomPicker() {
   function notLearned() {
     if (!picked) return;
     setPickedIds((ids) => ids.filter((id) => id !== picked.id));
-    setNote(`${picked.full_name} chưa thuộc bài — vẫn nằm trong danh sách lần sau.`);
+    setNote(`${picked.full_name} chưa thuộc bài, vẫn nằm trong danh sách lần sau.`);
     setPicked(null);
   }
 
   return (
     <div>
-      <h1>Chọn học sinh trả bài — Đường đua 🏁</h1>
+      <h1>Chọn học sinh trả bài: Đường đua 🏁</h1>
       <div className="toolbar">
         <select value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 220 }}>
           <option value="">-- Chọn lớp --</option>

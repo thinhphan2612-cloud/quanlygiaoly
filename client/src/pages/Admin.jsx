@@ -595,7 +595,7 @@ function CodeModal({ code, tiers, onClose, onSave }) {
                 <input type="number" min="1" value={c.free_months ?? 3} onChange={(e) => setC({ ...c, free_months: e.target.value })} placeholder="3" /></div>
               <div className="field"><label>Mức Pro áp dụng</label>
                 <select value={c.tier_id ?? ''} onChange={(e) => setC({ ...c, tier_id: e.target.value })}>
-                  <option value="">— Chọn mức —</option>
+                  <option value="">Chọn mức</option>
                   {(tiers || []).map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
                 </select></div>
             </>
@@ -663,7 +663,7 @@ function ActivateModal({ parish, tiers, onClose, onConfirm }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal wide" onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ marginTop: 0 }}>Kích hoạt / gia hạn Pro — {parish.name}</h2>
+        <h2 style={{ marginTop: 0 }}>Kích hoạt / gia hạn Pro: {parish.name}</h2>
         <div className="row">
           <div className="field" style={{ flex: '0 0 200px' }}>
             <label>Hạn gói (đến hết ngày)</label>
@@ -711,7 +711,7 @@ function PaymentModal({ parish, onClose, onSave }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal wide" onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ marginTop: 0 }}>Ghi thanh toán — {parish.name}</h2>
+        <h2 style={{ marginTop: 0 }}>Ghi thanh toán: {parish.name}</h2>
         <PaymentFields pay={pay} set={setPay} />
         <div className="modal-actions">
           <button className="btn ghost" onClick={onClose}>Hủy</button>

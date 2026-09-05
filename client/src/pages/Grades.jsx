@@ -200,7 +200,7 @@ export default function Grades() {
         <div className="panel"><p className="muted">Lớp chưa có học viên.</p></div>
       ) : (
         <div className="panel">
-          <p className="muted" style={{ marginTop: 0, fontSize: 12 }}>{isCurrent ? 'Nhập điểm trực tiếp vào ô, tự lưu khi bấm ra ngoài.' : `Đang xem điểm năm học ${year} (đã lưu trữ — chỉ đọc).`}</p>
+          <p className="muted" style={{ marginTop: 0, fontSize: 12 }}>{isCurrent ? 'Nhập điểm trực tiếp vào ô, tự lưu khi bấm ra ngoài.' : `Đang xem điểm năm học ${year} (đã lưu trữ chỉ đọc).`}</p>
           <div className="table-scroll">
             <table className="grade-table">
               <thead>
@@ -243,7 +243,7 @@ export default function Grades() {
       {overview && (
         <div className="modal-backdrop" onClick={() => setOverview(false)}>
           <div className="modal wide" onClick={(e) => e.stopPropagation()}>
-            <h2>Bảng điểm tổng quát — {className}</h2>
+            <h2>Bảng điểm tổng quát: {className}</h2>
             <div className="table-scroll">
               <table className="grade-table">
                 <thead>

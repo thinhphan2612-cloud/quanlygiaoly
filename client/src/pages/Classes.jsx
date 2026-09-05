@@ -342,11 +342,11 @@ export default function Classes() {
               {promotionOpen ? '🔒 Đóng kỳ xét lên lớp' : '📢 Mở kỳ xét lên lớp'}
             </button>
           )}
-          {!isFree && promotionOpen && <span className="muted" style={{ fontSize: 12, alignSelf: 'center' }}>Đang mở — các lớp chính quy có thể gửi kết quả để bạn duyệt.</span>}
+          {!isFree && promotionOpen && <span className="muted" style={{ fontSize: 12, alignSelf: 'center' }}>Đang mở, các lớp chính quy có thể gửi kết quả để bạn duyệt.</span>}
           {reached && (
             <span className="muted" style={{ fontSize: 13 }}>
               {isFree
-                ? 'Gói Khởi động quản lý 1 lớp — muốn dùng tiếp thì sửa lại lớp hiện có. Nâng lên Pro để thêm lớp.'
+                ? 'Gói Khởi động quản lý 1 lớp. Muốn dùng tiếp thì sửa lại lớp hiện có. Nâng lên Pro để thêm lớp.'
                 : `Đã đạt tối đa ${maxClasses} lớp của mức gói hiện tại. Nâng mức gói (liên hệ tác giả) để thêm lớp.`}
             </span>
           )}
@@ -563,7 +563,7 @@ export default function Classes() {
                     <button type="button" className={`seg-btn ${modal.kind === 'external' ? 'on' : ''}`} onClick={() => setModal({ ...modal, kind: 'external', is_graduation: false })}>Ngoài hệ thống</button>
                   </div>
                   <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-                    {modal.kind === 'external' ? 'Lớp hôn nhân / dự tòng… — học 1 khóa, tự xét tốt nghiệp, không lên lớp.' : 'Lớp cho học viên chính quy — nằm trong hệ thống lên lớp hằng năm.'}
+                    {modal.kind === 'external' ? 'Lớp hôn nhân / dự tòng…: học 1 khóa, tự xét tốt nghiệp, không lên lớp.' : 'Lớp cho học viên chính quy — nằm trong hệ thống lên lớp hằng năm.'}
                   </p>
                 </div>
                 {!isFree && modal.kind === 'catechism' && (
@@ -639,7 +639,7 @@ export default function Classes() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Cài đặt thứ tự lớp</h2>
             <p className="muted" style={{ marginTop: 0 }}>
-              Sắp xếp bậc lớp cho việc lên lớp cuối năm. <b>Trên cùng là lớp cao nhất</b> (thường là lớp tốt nghiệp — ra trường khi lên lớp),
+              Sắp xếp bậc lớp cho việc lên lớp cuối năm. <b>Trên cùng là lớp cao nhất</b> (thường là lớp tốt nghiệp, ra trường khi lên lớp),
               dưới cùng là lớp nhỏ nhất. Đánh dấu "🎓 lớp tốt nghiệp" ở nút <b>Sửa</b> của lớp cao nhất.
             </p>
             <div className="order-list">
@@ -665,7 +665,7 @@ export default function Classes() {
       {sac && (
         <div className="modal-backdrop" onClick={() => setSac(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Ghi bí tích / chứng chỉ — {sac.cls.name}</h2>
+            <h2>Ghi bí tích / chứng chỉ: {sac.cls.name}</h2>
             <div className="seg" style={{ marginBottom: 14 }}>
               <button className={`seg-btn ${sac.kind === 'sacrament' ? 'on' : ''}`} onClick={() => setSac({ ...sac, kind: 'sacrament' })}>Bí tích</button>
               <button className={`seg-btn ${sac.kind === 'cert' ? 'on' : ''}`} onClick={() => setSac({ ...sac, kind: 'cert' })}>Chứng chỉ / khóa</button>
@@ -718,7 +718,7 @@ export default function Classes() {
       {reviewModal && (
         <div className="modal-backdrop" onClick={() => setReviewModal(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>🏁 Kết thúc lớp — {reviewModal.cls.name}</h2>
+            <h2>🏁 Kết thúc lớp: {reviewModal.cls.name}</h2>
             <p className="muted" style={{ marginTop: -6, fontSize: 13 }}>
               {reviewModal.kind === 'external'
                 ? 'Chọn kết quả từng em rồi gửi Admin duyệt. Khi Admin duyệt, lớp sẽ đóng & chuyển vào Lưu trữ.'

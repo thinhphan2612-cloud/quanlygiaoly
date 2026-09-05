@@ -193,7 +193,7 @@ export default function StudentProfile() {
             <div className="card-head"><h2>Điểm danh gần đây</h2></div>
             <div className="att-recent">
               {data.attendance.recent.map((a, i) => (
-                <div className="att-recent-row" key={i} title={(ATT_LABEL[a.status] || '') + (a.note ? ' — ' + a.note : '')}>
+                <div className="att-recent-row" key={i} title={(ATT_LABEL[a.status] || '') + (a.note ? ' · ' + a.note : '')}>
                   <span>{a.date.split('-').reverse().join('/')}</span>
                   <span className={`att-ic ${ATT_TONE[a.status]}`}>{ATT_CHAR[a.status] || '?'}</span>
                 </div>

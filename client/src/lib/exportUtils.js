@@ -104,7 +104,7 @@ export function exportPdf({ title, subtitle, columns, rows, totalsRow, summary, 
 // Dựng phần đầu bản xuất (dùng chung): giáo xứ, lớp + năm học, GV phụ trách, dòng thêm
 export function exportSubtitle({ parish, cls, extra = [] } = {}) {
   const lines = [];
-  if (parish?.name) lines.push(`Giáo xứ: ${parish.name}${parish.diocese ? ' — ' + parish.diocese : ''}`);
+  if (parish?.name) lines.push(`Giáo xứ: ${parish.name}${parish.diocese ? ', ' + parish.diocese : ''}`);
   if (cls?.name) {
     lines.push(`Lớp: ${cls.name}${cls.year ? '     Năm học: ' + cls.year : ''}`);
     if (cls.teacher_name) lines.push(`Giáo lý viên phụ trách: ${cls.teacher_name}`);

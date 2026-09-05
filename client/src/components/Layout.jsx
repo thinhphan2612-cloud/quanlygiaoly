@@ -315,7 +315,7 @@ export default function Layout({ children }) {
         <div className="promo-overlay" onClick={() => setPromoOpen(false)}>
           <div className="promo-box" onClick={(e) => e.stopPropagation()}>
             <button className="promo-close" onClick={() => setPromoOpen(false)} aria-label="Đóng">✕</button>
-            <img className="promo-img" src="/coupon50.png" alt="Giảm 50% — nhập mã GIAOLYSO50"
+            <img className="promo-img" src="/coupon50.png" alt="Giảm 50%, nhập mã GIAOLYSO50"
               onClick={() => { setPromoOpen(false); setPricing(true); }} />
             <div className="promo-code">
               <span>Mã ưu đãi: <b>GIAOLYSO50</b></span>

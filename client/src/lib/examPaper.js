@@ -56,7 +56,7 @@ function keyHtml(exam) {
   const qs = exam.questions || [];
   const head = `
     <div class="head">
-      <h1>Đáp án — ${esc(exam.title || '')}</h1>
+      <h1>Đáp án: ${esc(exam.title || '')}</h1>
       <div class="sub">Lớp: ${esc(exam.class_name || '')} · ${qs.length} câu · (dành cho GLV chấm)</div>
     </div>`;
   const grid = `<div class="key-grid">${qs.map((q, i) =>

@@ -26,7 +26,7 @@ export default function EphataStore() {
         <a className="btn btn-ext" href={STORE_URL} target="_blank" rel="noopener noreferrer">Đăng nhập Ephata Store <IconExt /></a>
       </div>
       <p className="muted" style={{ marginTop: -6 }}>
-        Kho ứng dụng &amp; tiện ích Công giáo. Đăng nhập bằng <b>chính tài khoản Giáo Lý Số</b> của bạn — tài khoản tự liên kết. Tính năng đã mua / thêm sẽ hiện tại đây để dùng ngay trong ứng dụng.
+        Kho ứng dụng &amp; tiện ích Công giáo. Đăng nhập bằng <b>chính tài khoản Giáo Lý Số</b> của bạn. Tài khoản tự liên kết. Tính năng đã mua / thêm sẽ hiện tại đây để dùng ngay trong ứng dụng.
       </p>
 
       {loading ? <div className="panel"><p className="muted">Đang tải…</p></div> : (
