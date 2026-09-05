@@ -272,11 +272,11 @@ export default function Admin() {
                     <td>{l.kind === 'register'
                       ? (l.status === 'duplicate'
                         ? <span style={{ color: '#b45309', fontSize: 12 }}>Email đã đăng ký (không gửi lại)</span>
-                        : l.status === 'invited'
-                          ? <span style={{ color: '#15803d', fontSize: 12 }}>Đã gửi email mời (tự động) ✓</span>
-                          : l.status === 'rate'
-                            ? <span style={{ color: '#b91c1c', fontSize: 12 }}>Bị giới hạn tần suất, chưa gửi mời (mời tay)</span>
-                            : <span style={{ color: '#b91c1c', fontSize: 12 }}>Chưa gửi được mời, cần xử lý tay</span>)
+                        : l.status === 'rate'
+                          ? <span style={{ color: '#b91c1c', fontSize: 12 }}>Bị giới hạn tần suất, chưa gửi mời (mời tay)</span>
+                          : l.status === 'error'
+                            ? <span style={{ color: '#b91c1c', fontSize: 12 }}>Chưa gửi được mời, cần xử lý tay</span>
+                            : <span style={{ color: '#15803d', fontSize: 12 }}>Đã gửi email mời (tự động) ✓</span>)
                       : l.status === 'granted' ? <span style={{ color: '#15803d', fontSize: 12 }}>Đã cấp ✓</span>
                         : l.status === 'archived' ? <span className="muted" style={{ fontSize: 12 }}>Đã lưu</span>
                           : <span style={{ color: '#a8641b', fontSize: 12 }}>Mới</span>}</td>

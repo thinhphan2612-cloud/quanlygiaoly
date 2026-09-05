@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
         await setLead('duplicate');
         return json({ already: true });
       }
-      await setLead('new'); // lỗi khác -> để admin xử lý tay
+      await setLead('error'); // lỗi khác -> để admin xử lý tay
       return json({ error: error.message }, 400);
     }
     await setLead('invited'); // đã gửi email mời tự động
