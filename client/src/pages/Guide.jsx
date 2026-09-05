@@ -115,7 +115,6 @@ const GUIDE = [
     tips: [
       'Xuất phiếu điểm danh hoặc bảng thống kê ra Excel hoặc PDF bằng nút ở góc bảng.',
       'Điểm danh đều đặn giúp thống kê và thi đua cuối kỳ chính xác, không phải cộng tay.',
-      'Nếu quản trị bật chuông báo vắng, hệ thống tự tạo thông báo khi có học viên vắng (xem mục Thông báo).',
     ],
   },
   {
@@ -224,15 +223,14 @@ const GUIDE = [
     ],
   },
   {
-    id: 'thongbao', title: 'Thông báo & Chuông báo vắng', roles: ['admin'], pro: true,
-    tags: 'thông báo chuông báo vắng gửi tin nhắn nhắc nhở tự động',
-    summary: 'Gửi thông báo tới giáo lý viên và bật chuông báo vắng tự động. Chỉ quản trị dùng được.',
+    id: 'thongbao', title: 'Gửi thông báo', roles: ['admin'], pro: true,
+    tags: 'thông báo gửi tin nhắn nhắc nhở giáo lý viên chuông',
+    summary: 'Quản trị soạn và gửi thông báo tới giáo lý viên trong giáo xứ. Chỉ quản trị dùng được.',
     steps: [
-      'Vào “Gửi thông báo” để soạn và gửi thông báo tới các giáo lý viên trong giáo xứ.',
-      'Bật chuông báo vắng để hệ thống tự tạo thông báo khi có học viên vắng.',
-      'Chuông ở góc trên phải hiển thị số thông báo chưa đọc cho mọi người.',
+      'Vào “Gửi thông báo”, chọn người nhận, nhập tiêu đề và nội dung rồi gửi.',
+      'Giáo lý viên nhận thông báo ở chuông góc trên phải; chuông hiển thị số thông báo chưa đọc.',
     ],
-    tips: ['Khi Cha sở mở “kỳ xét duyệt lớp”, giáo lý viên sẽ thấy trạng thái (được duyệt / cần xem lại) ngay trên Dashboard của họ.'],
+    tips: ['Khi quản trị mở kỳ xét lên lớp, giáo lý viên thấy trạng thái duyệt hoặc cần xem lại ngay trên Tổng quan của họ.'],
   },
   {
     id: 'caidat', title: 'Cài đặt quản lý', roles: ['admin'],
