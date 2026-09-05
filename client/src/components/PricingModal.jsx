@@ -128,6 +128,14 @@ export default function PricingModal({ current = 'free', onClose }) {
               <span className="pc-dot">●</span> Gói hiện tại của bạn: <b>{curLabel}</b>
             </div>
 
+            <div className="price-cheap">
+              <span className="pcheap-emoji">💡</span>
+              <div className="pcheap-body">
+                <div className="pcheap-big">Tính ra chỉ hơn <b>20.000đ</b> mỗi lớp mỗi tháng</div>
+                <div className="pcheap-sub">Rẻ hơn một ly cà phê, cho cả lớp dùng trọn vẹn mọi tính năng suốt tháng. Ví dụ gói vừa 2.900.000đ cho 12 lớp một niên khóa.</div>
+              </div>
+            </div>
+
             <div className="tier-cards">
               <div className={`tier-card ${isFreeNow ? 'cur' : ''}`}>
                 {isFreeNow && <span className="tc-badge">Gói hiện tại</span>}
