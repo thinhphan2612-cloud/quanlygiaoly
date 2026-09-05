@@ -433,7 +433,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
     <img class="cheap-deco b" src="assets/m-flask.png" alt="">
     <div class="cheap-eyebrow">Chi phí quá rẻ!</div>
     <h2 class="cheap-h">Chỉ từ <span>20.000đ</span> / lớp / tháng</h2>
-    <p class="cheap-sub">Rẻ hơn một ly cà phê — cho cả một lớp giáo lý dùng trọn vẹn mọi tính năng suốt cả tháng, tính theo niên khóa.</p>
+    <p class="cheap-sub">Rẻ hơn một ly cà phê. Cả một lớp giáo lý dùng trọn vẹn mọi tính năng suốt cả tháng, tính theo niên khóa.</p>
     <div class="cheap-points">
      <div>Bằng khoảng một ly cà phê mỗi tháng cho mỗi lớp</div>
      <div>Chia cho cả lớp: mỗi em chỉ vài trăm đồng/tháng</div>
@@ -447,8 +447,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
   <div class="container">
    <h2 class="hl-h">Vận hành cả giáo xứ trên một hệ thống</h2>
    <div class="hl-grid">
-    <div class="hl-card"><img class="hl-mascot" src="assets/m-book.png" alt=""><h3>Cha sở toàn quyền</h3><p>Tự tạo tài khoản cho từng Giáo lý viên, xếp vào dạy và quản lý đúng lớp được phân bổ — mỗi người chỉ thấy phần việc của mình.</p></div>
-    <div class="hl-card"><img class="hl-mascot" src="assets/m-pencil.png" alt=""><h3>Thi online · điểm tự động</h3><p>Cho học viên thi trắc nghiệm online, hệ thống tự chấm và cập nhật thẳng vào bảng điểm — không cần ghi chú bằng tay.</p></div>
+    <div class="hl-card"><img class="hl-mascot" src="assets/m-book.png" alt=""><h3>Cha sở toàn quyền</h3><p>Tự tạo tài khoản cho từng Giáo lý viên, xếp vào dạy và quản lý đúng lớp được phân bổ. Mỗi người chỉ thấy phần việc của mình.</p></div>
+    <div class="hl-card"><img class="hl-mascot" src="assets/m-pencil.png" alt=""><h3>Thi online · điểm tự động</h3><p>Cho học viên thi trắc nghiệm online, hệ thống tự chấm và cập nhật thẳng vào bảng điểm, không cần ghi chú bằng tay.</p></div>
     <div class="hl-card"><img class="hl-mascot" src="assets/m-eraser.png" alt=""><h3>Game giáo lý</h3><p>Bộ game học giáo lý được biên soạn sẵn, hoặc tự tạo nội dung câu hỏi cho riêng lớp mình.</p></div>
    </div>
   </div>
@@ -493,7 +493,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
     </tbody>
    </table>
   </div>
-  <p class="plan-note fade" data-y="20">Bậc Pro theo số lớp: <b>nhỏ ≤5 lớp</b> 1.500.000đ · <b>vừa 6–12 lớp</b> 2.900.000đ · <b>lớn 13–20 lớp</b> 5.200.000đ · <b>rất lớn trên 20 lớp</b> liên hệ — tất cả tính theo niên khóa.</p>
+  <p class="plan-note fade" data-y="20">Bậc Pro theo số lớp: <b>nhỏ ≤5 lớp</b> 1.500.000đ · <b>vừa 6–12 lớp</b> 2.900.000đ · <b>lớn 13–20 lớp</b> 5.200.000đ · <b>rất lớn trên 20 lớp</b> liên hệ. Tất cả tính theo niên khóa.</p>
  </div>
 </section>
 
@@ -636,7 +636,7 @@ document.querySelectorAll('.lp-card form').forEach(f=>{
    const j=await r.json();
    if(j.rate){st.className='lp-status err';st.textContent='Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau ít phút.';}
    else if(j.already){st.className='lp-status err';st.textContent='Email này đã được dùng để đăng ký rồi. Vui lòng đăng nhập, hoặc dùng email khác.';}
-   else if(j.ok){st.className='lp-status ok';st.textContent='Đã gửi! Vui lòng kiểm tra hộp thư đến của bạn — email mời tạo tài khoản truy cập đang được gửi tới (nhớ kiểm tra cả mục Spam/Quảng cáo).';f.reset();}
+   else if(j.ok){st.className='lp-status ok';st.textContent='Đã gửi! Vui lòng kiểm tra hộp thư đến của bạn. Email mời tạo tài khoản truy cập đang được gửi tới, nhớ kiểm tra cả mục Spam hoặc Quảng cáo.';f.reset();}
    else{st.className='lp-status err';st.textContent='Có lỗi khi tạo lời mời, vui lòng thử lại hoặc liên hệ hỗ trợ.';}
   }catch(err){st.className='lp-status err';st.textContent='Lỗi kết nối, vui lòng thử lại.';}
   btn.disabled=false;btn.textContent='Gửi đăng ký';
@@ -722,9 +722,9 @@ function copyPromoCode(btn){
     <button class="b2s-x" aria-label="Đóng" onclick="b2sMin()">✕</button>
     <div class="b2s-tag">🎒 BACK TO SCHOOL</div>
     <h3 class="b2s-h">Nâng gói <span>PRO MIỄN PHÍ 3 THÁNG</span></h3>
-    <p class="b2s-sub">Dành cho <b>50 giáo xứ nhập mã đầu tiên</b> — áp dụng gói Pro tối đa 5 lớp.</p>
+    <p class="b2s-sub">Dành cho <b>50 giáo xứ nhập mã đầu tiên</b>, áp dụng gói Pro tối đa 5 lớp.</p>
     <div class="b2s-code">Nhập mã <b>BACKTOSCHOOL</b> <button type="button" class="promo-copy" onclick="copyB2s(this)">📋 Sao chép</button></div>
-    <div class="b2s-count" id="b2sCount">Số lượng có hạn — nhanh tay!</div>
+    <div class="b2s-count" id="b2sCount">Số lượng có hạn, nhanh tay!</div>
     <a class="b2s-cta" href="#pricing" onclick="b2sMin()">Nhận ưu đãi ngay →</a>
   </div>
 </div>
@@ -736,7 +736,7 @@ function copyPromoCode(btn){
     <div class="zfab-head">Liên hệ &amp; hỗ trợ <button class="zfab-x" type="button" onclick="toggleZfab(false)">✕</button></div>
     <div class="zfab-body">
       <a class="zfab-zalo" href="https://zalo.me/0964013126" target="_blank" rel="noopener"><svg width="27" height="27" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="11" fill="#0068FF"/><text x="24" y="32" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-style="italic" font-size="18" fill="#fff">Zalo</text></svg>Chat với chúng tôi qua Zalo</a>
-      <div class="zfab-or">— hoặc gửi tin nhắn —</div>
+      <div class="zfab-or">Hoặc gửi tin nhắn</div>
       <form id="zfabForm" onsubmit="return sendZfab(event)">
         <input name="name" placeholder="Tên của bạn">
         <input name="phone" placeholder="SĐT / Email để liên hệ lại">

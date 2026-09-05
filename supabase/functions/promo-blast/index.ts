@@ -75,11 +75,11 @@ async function smtpSend(to: string, subject: string, html: string) {
 
 function promoHtml(who: string, pname: string, remaining: number | null, gmailUser: string, apology = false) {
   const rem = remaining != null
-    ? `Chương trình chỉ dành cho <b>50 giáo xứ nhập mã đầu tiên</b> — hiện còn <b>${remaining} suất</b>.`
-    : `Chương trình chỉ dành cho <b>50 giáo xứ nhập mã đầu tiên</b> — nhanh tay kẻo hết.`;
+    ? `Chương trình chỉ dành cho <b>50 giáo xứ nhập mã đầu tiên</b>, hiện còn <b>${remaining} suất</b>.`
+    : `Chương trình chỉ dành cho <b>50 giáo xứ nhập mã đầu tiên</b>, nhanh tay kẻo hết.`;
   const apologyBox = apology
     ? `<div style="margin:0 0 16px;padding:12px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#991b1b;font-size:13.5px;line-height:1.55">
-         Chúng con xin lỗi vì email gửi trước đó bị <b>lỗi hiển thị</b> (hiện dạng mã kỹ thuật). Chúng con đã khắc phục — đây là nội dung đúng, xin Quý Cha / Quý Thầy Cô bỏ qua thư trước ạ.
+         Chúng con xin lỗi vì email gửi trước đó bị <b>lỗi hiển thị</b> (hiện dạng mã kỹ thuật). Chúng con đã khắc phục. Đây là nội dung đúng, xin Quý Cha, Quý Thầy Cô bỏ qua thư trước ạ.
        </div>`
     : '';
   return `
@@ -92,7 +92,7 @@ function promoHtml(who: string, pname: string, remaining: number | null, gmailUs
         ${apologyBox}
         <h2 style="color:#2563eb;margin:0 0 12px;font-size:21px">Quà năm học mới: 3 tháng gói Pro miễn phí 🎒</h2>
         <p style="margin:0 0 12px">Kính gửi ${who},</p>
-        <p style="margin:0 0 14px">Nhân dịp khai giảng năm học giáo lý mới, <b>Giáo Lý Số</b> gửi tặng giáo xứ <b>${pname}</b> — hiện đang dùng gói <b>Khởi động</b> — cơ hội trải nghiệm <b>MIỄN PHÍ toàn bộ gói Pro (tối đa 5 lớp) trong 3 tháng</b>.</p>
+        <p style="margin:0 0 14px">Nhân dịp khai giảng năm học giáo lý mới, <b>Giáo Lý Số</b> gửi tặng giáo xứ <b>${pname}</b> (hiện đang dùng gói <b>Khởi động</b>) cơ hội trải nghiệm <b>MIỄN PHÍ toàn bộ gói Pro (tối đa 5 lớp) trong 3 tháng</b>.</p>
         <div style="margin:0 0 16px;padding:16px;background:#eff6ff;border:1px dashed #93c5fd;border-radius:12px;text-align:center">
           <div style="color:#6b7280;font-size:13px;margin-bottom:4px">Mã ưu đãi của bạn</div>
           <div style="font-size:26px;font-weight:800;letter-spacing:2px;color:#2563eb">${CODE}</div>
@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
     if (data && data.remaining != null) remaining = data.remaining;
   } catch (_e) { /* ignore */ }
 
-  const rawSubject = `🎒 Tặng giáo xứ 3 tháng gói Pro MIỄN PHÍ — Giáo Lý Số`;
+  const rawSubject = `🎒 Tặng giáo xứ 3 tháng gói Pro miễn phí`;
 
   // ---- TEST: gửi 1 email mẫu ----
   if (mode === 'test') {

@@ -55,7 +55,7 @@ function notifyHtml(name: string, phone: string, msg: string, source: string) {
   return `
   <div style="background:#f4f6fb;padding:24px 12px;font-family:Arial,Helvetica,sans-serif">
     <div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden">
-      <div style="background:#2563eb;padding:16px 24px;color:#fff;font-weight:700;font-size:16px">📩 Tin nhắn liên hệ mới — Giáo Lý Số</div>
+      <div style="background:#2563eb;padding:16px 24px;color:#fff;font-weight:700;font-size:16px">📩 Tin nhắn liên hệ mới</div>
       <div style="padding:22px 26px;color:#1f2937;line-height:1.6">
         <table style="width:100%;border-collapse:collapse;font-size:14px">
           <tr><td style="padding:6px 0;color:#6b7280;width:110px">Tên</td><td style="padding:6px 0"><b>${esc(name) || '(không rõ)'}</b></td></tr>

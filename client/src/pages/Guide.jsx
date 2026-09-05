@@ -28,11 +28,11 @@ const GUIDE = [
       'Vào “Cài đặt quản lý” (menu tài khoản góc trên phải): điền tên giáo xứ, giáo phận, tải logo. Logo và tên hiện trên đầu ứng dụng và trên chứng chỉ.',
       'Vào “Lớp học”: tạo TRƯỚC các lớp theo khối/ngành (vd Khai tâm, Rước lễ, Thêm sức…). Nên tạo đủ lớp rồi mới nạp học viên.',
       'Vào “Giáo lý viên”: tạo tài khoản cho từng GLV rồi gán vào lớp phụ trách.',
-      'Vào “Học viên”: nạp học viên theo TỪNG LỚP — dùng “Nhập hàng loạt”, chọn đúng lớp cần nạp rồi tải file mẫu Excel đã điền lên (xem mục “Nhập học viên hàng loạt”).',
+      'Vào “Học viên”: nạp học viên theo TỪNG LỚP. Dùng “Nhập hàng loạt”, chọn đúng lớp cần nạp rồi tải file mẫu Excel đã điền lên (xem mục “Nhập học viên hàng loạt”).',
       'Xong phần khung, mỗi buổi học chỉ cần: “Điểm danh” → “Điểm số” → cuối năm “Lưu trữ” & lên lớp.',
     ],
     tips: [
-      'Tạo lớp trước rồi nạp học viên theo từng lớp — nhanh và gọn hơn nạp cả giáo xứ rồi chia lớp từng em.',
+      'Tạo lớp trước rồi nạp học viên theo từng lớp. Cách này nhanh và gọn hơn nạp cả giáo xứ rồi chia lớp cho từng em.',
       'Hoàn tất Cài đặt (tên + logo) trước khi xuất chứng chỉ/giấy khen, vì các mẫu lấy dữ liệu từ đó.',
     ],
   },
@@ -72,7 +72,7 @@ const GUIDE = [
       'Xem bảng “Xem trước” để kiểm tra, rồi bấm “Nhập … học viên”. Làm lần lượt cho từng lớp.',
     ],
     tips: [
-      'Chọn lớp TRƯỚC khi nhập để cả danh sách vào đúng lớp — khỏi phải chia lớp từng em sau đó.',
+      'Chọn lớp TRƯỚC khi nhập để cả danh sách vào đúng lớp, khỏi phải chia lớp cho từng em sau đó.',
       'Mỗi lớp làm một đợt (một file, hoặc một lần dán) cho gọn và dễ kiểm tra.',
     ],
   },
@@ -97,7 +97,7 @@ const GUIDE = [
       'Có thể chỉnh lại phân công hoặc gỡ tài khoản khi GLV nghỉ.',
     ],
     tips: [
-      'Mỗi GLV chỉ thấy phần việc của mình — dữ liệu các lớp khác được ẩn, đảm bảo riêng tư và tránh nhầm lẫn.',
+      'Mỗi GLV chỉ thấy phần việc của mình. Dữ liệu các lớp khác được ẩn, giữ riêng tư và tránh nhầm lẫn.',
     ],
   },
   {
@@ -130,7 +130,7 @@ const GUIDE = [
       'Vào “Đề thi” → tạo đề: chọn từ ngân hàng câu hỏi có sẵn hoặc tự soạn câu hỏi riêng cho lớp.',
       'Xem trước (preview) toàn bộ đề; có thể tải đề ra PDF/DOCX để in nếu cần thi giấy.',
       'Phát mã thi cho học viên. Học viên mở link, nhập mã và làm bài trắc nghiệm online.',
-      'Nộp bài xong hệ thống tự chấm và ghi điểm vào bảng điểm của lớp — không cần chấm tay.',
+      'Nộp bài xong hệ thống tự chấm và ghi điểm vào bảng điểm của lớp, không cần chấm tay.',
     ],
     tips: ['Tự soạn câu hỏi sát bài đã dạy để kiểm tra đúng trọng tâm của lớp mình.'],
   },
@@ -150,7 +150,7 @@ const GUIDE = [
   {
     id: 'trabai', title: 'Chọn trả bài (bốc thăm)', roles: ['admin', 'teacher'],
     tags: 'chọn trả bài bốc thăm ngẫu nhiên random gọi tên kiểm tra bài cũ',
-    summary: 'Bốc thăm ngẫu nhiên một học viên trong lớp để trả bài — công bằng, sinh động.',
+    summary: 'Bốc thăm ngẫu nhiên một học viên trong lớp để trả bài cho công bằng và sinh động.',
     steps: [
       'Chọn lớp, bấm bốc thăm; hệ thống chọn ngẫu nhiên một học viên.',
     ],
@@ -196,7 +196,7 @@ const GUIDE = [
       'Dữ liệu năm cũ (điểm danh, điểm số…) được lưu trữ theo niên khóa, có thể xem lại bất cứ lúc nào.',
     ],
     tips: [
-      'Chỉ chạy lên lớp khi đã hoàn tất điểm số & chứng chỉ của năm hiện tại — vì thao tác này chuyển toàn bộ học viên sang năm mới.',
+      'Chỉ chạy lên lớp khi đã hoàn tất điểm số và chứng chỉ của năm hiện tại, vì thao tác này chuyển toàn bộ học viên sang năm mới.',
     ],
   },
   {
@@ -217,7 +217,7 @@ const GUIDE = [
     steps: [
       'Mở menu tài khoản (góc trên phải) → “Cài đặt quản lý”.',
       'Cập nhật tên giáo xứ, giáo phận, logo; các thiết lập niên khóa và kỳ xét duyệt lớp.',
-      'Gói Pro: mục “Quản trị viên giáo xứ” cho phép thêm quản trị viên khác — nhập họ tên, email và mật khẩu tạm. Các quản trị viên có quyền ngang nhau (toàn quyền trên giáo xứ).',
+      'Gói Pro: mục “Quản trị viên giáo xứ” cho phép thêm quản trị viên khác bằng cách nhập họ tên, email và mật khẩu tạm. Các quản trị viên có quyền ngang nhau (toàn quyền trên giáo xứ).',
     ],
     tips: ['Tên và logo ở đây xuất hiện trên đầu ứng dụng và trên chứng chỉ/giấy khen.', 'Nên cho quản trị viên mới đổi mật khẩu sau khi đăng nhập lần đầu.'],
   },
@@ -240,7 +240,7 @@ const GUIDE = [
     summary: 'Cách hệ thống nhắc gia hạn, quy tắc cộng dồn thời gian, và chính sách dữ liệu khi gói Pro hết hạn mà không gia hạn.',
     steps: [
       'Nhắc trước hạn: từ 30 ngày trước khi hết hạn, hệ thống nhắc qua email và banner trong ứng dụng, lặp lại mỗi 3 ngày cho tới khi gia hạn. Hạn còn lại cũng hiển thị ngay cạnh ảnh đại diện.',
-'Gia hạn / đổi gói mọi lúc: bắt đầu một chu kỳ 1 năm mới tính từ hôm nay. Phần còn thừa của gói hiện tại được quy đổi thành tiền (credit) và trừ vào số phải trả — không mất phần chưa dùng. Ví dụ đang dùng gói nhỏ còn 6 tháng mà lên gói lớn hơn: chỉ trả phần chênh sau khi trừ credit.',
+'Gia hạn hoặc đổi gói mọi lúc: bắt đầu một chu kỳ 1 năm mới tính từ hôm nay. Phần còn thừa của gói hiện tại được quy đổi thành tiền (credit) và trừ vào số phải trả, không mất phần chưa dùng. Ví dụ đang dùng gói nhỏ còn 6 tháng mà lên gói lớn hơn thì chỉ trả phần chênh sau khi trừ credit.',
       'Gia hạn: bấm nút “Gia hạn ngay” trên banner (hoặc “Xem gói & nâng cấp”) → hiện mã QR thanh toán; sau khi đối soát, Pro được kích hoạt và banner biến mất.',
     ],
     tips: [

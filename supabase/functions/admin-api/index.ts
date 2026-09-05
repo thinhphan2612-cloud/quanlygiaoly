@@ -79,7 +79,7 @@ async function sendProEmail(admin: any, parishId: string, opts: { expires?: stri
     const intro = isRenew
       ? `Giáo xứ <b>${pname}</b> đã được <b>gia hạn gói Pro</b> trên Giáo Lý Số:`
       : `Giáo xứ <b>${pname}</b> đã được kích hoạt <b>gói Pro</b> trên Giáo Lý Số:`;
-    const subject = isRenew ? `Gia hạn gói Pro thành công — ${pname}` : `Chào mừng ${pname} lên gói Pro — Giáo Lý Số`;
+    const subject = isRenew ? `Gia hạn gói Pro thành công: ${pname}` : `Chào mừng ${pname} lên gói Pro`;
     const html = `
       <div style="background:#f4f6fb;padding:28px 12px;font-family:Arial,Helvetica,sans-serif">
         <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden">

@@ -69,7 +69,7 @@ export default function PricingModal({ current = 'free', onClose }) {
         try {
           const rr = await api.get('/upgrade/code-remaining?code=' + encodeURIComponent(c));
           if (rr.data && rr.data.kind === 'pro_free' && rr.data.active) {
-            hint = 'Đây là mã nâng Pro miễn phí — bấm “← Quay lại” rồi nhập ở ô “🎁 Có mã khuyến mãi?”.';
+            hint = 'Đây là mã nâng Pro miễn phí. Bấm “← Quay lại” rồi nhập ở ô “🎁 Có mã khuyến mãi?”.';
           }
         } catch { /* bỏ qua */ }
         setCodeMsg(hint);

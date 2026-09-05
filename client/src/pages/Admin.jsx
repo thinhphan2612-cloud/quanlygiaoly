@@ -382,7 +382,7 @@ export default function Admin() {
       <div className="panel" id="sec-purge">
         <div className="card-head"><h2 style={{ margin: 0 }}>🗑 Dọn dữ liệu giáo xứ quá hạn ({overdue.length})</h2></div>
         <p className="muted" style={{ fontSize: 12, marginTop: 0 }}>
-          Giáo xứ gói Pro đã hết hạn <b>quá 30 ngày</b> — đủ điều kiện xóa dữ liệu theo chính sách. Duyệt từng giáo xứ rồi xóa thủ công (không tự động). Thao tác <b>không thể hoàn tác</b>.
+          Giáo xứ gói Pro đã hết hạn <b>quá 30 ngày</b>, đủ điều kiện xóa dữ liệu theo chính sách. Duyệt từng giáo xứ rồi xóa thủ công (không tự động). Thao tác <b>không thể hoàn tác</b>.
         </p>
         {overdue.length === 0 ? <p className="muted">Không có giáo xứ nào quá hạn trên 30 ngày.</p> : (
           <div style={{ overflowX: 'auto' }}>

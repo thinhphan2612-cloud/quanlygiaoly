@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
     const { data: par } = await admin.from('parishes').select('name, plan, plan_expires_at, plan_max_classes').eq('id', prof.parish_id).maybeSingle();
     if (!par || par.plan !== 'pro') return json({ ok: false, error: 'not-pro' }); // chỉ gửi khi đã lên Pro
 
-    await smtpSend(to, `Chào mừng ${par.name || 'giáo xứ'} lên gói Pro — Giáo Lý Số`,
+    await smtpSend(to, `Chào mừng ${par.name || 'giáo xứ'} lên gói Pro`,
       welcomeHtml(prof.full_name || 'Quý Cha / Quý Thầy Cô', par.name || 'Giáo xứ', par.plan_max_classes ?? null, par.plan_expires_at ?? null, gmailUser, appUrl));
     return json({ ok: true, sent_to: to });
   } catch (e) {

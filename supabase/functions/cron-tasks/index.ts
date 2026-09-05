@@ -51,7 +51,7 @@ function reminderHtml(pname: string, who: string, dateStr: string, days: number,
       <div style="padding:26px 30px;color:#1f2937;line-height:1.6">
         <h2 style="color:#b45309;margin:0 0 12px;font-size:20px">Gói Pro sắp hết hạn ⏰</h2>
         <p style="margin:0 0 12px">Kính gửi ${who},</p>
-        <p style="margin:0 0 14px">Gói <b>Pro</b> của giáo xứ <b>${pname}</b> sẽ hết hạn vào <b>${dateStr}</b> — còn <b>${days} ngày</b>.</p>
+        <p style="margin:0 0 14px">Gói <b>Pro</b> của giáo xứ <b>${pname}</b> sẽ hết hạn vào <b>${dateStr}</b>, còn <b>${days} ngày</b>.</p>
         <p style="margin:0 0 20px">Để không gián đoạn các tính năng Pro (chứng chỉ, thi online, điểm số &amp; thi đua, lưu trữ niên khóa…), xin gia hạn trước khi hết hạn. Vào ứng dụng mục <b>Xem gói &amp; nâng cấp</b> hoặc liên hệ để được hỗ trợ.</p>
         <p style="text-align:center;margin:0"><a href="${appUrl}" style="background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:10px;font-weight:600;display:inline-block">Gia hạn ngay</a></p>
       </div>
@@ -71,11 +71,11 @@ function expiredHtml(pname: string, who: string, expStr: string, purgeStr: strin
         <img src="${appUrl}/logo-full.png" alt="Giáo Lý Số" height="38" style="height:38px;display:inline-block" />
       </div>
       <div style="padding:26px 30px;color:#1f2937;line-height:1.6">
-        <h2 style="color:#b91c1c;margin:0 0 12px;font-size:20px">Gói Pro đã hết hạn — nguy cơ mất dữ liệu ⚠️</h2>
+        <h2 style="color:#b91c1c;margin:0 0 12px;font-size:20px">Gói Pro đã hết hạn, nguy cơ mất dữ liệu ⚠️</h2>
         <p style="margin:0 0 12px">Kính gửi ${who},</p>
         <p style="margin:0 0 14px">Gói <b>Pro</b> của giáo xứ <b>${pname}</b> đã hết hạn vào <b>${expStr}</b>. Ứng dụng đang tạm khóa cho tới khi gia hạn.</p>
         <p style="margin:0 0 14px;padding:12px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#991b1b">
-          Để bảo đảm an toàn, dữ liệu của giáo xứ sẽ được <b>xóa sau 30 ngày</b> kể từ ngày hết hạn — dự kiến từ <b>${purgeStr}</b> (còn <b>${daysToPurge} ngày</b>). Xin gia hạn, hoặc liên hệ hỗ trợ để sao lưu dữ liệu trước thời hạn.
+          Để bảo đảm an toàn, dữ liệu của giáo xứ sẽ được <b>xóa sau 30 ngày</b> kể từ ngày hết hạn, dự kiến từ <b>${purgeStr}</b> (còn <b>${daysToPurge} ngày</b>). Xin gia hạn hoặc liên hệ hỗ trợ để sao lưu dữ liệu trước thời hạn.
         </p>
         <p style="text-align:center;margin:0"><a href="${appUrl}" style="background:#b91c1c;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:10px;font-weight:600;display:inline-block">Gia hạn ngay</a></p>
       </div>
@@ -126,13 +126,13 @@ Deno.serve(async (req) => {
     const days = Math.ceil((exp.getTime() - now.getTime()) / 86400000);
     try {
       if (days > 0) {
-        await sendGmail(to, `Gói Pro sắp hết hạn (còn ${days} ngày) — ${p.name}`,
+        await sendGmail(to, `Gói Pro sắp hết hạn (còn ${days} ngày): ${p.name}`,
           reminderHtml(p.name || 'Giáo xứ', who, expStr, days, appUrl, gmailUser),
           `Gói Pro của ${p.name} sẽ hết hạn ngày ${expStr} (còn ${days} ngày). Xin gia hạn để không gián đoạn.`);
       } else {
         const daysToPurge = Math.max(0, 30 + days); // days <= 0
         const purgeStr = new Date(exp.getTime() + 30 * 86400000).toLocaleDateString('vi-VN');
-        await sendGmail(to, `Gói Pro đã hết hạn — dữ liệu sẽ bị xóa sau ${daysToPurge} ngày — ${p.name}`,
+        await sendGmail(to, `Gói Pro đã hết hạn, dữ liệu sẽ bị xóa sau ${daysToPurge} ngày: ${p.name}`,
           expiredHtml(p.name || 'Giáo xứ', who, expStr, purgeStr, daysToPurge, appUrl, gmailUser),
           `Gói Pro của ${p.name} đã hết hạn ngày ${expStr}. Dữ liệu sẽ bị xóa sau ${daysToPurge} ngày. Xin gia hạn hoặc sao lưu.`);
       }
