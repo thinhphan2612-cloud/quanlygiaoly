@@ -228,7 +228,7 @@ const GUIDE = [
     tags: 'thông báo chuông báo vắng gửi tin nhắn nhắc nhở tự động',
     summary: 'Gửi thông báo tới giáo lý viên và bật chuông báo vắng tự động. Chỉ quản trị dùng được.',
     steps: [
-      'Vào “Thông báo” để soạn và gửi thông báo tới các giáo lý viên trong giáo xứ.',
+      'Vào “Gửi thông báo” để soạn và gửi thông báo tới các giáo lý viên trong giáo xứ.',
       'Bật chuông báo vắng để hệ thống tự tạo thông báo khi có học viên vắng.',
       'Chuông ở góc trên phải hiển thị số thông báo chưa đọc cho mọi người.',
     ],

@@ -30,7 +30,7 @@ const nav = [
   { to: '/audit', label: 'Thu chi', Icon: IconMoney, proOnly: true },
   { to: '/archive', label: 'Lưu trữ', Icon: IconArchive, adminOnly: true, proOnly: true },
   { to: '/guide', label: 'Hướng dẫn sử dụng', Icon: IconGuide },
-  { to: '/notify', label: 'Thông báo', Icon: IconBell, adminOnly: true, proOnly: true },
+  { to: '/notify', label: 'Gửi thông báo', Icon: IconBell, adminOnly: true, proOnly: true },
   { to: '/admin', label: 'Quản trị hệ thống', Icon: IconMoney, superOnly: true },
 ];
 
