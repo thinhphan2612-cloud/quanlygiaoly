@@ -91,6 +91,12 @@ export default function Login({ initialMode = 'login' }) {
           </div>
         )}
 
+        {isReset && (
+          <p className="muted" style={{ margin: '4px 0 0', fontSize: 12.5, lineHeight: 1.5 }}>
+            Nhập email của tài khoản để nhận link đặt lại mật khẩu. Nếu bạn là giáo lý viên và tài khoản do giáo xứ cấp, hãy liên hệ quản trị viên (ban giáo lý) của giáo xứ để được cấp lại mật khẩu.
+          </p>
+        )}
+
         {!isReset && !isReg && (
           <p style={{ textAlign: 'right', margin: '2px 0 0', fontSize: 13 }}>
             <a href="#" onClick={(e) => { e.preventDefault(); setError(''); setInfo(''); setMode('reset'); }} style={{ color: 'var(--primary)', fontWeight: 600 }}>Quên mật khẩu?</a>
