@@ -10,6 +10,9 @@ export default function Teachers() {
   const [modal, setModal] = useState(null); // {mode:'create'} | {mode:'edit', ...profile}
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [pwd, setPwd] = useState('');
+  const [pwdBusy, setPwdBusy] = useState(false);
+  const [pwdMsg, setPwdMsg] = useState('');
 
   function load() { api.get('/auth/users').then((r) => setUsers(r.data)); }
   useEffect(() => { if (user?.role === 'admin') load(); }, [user]);
@@ -17,7 +20,7 @@ export default function Teachers() {
   if (user?.role !== 'admin') return <div className="muted">Chỉ quản trị viên được quản lý tài khoản.</div>;
 
   function openCreate() { setError(''); setModal({ mode: 'create', ...emptyCreate }); }
-  function openEdit(u) { setError(''); setModal({ mode: 'edit', ...u }); }
+  function openEdit(u) { setError(''); setPwd(''); setPwdMsg(''); setModal({ mode: 'edit', ...u }); }
   const set = (k) => (e) => setModal({ ...modal, [k]: e.target.value });
 
   async function save() {
@@ -33,6 +36,17 @@ export default function Teachers() {
     } catch (err) {
       setError(err.response?.data?.error || 'Lưu thất bại');
     } finally { setSaving(false); }
+  }
+
+  async function resetPwd() {
+    if (pwd.length < 6) { setPwdMsg('Mật khẩu tối thiểu 6 ký tự'); return; }
+    setPwdBusy(true); setPwdMsg('');
+    try {
+      await api.post(`/auth/users/${modal.id}/password`, { password: pwd });
+      setPwd(''); setPwdMsg('Đã cấp mật khẩu mới ✓');
+    } catch (err) {
+      setPwdMsg(err.response?.data?.error || 'Cấp lại mật khẩu thất bại');
+    } finally { setPwdBusy(false); }
   }
 
   async function remove(u) {
@@ -114,6 +128,15 @@ export default function Teachers() {
               <div className="field"><label>Địa chỉ</label><input value={modal.address || ''} onChange={set('address')} /></div>
             </div>
             <p className="muted" style={{ fontSize: 12 }}>Lớp phụ trách được phân công ở trang "Lớp học".</p>
+            <div style={{ borderTop: '1px solid #eee', paddingTop: 12, marginTop: 8 }}>
+              <label style={{ fontWeight: 600, fontSize: 13 }}>Cấp lại mật khẩu đăng nhập</label>
+              <p className="muted" style={{ margin: '2px 0 8px', fontSize: 12 }}>Đặt mật khẩu mới cho giáo lý viên này rồi báo lại cho họ. Mật khẩu cũ sẽ không dùng được nữa.</p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input type="text" value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="Mật khẩu mới (tối thiểu 6 ký tự)" style={{ flex: 1 }} />
+                <button className="btn ghost" type="button" onClick={resetPwd} disabled={pwdBusy || !pwd}>{pwdBusy ? 'Đang đặt...' : 'Cấp lại'}</button>
+              </div>
+              {pwdMsg && <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>{pwdMsg}</div>}
+            </div>
             {error && <div className="error">{error}</div>}
             <div className="modal-actions">
               <button className="btn ghost" onClick={() => setModal(null)}>Hủy</button>

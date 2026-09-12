@@ -236,6 +236,17 @@ async function handle(method, rawUrl, body = {}) {
       if (data?.error) return fail(400, data.error);
       return ok(data);
     }
+    if (seg[0] === 'auth' && seg[1] === 'users' && seg[2] && seg[3] === 'password' && method === 'post') {
+      if (!body.password) return fail(400, 'Cần mật khẩu mới');
+      const { data, error } = await supabase.functions.invoke('create-teacher', { body: { action: 'reset-password', user_id: seg[2], password: body.password } });
+      if (error) {
+        let msg = 'Cấp lại mật khẩu thất bại';
+        try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch { /* noop */ }
+        return fail(400, msg);
+      }
+      if (data?.error) return fail(400, data.error);
+      return ok(data);
+    }
     if (seg[0] === 'auth' && seg[1] === 'users' && seg[2] && method === 'put') {
       const patch = {};
       for (const k of ['full_name', 'saint_name', 'birth_date', 'address', 'area', 'glv_level', 'occupation', 'phone'])

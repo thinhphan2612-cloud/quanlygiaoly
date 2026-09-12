@@ -35,7 +35,21 @@ Deno.serve(async (req) => {
       return json({ error: 'Chỉ quản trị viên được tạo tài khoản' }, 403);
     }
 
-    const { email, password, full_name, role: reqRole } = await req.json();
+    const body = await req.json();
+
+    // Cấp lại mật khẩu cho một tài khoản trong CÙNG giáo xứ của admin.
+    if (body.action === 'reset-password') {
+      const { user_id, password } = body;
+      if (!user_id || !password) return json({ error: 'Cần user_id và mật khẩu' }, 400);
+      if (String(password).length < 6) return json({ error: 'Mật khẩu tối thiểu 6 ký tự' }, 400);
+      const { data: target } = await admin.from('profiles').select('parish_id').eq('id', user_id).maybeSingle();
+      if (!target || target.parish_id !== caller.parish_id) return json({ error: 'Không có quyền với tài khoản này' }, 403);
+      const { error: rerr } = await admin.auth.admin.updateUserById(user_id, { password });
+      if (rerr) return json({ error: rerr.message }, 400);
+      return json({ ok: true });
+    }
+
+    const { email, password, full_name, role: reqRole } = body;
     const role = reqRole === 'admin' ? 'admin' : 'teacher';
     if (!email || !password) return json({ error: 'Cần email và mật khẩu' }, 400);
     if (String(password).length < 6) return json({ error: 'Mật khẩu tối thiểu 6 ký tự' }, 400);
@@ -51,7 +65,12 @@ Deno.serve(async (req) => {
       email, password, email_confirm: true,
       user_metadata: { full_name: full_name || '', parish_id: caller.parish_id, role },
     });
-    if (cerr) return json({ error: cerr.message }, 400);
+    if (cerr) {
+      const m = (cerr.message || '').toLowerCase();
+      if ((cerr as { code?: string }).code === 'email_exists' || /already|registered|exist/.test(m))
+        return json({ error: 'Email này đã được dùng cho một tài khoản khác. Vui lòng dùng email khác.' }, 400);
+      return json({ error: cerr.message }, 400);
+    }
 
     // Tạo profile trực tiếp với parish_id đã xác thực
     const { error: perr } = await admin.from('profiles').insert({
