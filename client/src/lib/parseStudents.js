@@ -27,7 +27,7 @@ export function normalizeDate(raw) {
 }
 
 // Khai báo cột theo thứ tự. t: 'date'|'gender' -> chuẩn hóa. Còn lại lưu thẳng vào key.
-const FIELDS = [
+export const FIELDS = [
   { h: 'Tên thánh', k: 'saint_name' },
   { h: 'Họ và tên', k: 'full_name' },
   { h: 'Ngày sinh (dd/mm/yyyy)', k: 'birth_date', t: 'date' },

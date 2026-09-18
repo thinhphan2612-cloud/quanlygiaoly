@@ -9,6 +9,8 @@ import { SACRAMENTS, CERT_SUGGESTIONS } from '../components/SacramentBadge.jsx';
 import StudentForm from '../components/StudentForm.jsx';
 import Avatar from '../components/Avatar.jsx';
 import { byViName } from '../lib/viName';
+import { exportXlsx, exportSubtitle, fileSlug, STT_COL } from '../lib/exportUtils';
+import { FIELDS } from '../lib/parseStudents';
 
 const empty = {
   mode: 'new', name: '', year: '', room: '', schedule: '', promotes: true, kind: 'catechism', is_graduation: false, teachers: [],
@@ -52,6 +54,7 @@ export default function Classes() {
   const [orderList, setOrderList] = useState(null); // modal sắp xếp thứ tự
   const [sac, setSac] = useState(null); // modal ghi bí tích/chứng chỉ cả lớp
   const [detail, setDetail] = useState(null); // { cls, students, picked }
+  const [sortAbc, setSortAbc] = useState(false); // sắp danh sách HV theo tên A→Z
   const [stEdit, setStEdit] = useState(null); // sửa 1 học viên
   const [mv, setMv] = useState(null); // chuyển lớp: { ids, dest }
   const [hist, setHist] = useState(null); // lịch sử lớp: { cls, rows }
@@ -297,6 +300,22 @@ export default function Classes() {
   const dAll = detail?.students && detail.students.length > 0 && detail.students.every((s) => detail.picked.includes(s.id));
   const dToggleAll = () => setDetail({ ...detail, picked: dAll ? [] : detail.students.map((s) => s.id) });
   const dTogglePick = (id) => setDetail({ ...detail, picked: detail.picked.includes(id) ? detail.picked.filter((x) => x !== id) : [...detail.picked, id] });
+  // Danh sách hiển thị: giữ nguyên thứ tự, hoặc sắp theo tên (A→Z kiểu Việt) khi bật.
+  const dStudents = detail?.students ? (sortAbc ? [...detail.students].sort((a, b) => byViName(a, b)) : detail.students) : null;
+
+  function exportClassXlsx() {
+    const cls = detail.cls;
+    const list = dStudents || [];
+    exportXlsx({
+      filename: `danh-sach-${fileSlug(cls.name) || 'lop'}.xlsx`,
+      sheetName: (cls.name || 'Lớp').slice(0, 31),
+      title: 'DANH SÁCH HỌC VIÊN',
+      subtitle: exportSubtitle({ parish, cls: { name: cls.name, year: cls.year, teacher_name: cls.teacher_name } }),
+      columns: [STT_COL, ...FIELDS.map((f) => ({ label: f.h, get: (s) => s[f.k] ?? '' }))],
+      rows: list,
+      summary: `Tổng số học viên: ${list.length}`,
+    });
+  }
   async function removeStudent(s) { if (!confirm(`Xóa học viên "${s.full_name}"?`)) return; await api.delete(`/students/${s.id}`); reloadDetail(); }
   async function saveStudent() {
     try { await api.put(`/students/${stEdit.id}`, stEdit); setStEdit(null); reloadDetail(); }
@@ -420,6 +439,8 @@ export default function Classes() {
           <div className="card-head">
             <h2>Danh sách lớp {detail.cls.name} {detail.cls.merged && <span className="tag-chip merged">● lớp gộp</span>}</h2>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <button className="btn ghost sm" onClick={() => setSortAbc((v) => !v)}>{sortAbc ? '✓ Đang xếp A→Z (theo tên)' : '↕ Sắp xếp A→Z'}</button>
+              <button className="btn ghost sm" onClick={exportClassXlsx} disabled={!detail.students?.length}>⬇ Xuất Excel</button>
               <button className="btn ghost sm" onClick={() => openHist(detail.cls)}>📈 Lịch sử lớp</button>
               <span className="link" onClick={() => setDetail(null)}>Đóng ✕</span>
             </div>
@@ -440,7 +461,7 @@ export default function Classes() {
                   <th>Tên thánh</th><th>Họ tên</th><th>Chức vụ</th><th>Ngày sinh</th><th>SĐT phụ huynh</th><th></th>
                 </tr></thead>
                 <tbody>
-                  {detail.students.map((s) => (
+                  {dStudents.map((s) => (
                     <tr key={s.id}>
                       <td><input type="checkbox" checked={detail.picked.includes(s.id)} onChange={() => dTogglePick(s.id)} /></td>
                       <td>{s.saint_name || '—'}</td>
