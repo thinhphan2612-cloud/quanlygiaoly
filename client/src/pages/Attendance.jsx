@@ -411,29 +411,25 @@ function ReportModal({ classId, cls, parish, defaultRange, onClose }) {
     try {
       const className = cls?.name || '';
       const kyBaoCao = `Kỳ báo cáo: ${ddmy(from)} - ${ddmy(to)}`;
-      const sheets = [];
-      const sections = [];
-      let anyRows = false;
+      const lead = [
+        STT_COL,
+        { label: 'Tên thánh', get: (r) => r.saint_name || '', width: 14 },
+        { label: 'Họ và tên', get: (r) => r.full_name, width: 22 },
+      ];
 
+      let gl = null, tl = null;
       if (wantGL) {
         const { data } = await api.get(`/attendance-range?class_id=${classId}&from=${from}&to=${to}`);
-        const columns = [
-          STT_COL,
-          { label: 'Tên thánh', get: (r) => r.saint_name || '', width: 14 },
-          { label: 'Họ và tên', get: (r) => r.full_name, width: 22 },
-          ...data.dates.map((d) => ({ label: ddmm(d), get: (r) => GLCODE[r.byDate[d]] || '', width: 6 })),
-          { label: 'Có mặt', get: (r) => r.present, width: 8 },
-          { label: 'Trễ', get: (r) => r.late, width: 6 },
-          { label: 'Vắng KP', get: (r) => r.absent, width: 8 },
-          { label: 'Vắng CP', get: (r) => r.excused, width: 8 },
-          { label: 'Tỷ lệ đi học', get: (r) => { const c = r.present + r.late + r.absent; return c ? Math.round((100 * r.present) / c) + '%' : '—'; }, width: 12 },
+        const cols = [
+          ...data.dates.map((d) => ({ label: ddmm(d), get: (r) => GLCODE[r.byDate?.[d]] || '', width: 6 })),
+          { label: 'Có mặt', get: (r) => r.present ?? 0, width: 8 },
+          { label: 'Trễ', get: (r) => r.late ?? 0, width: 6 },
+          { label: 'Vắng KP', get: (r) => r.absent ?? 0, width: 8 },
+          { label: 'Vắng CP', get: (r) => r.excused ?? 0, width: 8 },
+          { label: 'Tỷ lệ đi học', get: (r) => { const c = (r.present || 0) + (r.late || 0) + (r.absent || 0); return c ? Math.round((100 * (r.present || 0)) / c) + '%' : '—'; }, width: 12 },
         ];
-        const subtitle = exportSubtitle({ parish, cls, extra: [kyBaoCao, `Số buổi đã điểm danh: ${data.dates.length}`, 'Chú thích: + Có mặt, T Trễ, V Vắng không phép, P Vắng có phép'] });
-        if (data.students.length) anyRows = true;
-        sheets.push({ name: 'Giáo lý', title: 'BÁO CÁO ĐIỂM DANH GIÁO LÝ', subtitle, columns, rows: data.students });
-        sections.push({ heading: 'Điểm danh Giáo lý', subtitle, columns, rows: data.students });
+        gl = { data, cols, extra: [`Số buổi đã điểm danh: ${data.dates.length}`, 'Chú thích: + Có mặt, T Trễ, V Vắng không phép, P Vắng có phép'] };
       }
-
       if (wantTL) {
         const [tRes, dRes] = await Promise.all([
           api.get('/spiritual-tasks'),
@@ -442,25 +438,46 @@ function ReportModal({ classId, cls, parish, defaultRange, onClose }) {
         const tasks = tRes.data;
         const data = dRes.data;
         const totalPossible = data.dates.length * tasks.length;
-        const doneOf = (r) => tasks.reduce((a, t) => a + (r.counts[t.id] || 0), 0);
-        const columns = [
-          STT_COL,
-          { label: 'Tên thánh', get: (r) => r.saint_name || '', width: 14 },
-          { label: 'Họ và tên', get: (r) => r.full_name, width: 22 },
-          ...tasks.map((t) => ({ label: t.name, get: (r) => r.counts[t.id] || 0, width: 10 })),
-          { label: 'Tổng đã làm', get: (r) => doneOf(r), width: 10 },
-          { label: 'Tỷ lệ', get: (r) => (totalPossible ? Math.round((100 * doneOf(r)) / totalPossible) + '%' : '—'), width: 8 },
+        const doneOf = (r) => tasks.reduce((a, t) => a + (r.counts?.[t.id] || 0), 0);
+        const cols = [
+          ...tasks.map((t) => ({ label: t.name, get: (r) => r.counts?.[t.id] || 0, width: 10 })),
+          { label: 'Tổng TThL', get: (r) => doneOf(r), width: 10 },
+          { label: 'Tỷ lệ TThL', get: (r) => (totalPossible ? Math.round((100 * doneOf(r)) / totalPossible) + '%' : '—'), width: 10 },
         ];
-        const subtitle = exportSubtitle({ parish, cls, extra: [kyBaoCao, `Số ngày ghi nhận: ${data.dates.length}`, `Số việc thiêng liêng: ${tasks.length}`] });
-        if (data.students.length) anyRows = true;
-        sheets.push({ name: 'Việc thiêng liêng', title: 'BÁO CÁO VIỆC THIÊNG LIÊNG', subtitle, columns, rows: data.students });
-        sections.push({ heading: 'Việc Thiêng liêng', subtitle, columns, rows: data.students });
+        tl = { data, cols, extra: [`Số ngày ghi nhận việc thiêng liêng: ${data.dates.length}`, `Số việc thiêng liêng: ${tasks.length}`] };
       }
 
-      if (!anyRows) { setErr('Lớp chưa có học viên để xuất.'); setBusy(false); return; }
+      const glRows = gl?.data.students || [];
+      const tlRows = tl?.data.students || [];
+      if (!glRows.length && !tlRows.length) { setErr('Lớp chưa có học viên để xuất.'); setBusy(false); return; }
+
+      const subOf = (parts) => exportSubtitle({ parish, cls, extra: [kyBaoCao, ...parts] });
       const fname = `bao-cao-${fileSlug(className) || 'lop'}-${from}_${to}`;
-      if (kind === 'xlsx') exportXlsxMulti({ filename: `${fname}.xlsx`, sheets });
-      else exportPdfMulti({ title: 'BÁO CÁO ĐIỂM DANH', sections });
+
+      if (kind === 'xlsx') {
+        let sheet;
+        if (gl && tl) {
+          // Gộp Giáo lý + Việc Thiêng liêng vào MỘT bảng: mỗi học viên một dòng đủ thông tin.
+          const byId = {};
+          glRows.forEach((s) => { byId[s.id] = { ...s, counts: {} }; });
+          tlRows.forEach((s) => {
+            byId[s.id] = { ...(byId[s.id] || { id: s.id, saint_name: s.saint_name, full_name: s.full_name, byDate: {}, present: 0, late: 0, absent: 0, excused: 0 }), counts: s.counts };
+          });
+          const order = glRows.length ? glRows : tlRows;
+          const rows = order.map((s) => byId[s.id]);
+          sheet = { name: 'Báo cáo', title: 'BÁO CÁO ĐIỂM DANH GIÁO LÝ & VIỆC THIÊNG LIÊNG', subtitle: subOf([...gl.extra, ...tl.extra]), columns: [...lead, ...gl.cols, ...tl.cols], rows };
+        } else if (gl) {
+          sheet = { name: 'Giáo lý', title: 'BÁO CÁO ĐIỂM DANH GIÁO LÝ', subtitle: subOf(gl.extra), columns: [...lead, ...gl.cols], rows: glRows };
+        } else {
+          sheet = { name: 'Việc thiêng liêng', title: 'BÁO CÁO VIỆC THIÊNG LIÊNG', subtitle: subOf(tl.extra), columns: [...lead, ...tl.cols], rows: tlRows };
+        }
+        exportXlsxMulti({ filename: `${fname}.xlsx`, sheets: [sheet] });
+      } else {
+        const sections = [];
+        if (gl) sections.push({ heading: 'Điểm danh Giáo lý', subtitle: subOf(gl.extra), columns: [...lead, ...gl.cols], rows: glRows });
+        if (tl) sections.push({ heading: 'Việc Thiêng liêng', subtitle: subOf(tl.extra), columns: [...lead, ...tl.cols], rows: tlRows });
+        exportPdfMulti({ title: 'BÁO CÁO ĐIỂM DANH', sections });
+      }
       onClose();
     } catch (e) {
       setErr(e.response?.data?.error || 'Xuất báo cáo thất bại');
@@ -482,7 +499,7 @@ function ReportModal({ classId, cls, parish, defaultRange, onClose }) {
           <label className="fp-chk"><input type="checkbox" checked={wantGL} onChange={(e) => setWantGL(e.target.checked)} /><span>Giáo lý (đi học)</span></label>
           <label className="fp-chk"><input type="checkbox" checked={wantTL} onChange={(e) => setWantTL(e.target.checked)} /><span>Việc Thiêng liêng</span></label>
         </div>
-        <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>Chọn cả hai để gộp vào một file (Excel tách 2 sheet, PDF tách 2 mục).</p>
+        <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>Chọn cả hai: Excel gộp chung một bảng (mỗi học viên một dòng đủ thông tin), PDF tách 2 mục.</p>
         {err && <div className="error">{err}</div>}
         <div className="modal-actions">
           <button className="btn ghost" onClick={onClose}>Hủy</button>
