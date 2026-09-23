@@ -101,6 +101,54 @@ export function exportPdf({ title, subtitle, columns, rows, totalsRow, summary, 
   }, 300);
 }
 
+// Xuất PDF nhiều mục vào MỘT bản in (dùng cho báo cáo tổng hợp nhiều bảng).
+// sections = [{ heading, subtitle, columns, rows, align }]
+export function exportPdfMulti({ title, sections, summary }) {
+  const now = new Date().toLocaleDateString('vi-VN');
+  const secHtml = (sections || []).map((s) => {
+    const align = s.align === 'center' ? 'center' : 'left';
+    const thead = '<tr>' + s.columns.map((c) => `<th>${esc(c.label)}</th>`).join('') + '</tr>';
+    const tbody = s.rows
+      .map((r, i) => '<tr>' + s.columns.map((c) => `<td style="text-align:${align}">${esc(c.get(r, i))}</td>`).join('') + '</tr>')
+      .join('');
+    return `<section class="sec">
+      ${s.heading ? `<h2>${esc(s.heading)}</h2>` : ''}
+      ${subLines(s.subtitle).length ? `<div class="sub">${subLines(s.subtitle).map(esc).join('<br>')}</div>` : ''}
+      <table><thead>${thead}</thead><tbody>${tbody}</tbody></table>
+    </section>`;
+  }).join('');
+  const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${esc(title)}</title>
+    <style>
+      body { font-family: 'Times New Roman', serif; color: #111; padding: 24px; }
+      h1 { font-size: 18px; text-align: center; margin: 0 0 14px; text-transform: uppercase; }
+      h2 { font-size: 15px; margin: 18px 0 4px; }
+      .sec { page-break-inside: auto; }
+      .sub { color: #444; font-size: 12px; margin-bottom: 8px; }
+      table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
+      th, td { border: 1px solid #333; padding: 4px 6px; vertical-align: top; }
+      th { background: #eee; font-weight: 700; text-align: center; }
+      .summary { margin-top: 8px; font-size: 13px; font-weight: 700; text-align: center; }
+      .foot { margin-top: 14px; font-size: 11px; color: #666; text-align: right; }
+      @media print { body { padding: 0; } }
+    </style></head><body>
+      <h1>${esc(title)}</h1>
+      ${secHtml}
+      ${summary ? `<div class="summary">${esc(summary)}</div>` : ''}
+      <div class="foot">Xuất ngày ${now} · Quản lý Giáo lý</div>
+    </body></html>`;
+
+  const iframe = document.createElement('iframe');
+  Object.assign(iframe.style, { position: 'fixed', right: '0', bottom: '0', width: '0', height: '0', border: '0' });
+  document.body.appendChild(iframe);
+  const doc = iframe.contentWindow.document;
+  doc.open(); doc.write(html); doc.close();
+  setTimeout(() => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(() => document.body.removeChild(iframe), 1500);
+  }, 300);
+}
+
 // Dựng phần đầu bản xuất (dùng chung): giáo xứ, lớp + năm học, GV phụ trách, dòng thêm
 export function exportSubtitle({ parish, cls, extra = [] } = {}) {
   const lines = [];

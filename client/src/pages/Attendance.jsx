@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
-import { exportXlsx, exportPdf, STT_COL, ATT_LABEL, fileSlug, exportSubtitle } from '../lib/exportUtils';
+import { exportXlsx, exportPdf, exportXlsxMulti, exportPdfMulti, STT_COL, ATT_LABEL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 import Avatar from '../components/Avatar.jsx';
 
 // Ngày dạng YYYY-MM-DD theo giờ ĐỊA PHƯƠNG (không dùng toISOString vì lệch múi giờ).
@@ -54,6 +54,7 @@ export default function Attendance() {
   const [date, setDate] = useState(today());
   const [mode, setMode] = useState('day'); // day | week | month
   const [parish, setParish] = useState(null);
+  const [report, setReport] = useState(false); // modal xuất báo cáo tổng hợp
 
   useEffect(() => { api.get('/classes').then((r) => setClasses(r.data)); }, []);
   useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
@@ -82,7 +83,10 @@ export default function Attendance() {
           <button className={mode === 'week' ? 'on' : ''} onClick={() => setMode('week')}>Tuần</button>
           <button className={mode === 'month' ? 'on' : ''} onClick={() => setMode('month')}>Tháng</button>
         </div>
+        <button className="btn ghost" style={{ marginLeft: 'auto' }} disabled={!classId} onClick={() => setReport(true)}>⬇ Xuất báo cáo</button>
       </div>
+
+      {report && <ReportModal classId={classId} cls={cls} parish={parish} defaultRange={range || monthRange(date)} onClose={() => setReport(false)} />}
 
       {!classId ? (
         <div className="panel"><p className="muted">Hãy chọn lớp để điểm danh.</p></div>
@@ -384,6 +388,108 @@ function ThiengStats({ classId, range }) {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ---------------- XUẤT BÁO CÁO TỔNG HỢP (Giáo lý + Việc Thiêng liêng) ---------------- */
+const GLCODE = { present: '+', late: 'T', absent: 'V', excused: 'P' };
+const ddmy = (d) => d.split('-').reverse().join('/');
+
+function ReportModal({ classId, cls, parish, defaultRange, onClose }) {
+  const [from, setFrom] = useState(defaultRange.from);
+  const [to, setTo] = useState(defaultRange.to);
+  const [wantGL, setWantGL] = useState(true);
+  const [wantTL, setWantTL] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function buildAndExport(kind) {
+    if (!wantGL && !wantTL) { setErr('Hãy chọn ít nhất một loại báo cáo.'); return; }
+    if (from > to) { setErr('“Từ ngày” phải trước hoặc bằng “Đến ngày”.'); return; }
+    setBusy(true); setErr('');
+    try {
+      const className = cls?.name || '';
+      const kyBaoCao = `Kỳ báo cáo: ${ddmy(from)} - ${ddmy(to)}`;
+      const sheets = [];
+      const sections = [];
+      let anyRows = false;
+
+      if (wantGL) {
+        const { data } = await api.get(`/attendance-range?class_id=${classId}&from=${from}&to=${to}`);
+        const columns = [
+          STT_COL,
+          { label: 'Tên thánh', get: (r) => r.saint_name || '', width: 14 },
+          { label: 'Họ và tên', get: (r) => r.full_name, width: 22 },
+          ...data.dates.map((d) => ({ label: ddmm(d), get: (r) => GLCODE[r.byDate[d]] || '', width: 6 })),
+          { label: 'Có mặt', get: (r) => r.present, width: 8 },
+          { label: 'Trễ', get: (r) => r.late, width: 6 },
+          { label: 'Vắng KP', get: (r) => r.absent, width: 8 },
+          { label: 'Vắng CP', get: (r) => r.excused, width: 8 },
+          { label: 'Tỷ lệ đi học', get: (r) => { const c = r.present + r.late + r.absent; return c ? Math.round((100 * r.present) / c) + '%' : '—'; }, width: 12 },
+        ];
+        const subtitle = exportSubtitle({ parish, cls, extra: [kyBaoCao, `Số buổi đã điểm danh: ${data.dates.length}`, 'Chú thích: + Có mặt, T Trễ, V Vắng không phép, P Vắng có phép'] });
+        if (data.students.length) anyRows = true;
+        sheets.push({ name: 'Giáo lý', title: 'BÁO CÁO ĐIỂM DANH GIÁO LÝ', subtitle, columns, rows: data.students });
+        sections.push({ heading: 'Điểm danh Giáo lý', subtitle, columns, rows: data.students });
+      }
+
+      if (wantTL) {
+        const [tRes, dRes] = await Promise.all([
+          api.get('/spiritual-tasks'),
+          api.get(`/spiritual-range?class_id=${classId}&from=${from}&to=${to}`),
+        ]);
+        const tasks = tRes.data;
+        const data = dRes.data;
+        const totalPossible = data.dates.length * tasks.length;
+        const doneOf = (r) => tasks.reduce((a, t) => a + (r.counts[t.id] || 0), 0);
+        const columns = [
+          STT_COL,
+          { label: 'Tên thánh', get: (r) => r.saint_name || '', width: 14 },
+          { label: 'Họ và tên', get: (r) => r.full_name, width: 22 },
+          ...tasks.map((t) => ({ label: t.name, get: (r) => r.counts[t.id] || 0, width: 10 })),
+          { label: 'Tổng đã làm', get: (r) => doneOf(r), width: 10 },
+          { label: 'Tỷ lệ', get: (r) => (totalPossible ? Math.round((100 * doneOf(r)) / totalPossible) + '%' : '—'), width: 8 },
+        ];
+        const subtitle = exportSubtitle({ parish, cls, extra: [kyBaoCao, `Số ngày ghi nhận: ${data.dates.length}`, `Số việc thiêng liêng: ${tasks.length}`] });
+        if (data.students.length) anyRows = true;
+        sheets.push({ name: 'Việc thiêng liêng', title: 'BÁO CÁO VIỆC THIÊNG LIÊNG', subtitle, columns, rows: data.students });
+        sections.push({ heading: 'Việc Thiêng liêng', subtitle, columns, rows: data.students });
+      }
+
+      if (!anyRows) { setErr('Lớp chưa có học viên để xuất.'); setBusy(false); return; }
+      const fname = `bao-cao-${fileSlug(className) || 'lop'}-${from}_${to}`;
+      if (kind === 'xlsx') exportXlsxMulti({ filename: `${fname}.xlsx`, sheets });
+      else exportPdfMulti({ title: 'BÁO CÁO ĐIỂM DANH', sections });
+      onClose();
+    } catch (e) {
+      setErr(e.response?.data?.error || 'Xuất báo cáo thất bại');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h2>Xuất báo cáo điểm danh</h2>
+        <div className="row">
+          <div className="field"><label>Từ ngày</label><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+          <div className="field"><label>Đến ngày</label><input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+        </div>
+        <div className="field">
+          <label>Nội dung báo cáo</label>
+          <label className="fp-chk"><input type="checkbox" checked={wantGL} onChange={(e) => setWantGL(e.target.checked)} /><span>Giáo lý (đi học)</span></label>
+          <label className="fp-chk"><input type="checkbox" checked={wantTL} onChange={(e) => setWantTL(e.target.checked)} /><span>Việc Thiêng liêng</span></label>
+        </div>
+        <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>Chọn cả hai để gộp vào một file (Excel tách 2 sheet, PDF tách 2 mục).</p>
+        {err && <div className="error">{err}</div>}
+        <div className="modal-actions">
+          <button className="btn ghost" onClick={onClose}>Hủy</button>
+          <button className="btn ghost" disabled={busy} onClick={() => buildAndExport('pdf')}>🖨 PDF</button>
+          <button className="btn" disabled={busy} onClick={() => buildAndExport('xlsx')}>{busy ? 'Đang xuất...' : '⬇ Excel'}</button>
+        </div>
+      </div>
     </div>
   );
 }
