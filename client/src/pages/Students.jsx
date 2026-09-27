@@ -81,10 +81,7 @@ export default function Students() {
       setModal(null);
       load();
     } catch (err) {
-      const msg = err.response?.data?.error || 'Lưu thất bại';
-      setError(/row-level security|violates row-level/i.test(msg)
-        ? 'Không lưu được: giáo lý viên chỉ thêm hoặc sửa học viên trong lớp mình phụ trách. Hãy chọn đúng lớp của bạn.'
-        : msg);
+      setError(err.response?.data?.error || 'Lưu thất bại');
     }
   }
 

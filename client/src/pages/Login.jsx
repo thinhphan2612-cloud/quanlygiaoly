@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
 import { supabase } from '../supabase';
+import { viError } from '../lib/viError';
 
 export default function Login({ initialMode = 'login' }) {
   const { login, register, user } = useAuth();
@@ -36,7 +37,7 @@ export default function Login({ initialMode = 'login' }) {
         }
       }
     } catch (err) {
-      setError(err.message || 'Có lỗi xảy ra');
+      setError(viError(err.response?.data?.error || err.message));
     } finally {
       setLoading(false);
     }

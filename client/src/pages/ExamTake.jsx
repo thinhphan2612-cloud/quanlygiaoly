@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../supabase';
+import { viError } from '../lib/viError';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const lsKey = (code) => `exam:${code}`;
@@ -132,7 +133,7 @@ export default function ExamTake() {
       const att = { id: data, student_id: picked, name: st?.name || '' };
       localStorage.setItem(lsKey(code), JSON.stringify(att));
       setAttempt(att); loadExam();
-    } catch (e) { setErr(e.message || 'Không vào được phòng thi'); } finally { setJoining(false); }
+    } catch (e) { setErr(e.message ? viError(e.message) : 'Không vào được phòng thi'); } finally { setJoining(false); }
   }
 
   function pick(qid, orig) { setAnswers((a) => { const n = { ...a, [qid]: orig }; answersRef.current = n; return n; }); }
@@ -157,7 +158,7 @@ export default function ExamTake() {
       if (error) throw error;
       setScoreData(data); setSubmitted(true); localStorage.removeItem(lsKey(code));
       return data;
-    } catch (e) { submittingRef.current = false; if (!auto) alert(e.message || 'Nộp bài thất bại'); return null; }
+    } catch (e) { submittingRef.current = false; if (!auto) alert(e.message ? viError(e.message) : 'Nộp bài thất bại'); return null; }
   }
   async function loadReview() { const { data } = await supabase.rpc('exam_review', { p_attempt_id: attempt.id }); if (data && !data.error) setReview(data); }
 

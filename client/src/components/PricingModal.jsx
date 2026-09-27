@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import { PLANS, isPro } from '../lib/plans';
+import { viError } from '../lib/viError';
 import { useAuth } from '../auth.jsx';
 import { useParish } from '../parish.jsx';
 import { sendContactMessage } from '../lib/contact';
@@ -84,7 +85,7 @@ export default function PricingModal({ current = 'free', onClose }) {
     try {
       await sendContactMessage({ user, parish, message: msg, context: 'Nâng cấp: ' + (tier?.label || 'Giáo xứ lớn') });
       setSent(true);
-    } catch (e) { alert(e.message || 'Gửi thất bại'); }
+    } catch (e) { alert(viError(e.response?.data?.error || e.message)); }
     finally { setBusy(false); }
   }
 

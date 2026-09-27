@@ -3,12 +3,14 @@
 // Mỗi giáo xứ là 1 tenant; RLS ở Supabase tự lọc theo parish_id.
 import { supabase } from './supabase';
 import { byViName } from './lib/viName';
+import { viError } from './lib/viError';
 
 // sắp xếp danh sách học viên theo TÊN (từ cuối họ và tên)
 const sortStudents = (arr, f = 'full_name') => (arr || []).slice().sort((a, b) => byViName(a, b, f));
 
 const ok = (data) => Promise.resolve({ data });
-const fail = (status, error) => Promise.reject({ response: { status, data: { error } } });
+// Mọi lỗi trả về UI đều đi qua viError để thành tiếng Việt dễ hiểu (thông báo đã là tiếng Việt thì giữ nguyên).
+const fail = (status, error) => Promise.reject({ response: { status, data: { error: viError(error) } } });
 const round1 = (n) => Math.round(n * 10) / 10;
 // "2025-2026" -> "2026-2027"; "2025" -> "2026"; không parse được -> null
 function bumpYear(y) {

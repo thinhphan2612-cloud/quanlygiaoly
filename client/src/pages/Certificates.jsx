@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
+import { viError } from '../lib/viError';
 import { supabase } from '../supabase';
 import { printCert, certPageHtml, BUILTIN_FRAMES, CERT_ORIENT } from '../lib/certTemplates';
 import { fileToPngBlob } from '../lib/img';
@@ -146,7 +147,7 @@ export default function Certificates() {
       await loadFrames();
       setSelFrame(pub);
     } catch (e) {
-      alert('Tải khung thất bại: ' + (e.message || e) + '\n(Đã chạy migration cert_frames & tạo bucket "cert-frames" chưa?)');
+      alert('Tải khung thất bại: ' + viError(e.message || e) + '\n(Đã chạy migration cert_frames & tạo bucket "cert-frames" chưa?)');
     } finally { setFrameBusy(false); }
   }
   async function delFrame(f) {
@@ -156,7 +157,7 @@ export default function Certificates() {
       const p = (f.url || '').split('/cert-frames/')[1];
       if (p) await supabase.storage.from('cert-frames').remove([decodeURIComponent(p)]).catch(() => {});
       await loadFrames();
-    } catch (e) { alert('Không xoá được: ' + (e.message || e)); }
+    } catch (e) { alert('Không xoá được: ' + viError(e.message || e)); }
   }
 
   const [msg, setMsg] = useState('');

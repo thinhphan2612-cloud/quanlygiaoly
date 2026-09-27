@@ -9,6 +9,7 @@ import { isPro, planName } from '../lib/plans';
 import { isSuperAdmin } from '../lib/superadmin';
 import { sendContactMessage } from '../lib/contact';
 import { fileToDataUrl } from '../lib/img';
+import { viError } from '../lib/viError';
 import PricingModal from './PricingModal.jsx';
 import {
   IconHome, IconStudents, IconClass, IconCheck, IconGrades,
@@ -341,7 +342,7 @@ function FeedbackModal({ user, parish, onClose }) {
     try {
       await sendContactMessage({ user, parish, message: msg, context: 'Góp ý' });
       setSent(true);
-    } catch (e) { alert(e.message || 'Gửi thất bại'); }
+    } catch (e) { alert(viError(e.response?.data?.error || e.message)); }
     finally { setBusy(false); }
   }
 
@@ -393,7 +394,7 @@ function ChangePasswordModal({ email, onClose }) {
       setMsg('Đã đổi mật khẩu thành công.');
       setCur(''); setPw(''); setPw2('');
     } catch (e3) {
-      setErr(e3.message || 'Đổi mật khẩu thất bại');
+      setErr(viError(e3.response?.data?.error || e3.message));
     } finally {
       setLoading(false);
     }

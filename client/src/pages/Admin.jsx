@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import api from '../api';
+import { viError } from '../lib/viError';
 import { useAuth } from '../auth.jsx';
 import { isSuperAdmin } from '../lib/superadmin';
 import { supabase } from '../supabase';
@@ -744,7 +745,7 @@ function LoadMonitor() {
       const { data, error } = await supabase.rpc('load_stats');
       const ms = Math.round(performance.now() - t0);
       if (!live) return;
-      if (error) { setErr(error.message || 'Không đọc được chỉ số'); }
+      if (error) { setErr(error.message ? viError(error.message) : 'Không đọc được chỉ số'); }
       else { setErr(''); setS(data); setLat(ms); }
     };
     tick();
@@ -892,7 +893,7 @@ function DefaultGamesManager() {
       document.getElementById('dg-file') && (document.getElementById('dg-file').value = '');
       document.getElementById('dg-thumb') && (document.getElementById('dg-thumb').value = '');
       load();
-    } catch (e) { setBusy(''); setErr(e.message || 'Tải lên thất bại'); }
+    } catch (e) { setBusy(''); setErr(e.message ? viError(e.message) : 'Tải lên thất bại'); }
   }
 
   async function del(g) {

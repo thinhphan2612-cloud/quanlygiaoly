@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../supabase';
+import { viError } from '../lib/viError';
 
 // Trang đặt mật khẩu khi người dùng bấm link mời / đặt lại mật khẩu trong email.
 // Link mời tạo sẵn phiên đăng nhập -> ở đây bắt buộc đặt mật khẩu rồi đăng nhập lại.
@@ -23,7 +24,7 @@ export default function SetPassword() {
       setDone(true);
       setTimeout(() => window.location.replace('/login'), 1600);
     } catch (e2) {
-      setErr(e2.message || 'Không đặt được mật khẩu. Link có thể đã hết hạn, vui lòng yêu cầu gửi lại.');
+      setErr(e2?.message ? viError(e2.message) : 'Không đặt được mật khẩu. Link có thể đã hết hạn, vui lòng yêu cầu gửi lại.');
       setLoading(false);
     }
   }
