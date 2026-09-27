@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useRealtime } from '../realtime.jsx';
+import { useAuth } from '../auth.jsx';
 import BulkImport from '../components/BulkImport.jsx';
 import SacramentBadge from '../components/SacramentBadge.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -41,6 +42,8 @@ const defaultFilter = { classes: [], sacrament: '', sortBy: 'name' };
 
 export default function Students() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isTeacher = user?.role === 'teacher';
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [stats, setStats] = useState({});
@@ -62,18 +65,26 @@ export default function Students() {
   const rev = useRealtime(['students', 'classes', 'grades', 'attendance']);
   useEffect(() => { if (rev) { load(); api.get('/classes').then((r) => setClasses(r.data)); } }, [rev]);
 
-  function openCreate() { setError(''); setModal({ ...empty }); }
+  // GLV chỉ thêm được vào lớp mình -> mặc định chọn sẵn lớp đầu tiên của họ.
+  function openCreate() { setError(''); setModal({ ...empty, class_id: isTeacher && classes.length ? classes[0].id : '' }); }
   function openEdit(s) { setError(''); setModal({ ...s, class_id: s.class_id || '' }); }
 
   async function save() {
     setError('');
+    if (isTeacher && !modal.class_id) {
+      setError('Vui lòng chọn lớp cho học viên. Giáo lý viên chỉ thêm hoặc sửa học viên trong lớp mình phụ trách.');
+      return;
+    }
     try {
       if (modal.id) await api.put(`/students/${modal.id}`, modal);
       else await api.post('/students', modal);
       setModal(null);
       load();
     } catch (err) {
-      setError(err.response?.data?.error || 'Lưu thất bại');
+      const msg = err.response?.data?.error || 'Lưu thất bại';
+      setError(/row-level security|violates row-level/i.test(msg)
+        ? 'Không lưu được: giáo lý viên chỉ thêm hoặc sửa học viên trong lớp mình phụ trách. Hãy chọn đúng lớp của bạn.'
+        : msg);
     }
   }
 
