@@ -7,9 +7,11 @@ import { RealtimeProvider } from './realtime.jsx';
 import { EntitlementsProvider } from './entitlements.jsx';
 import { ParishProvider } from './parish.jsx';
 import { applyTheme, loadTheme } from './theme.js';
+import { initPwa } from './lib/pwa';
 import './styles.css';
 
 applyTheme(loadTheme());
+initPwa();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

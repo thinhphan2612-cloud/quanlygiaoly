@@ -1,0 +1,17 @@
+{
+  "name": "Giáo Lý Số",
+  "short_name": "Giáo Lý Số",
+  "description": "Quản lý lớp giáo lý theo giáo xứ: điểm danh, điểm số, việc thiêng liêng, đề thi online.",
+  "lang": "vi",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    { "src": "/favicon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

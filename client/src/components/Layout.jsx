@@ -10,6 +10,8 @@ import { isSuperAdmin } from '../lib/superadmin';
 import { sendContactMessage } from '../lib/contact';
 import { fileToDataUrl } from '../lib/img';
 import { viError } from '../lib/viError';
+import { isStandalone } from '../lib/pwa';
+import InstallGuide from './InstallGuide.jsx';
 import PricingModal from './PricingModal.jsx';
 import {
   IconHome, IconStudents, IconClass, IconCheck, IconGrades,
@@ -59,6 +61,9 @@ export default function Layout({ children }) {
   const location = useLocation();
   const [navOpen, setNavOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [installOpen, setInstallOpen] = useState(false);
+  const [installBarHidden, setInstallBarHidden] = useState(() => { try { return localStorage.getItem('hideInstallBar') === '1'; } catch { return false; } });
+  const showInstallBar = !installBarHidden && !isStandalone();
   const [pricing, setPricing] = useState(false);
   const [promoOpen, setPromoOpen] = useState(true); // banner khuyến mãi: hiện mỗi lần tải trang (F5), tắt khi bấm X
   const [promoCopied, setPromoCopied] = useState(false);
@@ -260,6 +265,7 @@ export default function Layout({ children }) {
                       <button className="user-menu-item" onClick={() => navigate('/settings')}>⚙ Cài đặt quản lý</button>
                     )}
                     <button className="user-menu-item" onClick={() => { setMenuOpen(false); window.open('https://ephatastore.com', '_blank', 'noopener'); }}><IconStore /> <span style={{ flex: 1 }}>Đăng nhập Ephata Store</span><IconExt style={{ width: 15, height: 15, opacity: .6 }} /></button>
+                    <button className="user-menu-item" onClick={() => { setMenuOpen(false); setInstallOpen(true); }}>📲 Cài đặt ứng dụng</button>
                     <button className="user-menu-item" onClick={() => { setMenuOpen(false); setPwModal(true); }}>🔑 Đổi mật khẩu</button>
                     <button className="user-menu-item danger" onClick={handleLogout}><IconLogout /> Đăng xuất</button>
                   </div>
@@ -275,6 +281,14 @@ export default function Layout({ children }) {
           </div>
         )}
         <main className="content">
+          {showInstallBar && (
+            <div className="renew-bar" style={{ background: '#eff6ff', borderColor: '#bfdbfe', color: '#1e3a8a' }}>
+              <span className="rb-ic">📲</span>
+              <div className="rb-text">Cài <b>Giáo Lý Số</b> thành ứng dụng trên máy để mở nhanh như app riêng, không cần gõ lại đường link.</div>
+              <button className="btn sm" onClick={() => setInstallOpen(true)}>Xem cách cài</button>
+              <button className="rb-x" aria-label="Đóng" onClick={() => { setInstallBarHidden(true); try { localStorage.setItem('hideInstallBar', '1'); } catch { /* noop */ } }}>✕</button>
+            </div>
+          )}
           {expSoon && !renewBarClosed && !sa && (
             <div className="renew-bar">
               <span className="rb-ic">⏰</span>
@@ -291,6 +305,7 @@ export default function Layout({ children }) {
       </div>
 
       {pricing && <PricingModal current={plan} onClose={() => setPricing(false)} />}
+      {installOpen && <InstallGuide onClose={() => setInstallOpen(false)} />}
 
       {/* Khóa khi gói Pro đã hết hạn: chặn toàn ứng dụng cho tới khi gia hạn */}
       {expired && !sa && (

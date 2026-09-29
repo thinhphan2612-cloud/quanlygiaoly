@@ -354,7 +354,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
  <div class="container">
   <nav>
    <a href="#top" class="brand"><img class="brand-logo" src="/logo-full.png" alt="Giáo Lý Số" /></a>
-   <div class="navlinks"><a href="#services">Tính năng</a><a href="#projects">Vai trò</a><a href="#about">Giới thiệu</a><a href="#pricing">Bảng giá</a><a href="#cta">Liên hệ</a></div>
+   <div class="navlinks"><a href="#services">Tính năng</a><a href="#projects">Vai trò</a><a href="#about">Giới thiệu</a><a href="#pricing">Bảng giá</a><a href="#" onclick="openLp('mInstall');return false;">Cài ứng dụng</a><a href="#cta">Liên hệ</a></div>
    <div class="nav-cta">
     <a class="nav-login" href="#lienhe" onclick="openLp('mContact');return false;">Liên hệ</a>
     <a class="btn-dark" id="btnRegister" href="#dangky" onclick="openLp('mReg');return false;">Đăng ký</a>
@@ -600,6 +600,54 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
  </div>
 </div>
 
+<!-- Popup: Hướng dẫn cài ứng dụng -->
+<div class="lp-modal" id="mInstall" hidden>
+ <div class="lp-bd" onclick="closeLp('mInstall')"></div>
+ <div class="lp-card" style="max-width:580px;text-align:left">
+  <button class="lp-x" aria-label="Đóng" onclick="closeLp('mInstall')">&times;</button>
+  <h3>📲 Cài Giáo Lý Số thành ứng dụng</h3>
+  <p class="lp-desc">Cài một lần để mở nhanh như một app riêng trên điện thoại hoặc máy tính, không cần gõ lại đường link mỗi lần.</p>
+  <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:10px 12px;font-size:13px;color:#7c2d12;margin:0 0 14px;line-height:1.5">
+   ⚠ Hãy cài đúng địa chỉ <b>app.giaoly.com.vn</b> (có chữ <b>“app.”</b> phía trước). Đừng cài <b>giaoly.com.vn</b> — đây là trang giới thiệu, không phải ứng dụng.
+  </div>
+  <a href="https://app.giaoly.com.vn" target="_blank" rel="noopener" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;padding:11px 18px;font-size:14px;margin-bottom:16px">Mở app.giaoly.com.vn ↗</a>
+  <div style="font-size:14px;line-height:1.6;color:#26201a">
+   <p style="margin:10px 0 4px"><b>💻 Máy tính (Chrome hoặc Edge)</b></p>
+   <ol style="margin:0 0 12px;padding-left:20px">
+    <li>Mở trình duyệt và vào <b>app.giaoly.com.vn</b>.</li>
+    <li>Bấm biểu tượng <b>Cài đặt</b> (hình màn hình có mũi tên <b>⤓</b>) ở cuối thanh địa chỉ. Nếu không thấy: mở menu <b>⋮</b> → <b>Cài Giáo Lý Số</b>.</li>
+    <li>Bấm <b>Cài đặt</b>. App mở thành cửa sổ riêng, ghim được vào Taskbar/Dock.</li>
+   </ol>
+   <p style="margin:10px 0 4px"><b>🍎 iPhone / iPad (dùng Safari)</b></p>
+   <ol style="margin:0 0 12px;padding-left:20px">
+    <li>Mở <b>Safari</b> và vào <b>app.giaoly.com.vn</b> (không dùng được trên Chrome của iPhone).</li>
+    <li>Bấm nút <b>Chia sẻ</b> (ô vuông có mũi tên hướng lên <b>⬆</b>).</li>
+    <li>Chọn <b>Thêm vào MH chính</b> (Add to Home Screen), rồi bấm <b>Thêm</b>.</li>
+   </ol>
+   <p style="margin:10px 0 4px"><b>🤖 Android (dùng Chrome)</b></p>
+   <ol style="margin:0 0 4px;padding-left:20px">
+    <li>Mở <b>Chrome</b> và vào <b>app.giaoly.com.vn</b>.</li>
+    <li>Bấm menu <b>⋮</b> (góc phải trên).</li>
+    <li>Chọn <b>Cài đặt ứng dụng</b> hoặc <b>Thêm vào Màn hình chính</b>, rồi bấm <b>Cài đặt</b>.</li>
+   </ol>
+  </div>
+ </div>
+</div>
+
+<!-- Thông báo nổi: gợi ý cài ứng dụng -->
+<div id="installTip" style="position:fixed;left:16px;bottom:16px;z-index:900;max-width:330px;background:#1f2937;color:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 10px 34px rgba(0,0,0,.28);font-family:'Oswald',sans-serif;font-size:14px;line-height:1.5;display:none">
+ <div style="display:flex;gap:9px;align-items:flex-start">
+  <span style="font-size:20px;line-height:1">📲</span>
+  <div style="flex:1">
+   Cài <b>Giáo Lý Số</b> thành ứng dụng trên máy để mở nhanh như app riêng.
+   <div style="margin-top:9px;display:flex;gap:8px">
+    <button onclick="openLp('mInstall')" style="background:#2563eb;color:#fff;border:0;border-radius:8px;padding:7px 12px;font:inherit;cursor:pointer">Xem hướng dẫn</button>
+    <button onclick="dismissInstallTip()" style="background:transparent;color:#cbd5e1;border:0;font:inherit;cursor:pointer">Để sau</button>
+   </div>
+  </div>
+ </div>
+</div>
+
 <script>
 const APP='https://app.giaoly.com.vn';
 const FORM_KEY='93c36314-d9bf-48d7-bc43-3224e8180076'; /* Web3Forms access key -> gửi email tự động về support.giaolyso@gmail.com */
@@ -611,6 +659,8 @@ function saveLead(kind,d){try{fetch(SB_URL+'/rest/v1/leads',{method:'POST',heade
 function openLp(id){const m=document.getElementById(id);if(m){m.hidden=false;document.body.style.overflow='hidden';const i=m.querySelector('input');if(i)setTimeout(()=>i.focus(),50);}}
 function closeLp(id){const m=document.getElementById(id);if(m){m.hidden=true;document.body.style.overflow='';}}
 addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.lp-modal:not([hidden])').forEach(m=>closeLp(m.id));}});
+function dismissInstallTip(){var t=document.getElementById('installTip');if(t)t.style.display='none';try{localStorage.setItem('hideInstallTip','1');}catch(e){}}
+(function(){try{if(localStorage.getItem('hideInstallTip')==='1')return;}catch(e){}var t=document.getElementById('installTip');if(t)setTimeout(function(){t.style.display='block';},1500);})();
 
 document.querySelectorAll('.lp-card form').forEach(f=>{
  f.addEventListener('submit',async e=>{
