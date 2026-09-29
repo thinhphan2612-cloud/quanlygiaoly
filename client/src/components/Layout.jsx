@@ -265,7 +265,7 @@ export default function Layout({ children }) {
                       <button className="user-menu-item" onClick={() => navigate('/settings')}>⚙ Cài đặt quản lý</button>
                     )}
                     <button className="user-menu-item" onClick={() => { setMenuOpen(false); window.open('https://ephatastore.com', '_blank', 'noopener'); }}><IconStore /> <span style={{ flex: 1 }}>Đăng nhập Ephata Store</span><IconExt style={{ width: 15, height: 15, opacity: .6 }} /></button>
-                    <button className="user-menu-item" onClick={() => { setMenuOpen(false); setInstallOpen(true); }}>📲 Cài đặt ứng dụng</button>
+                    <button className="user-menu-item" onClick={() => { setMenuOpen(false); setInstallOpen(true); }}>Cài đặt ứng dụng</button>
                     <button className="user-menu-item" onClick={() => { setMenuOpen(false); setPwModal(true); }}>🔑 Đổi mật khẩu</button>
                     <button className="user-menu-item danger" onClick={handleLogout}><IconLogout /> Đăng xuất</button>
                   </div>
@@ -283,7 +283,6 @@ export default function Layout({ children }) {
         <main className="content">
           {showInstallBar && (
             <div className="renew-bar" style={{ background: '#eff6ff', borderColor: '#bfdbfe', color: '#1e3a8a' }}>
-              <span className="rb-ic">📲</span>
               <div className="rb-text">Cài <b>Giáo Lý Số</b> thành ứng dụng trên máy để mở nhanh như app riêng, không cần gõ lại đường link.</div>
               <button className="btn sm" onClick={() => setInstallOpen(true)}>Xem cách cài</button>
               <button className="rb-x" aria-label="Đóng" onClick={() => { setInstallBarHidden(true); try { localStorage.setItem('hideInstallBar', '1'); } catch { /* noop */ } }}>✕</button>

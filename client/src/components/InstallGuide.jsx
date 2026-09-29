@@ -5,32 +5,31 @@ const APP_URL = 'app.giaoly.com.vn';
 
 const STEPS = {
   desktop: {
-    label: '💻 Máy tính',
-    note: 'Dùng trình duyệt Chrome hoặc Microsoft Edge.',
+    label: 'Máy tính',
+    title: 'Trên máy tính (Chrome hoặc Edge)',
     steps: [
       <>Mở trình duyệt và vào đúng địa chỉ <b>{APP_URL}</b>.</>,
-      <>Nhìn cuối thanh địa chỉ (góc phải), bấm biểu tượng <b>Cài đặt</b> (hình màn hình nhỏ có mũi tên <b>⤓</b>).</>,
-      <>Nếu không thấy biểu tượng đó: mở menu <b>⋮</b> (ba chấm, góc phải trên) → chọn <b>Cài Giáo Lý Số</b> (hoặc “Install Giáo Lý Số”).</>,
-      <>Bấm <b>Cài đặt</b>. Ứng dụng sẽ mở thành một cửa sổ riêng và có thể ghim vào thanh Taskbar (Windows) hoặc Dock (Mac).</>,
+      <>Nhìn cuối thanh địa chỉ (góc phải), bấm nút <b>Cài đặt</b> (hình màn hình nhỏ có mũi tên xuống). Nếu không thấy: mở menu ba chấm dọc ở góc phải rồi chọn <b>Cài Giáo Lý Số</b>.</>,
+      <>Bấm <b>Cài đặt</b>. Ứng dụng mở thành cửa sổ riêng, ghim được vào thanh Taskbar (Windows) hoặc Dock (Mac).</>,
     ],
   },
   ios: {
-    label: '🍎 iPhone / iPad',
-    note: 'Bắt buộc dùng trình duyệt Safari (không dùng được trên Chrome của iPhone).',
+    label: 'iPhone / iPad',
+    title: 'Trên iPhone / iPad (dùng Safari)',
     steps: [
-      <>Mở <b>Safari</b> và vào đúng địa chỉ <b>{APP_URL}</b>.</>,
-      <>Bấm nút <b>Chia sẻ</b> (hình ô vuông có mũi tên hướng lên <b>⬆</b>) ở thanh công cụ.</>,
+      <>Mở <b>Safari</b> và vào đúng địa chỉ <b>{APP_URL}</b> (không dùng được trên Chrome của iPhone).</>,
+      <>Bấm nút <b>Chia sẻ</b> (ô vuông có mũi tên hướng lên) ở thanh công cụ.</>,
       <>Vuốt xuống và chọn <b>Thêm vào MH chính</b> (Add to Home Screen).</>,
       <>Bấm <b>Thêm</b> ở góc phải trên. Biểu tượng Giáo Lý Số sẽ nằm ở màn hình chính như một ứng dụng.</>,
     ],
   },
   android: {
-    label: '🤖 Android',
-    note: 'Dùng trình duyệt Chrome.',
+    label: 'Android',
+    title: 'Trên Android (dùng Chrome)',
     steps: [
       <>Mở <b>Chrome</b> và vào đúng địa chỉ <b>{APP_URL}</b>.</>,
-      <>Bấm menu <b>⋮</b> (ba chấm, góc phải trên).</>,
-      <>Chọn <b>Cài đặt ứng dụng</b> (Install app) hoặc <b>Thêm vào Màn hình chính</b> (Add to Home screen).</>,
+      <>Bấm menu ba chấm dọc ở góc phải trên.</>,
+      <>Chọn <b>Cài đặt ứng dụng</b> hoặc <b>Thêm vào Màn hình chính</b>.</>,
       <>Bấm <b>Cài đặt</b> (hoặc <b>Thêm</b>). Biểu tượng sẽ xuất hiện ở màn hình chính, mở ra chạy như một ứng dụng riêng.</>,
     ],
   },
@@ -54,13 +53,13 @@ export default function InstallGuide({ onClose }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
-        <h2 style={{ marginTop: 0 }}>📲 Cài Giáo Lý Số thành ứng dụng</h2>
+        <h2 style={{ marginTop: 0 }}>Cài Giáo Lý Số thành ứng dụng</h2>
         <p className="muted" style={{ marginTop: 0, fontSize: 13 }}>
           Cài một lần để mở nhanh như app riêng, không cần gõ lại đường link mỗi lần.
         </p>
 
         <div style={{ background: '#fff7ed', border: '1px solid #fdba74', borderRadius: 8, padding: '10px 12px', fontSize: 13, marginBottom: 14 }}>
-          ⚠ Hãy cài đúng địa chỉ <b>app.giaoly.com.vn</b> (có chữ <b>“app.”</b> phía trước).
+          <b>Lưu ý:</b> Hãy cài đúng địa chỉ <b>app.giaoly.com.vn</b> (có chữ <b>“app.”</b> phía trước).
           Đừng cài <b>giaoly.com.vn</b> vì đó là trang giới thiệu, không phải ứng dụng.
         </div>
 
@@ -70,16 +69,16 @@ export default function InstallGuide({ onClose }) {
           ))}
         </div>
 
-        <p className="muted" style={{ fontSize: 12.5, marginTop: 0 }}>{cur.note}</p>
-        <ol style={{ paddingLeft: 20, lineHeight: 1.7, fontSize: 14 }}>
+        <h3 style={{ margin: '4px 0 6px', fontSize: 15 }}>{cur.title}</h3>
+        <ol style={{ paddingLeft: 20, lineHeight: 1.7, fontSize: 14, marginTop: 0 }}>
           {cur.steps.map((s, i) => <li key={i} style={{ marginBottom: 4 }}>{s}</li>)}
         </ol>
 
         {showQuickInstall && (
           <div style={{ marginTop: 6 }}>
             {done
-              ? <div style={{ color: 'var(--success)', fontWeight: 600 }}>✓ Đã cài đặt. Hãy tìm biểu tượng Giáo Lý Số trên máy.</div>
-              : <button className="btn" onClick={quickInstall}>⬇ Cài đặt ngay</button>}
+              ? <div style={{ color: 'var(--success)', fontWeight: 600 }}>Đã cài đặt. Hãy tìm biểu tượng Giáo Lý Số trên máy.</div>
+              : <button className="btn" onClick={quickInstall}>Cài đặt ngay</button>}
             <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>Nếu nút không chạy, làm theo các bước ở trên.</p>
           </div>
         )}
