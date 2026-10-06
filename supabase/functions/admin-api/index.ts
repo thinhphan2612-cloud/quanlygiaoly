@@ -55,6 +55,106 @@ function json(body: unknown, status = 200) {
 const superEmails = (Deno.env.get('SUPERADMIN_EMAILS') || '')
   .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
 
+// ---- Chương trình TÂN THỦ: nâng giáo xứ mới lên Pro 12 tháng miễn phí + gửi email ----
+const APP_URL = Deno.env.get('APP_URL') || 'https://app.giaoly.com.vn';
+const TANTHU_LONG_DAYS = 150; // 'pro' còn > ngưỡng này coi như đã có gói dài -> bỏ qua
+const TANTHU_SUBJECT = 'Giáo xứ được tặng gói Pro 12 tháng miễn phí (chương trình Tân thủ)';
+function tierLabel(maxClasses: number | null): string {
+  if (maxClasses === 5) return 'Nhỏ (tối đa 5 lớp)';
+  if (maxClasses === 12) return 'Vừa (6 đến 12 lớp)';
+  if (maxClasses === 20) return 'Lớn (13 đến 20 lớp)';
+  if (maxClasses == null) return 'Rất lớn (trên 20 lớp)';
+  return `Tối đa ${maxClasses} lớp`;
+}
+const ddmy = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+function tanThuHtml(who: string, pname: string, tier: string, expiry: string, gmailUser: string) {
+  return `
+  <div style="background:#f4f6fb;padding:28px 12px;font-family:Arial,Helvetica,sans-serif">
+    <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden">
+      <div style="background:#2563eb;padding:20px 28px;text-align:center">
+        <img src="${APP_URL}/logo-full.png" alt="Giáo Lý Số" height="38" style="height:38px;display:inline-block" />
+      </div>
+      <div style="padding:26px 30px;color:#1f2937;line-height:1.6">
+        <h2 style="color:#2563eb;margin:0 0 12px;font-size:21px">Chào mừng giáo xứ: tặng Pro 12 tháng miễn phí</h2>
+        <p style="margin:0 0 12px">Kính gửi ${who},</p>
+        <p style="margin:0 0 14px">Tạ ơn Chúa và cảm ơn giáo xứ đã đăng ký dùng <b>Giáo Lý Số</b>. Theo <b>chương trình Tân thủ</b> dành cho giáo xứ mới, giáo xứ <b>${pname}</b> được <b>tặng gói Pro, hoàn toàn miễn phí trong 12 tháng</b>.</p>
+        <div style="margin:0 0 16px;padding:16px;background:#eff6ff;border:1px dashed #93c5fd;border-radius:12px">
+          <div style="margin-bottom:6px"><span style="color:#6b7280;font-size:13px">Gói hiện tại:&nbsp;</span><b>Pro · ${tier}</b></div>
+          <div><span style="color:#6b7280;font-size:13px">Hiệu lực đến:&nbsp;</span><b>${expiry}</b></div>
+        </div>
+        <p style="margin:0 0 16px;font-size:14px">Quý Cha, Quý Thầy Cô <b>không cần làm gì thêm</b>. Toàn bộ tính năng Pro đã sẵn sàng ngay khi đăng nhập: nhiều lớp và nhiều giáo lý viên, xuất chứng chỉ, thi online và tự chấm điểm, điểm số và thi đua, việc thiêng liêng, lưu trữ niên khóa, game học giáo lý…</p>
+        <p style="text-align:center;margin:0"><a href="${APP_URL}" style="background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 30px;border-radius:10px;font-weight:600;display:inline-block">Mở ứng dụng →</a></p>
+      </div>
+      <div style="padding:18px 30px;border-top:1px solid #eef2f7;color:#6b7280;font-size:12.5px;line-height:1.6">
+        Xin Chúa chúc lành cho việc dạy giáo lý của giáo xứ. Cần hỗ trợ, xin phản hồi email này hoặc nhắn Zalo 0964 013 126.<br>
+        <b style="color:#374151">Giáo Lý Số</b> · ${gmailUser}
+      </div>
+    </div>
+  </div>`;
+}
+
+// Tính danh sách giáo xứ đủ điều kiện Tân thủ + ai bị bỏ qua. apply=true thì nâng gói + gửi email.
+async function runTanThu(admin: ReturnType<typeof createClient>, opts: { apply: boolean; exclude?: string[] }) {
+  const now = new Date();
+  const newExp = new Date(now); newExp.setMonth(newExp.getMonth() + 12);
+  const newExpIso = newExp.toISOString();
+  const newExpVi = ddmy(newExp);
+  const gmailUser = Deno.env.get('GMAIL_USER');
+
+  const { data: parishes } = await admin.from('parishes').select('id, name, plan, plan_expires_at, plan_max_classes, settings');
+  const { data: paidOrders } = await admin.from('plan_orders').select('parish_id').eq('status', 'paid');
+  const paid = new Set<string>((paidOrders || []).map((o: { parish_id: string }) => o.parish_id).filter(Boolean));
+  const { data: profiles } = await admin.from('profiles').select('id, parish_id, role, full_name, email').eq('role', 'admin');
+  const adminByParish = new Map<string, { id: string; full_name?: string; email?: string }>();
+  for (const p of (profiles || [])) if (p.parish_id && !adminByParish.has(p.parish_id)) adminByParish.set(p.parish_id, p);
+  const exclude = new Set<string>((opts.exclude || []).map((e) => String(e).trim().toLowerCase()));
+
+  const eligible: { parish_id: string; name: string; to: string; who: string; from: string; tier_label: string; new_max: number | null }[] = [];
+  const skipped: { name: string; reason: string }[] = [];
+
+  for (const par of (parishes || [])) {
+    const settings = (par.settings || {}) as Record<string, unknown>;
+    if (settings.pro12_campaign) { skipped.push({ name: par.name, reason: 'đã tham gia chương trình trước đó' }); continue; }
+    const isPro = par.plan === 'pro';
+    const daysLeft = par.plan_expires_at ? (new Date(par.plan_expires_at).getTime() - now.getTime()) / 864e5 : -Infinity;
+    if (isPro && (paid.has(par.id) || daysLeft > TANTHU_LONG_DAYS)) {
+      skipped.push({ name: par.name, reason: paid.has(par.id) ? 'đã mua gói (đơn đã thanh toán)' : `đã có Pro dài hạn (còn ${Math.round(daysLeft)} ngày)` });
+      continue;
+    }
+    const from = isPro ? 'Pro 3 tháng' : 'Khởi động';
+    const newMax = isPro ? (par.plan_max_classes ?? 5) : 5;
+    const prof = adminByParish.get(par.id);
+    let to = (prof?.email || '').trim();
+    if (!to && prof) { try { const { data: uu } = await admin.auth.admin.getUserById(prof.id); to = uu?.user?.email || ''; } catch (_e) { /* ignore */ } }
+    to = to.trim().toLowerCase();
+    if (!to) { skipped.push({ name: par.name, reason: 'không tìm thấy email quản trị viên' }); continue; }
+    if (exclude.has(to)) { skipped.push({ name: par.name, reason: 'nằm trong danh sách loại trừ' }); continue; }
+    eligible.push({ parish_id: par.id, name: par.name, to, who: prof?.full_name || 'Quý Cha / Quý Thầy Cô', from, tier_label: tierLabel(newMax), new_max: newMax });
+  }
+
+  if (!opts.apply) {
+    return { ok: true, new_expiry: newExpVi, eligible_count: eligible.length, skipped_count: skipped.length,
+      eligible: eligible.map((e) => ({ name: e.name, to: e.to, from: e.from, new_tier: e.tier_label })), skipped };
+  }
+
+  let upgraded = 0, sent = 0; const failedMail: string[] = []; const failedUpd: string[] = [];
+  for (const e of eligible) {
+    const { data: cur } = await admin.from('parishes').select('settings').eq('id', e.parish_id).maybeSingle();
+    const ns = { ...((cur?.settings || {}) as Record<string, unknown>) };
+    delete ns.renew_last_reminded; delete ns.renew_reminded_for;
+    ns.pro12_campaign = { at: now.toISOString(), tier: e.new_max, from: e.from, program: 'tan-thu' };
+    const { error: ue } = await admin.from('parishes')
+      .update({ plan: 'pro', plan_expires_at: newExpIso, plan_max_classes: e.new_max, settings: ns }).eq('id', e.parish_id);
+    if (ue) { failedUpd.push(e.name); continue; }
+    upgraded++;
+    if (gmailUser) {
+      try { await smtpSend(e.to, TANTHU_SUBJECT, tanThuHtml(e.who, e.name, e.tier_label, newExpVi, gmailUser)); sent++; await new Promise((r) => setTimeout(r, 350)); }
+      catch (_e) { failedMail.push(e.to); }
+    }
+  }
+  return { ok: true, new_expiry: newExpVi, eligible: eligible.length, upgraded, sent, failed_update: failedUpd, failed_mail: failedMail, skipped_count: skipped.length };
+}
+
 // Gửi email chào mừng khi giáo xứ được kích hoạt / gia hạn Pro — gửi TỪ Gmail
 // (support.giaolyso@gmail.com) qua SMTP + App Password. Tự bỏ qua nếu chưa cấu
 // hình GMAIL_USER/GMAIL_APP_PASSWORD -> KHÔNG chặn việc kích hoạt.
@@ -407,6 +507,14 @@ Deno.serve(async (req) => {
       if (error) return json({ error: error.message }, 400);
       if (body?.lead_id) await admin.from('leads').update({ status: 'granted' }).eq('id', body.lead_id);
       return json({ ok: true, user_id: data?.user?.id, email });
+    }
+
+    // Chương trình Tân thủ: xem trước (không đổi gì) / áp dụng (nâng Pro 12 tháng + gửi email)
+    if (action === 'tanthu-preview') {
+      return json(await runTanThu(admin, { apply: false, exclude: body?.exclude || [] }));
+    }
+    if (action === 'tanthu-apply') {
+      return json(await runTanThu(admin, { apply: true, exclude: body?.exclude || [] }));
     }
 
     return json({ error: 'Action không hợp lệ' }, 400);

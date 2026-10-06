@@ -847,6 +847,12 @@ async function handle(method, rawUrl, body = {}) {
     if (path === '/admin/grant-account' && method === 'post') {
       const r = await adminCall('grant-account', body); if (r.error) return fail(r.status, r.error); return ok(r.data);
     }
+    if (path === '/admin/tanthu-preview' && method === 'post') {
+      const r = await adminCall('tanthu-preview', body); if (r.error) return fail(r.status, r.error); return ok(r.data);
+    }
+    if (path === '/admin/tanthu-apply' && method === 'post') {
+      const r = await adminCall('tanthu-apply', body); if (r.error) return fail(r.status, r.error); return ok(r.data);
+    }
 
     // ---------------- school_years (năm học) ----------------
     if (path === '/school-years' && method === 'get') {

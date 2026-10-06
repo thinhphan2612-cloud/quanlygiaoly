@@ -41,6 +41,7 @@ export default function Admin() {
   const [editCode, setEditCode] = useState(null);     // mã đang tạo/sửa
   const [leads, setLeads] = useState([]);             // đơn liên hệ / đăng ký
   const [grantLead, setGrantLead] = useState(null);   // lead đang cấp tài khoản
+  const [tanthu, setTanthu] = useState(false);        // modal chương trình Tân thủ
 
   function load() {
     setLoading(true); setErr('');
@@ -252,6 +253,17 @@ export default function Admin() {
           </div>
         </div>
       )}
+
+      <div className="panel" id="sec-tanthu">
+        <div className="card-head" style={{ alignItems: 'center' }}>
+          <h2 style={{ margin: 0 }}>🎁 Chương trình Tân thủ</h2>
+          <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => setTanthu(true)}>Kích hoạt gói Tân thủ</button>
+        </div>
+        <p className="muted" style={{ fontSize: 13, marginBottom: 0 }}>
+          Nâng các giáo xứ mới (đang Khởi động hoặc Pro 3 tháng) lên <b>Pro 12 tháng miễn phí</b> và gửi email báo.
+          Giáo xứ đã có Pro dài hạn hoặc đã tham gia trước đó sẽ tự động bị bỏ qua.
+        </p>
+      </div>
 
       <div className="panel" id="sec-leads">
         <div className="card-head"><h2 style={{ margin: 0 }}>Đơn liên hệ &amp; đăng ký dùng thử{newLeads > 0 ? ` (${newLeads} mới)` : ''}</h2></div>
@@ -515,6 +527,7 @@ export default function Admin() {
       {payingOrder && <OrderPaidModal order={payingOrder} onClose={() => setPayingOrder(null)} onConfirm={(exp) => markOrderPaid(payingOrder, exp)} />}
       {editCode && <CodeModal code={editCode} tiers={tiers} onClose={() => setEditCode(null)} onSave={saveCode} />}
       {grantLead && <GrantModal lead={grantLead} onClose={() => setGrantLead(null)} onConfirm={(form) => grantAccount(grantLead, form)} />}
+      {tanthu && <TanThuModal onClose={() => { setTanthu(false); load(); }} />}
     </div>
   );
 }
@@ -654,6 +667,90 @@ function PaymentFields({ pay, set }) {
 }
 
 const emptyPay = () => ({ amount: '', method: 'bank', paid_at: new Date().toISOString().slice(0, 10), discount_code: '', note: '' });
+
+function TanThuModal({ onClose }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState('');
+  const [excl, setExcl] = useState(() => new Set());
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState(null);
+
+  useEffect(() => {
+    api.post('/admin/tanthu-preview', {})
+      .then((r) => setData(r.data))
+      .catch((e) => setErr(e.response?.data?.error || 'Không tải được danh sách'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const toggle = (email) => setExcl((s) => { const n = new Set(s); if (n.has(email)) n.delete(email); else n.add(email); return n; });
+  const willCount = data ? data.eligible.length - excl.size : 0;
+
+  async function apply() {
+    if (!willCount) return;
+    if (!confirm(`Nâng Pro 12 tháng và gửi email cho ${willCount} giáo xứ? Thao tác này là thật và không hoàn tác.`)) return;
+    setBusy(true); setErr('');
+    try {
+      const r = await api.post('/admin/tanthu-apply', { exclude: [...excl] });
+      setResult(r.data);
+    } catch (e) { setErr(e.response?.data?.error || 'Áp dụng thất bại'); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 640 }}>
+        <h2 style={{ marginTop: 0 }}>🎁 Kích hoạt gói Tân thủ</h2>
+        {loading ? <p className="muted">Đang tải danh sách…</p>
+          : result ? (
+            <div>
+              <div style={{ color: 'var(--success)', fontWeight: 600, marginBottom: 6 }}>✓ Hoàn tất</div>
+              <p style={{ margin: '4px 0' }}>Đã nâng <b>{result.upgraded}</b> giáo xứ · gửi <b>{result.sent}</b> email · hạn mới <b>{result.new_expiry}</b>.</p>
+              {result.failed_update?.length ? <p className="error">Lỗi cập nhật: {result.failed_update.join(', ')}</p> : null}
+              {result.failed_mail?.length ? <p className="error">Email chưa gửi được: {result.failed_mail.join(', ')}</p> : null}
+              <div className="modal-actions"><button className="btn" onClick={onClose}>Xong</button></div>
+            </div>
+          ) : data ? (
+            <>
+              <p className="muted" style={{ marginTop: 0, fontSize: 13 }}>
+                Đủ điều kiện: <b>{data.eligible_count}</b> · Bỏ qua: <b>{data.skipped_count}</b> · Hạn mới nếu áp dụng: <b>{data.new_expiry}</b>.
+                Bỏ tick giáo xứ nào nếu không muốn nâng (ví dụ tài khoản thử).
+              </p>
+              {data.eligible.length === 0 ? <p className="muted">Hiện không có giáo xứ mới nào cần nâng.</p> : (
+                <div className="table-scroll" style={{ maxHeight: 280 }}>
+                  <table>
+                    <thead><tr><th></th><th>Giáo xứ</th><th>Hiện tại</th><th>Bậc mới</th><th>Email</th></tr></thead>
+                    <tbody>
+                      {data.eligible.map((e) => (
+                        <tr key={e.to}>
+                          <td><input type="checkbox" checked={!excl.has(e.to)} onChange={() => toggle(e.to)} /></td>
+                          <td>{e.name}</td><td>{e.from}</td><td>{e.new_tier}</td>
+                          <td className="muted" style={{ fontSize: 12 }}>{e.to}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {data.skipped?.length ? (
+                <details style={{ marginTop: 8 }}>
+                  <summary className="muted" style={{ cursor: 'pointer', fontSize: 13 }}>Xem {data.skipped.length} giáo xứ bị bỏ qua</summary>
+                  <ul style={{ fontSize: 12.5, color: '#555', marginTop: 6 }}>
+                    {data.skipped.map((s, i) => <li key={i}>{s.name} — {s.reason}</li>)}
+                  </ul>
+                </details>
+              ) : null}
+              {err && <div className="error">{err}</div>}
+              <div className="modal-actions">
+                <button className="btn ghost" onClick={onClose}>Hủy</button>
+                <button className="btn" disabled={busy || willCount === 0} onClick={apply}>{busy ? 'Đang áp dụng…' : `Áp dụng cho ${willCount} giáo xứ`}</button>
+              </div>
+            </>
+          ) : <div className="error">{err || 'Không tải được'}</div>}
+      </div>
+    </div>
+  );
+}
 
 function ActivateModal({ parish, tiers, onClose, onConfirm }) {
   const [exp, setExp] = useState(freshExpiry());
