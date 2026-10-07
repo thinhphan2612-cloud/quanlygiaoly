@@ -26,3 +26,6 @@ npm-debug.log*
 
 # Supabase CLI local state
 supabase/.temp/
+
+# Handoff (local only, chứa ghi chú chi tiết)
+HANDOFF.md
