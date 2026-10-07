@@ -1,77 +1,75 @@
-# Quản lý Giáo lý
+# Giáo Lý Số (quanlygiaoly)
 
-Ứng dụng web quản lý lớp giáo lý cho giáo xứ: quản lý học viên (thiếu nhi), lớp học, giáo lý viên, điểm danh, điểm số, và bốc thăm ngẫu nhiên học sinh lên trả bài.
+Webapp SaaS quản lý lớp giáo lý Công giáo theo từng **giáo xứ** (multi-tenant): học viên, lớp, giáo lý viên, điểm danh, việc thiêng liêng, điểm số và thi đua, đề thi online tự chấm, chứng chỉ bí tích, lên lớp/ra trường theo niên khóa, dashboard và game học giáo lý.
+
+- App: **app.giaoly.com.vn** · Giới thiệu: **giaoly.com.vn**
 
 ## Công nghệ
 
-- **Backend**: Node.js + Express + SQLite (better-sqlite3), xác thực JWT
-- **Frontend**: React + Vite + React Router
+- **Frontend**: React + Vite + React Router (thư mục `client/`). Triển khai trên **Vercel**.
+- **Backend**: **Supabase** — Postgres (RLS multi-tenant theo `parish_id`) + **Edge Functions** (Deno). Không có server Node riêng cho production.
+- Client gọi dữ liệu qua `client/src/supabaseApi.js` (adapter giả lập REST path-based, nói chuyện trực tiếp với Supabase JS + RPC), và gọi Edge Functions cho các việc cần `service_role` hoặc gửi email.
 
-## Chức năng
+> Thư mục `server/` (Express + SQLite) và `api/` là mã **cũ trước khi chuyển sang Supabase**, giữ lại để tham khảo, không dùng cho production.
 
-- 🔐 Đăng nhập & phân quyền (Quản trị / Giáo lý viên)
-- 👦 Quản lý học viên/thiếu nhi (thêm, sửa, xóa, tìm kiếm, lọc theo lớp)
-- 🏫 Quản lý lớp học & phân công giáo lý viên
-- ✅ Điểm danh theo lớp và theo ngày (có mặt / vắng / trễ)
-- 📊 Nhập & theo dõi điểm số từng học viên
-- 🎲 Chọn ngẫu nhiên học sinh lên trả bài (có tùy chọn không lặp lại)
-- 🎮 Game học giáo lý *(bổ sung sau)*
+## Cấu trúc thư mục
 
-## Cài đặt & chạy
+```
+client/            # React SPA (Vite) — deploy lên Vercel
+  src/
+    pages/         # Students, Classes, Attendance, Grades, Exams, ExamTake, Admin, Settings, Login, Guide...
+    components/    # Layout, InstallGuide, PricingModal...
+    lib/           # plans, viError, exportUtils, viName, pwa, parseStudents...
+    supabaseApi.js # "API" path-based gọi Supabase (quan trọng nhất)
+    api.js, auth.jsx
+  public/          # manifest.webmanifest, sw.js, exam-question-bank.json, favicon, logo
+  index.html, .env.local (không commit)
+supabase/
+  functions/<tên>/index.ts   # Edge Functions (Deno)
+  migration_*.sql, schema.sql # chạy TAY trong Supabase SQL Editor
+landing/index.html           # trang giới thiệu tĩnh (giaoly.com.vn)
+vercel.json                  # cấu hình build/deploy Vercel
+```
 
-Yêu cầu: Node.js >= 18.
+## Chức năng chính
+
+- Phân quyền theo giáo xứ: **Quản trị (admin)** và **Giáo lý viên (GLV)**; **super-admin** quản trị billing toàn hệ thống.
+- Học viên (hồ sơ trọn đời, cha mẹ, đỡ đầu, bí tích), lớp học, phân công GLV, nhập hàng loạt.
+- Điểm danh theo ngày và việc thiêng liêng; thống kê tuần/tháng; xuất báo cáo Excel/PDF.
+- Điểm số theo hệ số, xếp hạng thi đua; chứng chỉ bí tích (in/PDF).
+- Đề thi online: tạo đề (ngân hàng câu hỏi + tự soạn), học viên quét mã vào thi, tự chấm, cảnh báo rời màn hình.
+- Lên lớp/ra trường cuối năm (mô hình COPY theo niên khóa) + lưu trữ các niên khóa cũ.
+- Gói dịch vụ: **Khởi động** (free, 1 lớp) và **Pro** (phân bậc theo số lớp), tính theo niên khóa.
+
+## Edge Functions (Supabase)
+
+`admin-api` (super-admin + chương trình Tân thủ), `create-teacher` (tạo GLV/đổi mật khẩu), `register-invite` (đăng ký từ landing), `redeem-welcome`, `promo-blast`, `pro12-campaign`, `cron-tasks` (nhắc gia hạn), `lead-notify`, `provision`.
+
+## Phát triển & triển khai
 
 ```bash
-# Cài dependencies cho cả root, server và client
-npm run install:all
+# Chạy client ở local (cần client/.env.local với VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
+cd client && npm install && npm run dev
 
-# Chạy đồng thời backend (cổng 4000) và frontend (cổng 5173)
-npm run dev
+# Build kiểm tra
+cd client && npm run build
+
+# Deploy Edge Function (Supabase CLI đã đăng nhập)
+npx supabase functions deploy <tên> [--no-verify-jwt] --project-ref <project-ref>
+
+# Đặt secret cho Edge Functions
+npx supabase secrets set NAME=value --project-ref <project-ref>
 ```
 
-Mở trình duyệt tại http://localhost:5173
+- **Frontend**: Vercel tự build từ branch `main` (`buildCommand: npm --prefix client run build`, output `client/dist`).
+- **Migrations**: dán nội dung `supabase/migration_*.sql` vào **Supabase SQL Editor** rồi chạy (không có pipeline tự động).
 
-### Tài khoản mặc định
+## Biến môi trường (chỉ tên — không commit giá trị)
 
-Lần chạy đầu tiên, hệ thống tự tạo tài khoản quản trị:
+- Client (`client/.env.local`): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `EXAM_CODE`.
+- Edge Functions (Supabase secrets): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `SUPERADMIN_EMAILS`, `APP_URL`, `PROMO_SECRET`, `PRO12_SECRET`.
 
-- Tên đăng nhập: `admin`
-- Mật khẩu: `admin123`
+## Lưu ý
 
-> Hãy đổi mật khẩu/ tạo tài khoản mới sau khi đăng nhập lần đầu.
-
-## Cấu trúc dự án
-
-```
-quanlygiaoly/
-├── server/          # API backend (Express + SQLite)
-│   └── src/
-│       ├── index.js       # điểm khởi động server
-│       ├── db.js          # khởi tạo CSDL + seed admin
-│       ├── auth.js        # JWT + middleware phân quyền
-│       └── routes/        # các endpoint API
-└── client/          # Giao diện React (Vite)
-    └── src/
-        ├── pages/         # các trang chức năng
-        ├── components/    # layout dùng chung
-        ├── api.js         # cấu hình axios
-        └── auth.jsx       # context xác thực
-```
-
-## Ghi chú triển khai
-
-- Cơ sở dữ liệu SQLite được lưu tại `server/data/quanlygiaoly.db` (đã bỏ qua trong git).
-- Đặt biến môi trường `JWT_SECRET` trong `server/.env` cho môi trường production (xem `server/.env.example`).
-- Build frontend: `npm run build` → kết quả tại `client/dist`.
-
-## Bản demo trên Vercel (client-only)
-
-Bản deploy trên Vercel chạy **hoàn toàn phía trình duyệt** (không backend): tầng dữ liệu
-dùng `localStorage` thay cho Express/SQLite, có sẵn dữ liệu mẫu. Dữ liệu lưu riêng trên
-máy mỗi người xem (không chia sẻ chung) — phù hợp để xem thử/live demo.
-
-- Cấu hình build ở `vercel.json` (build `client` với biến `VITE_USE_LOCAL=1`, định tuyến SPA).
-- Bật/tắt chế độ này bằng biến môi trường `VITE_USE_LOCAL=1` khi build.
-- Đăng nhập demo: `admin` / `admin123` (hoặc giáo lý viên `glv` / `glv123`).
-
-> Chạy local với `npm run dev` vẫn dùng backend thật (SQLite) như bình thường.
+- Email gửi bằng SMTP thô tự viết (`smtpSend` trong các Edge Function), không dùng denomailer.
+- Văn bản hiển thị cho người dùng viết tiếng Việt tự nhiên, không dùng dấu gạch ngang dài (—).
