@@ -1001,6 +1001,39 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .admin-kpis .kpi { text-align: center; padding: 16px 8px; }
 .admin-kpis .kpi .n { font-size: 26px; font-weight: 800; line-height: 1.1; }
 .admin-kpis .kpi .l { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.admin-kpis .kpi.click { cursor: pointer; transition: box-shadow .15s; }
+.admin-kpis .kpi.click:hover, .admin-kpis .kpi.click:focus-visible { box-shadow: 0 0 0 2px var(--primary); outline: none; }
+.admin-todo { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 14px 0 12px; }
+.admin-todo .todo-tile { cursor: pointer; padding: 14px 16px; border-left: 4px solid var(--border); transition: box-shadow .15s; }
+.admin-todo .todo-tile:hover, .admin-todo .todo-tile:focus-visible { box-shadow: 0 0 0 2px var(--primary); outline: none; }
+.admin-todo .todo-tile.hot { border-left-color: #a8641b; }
+.admin-todo .todo-tile.red { border-left-color: #b91c1c; }
+.admin-todo .todo-tile .n { font-size: 24px; font-weight: 800; line-height: 1.1; color: var(--muted); }
+.admin-todo .todo-tile.hot .n { color: #a8641b; }
+.admin-todo .todo-tile.red .n { color: #b91c1c; }
+.admin-todo .todo-tile .l { font-size: 13px; color: var(--text); margin-top: 2px; }
+.danger-zone { margin-top: 22px; padding: 12px 14px; border: 1px solid rgba(185, 28, 28, .35); border-radius: 12px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.admin-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 9999; background: #1c1c1e; color: #fff; padding: 12px 18px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.25); font-size: 14px; max-width: min(560px, 92vw); cursor: pointer; }
+.admin-toast.err { background: #b91c1c; }
+/* Trang Quản trị trên điện thoại: ô việc cần xử lý 2 cột, bộ lọc full-width, bảng chuyển thành thẻ */
+@media (max-width: 640px) {
+  .admin-todo { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .admin-todo .todo-tile { padding: 10px 12px; }
+  .admin-todo .todo-tile .n { font-size: 20px; }
+  .admin-todo .todo-tile .l { font-size: 12px; }
+  .admin-page .card-head input, .admin-page .card-head select { flex: 1 1 100%; min-width: 0 !important; margin-left: 0 !important; }
+  .admin-page .card-head > .btn { margin-left: 0 !important; }
+  .admin-table thead { display: none; }
+  .admin-table, .admin-table tbody, .admin-table tr, .admin-table td { display: block; width: 100%; }
+  .admin-table tr { border: 1px solid var(--border); border-radius: 12px; padding: 6px 12px; margin-bottom: 10px; }
+  .admin-table td { padding: 6px 0 !important; text-align: right !important; border: 0 !important; max-width: none !important; white-space: normal !important; overflow-wrap: anywhere; overflow: visible !important; }
+  .admin-table td::after { content: ''; display: block; clear: both; }
+  .admin-table td::before { content: attr(data-label); float: left; margin-right: 12px; color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+  .admin-table td[data-label=""]::before { display: none; }
+  .admin-table td[data-label=""] { border-top: 1px solid var(--border) !important; margin-top: 4px; padding-top: 10px !important; }
+  .admin-page .modal .modal-actions { flex-wrap: wrap; }
+  .admin-page .modal .modal-actions > .modal-side-link { order: 2; flex: 1 1 100%; justify-content: center; margin: 6px 0 0 !important; }
+}
 @media (max-width: 720px) { .admin-kpis { grid-template-columns: repeat(3, 1fr); } }
 .growth-chart { display: flex; align-items: flex-end; gap: 10px; height: 150px; padding: 8px 4px 0; }
 .growth-chart .gc-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
