@@ -26,7 +26,7 @@ export default function Games() {
   const [myGames, setMyGames] = useState([]);
   const [playing, setPlaying] = useState(null); // game đang chơi (iframe)
   const [loading, setLoading] = useState(true);
-  const [swReady, setSwReady] = useState(() => typeof navigator !== 'undefined' && !!navigator.serviceWorker?.controller);
+  const [swReady, setSwReady] = useState(false);
 
   function loadAll() {
     Promise.all([
@@ -36,13 +36,21 @@ export default function Games() {
   }
   useEffect(() => { loadAll(); }, []);
 
-  // Đăng ký Service Worker phục vụ game; chờ sẵn sàng mới nạp game host trên Storage.
+  // Service Worker (sw.js, có proxy game) phải đang điều khiển trang thì iframe /game-proxy/ mới chạy.
+  // Hỏi thử /game-proxy/__ping: nếu SW chưa điều khiển trang hoặc là bản cũ không có proxy,
+  // request ra mạng và nhận về index.html của app thay vì 'ok' -> chờ SW mới kích hoạt rồi thử lại.
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('/game-sw.js')
-      .then(() => navigator.serviceWorker.ready)
-      .then(() => setSwReady(true))
+    if (!('serviceWorker' in navigator)) return undefined;
+    let live = true;
+    const check = () => fetch('/game-proxy/__ping', { cache: 'no-store' })
+      .then((r) => r.text()).then((t) => { if (live && t === 'ok') setSwReady(true); })
       .catch(() => {});
+    navigator.serviceWorker.addEventListener('controllerchange', check);
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => reg.update().catch(() => {}))
+      .catch(() => {})
+      .then(check);
+    return () => { live = false; navigator.serviceWorker.removeEventListener('controllerchange', check); };
   }, []);
 
   async function removeMine(g) {

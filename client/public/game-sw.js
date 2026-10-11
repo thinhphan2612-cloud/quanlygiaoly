@@ -21,6 +21,8 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (url.origin !== self.location.origin || !url.pathname.startsWith('/game-proxy/')) return;
   const rel = url.pathname.slice('/game-proxy/'.length);
+  // Trang Game hỏi thử để biết proxy đang chạy (SW cũ không có proxy sẽ để request ra mạng).
+  if (rel === '__ping') { e.respondWith(new Response('ok', { headers: { 'Content-Type': 'text/plain' } })); return; }
   e.respondWith((async () => {
     try {
       // KHÔNG chuyển tiếp Range: header Content-Range của Supabase KHÔNG được lộ qua
