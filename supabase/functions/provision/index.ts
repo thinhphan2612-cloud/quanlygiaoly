@@ -60,5 +60,56 @@ Deno.serve(async (req) => {
     return json({ ok: true });
   }
 
+  // Tính năng mua trên Ephata Store → bật cho CẢ GIÁO XỨ (bảng parish_features).
+  // Body: { action:"grant_feature", parish_id, feature_key, expires_at|null, source, ref,
+  //         feature:{ name, description } }
+  if (body?.action === 'grant_feature') {
+    const parishId = body.parish_id;
+    const key = body.feature_key;
+    if (!parishId || !key) return json({ error: 'Thiếu parish_id hoặc feature_key' }, 400);
+    const { data: parish } = await admin.from('parishes').select('id').eq('id', String(parishId)).maybeSingle();
+    if (!parish) return json({ error: 'Không tìm thấy giáo xứ' }, 404);
+
+    // Đảm bảo có trong catalog tính năng (không ghi đè cấu hình tính năng đã có sẵn).
+    const f = body.feature || {};
+    const { error: ferr } = await admin.from('features').upsert(
+      { key: String(key), name: f.name ? String(f.name) : String(key), description: f.description ? String(f.description) : null, category: 'Ephata' },
+      { onConflict: 'key', ignoreDuplicates: true },
+    );
+    if (ferr) return json({ error: ferr.message }, 400);
+
+    // Nhiều quản trị cùng giáo xứ mua → giữ hạn xa nhất (null = vĩnh viễn thắng).
+    const { data: cur } = await admin.from('parish_features')
+      .select('status, expires_at').eq('parish_id', String(parishId)).eq('feature_key', String(key)).maybeSingle();
+    const incoming = body.expires_at ? String(body.expires_at) : null;
+    const keepCurrent = cur && cur.status === 'active' &&
+      (cur.expires_at === null || (incoming !== null && new Date(cur.expires_at) > new Date(incoming)));
+    const expiresAt = keepCurrent ? cur.expires_at : incoming;
+
+    const { error } = await admin.from('parish_features').upsert({
+      parish_id: String(parishId),
+      feature_key: String(key),
+      status: 'active',
+      source: 'purchase',
+      starts_at: new Date().toISOString(),
+      expires_at: expiresAt,
+    }, { onConflict: 'parish_id,feature_key' });
+    if (error) return json({ error: error.message }, 400);
+    return json({ ok: true, expires_at: expiresAt });
+  }
+
+  // Thu hồi tính năng của giáo xứ (admin Ephata thu hồi quyền).
+  // Body: { action:"revoke_feature", parish_id, feature_key, source, ref }
+  if (body?.action === 'revoke_feature') {
+    const parishId = body.parish_id;
+    const key = body.feature_key;
+    if (!parishId || !key) return json({ error: 'Thiếu parish_id hoặc feature_key' }, 400);
+    const { error } = await admin.from('parish_features')
+      .update({ status: 'revoked' })
+      .eq('parish_id', String(parishId)).eq('feature_key', String(key));
+    if (error) return json({ error: error.message }, 400);
+    return json({ ok: true });
+  }
+
   return json({ error: 'Unknown action' }, 400);
 });
