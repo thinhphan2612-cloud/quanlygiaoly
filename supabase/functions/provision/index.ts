@@ -111,5 +111,32 @@ Deno.serve(async (req) => {
     return json({ ok: true });
   }
 
+  // Ephata làm mới ngữ cảnh người dùng đã liên kết (giáo xứ, vai trò, gói, hạn gói) — đọc, không ghi.
+  // Body: { action:"user_contexts", giaoly_user_ids:[...] } (tối đa 100)
+  // Trả: { ok, contexts:[{ giaoly_user_id, parish_id, role, plan, plan_expires_at }] } — user không còn tồn tại thì không có trong danh sách.
+  if (body?.action === 'user_contexts') {
+    const ids = Array.isArray(body.giaoly_user_ids) ? body.giaoly_user_ids.map(String).slice(0, 100) : [];
+    if (!ids.length) return json({ error: 'Thiếu giaoly_user_ids' }, 400);
+    const { data: profs, error: perr } = await admin.from('profiles').select('id, parish_id, role').in('id', ids);
+    if (perr) return json({ error: perr.message }, 400);
+    const parishIds = [...new Set((profs || []).map((p) => p.parish_id).filter(Boolean))];
+    const { data: pars, error: parr } = parishIds.length
+      ? await admin.from('parishes').select('id, plan, plan_expires_at').in('id', parishIds)
+      : { data: [], error: null };
+    if (parr) return json({ error: parr.message }, 400);
+    const byId = new Map((pars || []).map((p) => [p.id, p]));
+    const contexts = (profs || []).map((p) => {
+      const par = p.parish_id ? byId.get(p.parish_id) : null;
+      return {
+        giaoly_user_id: p.id,
+        parish_id: p.parish_id ?? null,
+        role: p.role ?? null,
+        plan: par?.plan ?? null,
+        plan_expires_at: par?.plan_expires_at ?? null,
+      };
+    });
+    return json({ ok: true, contexts });
+  }
+
   return json({ error: 'Unknown action' }, 400);
 });
