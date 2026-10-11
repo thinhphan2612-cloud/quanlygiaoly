@@ -22,6 +22,25 @@ function freshExpiry() {
   return d.toISOString().slice(0, 10);
 }
 
+const PAGE_SIZE = 5;
+// Phân trang phía client: trả về các dòng của trang hiện tại và thanh chuyển trang.
+// resetKey đổi (vd ô tìm kiếm) thì quay về trang 1.
+function usePaged(list, resetKey) {
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [resetKey]);
+  const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const cur = Math.min(page, pages); // xóa dòng làm giảm số trang thì tự lùi về trang cuối
+  const items = list.slice((cur - 1) * PAGE_SIZE, cur * PAGE_SIZE);
+  const pager = pages > 1 && (
+    <div className="pager">
+      <button className="btn ghost sm" disabled={cur <= 1} onClick={() => setPage(cur - 1)}>← Trước</button>
+      <span className="muted" style={{ fontSize: 13 }}>Trang {cur}/{pages} · {list.length} dòng</span>
+      <button className="btn ghost sm" disabled={cur >= pages} onClick={() => setPage(cur + 1)}>Sau →</button>
+    </div>
+  );
+  return [items, pager];
+}
+
 export default function Admin() {
   const { user } = useAuth();
   if (!isSuperAdmin(user)) return <Navigate to="/" replace />;
@@ -201,6 +220,14 @@ export default function Admin() {
   }
   const newLeads = leads.filter((l) => l.status === 'new').length;
 
+  const [expiringPage, expiringPager] = usePaged(expiring);
+  const [leadsPage, leadsPager] = usePaged(leads);
+  const [parishPage, parishPager] = usePaged(filtered, qText);
+  const [overduePage, overduePager] = usePaged(overdue);
+  const [ordersPage, ordersPager] = usePaged(orders);
+  const [paymentsPage, paymentsPager] = usePaged(payments);
+  const [codesPage, codesPager] = usePaged(codes);
+
   return (
     <div>
       <div className="att-head">
@@ -239,7 +266,7 @@ export default function Admin() {
         <div className="panel expiry-panel">
           <div className="card-head"><h2 style={{ margin: 0 }}>⏰ Pro sắp / đã hết hạn ({expiring.length})</h2></div>
           <div className="stack" style={{ gap: 8 }}>
-            {expiring.map((p) => (
+            {expiringPage.map((p) => (
               <div key={p.id} className="expiry-row">
                 <div style={{ flex: 1, minWidth: 160 }}><b>{p.name}</b>{p.diocese && <span className="muted" style={{ fontSize: 12 }}> · {p.diocese}</span>}</div>
                 <div style={{ fontSize: 13 }}>
@@ -251,6 +278,7 @@ export default function Admin() {
               </div>
             ))}
           </div>
+          {expiringPager}
         </div>
       )}
 
@@ -272,7 +300,7 @@ export default function Admin() {
             <table>
               <thead><tr><th>Ngày</th><th>Loại</th><th>Người gửi</th><th>Giáo xứ</th><th>Nội dung</th><th>Trạng thái</th><th></th></tr></thead>
               <tbody>
-                {leads.map((l) => (
+                {leadsPage.map((l) => (
                   <tr key={l.id} style={l.status === 'new' ? { background: 'rgba(180,129,60,.05)' } : undefined}>
                     <td className="muted" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{fmtDate(l.created_at)}</td>
                     <td>{l.kind === 'register' ? <span className="plan-badge pro">Đăng ký</span> : <span className="plan-badge free">Liên hệ</span>}</td>
@@ -304,6 +332,7 @@ export default function Admin() {
                 ))}
               </tbody>
             </table>
+            {leadsPager}
           </div>
         )}
       </div>
@@ -342,7 +371,7 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((p) => {
+                {parishPage.map((p) => {
                   const expired = p.plan === 'pro' && p.plan_expires_at && new Date(p.plan_expires_at) < new Date();
                   return (
                     <tr key={p.id}>
@@ -389,6 +418,7 @@ export default function Admin() {
                 })}
               </tbody>
             </table>
+            {parishPager}
           </div>
         )}
         <p className="muted" style={{ fontSize: 12, marginTop: 12 }}>
@@ -406,7 +436,7 @@ export default function Admin() {
             <table>
               <thead><tr><th>Giáo xứ</th><th>Quản trị</th><th>Hết hạn</th><th>Quá hạn</th><th>Quy mô</th><th></th></tr></thead>
               <tbody>
-                {overdue.map((p) => (
+                {overduePage.map((p) => (
                   <tr key={p.id}>
                     <td>{p.name}</td>
                     <td className="muted" style={{ fontSize: 12 }}>{p.admin_email || '—'}</td>
@@ -418,6 +448,7 @@ export default function Admin() {
                 ))}
               </tbody>
             </table>
+            {overduePager}
           </div>
         )}
       </div>
@@ -429,7 +460,7 @@ export default function Admin() {
             <table>
               <thead><tr><th>Mã đơn</th><th>Giáo xứ</th><th>Gói</th><th>Mã GG</th><th style={{ textAlign: 'right' }}>Số tiền</th><th>Ngày</th><th></th></tr></thead>
               <tbody>
-                {orders.map((o) => (
+                {ordersPage.map((o) => (
                   <tr key={o.id}>
                     <td style={{ fontWeight: 600 }}>{o.order_code}</td>
                     <td>{o.parish_name}</td>
@@ -445,6 +476,7 @@ export default function Admin() {
                 ))}
               </tbody>
             </table>
+            {ordersPager}
           </div>
         )}
       </div>
@@ -466,7 +498,7 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {payments.map((p) => (
+                {paymentsPage.map((p) => (
                   <tr key={p.id}>
                     <td className="muted" style={{ whiteSpace: 'nowrap', fontSize: 12 }}>{fmtDate(p.paid_at)}</td>
                     <td>{p.parish_name}</td>
@@ -479,6 +511,7 @@ export default function Admin() {
                 ))}
               </tbody>
             </table>
+            {paymentsPager}
           </div>
         )}
       </div>
@@ -493,7 +526,7 @@ export default function Admin() {
             <table>
               <thead><tr><th>Mã</th><th>Giảm</th><th>Hạn</th><th style={{ textAlign: 'center' }}>Đã dùng</th><th>Trạng thái</th><th></th></tr></thead>
               <tbody>
-                {codes.map((c) => (
+                {codesPage.map((c) => (
                   <tr key={c.code}>
                     <td style={{ fontWeight: 600 }}>{c.code}</td>
                     <td>{c.kind === 'pro_free' ? `Pro ${c.free_months || 3} tháng` : c.kind === 'percent' ? c.value + '%' : fmtVnd(c.value)}</td>
@@ -508,6 +541,7 @@ export default function Admin() {
                 ))}
               </tbody>
             </table>
+            {codesPager}
           </div>
         )}
       </div>
@@ -917,6 +951,7 @@ function DefaultGamesManager() {
   const [busy, setBusy] = useState('');
   const [err, setErr] = useState('');
 
+  const [gamesPage, gamesPager] = usePaged(games);
   function load() { api.get('/default-games').then((r) => setGames(r.data)).catch(() => setGames([])); }
   useEffect(() => { load(); }, []);
 
@@ -1021,7 +1056,7 @@ function DefaultGamesManager() {
       <table style={{ marginTop: 10 }}>
         <thead><tr><th></th><th>Tên</th><th>Nguồn</th><th>Link</th><th></th></tr></thead>
         <tbody>
-          {games.map((g) => (
+          {gamesPage.map((g) => (
             <tr key={g.id}>
               <td style={{ fontSize: 20 }}>{g.icon}</td>
               <td>{g.title}</td>
@@ -1033,6 +1068,7 @@ function DefaultGamesManager() {
           {games.length === 0 && <tr><td colSpan={5} className="muted">Chưa có game mặc định</td></tr>}
         </tbody>
       </table>
+      {gamesPager}
     </div>
   );
 }
