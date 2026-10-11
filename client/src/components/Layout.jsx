@@ -39,6 +39,8 @@ const nav = [
 
 // Lối tắt cuộn tới từng mục trong trang /admin (chỉ super-admin)
 const ADMIN_SECTIONS = [
+  { id: 'sec-load', label: 'Giám sát thi online' },
+  { id: 'sec-tanthu', label: 'Chương trình Tân thủ' },
   { id: 'sec-todo', label: 'Việc cần xử lý' },
   { id: 'sec-orders', label: 'Đơn chờ thanh toán' },
   { id: 'sec-expiring', label: 'Pro sắp hết hạn' },
@@ -48,8 +50,6 @@ const ADMIN_SECTIONS = [
   { id: 'sec-codes', label: 'Mã giảm giá' },
   { id: 'sec-tiers', label: 'Bảng giá' },
   { id: 'sec-growth', label: 'Thống kê đăng ký' },
-  { id: 'sec-tanthu', label: 'Chương trình Tân thủ' },
-  { id: 'sec-load', label: 'Giám sát tải' },
   { id: 'sec-default-games', label: 'Game mặc định' },
   { id: 'sec-purge', label: 'Dọn dữ liệu quá hạn' },
 ];

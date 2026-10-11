@@ -123,7 +123,6 @@ export default function Admin() {
   const [leads, setLeads] = useState([]);             // đơn liên hệ / đăng ký
   const [grantLead, setGrantLead] = useState(null);   // lead đang cấp tài khoản
   const [tanthu, setTanthu] = useState(false);        // modal chương trình Tân thủ
-  const [loadLevel, setLoadLevel] = useState(0);      // mức tải từ LoadMonitor (0 ổn, 1 cao, 2 nguy cơ)
   const [toast, setToast] = useState(null);
   const toastTimer = useRef();
 
@@ -393,6 +392,17 @@ export default function Admin() {
         <button className="btn ghost" onClick={() => refresh()} disabled={refreshing}>{refreshing ? 'Đang tải…' : '↻ Tải lại'}</button>
       </div>
 
+      <div className="admin-strip">
+        <LoadMonitor />
+        <div className="panel mini-card tanthu" id="sec-tanthu">
+          <div className="mini-head">
+            <b>Chương trình Tân thủ</b>
+            <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => setTanthu(true)}>Xem &amp; kích hoạt</button>
+          </div>
+          <div className="mini-sub">Tặng Pro 12 tháng cho giáo xứ mới. Xem trước danh sách rồi mới áp dụng.</div>
+        </div>
+      </div>
+
       <div id="sec-todo">
         <div className="admin-todo">
           {todo.map((t) => (
@@ -400,11 +410,6 @@ export default function Admin() {
               <div className="n">{t.n}</div><div className="l">{t.l}</div>
             </Tile>
           ))}
-          {loadLevel >= 1 && (
-            <Tile className={`todo-tile hot${loadLevel === 2 ? ' red' : ''}`} onClick={() => scrollTo('sec-load')}>
-              <div className="n">{loadLevel === 2 ? 'Nguy cơ' : 'Cao'}</div><div className="l">Tải hệ thống (thi online)</div>
-            </Tile>
-          )}
         </div>
       </div>
 
@@ -742,19 +747,6 @@ export default function Admin() {
           })}
         </div>
       </div>
-
-      <div className="panel" id="sec-tanthu">
-        <div className="card-head" style={{ alignItems: 'center' }}>
-          <h2 style={{ margin: 0 }}>Chương trình Tân thủ</h2>
-          <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => setTanthu(true)}>Kích hoạt gói Tân thủ</button>
-        </div>
-        <p className="muted" style={{ fontSize: 13, marginBottom: 0 }}>
-          Nâng các giáo xứ mới (đang Khởi động hoặc Pro 3 tháng) lên <b>Pro 12 tháng miễn phí</b> và gửi email báo.
-          Giáo xứ đã có Pro dài hạn hoặc đã tham gia trước đó sẽ tự động bị bỏ qua. Luôn xem trước danh sách trước khi áp dụng.
-        </p>
-      </div>
-
-      <LoadMonitor onLevel={setLoadLevel} />
 
       <DefaultGamesManager />
 
@@ -1181,7 +1173,7 @@ const MON = { takersWarn: 400, takersRed: 600, latWarn: 300, latRed: 800, pollMs
 const LVL_COLOR = ['#15803d', '#a8641b', '#b91c1c'];
 const LVL_TEXT = ['Ổn định', 'Tải cao', 'Nguy cơ quá tải'];
 
-function LoadMonitor({ onLevel }) {
+function LoadMonitor() {
   const [s, setS] = useState(null);
   const [lat, setLat] = useState(null);
   const [err, setErr] = useState('');
@@ -1208,42 +1200,37 @@ function LoadMonitor({ onLevel }) {
   const lvlL = lat == null ? 0 : lat >= MON.latRed ? 2 : lat >= MON.latWarn ? 1 : 0;
   const lvl = Math.max(lvlT, lvlL);
   const color = LVL_COLOR[lvl];
-  useEffect(() => { onLevel?.(lvl); }, [lvl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (err && /function .*load_stats.* does not exist|Could not find the function/i.test(err)) {
     return (
-      <div className="panel" id="sec-load" style={{ borderLeft: '4px solid #a8641b' }}>
-        <b>Giám sát tải:</b> chưa cài. Chạy <code>supabase/migration_load_monitor.sql</code> để bật đèn báo.
+      <div className="panel mini-card" id="sec-load" style={{ borderLeftColor: '#a8641b' }}>
+        <div className="mini-head"><b>Giám sát thi online</b></div>
+        <div className="mini-sub">Chưa cài. Chạy <code>supabase/migration_load_monitor.sql</code> để bật đèn báo.</div>
       </div>
     );
   }
 
   return (
-    <div className="panel" id="sec-load" style={{ borderLeft: `4px solid ${color}` }}>
-      <div className="card-head" style={{ gap: 10, flexWrap: 'wrap' }}>
-        <h2 style={{ margin: 0 }}>Giám sát tải (thi online)</h2>
-        <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600, color }}>
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: color, display: 'inline-block' }} />
-          {LVL_TEXT[lvl]}
-        </span>
+    <div className="panel mini-card" id="sec-load" style={{ borderLeftColor: color }}
+      title={`Ngưỡng: vàng ${MON.takersWarn} / đỏ ${MON.takersRed} em, độ trễ vàng ${MON.latWarn}ms / đỏ ${MON.latRed}ms. Cảnh báo nền tự gửi qua chuông khi vượt ngưỡng đỏ.`}>
+      <div className="mini-head">
+        <span className="mini-dot" style={{ background: color }} />
+        <b>Giám sát thi online</b>
+        <span style={{ marginLeft: 'auto', fontWeight: 600, fontSize: 13, color }}>{LVL_TEXT[lvl]}</span>
       </div>
-      <div className="admin-kpis" style={{ marginTop: 4 }}>
-        <div className="panel kpi"><div className="n" style={{ color: LVL_COLOR[lvlT] }}>{taking}</div><div className="l">Đang thi</div></div>
-        <div className="panel kpi"><div className="n">{s?.waiting ?? '-'}</div><div className="l">Đang chờ mở</div></div>
-        <div className="panel kpi"><div className="n">{s?.open_exams ?? '-'}</div><div className="l">Đề đang mở</div></div>
-        <div className="panel kpi"><div className="n" style={{ color: LVL_COLOR[lvlL] }}>{lat == null ? '-' : lat + 'ms'}</div><div className="l">Độ trễ máy chủ</div></div>
+      <div className="mini-stats">
+        <span><b style={{ color: LVL_COLOR[lvlT] }}>{taking}</b> đang thi</span>
+        <span><b>{s?.waiting ?? '-'}</b> chờ mở</span>
+        <span><b>{s?.open_exams ?? '-'}</b> đề mở</span>
+        <span><b style={{ color: LVL_COLOR[lvlL] }}>{lat == null ? '-' : lat + 'ms'}</b> độ trễ</span>
       </div>
       {lvl >= 1 && (
-        <p className="muted" style={{ fontSize: 13, marginTop: 8, color }}>
+        <div className="mini-sub" style={{ color, fontWeight: 600 }}>
           {lvl === 2
-            ? '⚠ Tải đang ở mức nguy cơ. Nên nâng compute Supabase (Small → Medium) ngay, hoặc giãn lịch thi.'
-            : 'Tải đang cao. Theo dõi sát; nếu tiếp tục tăng thì cân nhắc nâng compute trước buổi thi.'}
-        </p>
+            ? '⚠ Nguy cơ quá tải: nâng compute Supabase (Small → Medium) ngay hoặc giãn lịch thi.'
+            : 'Tải cao: theo dõi sát, cân nhắc nâng compute trước buổi thi.'}
+        </div>
       )}
-      <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-        Ngưỡng: vàng {MON.takersWarn} / đỏ {MON.takersRed} em · độ trễ vàng {MON.latWarn}ms / đỏ {MON.latRed}ms.
-        Cảnh báo nền (khi không mở trang) tự gửi qua chuông khi vượt ngưỡng đỏ.
-      </p>
     </div>
   );
 }

@@ -1007,14 +1007,22 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .admin-todo .todo-tile { cursor: pointer; padding: 14px 16px; border-left: 4px solid var(--border); transition: box-shadow .15s; }
 .admin-todo .todo-tile:hover, .admin-todo .todo-tile:focus-visible { box-shadow: 0 0 0 2px var(--primary); outline: none; }
 .admin-todo .todo-tile.hot { border-left-color: #a8641b; }
-.admin-todo .todo-tile.red { border-left-color: #b91c1c; }
 .admin-todo .todo-tile .n { font-size: 24px; font-weight: 800; line-height: 1.1; color: var(--muted); }
 .admin-todo .todo-tile.hot .n { color: #a8641b; }
-.admin-todo .todo-tile.red .n { color: #b91c1c; }
 .admin-todo .todo-tile .l { font-size: 13px; color: var(--text); margin-top: 2px; }
 .danger-zone { margin-top: 22px; padding: 12px 14px; border: 1px solid rgba(185, 28, 28, .35); border-radius: 12px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
 .admin-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 9999; background: #1c1c1e; color: #fff; padding: 12px 18px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.25); font-size: 14px; max-width: min(560px, 92vw); cursor: pointer; }
 .admin-toast.err { background: #b91c1c; }
+.admin-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.admin-strip .panel, .admin-todo .panel, .admin-kpis .panel { margin: 0; }
+.mini-card { padding: 12px 16px; border-left: 4px solid var(--border); }
+.mini-card.tanthu { border-left-color: var(--primary); }
+.mini-head { display: flex; align-items: center; gap: 8px; font-size: 14px; min-height: 30px; }
+.mini-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+.mini-stats { display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.mini-stats b { color: var(--text); font-size: 15px; margin-right: 2px; }
+.mini-sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.45; }
+@media (max-width: 720px) { .admin-strip { grid-template-columns: 1fr; gap: 8px; } }
 /* Trang Quản trị trên điện thoại: ô việc cần xử lý 2 cột, bộ lọc full-width, bảng chuyển thành thẻ */
 @media (max-width: 640px) {
   .admin-todo { grid-template-columns: repeat(2, 1fr); gap: 8px; }
