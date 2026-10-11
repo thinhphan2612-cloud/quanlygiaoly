@@ -11,6 +11,7 @@ import { sendContactMessage } from '../lib/contact';
 import { fileToDataUrl } from '../lib/img';
 import { viError } from '../lib/viError';
 import { isStandalone } from '../lib/pwa';
+import { useAdminCounts } from '../lib/adminCounts';
 import InstallGuide from './InstallGuide.jsx';
 import PricingModal from './PricingModal.jsx';
 import {
@@ -37,22 +38,32 @@ const nav = [
   { to: '/admin', label: 'Quản trị hệ thống', Icon: IconMoney, superOnly: true },
 ];
 
-// Lối tắt cuộn tới từng mục trong trang /admin (chỉ super-admin)
-const ADMIN_SECTIONS = [
-  { id: 'sec-load', label: 'Giám sát thi online' },
-  { id: 'sec-tanthu', label: 'Chương trình Tân thủ' },
-  { id: 'sec-todo', label: 'Việc cần xử lý' },
-  { id: 'sec-orders', label: 'Đơn chờ thanh toán' },
-  { id: 'sec-expiring', label: 'Pro sắp hết hạn' },
-  { id: 'sec-leads', label: 'Đơn liên hệ' },
-  { id: 'sec-parishes', label: 'Giáo xứ' },
-  { id: 'sec-payments', label: 'Sổ thanh toán' },
-  { id: 'sec-codes', label: 'Mã giảm giá' },
-  { id: 'sec-tiers', label: 'Bảng giá' },
-  { id: 'sec-growth', label: 'Thống kê đăng ký' },
-  { id: 'sec-default-games', label: 'Game mặc định' },
-  { id: 'sec-purge', label: 'Dọn dữ liệu quá hạn' },
+// Lối tắt cuộn tới từng mục trong trang /admin (chỉ super-admin), chia nhóm theo đúng thứ tự trên trang.
+// count: khóa số việc cần xử lý (lib/adminCounts) để hiện badge.
+const ADMIN_GROUPS = [
+  { title: 'Tổng quan', items: [
+    { id: 'sec-load', label: 'Giám sát thi online' },
+    { id: 'sec-tanthu', label: 'Chương trình Tân thủ' },
+    { id: 'sec-todo', label: 'Việc cần xử lý' },
+  ] },
+  { title: 'Vận hành', items: [
+    { id: 'sec-orders', label: 'Đơn chờ thanh toán', count: 'orders' },
+    { id: 'sec-expiring', label: 'Pro sắp hết hạn', count: 'expiring' },
+    { id: 'sec-leads', label: 'Đơn liên hệ', count: 'leads' },
+    { id: 'sec-parishes', label: 'Giáo xứ' },
+  ] },
+  { title: 'Doanh thu', items: [
+    { id: 'sec-payments', label: 'Sổ thanh toán' },
+    { id: 'sec-codes', label: 'Mã giảm giá' },
+    { id: 'sec-tiers', label: 'Bảng giá' },
+  ] },
+  { title: 'Hệ thống', items: [
+    { id: 'sec-growth', label: 'Thống kê đăng ký' },
+    { id: 'sec-default-games', label: 'Game mặc định' },
+    { id: 'sec-purge', label: 'Dọn dữ liệu quá hạn', count: 'purge' },
+  ] },
 ];
+const ADMIN_IDS = ADMIN_GROUPS.flatMap((g) => g.items.map((i) => i.id));
 
 function initials(name = '') {
   const p = name.trim().split(/\s+/);
@@ -130,10 +141,39 @@ export default function Layout({ children }) {
 
   function handleLogout() { logout(); navigate('/login'); }
 
+  const adminCounts = useAdminCounts();
+  const onAdmin = sa && location.pathname === '/admin';
+  const [activeSec, setActiveSec] = useState('');
+  // Tô sáng mục đang xem khi cuộn trang /admin.
+  useEffect(() => {
+    if (!onAdmin) { setActiveSec(''); return undefined; }
+    let timer = 0;
+    const update = () => {
+      timer = 0;
+      let cur = ADMIN_IDS[0]; let lastTop = -Infinity; let lastEl = null;
+      for (const id of ADMIN_IDS) {
+        const el = document.getElementById(id); if (!el) continue;
+        const top = el.getBoundingClientRect().top;
+        // 2 thẻ cùng hàng (Giám sát, Tân thủ) có cùng top: giữ thẻ đứng trước
+        if (top <= 140 && top > lastTop + 1) { cur = id; lastTop = top; }
+        lastEl = el;
+      }
+      // Cuộn chạm đáy trang: mục cuối có thể không lên tới đầu màn hình
+      if (lastEl && lastEl.getBoundingClientRect().bottom <= window.innerHeight + 2) cur = lastEl.id;
+      setActiveSec(cur);
+    };
+    const onScroll = () => { if (!timer) timer = setTimeout(update, 60); };
+    document.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onScroll);
+    const t = setTimeout(update, 400);
+    return () => { document.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', onScroll); clearTimeout(t); clearTimeout(timer); };
+  }, [onAdmin]);
+
   function goSection(id) {
     const off = location.pathname !== '/admin';
     if (off) navigate('/admin');
     setNavOpen(false);
+    setActiveSec(id);
     setTimeout(() => { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, off ? 140 : 0);
   }
 
@@ -147,11 +187,18 @@ export default function Layout({ children }) {
     <div className="app">
       <aside className={`sidebar ${navOpen ? 'open' : ''}`}>
         <div className="brand">
-          {parish?.logo_url ? <img className="logo-img" src={parish.logo_url} alt="logo" /> : <div className="logo">✝</div>}
-          <div>
-            <div>{parishName}</div>
-            {parish?.diocese && <div className="brand-sub">{parish.diocese}</div>}
-          </div>
+          {!sa && parish?.logo_url ? <img className="logo-img" src={parish.logo_url} alt="logo" /> : <div className="logo">✝</div>}
+          {sa ? (
+            <div>
+              <div>Giáo Lý Số</div>
+              <div className="brand-sub">Quản trị hệ thống</div>
+            </div>
+          ) : (
+            <div>
+              <div>{parishName}</div>
+              {parish?.diocese && <div className="brand-sub">{parish.diocese}</div>}
+            </div>
+          )}
         </div>
         <nav>
           {nav.filter((n) => (sa ? n.superOnly : !n.superOnly && (!n.adminOnly || user?.role === 'admin') && !(n.proOnly && !pro))).map(({ to, label, Icon, end }) => (
@@ -161,8 +208,16 @@ export default function Layout({ children }) {
           ))}
           {sa && (
             <div className="admin-subnav">
-              {ADMIN_SECTIONS.map((s) => (
-                <button key={s.id} onClick={() => goSection(s.id)}>{s.label}</button>
+              {ADMIN_GROUPS.map((g) => (
+                <div key={g.title} className="asn-group">
+                  <div className="asn-title">{g.title}</div>
+                  {g.items.map((s) => (
+                    <button key={s.id} className={activeSec === s.id ? 'active' : ''} onClick={() => goSection(s.id)}>
+                      <span>{s.label}</span>
+                      {s.count && adminCounts[s.count] > 0 && <span className="nav-badge">{adminCounts[s.count]}</span>}
+                    </button>
+                  ))}
+                </div>
               ))}
             </div>
           )}

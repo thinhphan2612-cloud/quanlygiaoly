@@ -1023,6 +1023,9 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .mini-stats b { color: var(--text); font-size: 15px; margin-right: 2px; }
 .mini-sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.45; }
 @media (max-width: 720px) { .admin-strip { grid-template-columns: 1fr; gap: 8px; } }
+/* Ô tìm kiếm / bộ lọc trên tiêu đề bảng: không giãn hết chiều ngang (input mặc định width 100%) */
+.admin-page .card-head input { width: auto; flex: 0 1 260px; }
+.admin-page .card-head select { width: auto; }
 /* Trang Quản trị trên điện thoại: ô việc cần xử lý 2 cột, bộ lọc full-width, bảng chuyển thành thẻ */
 @media (max-width: 640px) {
   .admin-todo { grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -1065,10 +1068,16 @@ body::after {  /* lớp phủ nhẹ để chữ dễ đọc */
 .qr-info { flex: 1; min-width: 210px; }
 .qr-info .row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
 .qr-info .row:last-child { border-bottom: 0; }
-.admin-subnav { display: flex; flex-direction: column; gap: 2px; margin: 6px 0 0 10px; padding-left: 10px; border-left: 2px solid var(--border); }
-.admin-subnav button { background: none; border: 0; text-align: left; padding: 7px 10px; border-radius: 8px; color: var(--muted); font-size: 13.5px; cursor: pointer; }
+.admin-subnav { display: flex; flex-direction: column; margin-top: 2px; }
+.asn-group { display: flex; flex-direction: column; gap: 1px; }
+.asn-title { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); padding: 14px 14px 5px; }
+.admin-subnav button { position: relative; display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: 0; text-align: left; padding: 7px 12px 7px 16px; border-radius: 10px; color: var(--text); font-size: 13.5px; cursor: pointer; transition: background .12s, color .12s; }
 .admin-subnav button:hover { background: var(--primary-soft); color: var(--primary); }
-#sec-overview, #sec-parishes, #sec-orders, #sec-payments, #sec-codes, #sec-tiers { scroll-margin-top: 76px; }
+.admin-subnav button.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+.admin-subnav button.active::before { content: ''; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 3px; border-radius: 2px; background: var(--primary); }
+.nav-badge { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #fdecd8; color: #a8641b; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+:root[data-theme="dark"] .nav-badge { background: rgba(240, 180, 106, .18); color: #f0b46a; }
+.admin-page [id^="sec-"] { scroll-margin-top: 76px; }
 .pager { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 14px 0 2px; }
 .plan-card .pc-badge { display: inline-block; background: rgba(255,255,255,.22); color: #fff; font-weight: 700; font-size: 12.5px; padding: 3px 12px; border-radius: 999px; margin-bottom: 10px; }
 .plan-card .pc-feats { color: #fff; opacity: .93; font-size: 12px; line-height: 1.5; text-align: left; margin-bottom: 12px; }

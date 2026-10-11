@@ -6,6 +6,7 @@ import { useAuth } from '../auth.jsx';
 import { isSuperAdmin } from '../lib/superadmin';
 import { supabase } from '../supabase';
 import { exportXlsx } from '../lib/exportUtils';
+import { setAdminCounts } from '../lib/adminCounts';
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString('vi-VN') : '-');
 const fmtVnd = (n) => (Number(n) || 0).toLocaleString('vi-VN') + 'đ';
@@ -377,6 +378,11 @@ export default function Admin() {
   const [ordersPage, ordersPager] = usePaged(orders);
   const [paymentsPage, paymentsPager] = usePaged(paymentsShown, `${payPeriod}|${payQ}`);
   const [codesPage, codesPager] = usePaged(codes);
+
+  // Đẩy số việc cần xử lý lên menu bên trái (badge).
+  useEffect(() => {
+    setAdminCounts({ orders: orders.length, expiring: expiring.length, leads: leadTodo, purge: overdue.length });
+  }, [orders.length, expiring.length, leadTodo, overdue.length]);
 
   const todo = [
     { n: orders.length, l: 'Đơn chờ thanh toán', go: () => scrollTo('sec-orders') },
