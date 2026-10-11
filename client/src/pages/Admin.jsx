@@ -50,6 +50,9 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [qText, setQText] = useState('');
+  const [planFilter, setPlanFilter] = useState('all'); // lọc giáo xứ theo gói / bậc
+  const [parishSort, setParishSort] = useState('newest');
+  const [leadSort, setLeadSort] = useState('newest');
   const [editing, setEditing] = useState(null);     // giáo xứ đang kích hoạt/gia hạn Pro
   const [editParish, setEditParish] = useState(null); // giáo xứ đang sửa tên/giáo phận
   const [payParish, setPayParish] = useState(null);   // ghi thanh toán rời cho giáo xứ
@@ -85,10 +88,30 @@ export default function Admin() {
 
   const filtered = useMemo(() => {
     const t = qText.trim().toLowerCase();
-    if (!t) return rows;
-    return rows.filter((p) =>
+    let list = !t ? rows : rows.filter((p) =>
       [p.name, p.diocese, p.admin_email, p.admin_name].some((x) => (x || '').toLowerCase().includes(t)));
-  }, [rows, qText]);
+    if (planFilter !== 'all') {
+      list = list.filter((p) => {
+        const max = p.plan_max_classes;
+        if (planFilter === 'free') return p.plan !== 'pro';
+        if (p.plan !== 'pro') return false;
+        if (planFilter === 'pro5') return max != null && max <= 5;
+        if (planFilter === 'pro12') return max != null && max > 5 && max <= 12;
+        if (planFilter === 'pro20') return max != null && max > 12 && max <= 20;
+        if (planFilter === 'proXL') return max == null || max > 20;
+        if (planFilter === 'expiring') {
+          if (!p.plan_expires_at) return false;
+          const d = Math.ceil((new Date(p.plan_expires_at).getTime() - Date.now()) / 86400000);
+          return d >= 0 && d <= 30;
+        }
+        return true; // 'pro'
+      });
+    }
+    // API đã trả theo ngày tạo mới nhất; sort ổn định nên các giáo xứ bằng nhau vẫn giữ thứ tự đó.
+    const by = { classesDesc: (a, b) => b.classes - a.classes, classesAsc: (a, b) => a.classes - b.classes,
+      studentsDesc: (a, b) => b.students - a.students, studentsAsc: (a, b) => a.students - b.students }[parishSort];
+    return by ? [...list].sort(by) : list;
+  }, [rows, qText, planFilter, parishSort]);
 
   const now = Date.now();
   const daysLeft = (p) => (p.plan_expires_at ? Math.ceil((new Date(p.plan_expires_at).getTime() - now) / 86400000) : null);
@@ -219,10 +242,14 @@ export default function Admin() {
     catch (e) { alert(e.response?.data?.error || 'Xoá thất bại'); }
   }
   const newLeads = leads.filter((l) => l.status === 'new').length;
+  const sortedLeads = useMemo(() => [...leads].sort((a, b) => {
+    const c = String(a.created_at).localeCompare(String(b.created_at));
+    return leadSort === 'oldest' ? c : -c;
+  }), [leads, leadSort]);
 
   const [expiringPage, expiringPager] = usePaged(expiring);
-  const [leadsPage, leadsPager] = usePaged(leads);
-  const [parishPage, parishPager] = usePaged(filtered, qText);
+  const [leadsPage, leadsPager] = usePaged(sortedLeads, leadSort);
+  const [parishPage, parishPager] = usePaged(filtered, `${qText}|${planFilter}|${parishSort}`);
   const [overduePage, overduePager] = usePaged(overdue);
   const [ordersPage, ordersPager] = usePaged(orders);
   const [paymentsPage, paymentsPager] = usePaged(payments);
@@ -294,7 +321,13 @@ export default function Admin() {
       </div>
 
       <div className="panel" id="sec-leads">
-        <div className="card-head"><h2 style={{ margin: 0 }}>Đơn liên hệ &amp; đăng ký dùng thử{newLeads > 0 ? ` (${newLeads} mới)` : ''}</h2></div>
+        <div className="card-head" style={{ gap: 12, flexWrap: 'wrap' }}>
+          <h2 style={{ margin: 0 }}>Đơn liên hệ &amp; đăng ký dùng thử{newLeads > 0 ? ` (${newLeads} mới)` : ''}</h2>
+          <select value={leadSort} onChange={(e) => setLeadSort(e.target.value)} style={{ marginLeft: 'auto', width: 'auto' }}>
+            <option value="newest">Mới nhất</option>
+            <option value="oldest">Cũ nhất</option>
+          </select>
+        </div>
         {leads.length === 0 ? <p className="muted">Chưa có đơn nào.</p> : (
           <div style={{ overflowX: 'auto' }}>
             <table>
@@ -348,6 +381,23 @@ export default function Admin() {
             onChange={(e) => setQText(e.target.value)}
             style={{ marginLeft: 'auto', minWidth: 240 }}
           />
+          <select value={planFilter} onChange={(e) => setPlanFilter(e.target.value)} style={{ width: 'auto' }}>
+            <option value="all">Tất cả gói</option>
+            <option value="free">Khởi động</option>
+            <option value="pro">Pro (mọi bậc)</option>
+            <option value="pro5">Pro nhỏ (tối đa 5 lớp)</option>
+            <option value="pro12">Pro vừa (6 đến 12 lớp)</option>
+            <option value="pro20">Pro lớn (13 đến 20 lớp)</option>
+            <option value="proXL">Pro rất lớn (trên 20 lớp)</option>
+            <option value="expiring">Pro sắp hết hạn (30 ngày)</option>
+          </select>
+          <select value={parishSort} onChange={(e) => setParishSort(e.target.value)} style={{ width: 'auto' }}>
+            <option value="newest">Mới đăng ký nhất</option>
+            <option value="classesDesc">Nhiều lớp nhất</option>
+            <option value="classesAsc">Ít lớp nhất</option>
+            <option value="studentsDesc">Nhiều học viên nhất</option>
+            <option value="studentsAsc">Ít học viên nhất</option>
+          </select>
         </div>
 
         {err && <div className="error">{err}</div>}
