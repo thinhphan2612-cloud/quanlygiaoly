@@ -191,8 +191,9 @@ const GUIDE = [
     tags: 'game trò chơi học giáo lý ai là triệu phú chiếc nón kỳ diệu tự tạo câu hỏi nội dung',
     summary: 'Bộ game học giáo lý biên soạn sẵn, hoặc tự tạo nội dung câu hỏi cho riêng lớp mình.',
     steps: [
-      'Vào “Game học”, chọn một game có sẵn để chơi cùng lớp.',
-      'Với game hỗ trợ, mở phần “Tạo câu hỏi” để tự nhập nội dung câu hỏi theo bài đang dạy.',
+      'Vào “Game học”, bấm vào thẻ game để chơi. Game mở kín cửa sổ; bấm “Toàn màn hình” khi chiếu lên TV hoặc máy chiếu.',
+      'Với game hỗ trợ, mở phần “Tạo câu hỏi” để tự nhập câu hỏi theo bài đang dạy. Soạn xong bấm “Lưu trò chơi” trong game để tải bộ câu hỏi về máy, lần sau mở lại để dùng tiếp.',
+      'Bấm “Đóng” hoặc phím Esc để thoát game (có hỏi lại để không lỡ tay mất ván đang chơi). Game vừa chơi hiện ở mục “Chơi gần đây”.',
     ],
     tips: ['Dùng game để ôn tập cuối buổi, học viên hứng thú và nhớ bài lâu hơn.'],
   },

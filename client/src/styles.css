@@ -678,12 +678,6 @@ body { background: #f4f5f7; }
 .logo-preview { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; border: 1px solid var(--border); background: var(--primary-soft); display: grid; place-items: center; font-size: 26px; }
 
 /* ---------- Games grid ---------- */
-.game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
-.game-card { cursor: pointer; text-align: center; transition: transform .12s ease; }
-.game-card:hover { transform: translateY(-3px); }
-.game-card.locked { opacity: 0.75; }
-.game-thumb { height: 96px; border-radius: var(--radius); display: grid; place-items: center; font-size: 40px; box-shadow: var(--shadow-sm); overflow: hidden; }
-.game-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 /* ---------- Thi online (trang công khai) ---------- */
 .exam-wrap { min-height: 100vh; background: linear-gradient(160deg, #eef2f7 0%, #e6ebf2 100%); padding: 20px 12px 96px; display: flex; flex-direction: column; align-items: center; font-family: inherit; color: #1f2733; }
@@ -731,16 +725,6 @@ body { background: #f4f5f7; }
 .exam-score { font-size: 60px; font-weight: 800; color: #2563eb; line-height: 1; margin: 8px 0; }
 .exam-score span { font-size: 24px; color: #97a3b4; }
 .exam-spin { font-size: 46px; margin-bottom: 6px; }
-.game-name { margin-top: 8px; font-weight: 600; font-size: 14px; }
-.game-card { position: relative; }
-.ug-remove { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; border: none; background: rgba(0,0,0,.45); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; z-index: 2; display: grid; place-items: center; }
-.ug-remove:hover { background: #dc2626; }
-.ug-actions { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
-/* Chơi game nhúng iframe */
-.game-frame-overlay { position: fixed; inset: 0; z-index: 250; background: rgba(10,12,16,.7); display: flex; align-items: center; justify-content: center; padding: 18px; }
-.game-frame-box { width: min(1000px, 96vw); height: min(720px, 92vh); background: #fff; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0,0,0,.4); }
-.game-frame-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); font-weight: 600; }
-.game-frame { flex: 1; width: 100%; border: 0; display: block; }
 
 /* ---------- Pricing ---------- */
 .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
@@ -1063,8 +1047,6 @@ body { background: #f4f5f7; }
 }
 
 /* Khung game: chờ / không chạy được trong khung */
-.game-wait { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 24px; }
-.game-wait p { margin: 0; }
 
 /* Trang Quản trị trên điện thoại: ô việc cần xử lý 2 cột, bộ lọc full-width, bảng chuyển thành thẻ */
 @media (max-width: 640px) {
@@ -2064,6 +2046,52 @@ button.gx-stat:hover { border-color: var(--primary); }
   .arx-msearch { max-width: none; }
   .arx-exp { margin-left: 0; }
   .arx-mbody { max-height: none; }
+}
+
+/* ===== Game học (Games): tiền tố gmx- ===== */
+a.gmx-link, a.gmx-link:hover { text-decoration: none; }
+.gmx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.gmx-card { position: relative; }
+.gmx-play { width: 100%; display: flex; flex-direction: column; text-align: left; padding: 0; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); overflow: hidden; cursor: pointer; font: inherit; color: var(--text); transition: transform .12s, box-shadow .12s, border-color .12s; }
+.gmx-play:hover { transform: translateY(-2px); border-color: var(--primary); box-shadow: 0 8px 22px rgba(37, 99, 235, .12); }
+.gmx-thumb { position: relative; height: 130px; display: grid; place-items: center; overflow: hidden; }
+.gmx-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gmx-ico { font-size: 44px; color: #fff; }
+.gmx-playbadge { position: absolute; right: 10px; bottom: 10px; padding: 5px 12px; border-radius: 999px; background: rgba(15, 23, 42, .72); color: #fff; font-size: 13px; font-weight: 700; opacity: .92; }
+.gmx-play:hover .gmx-playbadge { background: var(--primary); opacity: 1; }
+.gmx-body { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px 14px; }
+.gmx-name { font-size: 15px; color: var(--heading); }
+.gmx-desc { font-size: 13px; color: var(--muted); line-height: 1.45; }
+.gmx-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.gmx-tag { padding: 2px 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 11.5px; font-weight: 600; }
+.gmx-menu { position: absolute; top: 8px; right: 8px; z-index: 2; }
+.gmx-menu .row-menu-btn { background: rgba(255, 255, 255, .92); }
+.gmx-recent { display: flex; gap: 8px; flex-wrap: wrap; }
+.gmx-chip { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); font: inherit; font-size: 14px; font-weight: 600; color: var(--text); cursor: pointer; }
+.gmx-chip:hover { border-color: var(--primary); }
+.gmx-chip-ico { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 14px; overflow: hidden; }
+.gmx-chip-ico img { width: 100%; height: 100%; object-fit: cover; }
+.gmx-empty { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.gmx-empty p { margin: 0; color: var(--muted); }
+.gmx-overlay { position: fixed; inset: 0; z-index: 250; background: rgba(10, 12, 16, .82); display: flex; padding: 10px; }
+.gmx-box { flex: 1; min-width: 0; background: #0b1020; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0, 0, 0, .45); }
+.gmx-box:fullscreen { border-radius: 0; }
+.gmx-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.gmx-title { font-weight: 700; color: var(--heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.gmx-tools { display: flex; gap: 8px; flex: 0 0 auto; }
+.gmx-rotate { padding: 8px 12px; background: #fef3c7; color: #92400e; font-size: 13px; text-align: center; }
+.gmx-frame { flex: 1; width: 100%; border: 0; display: block; background: #0b1020; }
+.gmx-wait { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 24px; background: var(--panel); }
+.gmx-wait p { margin: 0; }
+@media (max-width: 640px) {
+  .gmx-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .gmx-thumb { height: 92px; }
+  .gmx-desc { display: none; }
+  .gmx-body { padding: 10px; }
+  .gmx-name { font-size: 14px; }
+  .gmx-overlay { padding: 0; }
+  .gmx-box { border-radius: 0; }
+  .gmx-tools .btn-ext { display: none; }
 }
 
 /* ===== Hướng dẫn sử dụng (Guide / Wiki) ===== */
