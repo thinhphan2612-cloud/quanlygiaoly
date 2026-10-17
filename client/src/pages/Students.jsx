@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useRealtime } from '../realtime.jsx';
@@ -9,6 +9,7 @@ import Avatar from '../components/Avatar.jsx';
 import StudentForm from '../components/StudentForm.jsx';
 import { byViName } from '../lib/viName';
 import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
+import { getPref, setPref } from '../lib/prefs';
 
 const empty = {
   full_name: '', saint_name: '', birth_date: '', gender: '',
@@ -40,6 +41,59 @@ const studentColumns = [
 
 const defaultFilter = { classes: [], sacrament: '', sortBy: 'name' };
 
+const joinName = (saint, name) => [saint, name].filter(Boolean).join(' ');
+// Phụ huynh: ưu tiên cha / mẹ; dữ liệu cũ chỉ có parent_name / parent_phone.
+function parentLines(s) {
+  const lines = [];
+  const father = joinName(s.father_saint, s.father_name);
+  const mother = joinName(s.mother_saint, s.mother_name);
+  if (father || s.father_phone) lines.push({ who: 'Cha', name: father, phone: s.father_phone });
+  if (mother || s.mother_phone) lines.push({ who: 'Mẹ', name: mother, phone: s.mother_phone });
+  if (!lines.length && (s.parent_name || s.parent_phone)) lines.push({ who: '', name: s.parent_name, phone: s.parent_phone });
+  return lines;
+}
+const dash = <span className="muted">—</span>;
+
+// Các cột có thể hiện trong bảng. Họ tên luôn hiện; người dùng tự chọn các cột còn lại.
+const DISPLAY_COLS = [
+  { key: 'saint', exp: ['Tên thánh'], label: 'Tên thánh', render: (s) => s.saint_name || dash },
+  { key: 'position', exp: ['Chức vụ'], label: 'Chức vụ', render: (s) => (s.position ? <span className="role-chip">{s.position}</span> : dash) },
+  { key: 'birth', exp: ['Ngày sinh'], label: 'Ngày sinh', render: (s) => s.birth_date || dash },
+  { key: 'gender', exp: ['Giới tính'], label: 'Giới tính', render: (s) => s.gender || dash },
+  { key: 'class', exp: ['Lớp'], label: 'Lớp', render: (s) => s.class_name || <span className="muted">Chưa xếp lớp</span> },
+  { key: 'parents', exp: ['Họ tên cha', 'SĐT cha', 'Họ tên mẹ', 'SĐT mẹ'], label: 'Phụ huynh', render: (s) => {
+    const lines = parentLines(s);
+    if (!lines.length) return dash;
+    return lines.map((l, i) => (
+      <div key={i} className="parent-line">
+        {l.who && <span className="muted">{l.who}: </span>}{l.name || ''}{l.name && l.phone ? ' · ' : ''}{l.phone || ''}
+      </div>
+    ));
+  } },
+  { key: 'godparent', exp: ['Người đỡ đầu'], label: 'Người đỡ đầu', render: (s) => s.godparent_name || dash },
+  { key: 'student_phone', exp: ['SĐT học sinh'], label: 'SĐT học viên', render: (s) => s.student_phone || dash },
+  { key: 'baptism', exp: ['Rửa tội'], label: 'Ngày Rửa tội', render: (s) => s.baptism_date || dash },
+  { key: 'communion', exp: ['Rước lễ'], label: 'Ngày Rước lễ', render: (s) => s.first_communion_date || dash },
+  { key: 'confirmation', exp: ['Thêm sức'], label: 'Ngày Thêm sức', render: (s) => s.confirmation_date || dash },
+  { key: 'address', exp: ['Địa chỉ'], label: 'Địa chỉ', render: (s) => s.address || dash },
+  { key: 'notes', exp: ['Ghi chú'], label: 'Ghi chú', render: (s) => s.notes || dash },
+];
+const DEFAULT_COLS = ['saint', 'birth', 'class', 'parents'];
+const EXP_COL = Object.fromEntries(studentColumns.map((c) => [c.label, c]));
+// Lựa chọn cột lưu ở tài khoản (đồng bộ giữa các máy, lib/prefs) và bản sao localStorage để mở trang hiện ngay.
+// Dạng lưu: { cols: [...key], exportAll: bool }.
+const colsKey = (uid) => `students_cols:${uid || 'anon'}`;
+function normCols(v) {
+  if (Array.isArray(v)) return { cols: v, exportAll: false }; // dạng cũ: chỉ mảng cột
+  if (v && Array.isArray(v.cols)) return { cols: v.cols, exportAll: !!v.exportAll };
+  return null;
+}
+function cleanCols(p) { return { ...p, cols: p.cols.filter((k) => DISPLAY_COLS.some((c) => c.key === k)) }; }
+function loadCols(uid) {
+  try { const v = normCols(JSON.parse(localStorage.getItem(colsKey(uid)))); if (v) return cleanCols(v); } catch { /* dùng mặc định */ }
+  return { cols: DEFAULT_COLS, exportAll: false };
+}
+
 export default function Students() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -54,6 +108,32 @@ export default function Students() {
   const [showFilter, setShowFilter] = useState(false);
   const [f, setF] = useState(defaultFilter);
   const [parish, setParish] = useState(null);
+  const [showCols, setShowCols] = useState(false);
+  const [view, setView] = useState(() => loadCols(user?.id));
+  const cols = view.cols;
+  const saveTimer = useRef();
+  // Lấy lựa chọn đã lưu ở tài khoản (có thể đặt từ máy khác).
+  useEffect(() => {
+    getPref('students_cols').then((v) => {
+      const p = normCols(v); if (!p) return;
+      const next = cleanCols(p);
+      setView(next);
+      try { localStorage.setItem(colsKey(user?.id), JSON.stringify(next)); } catch { /* bỏ qua */ }
+    }).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  function saveView(next) {
+    setView(next);
+    try { localStorage.setItem(colsKey(user?.id), JSON.stringify(next)); } catch { /* bỏ qua */ }
+    // Gom nhiều lần tick liên tiếp thành 1 lần ghi lên tài khoản.
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => { setPref('students_cols', next).catch(() => {}); }, 800);
+  }
+  const toggleCol = (key) => saveView({ ...view, cols: cols.includes(key) ? cols.filter((k) => k !== key) : [...cols, key] });
+  const resetCols = () => saveView({ cols: DEFAULT_COLS, exportAll: view.exportAll });
+  // Giữ đúng thứ tự cột theo DISPLAY_COLS; Họ tên đứng sau Tên thánh (hoặc đầu bảng nếu ẩn Tên thánh).
+  const shownCols = DISPLAY_COLS.filter((c) => cols.includes(c.key));
+  const beforeName = shownCols.filter((c) => c.key === 'saint');
+  const afterName = shownCols.filter((c) => c.key !== 'saint');
 
   function load() {
     api.get('/students').then((r) => setStudents(r.data));
@@ -109,10 +189,17 @@ export default function Students() {
   const activeCount = (f.classes.length ? 1 : 0) + (f.sacrament ? 1 : 0) + (f.sortBy !== 'name' ? 1 : 0);
 
   const singleCls = f.classes.length === 1 ? classes.find((c) => c.id === f.classes[0]) : null;
+  // Xuất theo đúng các cột đang hiện (Họ tên luôn có), hoặc toàn bộ cột nếu người dùng chọn.
+  const exportCols = view.exportAll ? studentColumns : [
+    STT_COL,
+    ...beforeName.flatMap((c) => c.exp.map((l) => EXP_COL[l])),
+    EXP_COL['Họ và tên'],
+    ...afterName.flatMap((c) => c.exp.map((l) => EXP_COL[l])),
+  ];
   const exportMeta = {
     title: 'Danh sách học viên',
     subtitle: exportSubtitle({ parish, cls: singleCls, extra: singleCls ? [] : ['Tất cả các lớp'] }),
-    columns: studentColumns,
+    columns: exportCols,
     rows: filtered,
   };
   const exportName = 'danh-sach-hoc-vien';
@@ -123,10 +210,11 @@ export default function Students() {
     <div>
       <h1>Quản lý học viên</h1>
       <div className="toolbar">
-        <input className="grow" placeholder="Tìm theo tên..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input className="grow stu-search" placeholder="Tìm theo tên..." value={search} onChange={(e) => setSearch(e.target.value)} />
         <button className={`btn ghost ${activeCount ? 'has-badge' : ''}`} onClick={() => setShowFilter((v) => !v)}>
           🔽 Lọc / Sắp xếp{activeCount ? ` (${activeCount})` : ''}
         </button>
+        <button className="btn ghost" onClick={() => setShowCols((v) => !v)}>☷ Cột hiển thị</button>
         <button className="btn ghost" onClick={() => setBulkOpen(true)}>⬆ Nhập hàng loạt</button>
         <button className="btn ghost" disabled={filtered.length === 0}
           onClick={() => exportXlsx({ filename: `${exportName}.xlsx`, sheetName: 'Học viên', ...exportMeta })}>⬇ Excel</button>
@@ -172,6 +260,33 @@ export default function Students() {
         </div>
       )}
 
+      {showCols && (
+        <div className="filter-panel">
+          <div className="fp-label">Chọn cột hiển thị trong bảng (Họ tên luôn hiện)</div>
+          <div className="fp-classes" style={{ maxHeight: 'none' }}>
+            {DISPLAY_COLS.map((c) => (
+              <label key={c.key} className="fp-chk">
+                <input type="checkbox" checked={cols.includes(c.key)} onChange={() => toggleCol(c.key)} />
+                <span>{c.label}</span>
+              </label>
+            ))}
+          </div>
+          <div className="fp-label" style={{ marginTop: 14 }}>Khi xuất Excel / PDF</div>
+          <div className="fp-classes" style={{ maxHeight: 'none' }}>
+            <label className="fp-chk">
+              <input type="radio" name="stu-export" checked={!view.exportAll} onChange={() => saveView({ ...view, exportAll: false })} />
+              <span>Chỉ các cột đang hiện</span>
+            </label>
+            <label className="fp-chk">
+              <input type="radio" name="stu-export" checked={view.exportAll} onChange={() => saveView({ ...view, exportAll: true })} />
+              <span>Tất cả thông tin (kể cả chứng chỉ / khóa học)</span>
+            </label>
+          </div>
+          <p className="muted" style={{ fontSize: 12, margin: '10px 0 0' }}>Lựa chọn được lưu vào tài khoản, đăng nhập máy khác vẫn giữ.</p>
+          <button className="btn ghost sm" style={{ marginTop: 12 }} onClick={resetCols}>Về mặc định</button>
+        </div>
+      )}
+
       <div className="panel">
         <div className="sac-legend">
           <span>Bí tích:</span>
@@ -183,25 +298,25 @@ export default function Students() {
         <table>
           <thead>
             <tr>
-              <th>Tên thánh</th><th>Họ tên</th><th>Chức vụ</th><th>Ngày sinh</th><th>Lớp</th><th>SĐT phụ huynh</th><th></th>
+              {beforeName.map((c) => <th key={c.key}>{c.label}</th>)}
+              <th>Họ tên</th>
+              {afterName.map((c) => <th key={c.key}>{c.label}</th>)}
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((s) => (
               <tr key={s.id}>
-                <td>{s.saint_name || '—'}</td>
+                {beforeName.map((c) => <td key={c.key}>{c.render(s)}</td>)}
                 <td><div className="stu-cell"><Avatar url={s.avatar_url} name={s.full_name} size={30} /><span className="link-name" onClick={() => navigate(`/students/${s.id}`)}>{s.full_name}</span><SacramentBadge value={s.sacrament} /></div></td>
-                <td>{s.position ? <span className="role-chip">{s.position}</span> : <span className="muted">—</span>}</td>
-                <td>{s.birth_date || '—'}</td>
-                <td>{s.class_name || <span className="muted">Chưa xếp lớp</span>}</td>
-                <td>{s.father_phone || s.mother_phone || s.parent_phone || '—'}</td>
+                {afterName.map((c) => <td key={c.key}>{c.render(s)}</td>)}
                 <td style={{ whiteSpace: 'nowrap' }}>
                   <button className="btn ghost sm" onClick={() => openEdit(s)}>Sửa</button>{' '}
                   <button className="btn danger sm" onClick={() => remove(s)}>Xóa</button>
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && <tr><td colSpan={7} className="muted">Không có học viên</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={shownCols.length + 2} className="muted">Không có học viên</td></tr>}
           </tbody>
         </table>
       </div>
