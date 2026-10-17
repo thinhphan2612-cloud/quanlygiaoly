@@ -132,8 +132,8 @@ function ClassReviews() {
                 <button className="btn ghost sm" onClick={() => revise(r)}>Yêu cầu xem lại</button>
               </>
             )}
-            {r.status === 'approved' && <span className="tag-chip" style={{ background: '#dcfce7', color: '#15803d' }}>✓ Đã duyệt</span>}
-            {r.status === 'revision' && <span className="tag-chip" style={{ background: '#fee2e2', color: '#b91c1c' }}>↩ Đã trả lại GLV</span>}
+            {r.status === 'approved' && <span className="tag-chip tone-green">✓ Đã duyệt</span>}
+            {r.status === 'revision' && <span className="tag-chip tone-red">Đã trả lại GLV</span>}
             {r.status === 'none' && <span className="muted" style={{ fontSize: 12 }}>Chờ GLV gửi</span>}
           </td>
         </tr>
@@ -193,9 +193,9 @@ function ClassReviewsGLV() {
     || (r.status === 'none' && (r.kind === 'external' || promotionOpen)));
   if (relevant.length === 0) return null;
   const statusChip = (r) => {
-    if (r.status === 'submitted') return <span className="tag-chip" style={{ background: '#fef9c3', color: '#854d0e' }}>⏳ Chờ Admin duyệt</span>;
-    if (r.status === 'approved') return <span className="tag-chip" style={{ background: '#dcfce7', color: '#15803d' }}>✓ Đã duyệt</span>;
-    if (r.status === 'revision') return <span className="tag-chip" style={{ background: '#fee2e2', color: '#b91c1c' }}>↩ Cần xem lại</span>;
+    if (r.status === 'submitted') return <span className="tag-chip tone-yellow">Chờ Admin duyệt</span>;
+    if (r.status === 'approved') return <span className="tag-chip tone-green">✓ Đã duyệt</span>;
+    if (r.status === 'revision') return <span className="tag-chip tone-red">Cần xem lại</span>;
     return <span className="muted" style={{ fontSize: 12 }}>Chưa gửi</span>;
   };
   return (

@@ -633,6 +633,21 @@ body { background: #f4f5f7; }
 .tag-chip.merged { background: #fdecec; color: #dc2626; font-weight: 600; }
 :root[data-theme="dark"] .tag-chip.merged { background: rgba(220,38,38,0.18); color: #f87171; }
 .tag-chip.grad { background: #dcfce7; color: #15803d; }
+/* Nhãn trạng thái theo tông màu (tự đổi ở chế độ tối) */
+.tag-chip.tone-green { background: #dcfce7; color: #15803d; }
+.tag-chip.tone-yellow { background: #fef9c3; color: #854d0e; }
+.tag-chip.tone-red { background: #fee2e2; color: #b91c1c; }
+.tag-chip.tone-gray { background: #e5e7eb; color: #374151; }
+.tag-chip.tone-indigo { background: #e0e7ff; color: #3730a3; }
+:root[data-theme="dark"] .tag-chip.tone-green { background: rgba(22,163,74,0.18); color: #4ade80; }
+:root[data-theme="dark"] .tag-chip.tone-yellow { background: rgba(234,179,8,0.18); color: #facc15; }
+:root[data-theme="dark"] .tag-chip.tone-red { background: rgba(220,38,38,0.18); color: #f87171; }
+:root[data-theme="dark"] .tag-chip.tone-gray { background: rgba(255,255,255,0.08); color: #cbd5e1; }
+:root[data-theme="dark"] .tag-chip.tone-indigo { background: rgba(99,102,241,0.2); color: #a5b4fc; }
+.renew-bar.info { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
+.note-warn { background: #fff7ed; border: 1px solid #fdba74; color: #7c2d12; }
+:root[data-theme="dark"] .renew-bar, :root[data-theme="dark"] .note-warn { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.35); color: #fcd34d; }
+:root[data-theme="dark"] .renew-bar.info { background: rgba(37,99,235,0.14); border-color: rgba(37,99,235,0.4); color: #bfdbfe; }
 :root[data-theme="dark"] .tag-chip.grad { background: rgba(22,163,74,0.18); color: #4ade80; }
 .sac-row { justify-content: flex-start; }
 .sac-cur { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; }

@@ -25,14 +25,14 @@ const empty = {
 const SCHEDULES = ['Sáng', 'Chiều', 'Tối'];
 const SAC_RANK = { none: 0, baptism: 1, ruoc_le: 2, them_suc: 3 }; // Rửa tội -> Rước lễ -> Thêm Sức
 const REVIEW_BADGE = {
-  submitted: ['Chờ duyệt', '#fef9c3', '#854d0e'],
-  approved: ['Đã duyệt', '#dcfce7', '#15803d'],
-  revision: ['Cần xem lại', '#fee2e2', '#b91c1c'],
+  submitted: ['Chờ duyệt', 'yellow'],
+  approved: ['Đã duyệt', 'green'],
+  revision: ['Cần xem lại', 'red'],
 };
 function reviewBadge(status) {
   const v = REVIEW_BADGE[status];
   if (!v) return null;
-  return <span className="tag-chip" style={{ marginLeft: 6, background: v[1], color: v[2] }}>{v[0]}</span>;
+  return <span className={`tag-chip tone-${v[1]}`} style={{ marginLeft: 6 }}>{v[0]}</span>;
 }
 // Điểm cuối kỳ = trung bình có hệ số trên các cột đã có điểm.
 function avgOf(scoreMap, columns) {

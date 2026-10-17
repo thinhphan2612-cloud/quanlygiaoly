@@ -13,10 +13,10 @@ const KINDS = [{ v: '15p', l: '15 phút' }, { v: '1tiet', l: '1 tiết' }, { v: 
 const kindLabel = (k) => (KINDS.find((x) => x.v === k) || { l: k }).l;
 const EXAM_BASE = (typeof window !== 'undefined' ? window.location.origin : '') + '/exam/';
 const ST = {
-  draft: ['Nháp', '#e5e7eb', '#374151'], waiting: ['Phòng chờ', '#fef9c3', '#854d0e'],
-  started: ['Đang thi', '#dcfce7', '#15803d'], closed: ['Đã đóng', '#e0e7ff', '#3730a3'],
+  draft: ['Nháp', 'gray'], waiting: ['Phòng chờ', 'yellow'],
+  started: ['Đang thi', 'green'], closed: ['Đã đóng', 'indigo'],
 };
-function badge(s) { const v = ST[s] || ST.draft; return <span className="tag-chip" style={{ background: v[1], color: v[2] }}>{v[0]}</span>; }
+function badge(s) { const v = ST[s] || ST.draft; return <span className={`tag-chip tone-${v[1]}`}>{v[0]}</span>; }
 const fmt = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
 
 export default function Exams() {
@@ -377,7 +377,7 @@ function ExamRoom({ examId, onBack }) {
                 {attempts.map((a) => (
                   <tr key={a.id} className={a.status === 'submitted' ? 'click-row' : ''} onClick={() => a.status === 'submitted' && setReviewing(a)}>
                     <td>{a.student_name}{a.leave_count > 0 && <span title="Số lần rời màn hình thi" style={{ color: '#dc2626', fontWeight: 700, fontSize: 12 }}> <IconAlert className="bi" style={{ width: 13, height: 13, marginRight: 2 }} />{a.leave_count}</span>}{a.status === 'submitted' && <span className="muted" style={{ fontSize: 11 }}> · xem lại</span>}</td>
-                    <td>{a.status === 'submitted' ? <span className="tag-chip" style={{ background: '#dcfce7', color: '#15803d' }}>Đã nộp</span> : <span className="muted">Đang làm</span>}</td>
+                    <td>{a.status === 'submitted' ? <span className="tag-chip tone-green">Đã nộp</span> : <span className="muted">Đang làm</span>}</td>
                     <td style={{ fontWeight: 600 }}>{a.score != null ? a.score : '—'}{a.total ? <span className="muted" style={{ fontSize: 12 }}> ({a.correct_count}/{a.total})</span> : ''}</td>
                   </tr>
                 ))}

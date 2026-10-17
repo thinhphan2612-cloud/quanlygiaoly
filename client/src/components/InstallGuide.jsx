@@ -58,7 +58,7 @@ export default function InstallGuide({ onClose }) {
           Cài một lần để mở nhanh như app riêng, không cần gõ lại đường link mỗi lần.
         </p>
 
-        <div style={{ background: '#fff7ed', border: '1px solid #fdba74', borderRadius: 8, padding: '10px 12px', fontSize: 13, marginBottom: 14 }}>
+        <div className="note-warn" style={{ borderRadius: 8, padding: '10px 12px', fontSize: 13, marginBottom: 14 }}>
           <b>Lưu ý:</b> Hãy cài đúng địa chỉ <b>app.giaoly.com.vn</b> (có chữ <b>“app.”</b> phía trước).
           Đừng cài <b>giaoly.com.vn</b> vì đó là trang giới thiệu, không phải ứng dụng.
         </div>

@@ -343,7 +343,7 @@ export default function Layout({ children }) {
         )}
         <main className="content">
           {showInstallBar && location.pathname === '/' && (
-            <div className="renew-bar" style={{ background: '#eff6ff', borderColor: '#bfdbfe', color: '#1e3a8a' }}>
+            <div className="renew-bar info">
               <div className="rb-text">Cài <b>Giáo Lý Số</b> thành ứng dụng trên máy để mở nhanh như app riêng, không cần gõ lại đường link.</div>
               <button className="btn sm" onClick={() => setInstallOpen(true)}>Xem cách cài</button>
               <button className="rb-x" aria-label="Đóng" onClick={() => { setInstallBarHidden(true); try { localStorage.setItem('hideInstallBar', '1'); } catch { /* noop */ } }}>✕</button>
