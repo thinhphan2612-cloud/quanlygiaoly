@@ -28,7 +28,7 @@ function frameSrc(g) {
 // Mô tả + nhãn cho game có sẵn (bảng default_games chưa có cột mô tả)
 const KNOWN = [
   { match: /tri[eệ]u ph[uú]|altp|millionaire/i, desc: 'Trả lời 15 câu hỏi giáo lý tăng dần độ khó, có trợ giúp 50:50, gọi điện, hỏi ý kiến. Chọn gói câu hỏi theo lớp hoặc tự soạn.', tags: ['Chiếu cả lớp', 'Tự tạo câu hỏi'] },
-  { match: /n[oó]n k[yỳ] di[eệ]u|wheel/i, desc: 'Quay nón, đoán chữ cái để mở ô chữ giáo lý.', tags: ['Chiếu cả lớp'] },
+  { match: /n[oó]n k[yỳ] di[eệ]u|wheel/i, desc: 'Quay nón may mắn, trả lời đúng câu hỏi giáo lý để rinh quà. Dùng bộ câu hỏi có sẵn hoặc tự soạn.', tags: ['Chiếu cả lớp', 'Tự tạo câu hỏi'] },
 ];
 const infoOf = (g) => KNOWN.find((k) => k.match.test(`${g.key || ''} ${g.title || ''}`)) || null;
 const RECENT_KEY = 'games_recent';
