@@ -8,7 +8,7 @@ import StudentModal from '../components/StudentModal.jsx';
 import { IconEdit, IconEditImage, IconPrinter } from '../components/Icons.jsx';
 import { fileToDataUrl } from '../lib/img';
 import { ATT_LABEL } from '../lib/exportUtils';
-import { exportCertificate } from '../lib/certificate';
+import { printCert, frameInset, BUILTIN_FRAMES } from '../lib/certTemplates';
 import { viDate } from '../lib/date';
 import { toast } from '../lib/toast';
 
@@ -52,6 +52,14 @@ export default function StudentProfile() {
 
   const s = data.student;
   const SAC_RANK = { none: 0, baptism: 1, ruoc_le: 2, them_suc: 3 };
+  // In chứng chỉ bí tích bằng mẫu thiết kế (khung mặc định + lề giáo xứ đã lưu)
+  function printSacrament(type) {
+    const fr = { ...BUILTIN_FRAMES[type][0], builtin: true };
+    printCert({
+      type, frame: fr.url, inset: frameInset(fr, parish), students: [s], extra: {},
+      parish: { ...parish, priest_name: parish?.settings?.priest_name, priest_signature: parish?.settings?.priest_signature },
+    });
+  }
   const sacRank = SAC_RANK[s.sacrament] || 0;
   const dash = (v) => v || '—';
   const fatherFull = [s.father_saint, s.father_name].filter(Boolean).join(' ') || s.parent_name || '—';
@@ -165,12 +173,11 @@ export default function StudentProfile() {
                 <p className="muted" style={{ margin: 0 }}>Em chưa nhận bí tích nào.</p>
               ) : (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {sacRank >= 1 && <button className="btn ghost" onClick={() => exportCertificate({ parish, student: s, kind: 'baptism' })}><IconPrinter className="bi" />Rửa tội</button>}
-                  {sacRank >= 2 && <button className="btn ghost" onClick={() => exportCertificate({ parish, student: s, kind: 'ruoc_le' })}><IconPrinter className="bi" />Rước lễ</button>}
-                  {sacRank >= 3 && <button className="btn ghost" onClick={() => exportCertificate({ parish, student: s, kind: 'them_suc' })}><IconPrinter className="bi" />Thêm Sức</button>}
+                  {sacRank >= 1 && <button className="btn ghost" onClick={() => printSacrament('baptism')}><IconPrinter className="bi" />{sacRank >= 3 ? 'Rửa Tội & Thêm Sức' : 'Rửa Tội'}</button>}
+                  {sacRank >= 2 && <button className="btn ghost" onClick={() => printSacrament('first_communion')}><IconPrinter className="bi" />Rước Lễ lần đầu</button>}
                 </div>
               )}
-              <p className="muted" style={{ fontSize: 12, marginTop: 10, marginBottom: 0 }}>Mở hộp thoại in → chọn "Lưu thành PDF". Mẫu tạm, sẽ thay bằng mẫu chuẩn của giáo xứ sau.</p>
+              <p className="muted" style={{ fontSize: 12, marginTop: 10, marginBottom: 0 }}>Chọn "Lưu thành PDF" trong hộp thoại in. Dùng khung mặc định của giáo xứ; muốn đổi khung hoặc in cả lớp thì vào trang Chứng chỉ.</p>
             </div>
           )}
 

@@ -3,7 +3,7 @@ import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { viError } from '../lib/viError';
 import { supabase } from '../supabase';
-import { printCert, certPageHtml, BUILTIN_FRAMES, CERT_ORIENT } from '../lib/certTemplates';
+import { printCert, certPageHtml, frameInset, BUILTIN_FRAMES, CERT_ORIENT } from '../lib/certTemplates';
 import { fileToPngBlob } from '../lib/img';
 import { IconAlert, IconPrinter, IconSave } from '../components/Icons.jsx';
 import { toast } from '../lib/toast';
@@ -11,9 +11,15 @@ import { confirmDialog } from '../lib/confirm';
 import PageHeader from '../components/PageHeader.jsx';
 
 const TYPES = [
+  { key: 'baptism', label: 'Rửa Tội & Thêm Sức' },
+  { key: 'first_communion', label: 'Rước Lễ lần đầu' },
   { key: 'marriage', label: 'Giáo Lý Hôn Nhân' },
   { key: 'merit', label: 'Giấy khen' },
+  { key: 'scout', label: 'Huynh trưởng' },
 ];
+const hasConfirmation = (s) => !!(s.confirmation_date || s.confirmation_church || s.confirmation_bishop || s.confirmation_book_no);
+// "12/2026" -> em thứ i được "12+i/2026"; không có số thì giữ nguyên cho mọi em
+const nthSono = (start, i) => { const m = /^(\d+)(.*)$/.exec(String(start || '').trim()); return m ? `${Number(m[1]) + i}${m[2]}` : String(start || '').trim(); };
 const INSET_MAX = 30;
 const todayStr = () => { const d = new Date(); const p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
 // Bỏ dấu để tìm kiếm
@@ -29,7 +35,7 @@ export default function Certificates() {
   const [archYears, setArchYears] = useState([]);
   const [year, setYear] = useState('');
   const [classes, setClasses] = useState([]);
-  const [kind, setKind] = useState('marriage');
+  const [kind, setKind] = useState('baptism');
   const [classId, setClassId] = useState('');
   const [students, setStudents] = useState([]);
   const [picked, setPicked] = useState([]);
@@ -42,7 +48,7 @@ export default function Certificates() {
   const [pv, setPv] = useState(0);          // tờ đang xem trước
   // thông tin in trên chứng chỉ thiết kế
   const [priestName, setPriestName] = useState('');
-  const [extra, setExtra] = useState({ place: '', issue_date: todayStr() });
+  const [extra, setExtra] = useState({ place: '', issue_date: todayStr(), level: 'I', org2: 'Ban Giáo lý & Mục vụ Thiếu nhi' });
   const setE = (k) => (e) => setExtra((x) => ({ ...x, [k]: e.target.value }));
   // Khung (frame) chứng chỉ
   const { user } = useAuth();
@@ -108,16 +114,21 @@ export default function Certificates() {
   const toggleAll = () => setPicked(allPicked ? [] : students.map((s) => s.id));
   // Hồ sơ thiếu gì so với nội dung in của loại chứng chỉ đang chọn
   const missing = (s) => {
-    if (isMerit) return [];
     const m = [];
+    if (kind === 'merit') return m;
     if (!s.birth_date) m.push('ngày sinh');
-    if (!s.father_name && !s.mother_name) m.push('tên cha mẹ');
-    if (!s.gender) m.push('giới tính');
+    if (kind !== 'scout' && !s.father_name && !s.mother_name) m.push('tên cha mẹ');
+    if (kind === 'marriage' && !s.gender) m.push('giới tính');
+    if (kind === 'baptism' && !s.baptism_date) m.push('ngày Rửa Tội');
+    if (kind === 'first_communion' && !s.first_communion_date) m.push('ngày Rước Lễ');
     return m;
   };
   // Học viên kèm dữ liệu riêng từng tờ (vị thứ, vai)
-  const withExtras = (s) => ({ ...s, _rank: (ranks[s.id] || '').trim(), _role: roles[s.id] || roleFromGender(s.gender) || 'Anh' });
   const sel = students.filter((s) => picked.includes(s.id));
+  const withExtras = (s) => ({
+    ...s, _rank: (ranks[s.id] || '').trim(), _role: roles[s.id] || roleFromGender(s.gender) || 'Anh',
+    _sono: extra.sono_start ? nthSono(extra.sono_start, Math.max(0, sel.findIndex((x) => x.id === s.id))) : '',
+  });
   const missCount = sel.filter((s) => missing(s).length).length;
 
   const frames = useMemo(() => [
@@ -133,7 +144,7 @@ export default function Certificates() {
   // sau khi đổi loại thì lấy khung đầu của loại -> tránh ghép nhầm frame loại khác.
   const effFrame = frames.some((f) => f.url === selFrame) ? selFrame : (frames[0]?.url || '');
   const selFrameObj = frames.find((f) => f.url === effFrame) || null;
-  const savedInset = (selFrameObj?.builtin ? (parish?.settings?.cert_insets?.[selFrameObj.id] || selFrameObj.inset) : selFrameObj?.inset) || {};
+  const savedInset = frameInset(selFrameObj, parish);
   useEffect(() => {
     setInsetDraft({ top: savedInset.top || 0, right: savedInset.right || 0, bottom: savedInset.bottom || 0, left: savedInset.left || 0 });
   }, [effFrame, customFrames, parish]); // eslint-disable-line
@@ -207,7 +218,10 @@ export default function Certificates() {
 
   // Tên mục lưu vào hồ sơ: kèm năm học + vị thứ để lần cấp sau không đè lần trước
   function certLogName(s) {
-    if (!isMerit) return 'Chứng chỉ Giáo lý Hôn nhân';
+    if (kind === 'baptism') return hasConfirmation(s) ? 'Chứng chỉ Rửa Tội và Thêm Sức' : 'Chứng chỉ Rửa Tội';
+    if (kind === 'first_communion') return 'Chứng nhận Rước Lễ lần đầu';
+    if (kind === 'scout') return `Chứng chỉ Huynh trưởng cấp ${extra.level || 'I'}`;
+    if (kind === 'marriage') return 'Chứng chỉ Giáo lý Hôn nhân';
     const rank = (ranks[s.id] || '').trim();
     return [(meritTitle || 'Giấy khen').trim(), cls.year, rank ? `Vị thứ ${rank}` : ''].filter(Boolean).join(' · ');
   }
@@ -233,7 +247,7 @@ export default function Certificates() {
     try {
       await printCert({ type: kind, frame: effFrame, inset: insetDraft, parish: parishForCert, students: sel.map(withExtras), extra: certExtra });
     } finally { setPrinting(false); }
-    const label = isMerit ? (meritTitle || 'Giấy khen').trim() : 'Chứng chỉ Giáo lý Hôn nhân';
+    const label = isMerit ? (meritTitle || 'Giấy khen').trim() : TYPES.find((t) => t.key === kind)?.label;
     const yes = await confirmDialog({
       message: `Đã in hoặc lưu PDF xong?\n\nGhi "${label}" vào hồ sơ ${sel.length} em để xem lại sau (kể cả khi đã ra trường).`,
       okText: 'Ghi vào hồ sơ', cancelText: 'Chưa, không ghi',
@@ -297,7 +311,7 @@ export default function Certificates() {
                     {on && isMerit && (
                       <input className="crx-rank" value={ranks[s.id] || ''} onChange={(e) => setRanks((r) => ({ ...r, [s.id]: e.target.value }))} placeholder="Vị thứ" aria-label={`Vị thứ của ${nameOf(s)}`} maxLength={20} />
                     )}
-                    {on && !isMerit && (
+                    {on && kind === 'marriage' && (
                       <select className="crx-role" value={roles[s.id] || 'Anh'} onChange={(e) => setRoles((r) => ({ ...r, [s.id]: e.target.value }))} aria-label={`Vai của ${nameOf(s)}`}>
                         <option>Anh</option><option>Chị</option>
                       </select>
@@ -308,20 +322,41 @@ export default function Certificates() {
               {shown.length === 0 && <div className="muted" style={{ fontSize: 13 }}>Không tìm thấy học viên.</div>}
             </div>
             {isMerit && picked.length > 0 && <p className="muted crx-hint">Vị thứ nhập riêng cho từng em; để trống thì tờ in không có dòng vị thứ.</p>}
-            {!isMerit && picked.length > 0 && <p className="muted crx-hint">Anh/Chị tự lấy theo giới tính trong hồ sơ, sửa được cho từng em.</p>}
+            {kind === 'marriage' && picked.length > 0 && <p className="muted crx-hint">Anh/Chị tự lấy theo giới tính trong hồ sơ, sửa được cho từng em.</p>}
           </>
         )}
       </div>
 
       <div className="panel">
         <h2 className="crx-h"><span>3</span>Nội dung</h2>
-        {isMerit ? (
+        {isMerit && (
           <div className="crx-grid2">
             <div className="field"><label>Tiêu đề</label><input value={meritTitle} onChange={(e) => setMeritTitle(e.target.value)} placeholder="GIẤY KHEN" /></div>
             <div className="field"><label>Nội dung khen</label><input value={meritReason} onChange={(e) => setMeritReason(e.target.value)} placeholder="Đã chuyên chăm học giáo lý và siêng năng tham dự Thánh Lễ" /></div>
           </div>
-        ) : (
+        )}
+        {kind === 'marriage' && (
           <div className="field"><label>Dòng chứng nhận</label><input value={extra.certify_line || ''} onChange={setE('certify_line')} placeholder={`VD: Linh mục Giáo xứ ${parish?.name || 'Nam Tây'} chứng nhận`} /></div>
+        )}
+        {kind === 'first_communion' && (
+          <div className="crx-grid2 crx-grid2e">
+            <div className="field"><label>Nơi Rước Lễ</label><input value={extra.communion_church || ''} onChange={setE('communion_church')} placeholder={`Nhà thờ Giáo xứ ${(parish?.name || '').replace(/^Giáo xứ\s*/i, '')}`} /></div>
+            <div className="field"><label>Linh mục cử hành</label><input value={extra.communion_priest || ''} onChange={setE('communion_priest')} placeholder={priestName || 'Để trống thì lấy người ký'} /></div>
+          </div>
+        )}
+        {kind === 'scout' && (
+          <>
+            <div className="crx-grid3">
+              <div className="field"><label>Ban cấp</label><input value={extra.org2 || ''} onChange={setE('org2')} placeholder="Ban Giáo lý & Mục vụ Thiếu nhi" /></div>
+              <div className="field"><label>Sa mạc</label><input value={extra.samac || ''} onChange={setE('samac')} placeholder="VD: Trại Mẹ La Vang" /></div>
+              <div className="field"><label>Ngày khai mạc</label><input type="date" value={extra.open_date || ''} onChange={setE('open_date')} /></div>
+            </div>
+            <div className="crx-grid3">
+              <div className="field"><label>Cấp</label><select value={extra.level || 'I'} onChange={setE('level')}><option>I</option><option>II</option><option>III</option></select></div>
+              <div className="field"><label>Số vào sổ (em đầu tiên)</label><input value={extra.sono_start || ''} onChange={setE('sono_start')} placeholder="VD: 12/2026" /></div>
+              <div className="field"><label>Giáo họ</label><input value={extra.giao_ho || ''} onChange={setE('giao_ho')} placeholder="Để trống thì không in" /></div>
+            </div>
+          </>
         )}
         <div className="crx-grid3">
           <div className="field"><label>Người ký (Linh mục / Trưởng ban)</label>
@@ -332,8 +367,9 @@ export default function Certificates() {
           <div className="field"><label>Ngày cấp</label><input type="date" value={extra.issue_date} onChange={setE('issue_date')} /></div>
         </div>
         <p className="muted crx-hint">
-          {isMerit
-            ? 'Lớp và năm học lấy theo lớp đang chọn, tên lấy từ hồ sơ. Chữ ký lấy từ Cài đặt giáo xứ.'
+          {isMerit ? 'Lớp và năm học lấy theo lớp đang chọn, tên lấy từ hồ sơ. Chữ ký lấy từ Cài đặt giáo xứ.'
+            : kind === 'baptism' ? 'Mọi thông tin lấy từ hồ sơ từng em (mục Bí tích). Em chưa Thêm Sức thì tờ in tự bỏ phần Thêm Sức. Chữ ký lấy từ Cài đặt giáo xứ.'
+            : kind === 'scout' ? 'Số vào sổ tự tăng theo thứ tự các em đã chọn (12/2026, 13/2026...). Chữ ký lấy từ Cài đặt giáo xứ.'
             : 'Tên, ngày sinh, cha mẹ lấy từ hồ sơ từng em. Chữ ký lấy từ Cài đặt giáo xứ.'}
         </p>
       </div>

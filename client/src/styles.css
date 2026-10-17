@@ -1749,6 +1749,7 @@ button.gx-stat:hover { border-color: var(--primary); }
 .crx-seg { flex-wrap: wrap; }
 .crx-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 14px; }
 .crx-grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 0 14px; }
+.crx-grid2.crx-grid2e { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .crx-hint { font-size: 12px; margin: 4px 0 0; }
 .crx-warn { color: #c2410c; font-weight: 600; }
 .crx-link { border: 0; background: none; padding: 0; font: inherit; font-size: 13px; font-weight: 600; color: var(--primary); cursor: pointer; }
@@ -1794,7 +1795,7 @@ button.gx-stat:hover { border-color: var(--primary); }
 .crx-bar-info b { color: var(--heading); }
 .crx-foot { margin-top: 8px; }
 @media (max-width: 640px) {
-  .crx-grid3, .crx-grid2 { grid-template-columns: 1fr; }
+  .crx-grid3, .crx-grid2, .crx-grid2.crx-grid2e { grid-template-columns: 1fr; }
   .crx-list { max-height: none; }
   .crx-bar { padding: 8px 10px; border-radius: 12px; }
 }
