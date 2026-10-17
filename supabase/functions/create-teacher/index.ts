@@ -14,6 +14,21 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// Tìm tài khoản đăng nhập theo email (duyệt từng trang; số tài khoản của hệ thống không lớn).
+// deno-lint-ignore no-explicit-any
+async function findUserByEmail(admin: any, email: string) {
+  const want = String(email || '').trim().toLowerCase();
+  for (let page = 1; page <= 50; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) return null;
+    const users = data?.users || [];
+    const hit = users.find((u: { email?: string }) => (u.email || '').toLowerCase() === want);
+    if (hit) return hit;
+    if (users.length < 200) return null;
+  }
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   try {
@@ -49,6 +64,20 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    // Xóa hẳn tài khoản giáo lý viên (cả tài khoản đăng nhập) trong CÙNG giáo xứ.
+    // profiles xóa theo (on delete cascade); phân công lớp, thông báo của người này cũng xóa theo.
+    if (body.action === 'delete-user') {
+      const { user_id } = body;
+      if (!user_id) return json({ error: 'Cần user_id' }, 400);
+      if (user_id === user.id) return json({ error: 'Không thể tự xóa tài khoản của chính mình' }, 400);
+      const { data: target } = await admin.from('profiles').select('parish_id, role').eq('id', user_id).maybeSingle();
+      if (!target || target.parish_id !== caller.parish_id) return json({ error: 'Không có quyền với tài khoản này' }, 403);
+      if (target.role === 'admin') return json({ error: 'Đây là quản trị viên. Gỡ quyền quản trị trước (Cài đặt) rồi mới xóa.' }, 400);
+      const { error: derr } = await admin.auth.admin.deleteUser(user_id);
+      if (derr) return json({ error: derr.message }, 400);
+      return json({ ok: true });
+    }
+
     const { email, password, full_name, role: reqRole } = body;
     const role = reqRole === 'admin' ? 'admin' : 'teacher';
     if (!email || !password) return json({ error: 'Cần email và mật khẩu' }, 400);
@@ -67,8 +96,27 @@ Deno.serve(async (req) => {
     });
     if (cerr) {
       const m = (cerr.message || '').toLowerCase();
-      if ((cerr as { code?: string }).code === 'email_exists' || /already|registered|exist/.test(m))
+      if ((cerr as { code?: string }).code === 'email_exists' || /already|registered|exist/.test(m)) {
+        // Tài khoản "mồ côi": bị xóa hồ sơ theo cách cũ (còn tài khoản đăng nhập, không còn profile).
+        // Nối lại vào giáo xứ này thay vì báo trùng email.
+        const orphan = await findUserByEmail(admin, email);
+        if (orphan) {
+          const { data: hasProfile } = await admin.from('profiles').select('id').eq('id', orphan.id).maybeSingle();
+          if (!hasProfile) {
+            const { error: uperr } = await admin.auth.admin.updateUserById(orphan.id, {
+              password, email_confirm: true,
+              user_metadata: { full_name: full_name || '', parish_id: caller.parish_id, role },
+            });
+            if (uperr) return json({ error: uperr.message }, 400);
+            const { error: perr2 } = await admin.from('profiles').insert({
+              id: orphan.id, parish_id: caller.parish_id, role, full_name: full_name || '', email,
+            });
+            if (perr2) return json({ error: perr2.message }, 400);
+            return json({ id: orphan.id, email, full_name: full_name || '', role, restored: true });
+          }
+        }
         return json({ error: 'Email này đã được dùng cho một tài khoản khác. Vui lòng dùng email khác.' }, 400);
+      }
       return json({ error: cerr.message }, 400);
     }
 

@@ -268,10 +268,18 @@ async function handle(method, rawUrl, body = {}) {
       return ok(data);
     }
     if (seg[0] === 'auth' && seg[1] === 'users' && seg[2] && method === 'delete') {
-      // Xóa profile -> vô hiệu hóa truy cập (tài khoản auth vẫn còn, sẽ dọn sau)
-      const { error } = await supabase.from('profiles').delete().eq('id', seg[2]);
-      if (error) return fail(400, error.message);
-      return ok({ ok: true });
+      // Xóa hẳn tài khoản (cả đăng nhập) qua Edge Function create-teacher (action delete-user).
+      const { data, error } = await supabase.functions.invoke('create-teacher', { body: { action: 'delete-user', user_id: seg[2] } });
+      let msg = data?.error || '';
+      if (error) { msg = 'Xóa tài khoản thất bại'; try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch { /* noop */ } }
+      if (!msg) return ok({ ok: true });
+      // Function trên máy chủ còn là bản cũ (chưa deploy action delete-user): xóa profile như trước để không chặn người dùng.
+      if (/Cần email và mật khẩu/.test(msg)) {
+        const { error: e2 } = await supabase.from('profiles').delete().eq('id', seg[2]);
+        if (e2) return fail(400, e2.message);
+        return ok({ ok: true, legacy: true });
+      }
+      return fail(400, msg);
     }
 
     // ---------------- hồ sơ học viên (gộp) ----------------
