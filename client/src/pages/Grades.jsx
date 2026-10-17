@@ -9,6 +9,8 @@ import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib
 import { IconDownload, IconFlag, IconList, IconPrinter, IconSliders } from '../components/Icons.jsx';
 import { pickClass, rememberClass } from '../lib/lastClass';
 import { toast } from '../lib/toast';
+import { SkeletonTable } from '../components/Skeleton.jsx';
+import { confirmDialog } from '../lib/confirm';
 
 const round1 = (n) => Math.round(n * 10) / 10;
 
@@ -30,6 +32,7 @@ export default function Grades() {
   const [yearList, setYearList] = useState([]);
   const [classId, setClassId] = useState('');
   const [data, setData] = useState({ students: [], columns: [], scores: {} });
+  const [loadedFor, setLoadedFor] = useState(''); // lớp đã tải xong dữ liệu điểm
   const [sortByRank, setSortByRank] = useState(false);
   const [gf, setGf] = useState({ op: '', val: '', missingOnly: false });
   const [gear, setGear] = useState(false);
@@ -74,14 +77,15 @@ export default function Grades() {
   function load() {
     if (!classId) { setData({ students: [], columns: [], scores: {} }); return; }
     const url = isCurrent ? `/grades-class?class_id=${classId}` : `/archive-class?class_id=${classId}`;
-    api.get(url).then((r) => setData(r.data));
+    const forClass = classId;
+    api.get(url).then((r) => { setData(r.data); setLoadedFor(forClass); });
   }
   async function endYear() {
     const catechism = (classes || []).filter((c) => c.kind !== 'external');
     if (catechism.length && !catechism.some((c) => c.is_graduation)) {
-      if (!confirm('Bạn CHƯA gắn nhãn "Lớp tốt nghiệp" cho lớp giáo lý nào.\n\nHệ thống sẽ tự lấy lớp bậc cao nhất làm lớp tốt nghiệp. Nên vào "Lớp học" → sửa lớp cao nhất → bật "Đây là lớp tốt nghiệp" để chính xác.\n\nVẫn tiếp tục?')) return;
+      if (!await confirmDialog('Bạn CHƯA gắn nhãn "Lớp tốt nghiệp" cho lớp giáo lý nào.\n\nHệ thống sẽ tự lấy lớp bậc cao nhất làm lớp tốt nghiệp. Nên vào "Lớp học" → sửa lớp cao nhất → bật "Đây là lớp tốt nghiệp" để chính xác.\n\nVẫn tiếp tục?')) return;
     }
-    if (!confirm(
+    if (!await confirmDialog(
       'KẾT THÚC NĂM HỌC & LÊN LỚP\n\n' +
       'Chỉ thực hiện khi TẤT CẢ các lớp đã được duyệt (GLV chốt lớp → Admin duyệt ở Tổng quan).\n\n' +
       'Hệ thống áp quyết định từng em: "lên lớp" chuyển lên bậc kế (điểm bắt đầu lại), "ở lại" giữ nguyên lớp năm sau. ' +
@@ -211,6 +215,8 @@ export default function Grades() {
 
       {!classId ? (
         <div className="panel"><p className="muted">Hãy chọn lớp để nhập điểm.</p></div>
+      ) : loadedFor !== classId ? (
+        <div className="panel"><SkeletonTable rows={6} cols={5} /></div>
       ) : columns.length === 0 ? (
         <div className="panel"><p className="muted">{isCurrent ? 'Lớp chưa có cột điểm nào. Bấm "Cột điểm" để tạo (Kiểm tra 15\', Thi HK1...).' : 'Lớp này không có cột điểm trong năm học đã chọn.'}</p></div>
       ) : students.length === 0 ? (
@@ -298,7 +304,7 @@ function ColumnManager({ classId, columns, onChange, onClose }) {
     setNn({ name: '', weight: '1' }); onChange();
   }
   async function saveCol(c, patch) { await api.put(`/grade-columns/${c.id}`, patch); onChange(); }
-  async function del(c) { if (confirm(`Xóa cột "${c.name}"? Điểm của cột này sẽ mất.`)) { await api.delete(`/grade-columns/${c.id}`); onChange(); } }
+  async function del(c) { if (await confirmDialog(`Xóa cột "${c.name}"? Điểm của cột này sẽ mất.`)) { await api.delete(`/grade-columns/${c.id}`); onChange(); } }
 
   return (
     <div className="modal-backdrop" onClick={onClose}>

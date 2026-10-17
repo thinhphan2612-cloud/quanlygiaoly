@@ -7,6 +7,7 @@ import { printCert, certPageHtml, BUILTIN_FRAMES, CERT_ORIENT } from '../lib/cer
 import { fileToPngBlob } from '../lib/img';
 import { IconPrinter, IconSave } from '../components/Icons.jsx';
 import { toast } from '../lib/toast';
+import { confirmDialog } from '../lib/confirm';
 
 const TYPES = [
   { key: 'marriage', label: 'Giáo Lý Hôn Nhân' },
@@ -153,7 +154,7 @@ export default function Certificates() {
     } finally { setFrameBusy(false); }
   }
   async function delFrame(f) {
-    if (!confirm(`Xoá khung "${f.name}"?`)) return;
+    if (!await confirmDialog(`Xoá khung "${f.name}"?`)) return;
     try {
       await api.delete(`/cert-frames/${f.id}`);
       const p = (f.url || '').split('/cert-frames/')[1];

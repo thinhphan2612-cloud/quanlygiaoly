@@ -9,6 +9,8 @@ import { LeaderboardTable } from '../components/Leaderboard.jsx';
 import Avatar from '../components/Avatar.jsx';
 import { IconCheck, IconClass, IconDice, IconFlag, IconGradCap, IconGrades, IconList, IconStudents, IconTeacher, IconTrophy } from '../components/Icons.jsx';
 import { toast } from '../lib/toast';
+import { SkeletonDashboard } from '../components/Skeleton.jsx';
+import { confirmDialog } from '../lib/confirm';
 
 const PALETTE = ['#2563eb', '#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#f43f5e', '#14b8a6', '#0ea5e9'];
 
@@ -94,7 +96,7 @@ function ClassReviews() {
   const total = cat.length;
   const toggle = (id) => setOpen((o) => ({ ...o, [id]: !o[id] }));
   async function approve(r) {
-    if (!confirm(`Duyệt lớp "${r.class_name}"?` + (r.kind === 'external' ? '\nLớp giáo lý ngoại thường sẽ được đóng & chuyển vào Lưu trữ ngay.' : ''))) return;
+    if (!await confirmDialog(`Duyệt lớp "${r.class_name}"?` + (r.kind === 'external' ? '\nLớp giáo lý ngoại thường sẽ được đóng & chuyển vào Lưu trữ ngay.' : ''))) return;
     try { await api.post('/review-approve', { id: r.review_id }); load(); }
     catch (e) { toast.err(e.response?.data?.error || 'Thất bại'); }
   }
@@ -253,7 +255,7 @@ export default function Dashboard() {
   const rev = useRealtime(['grades', 'attendance', 'students', 'classes', 'class_teachers']);
   useEffect(() => { if (rev) loadDash(year); }, [rev]);
 
-  if (!data) return <div className="muted">Đang tải...</div>;
+  if (!data) return <SkeletonDashboard />;
 
   const { counts, studentsPerClass, topStudents, classAverages, attendanceByWeek = [] } = data;
   const isCurrent = !data.currentYear || year === data.currentYear;

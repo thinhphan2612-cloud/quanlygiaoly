@@ -5,6 +5,8 @@ import { exportXlsx, fileSlug } from '../lib/exportUtils';
 import { printExamPaper } from '../lib/examPaper';
 import { IconAlert, IconClock, IconDice, IconDownload, IconPlus, IconPrinter, IconRefresh } from '../components/Icons.jsx';
 import { toast } from '../lib/toast';
+import { SkeletonTable } from '../components/Skeleton.jsx';
+import { confirmDialog } from '../lib/confirm';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const KINDS = [{ v: '15p', l: '15 phút' }, { v: '1tiet', l: '1 tiết' }, { v: 'hocky', l: 'Học kỳ' }, { v: 'khac', l: 'Khác' }];
@@ -20,11 +22,12 @@ const fmt = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return `${St
 export default function Exams() {
   const [view, setView] = useState('list'); // list | build | room
   const [exams, setExams] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [current, setCurrent] = useState(null);
   const [classes, setClasses] = useState([]);
-  function load() { api.get('/exams').then((r) => setExams(r.data)).catch(() => setExams([])); }
+  function load() { api.get('/exams').then((r) => setExams(r.data)).catch(() => setExams([])).finally(() => setLoaded(true)); }
   useEffect(() => { load(); api.get('/classes').then((r) => setClasses(r.data)).catch(() => {}); }, []);
-  async function del(e) { if (!confirm(`Xoá đề "${e.title}"? Mất luôn các bài đã nộp.`)) return; await api.delete(`/exams/${e.id}`); load(); }
+  async function del(e) { if (!await confirmDialog(`Xoá đề "${e.title}"? Mất luôn các bài đã nộp.`)) return; await api.delete(`/exams/${e.id}`); load(); }
 
   if (view === 'build') return <ExamBuilder classes={classes} onCancel={() => setView('list')} onDone={(id) => { load(); setCurrent(id); setView('room'); }} />;
   if (view === 'room' && current) return <ExamRoom examId={current} onBack={() => { load(); setCurrent(null); setView('list'); }} />;
@@ -34,7 +37,7 @@ export default function Exams() {
       <div className="att-head"><h1 style={{ margin: 0 }}>Đề thi &amp; thi online</h1>
         <button className="btn" onClick={() => setView('build')}>+ Tạo đề</button></div>
       <div className="panel">
-        {exams.length === 0 ? <p className="muted">Chưa có đề thi nào. Bấm "Tạo đề" để soạn đề trắc nghiệm cho học viên thi online.</p> : (
+        {!loaded ? <SkeletonTable rows={3} cols={6} /> : exams.length === 0 ? <p className="muted">Chưa có đề thi nào. Bấm "Tạo đề" để soạn đề trắc nghiệm cho học viên thi online.</p> : (
           <div className="table-scroll"><table>
             <thead><tr><th>Đề</th><th>Lớp</th><th>Loại (hệ số)</th><th>Câu</th><th>Trạng thái</th><th>Nộp</th><th></th></tr></thead>
             <tbody>{exams.map((e) => (
@@ -352,7 +355,7 @@ function ExamRoom({ examId, onBack }) {
             <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
               {exam.status === 'draft' && <button className="btn" onClick={() => setStatus('waiting')}>Mở phòng chờ</button>}
               {exam.status === 'waiting' && <button className="btn" onClick={() => setStatus('started')}>▶ Bắt đầu thi</button>}
-              {exam.status === 'started' && <button className="btn danger" onClick={() => { if (confirm('Kết thúc & đóng phòng thi?')) setStatus('closed'); }}>■ Kết thúc</button>}
+              {exam.status === 'started' && <button className="btn danger" onClick={async () => { if (await confirmDialog('Kết thúc & đóng phòng thi?')) setStatus('closed'); }}>■ Kết thúc</button>}
               {exam.status === 'closed' && <button className="btn" onClick={() => setStatus('started')}><IconRefresh className="bi" />Mở thi lại (cho em vắng)</button>}
             </div>
             {exam.status === 'waiting' && <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>Các em quét QR, chọn tên và chờ. Bấm "Bắt đầu thi" khi đủ.</p>}

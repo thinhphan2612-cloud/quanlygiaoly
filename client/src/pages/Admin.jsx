@@ -7,6 +7,7 @@ import { isSuperAdmin } from '../lib/superadmin';
 import { supabase } from '../supabase';
 import { exportXlsx } from '../lib/exportUtils';
 import { setAdminCounts } from '../lib/adminCounts';
+import { confirmDialog } from '../lib/confirm';
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString('vi-VN') : '-');
 const fmtVnd = (n) => (Number(n) || 0).toLocaleString('vi-VN') + 'đ';
@@ -249,7 +250,7 @@ export default function Admin() {
   }
 
   async function cancelPro(parish) {
-    if (!confirm(`Hủy Pro của "${parish.name}"?\n\nGiáo xứ về gói Khởi động ngay. Dữ liệu không bị xóa.`)) return;
+    if (!await confirmDialog(`Hủy Pro của "${parish.name}"?\n\nGiáo xứ về gói Khởi động ngay. Dữ liệu không bị xóa.`)) return;
     await setPlan(parish, 'free');
   }
 
@@ -275,7 +276,7 @@ export default function Admin() {
   }
 
   async function removePayment(p) {
-    if (!confirm(`Xóa khoản thu ${fmtVnd(p.amount)} của "${p.parish_name}" ngày ${fmtDate(p.paid_at)}?\n\nTổng thu sẽ giảm tương ứng. Không thể hoàn tác.`)) return;
+    if (!await confirmDialog(`Xóa khoản thu ${fmtVnd(p.amount)} của "${p.parish_name}" ngày ${fmtDate(p.paid_at)}?\n\nTổng thu sẽ giảm tương ứng. Không thể hoàn tác.`)) return;
     try {
       await api.post('/admin/payment-delete', { id: p.id });
       setPayments((ps) => ps.filter((x) => x.id !== p.id)); notify('Đã xóa khoản thu.');
@@ -289,7 +290,7 @@ export default function Admin() {
     } catch (e) { notify(errMsg(e, 'Thất bại'), 'err'); }
   }
   async function cancelOrder(order) {
-    if (!confirm(`Hủy đơn ${order.order_code} của "${order.parish_name}" (${fmtVnd(order.final_amount)})?`)) return;
+    if (!await confirmDialog(`Hủy đơn ${order.order_code} của "${order.parish_name}" (${fmtVnd(order.final_amount)})?`)) return;
     try { await api.post('/admin/order-cancel', { id: order.id }); notify(`Đã hủy đơn ${order.order_code}.`); refresh('orders'); }
     catch (e) { notify(errMsg(e, 'Thất bại'), 'err'); }
   }
@@ -298,7 +299,7 @@ export default function Admin() {
     catch (e) { notify(errMsg(e, 'Lưu mã thất bại'), 'err'); }
   }
   async function deleteCode(code) {
-    if (!confirm(`Xóa mã "${code}"?`)) return;
+    if (!await confirmDialog(`Xóa mã "${code}"?`)) return;
     try { await api.post('/admin/code-delete', { code }); setCodes((cs) => cs.filter((x) => x.code !== code)); notify(`Đã xóa mã ${code}.`); }
     catch (e) { notify(errMsg(e, 'Xóa thất bại'), 'err'); }
   }
@@ -318,7 +319,7 @@ export default function Admin() {
     catch (e) { notify(errMsg(e, 'Thất bại'), 'err'); }
   }
   async function deleteLead(lead) {
-    if (!confirm(`Xóa đơn của "${lead.name || lead.email || 'không tên'}"?`)) return;
+    if (!await confirmDialog(`Xóa đơn của "${lead.name || lead.email || 'không tên'}"?`)) return;
     try { await api.post('/admin/lead-delete', { id: lead.id }); setLeads((ls) => ls.filter((x) => x.id !== lead.id)); notify('Đã xóa đơn.'); }
     catch (e) { notify(errMsg(e, 'Xóa thất bại'), 'err'); }
   }
@@ -962,7 +963,7 @@ function TanThuModal({ onClose }) {
 
   async function apply() {
     if (!willCount || busy) return;
-    if (!confirm(`Nâng Pro 12 tháng và gửi email cho ${willCount} giáo xứ? Thao tác này là thật và không hoàn tác.`)) return;
+    if (!await confirmDialog(`Nâng Pro 12 tháng và gửi email cho ${willCount} giáo xứ? Thao tác này là thật và không hoàn tác.`)) return;
     setBusy(true); setErr('');
     try {
       const r = await api.post('/admin/tanthu-apply', { exclude: [...excl] });
@@ -1340,7 +1341,7 @@ function DefaultGamesManager() {
   }
 
   async function del(g) {
-    if (!confirm(`Xóa game mặc định "${g.title}"? (gỡ khỏi mọi tài khoản)`)) return;
+    if (!await confirmDialog(`Xóa game mặc định "${g.title}"? (gỡ khỏi mọi tài khoản)`)) return;
     try {
       if (g.source === 'upload') await rmDir(g.key);
       await api.delete(`/default-games/${g.id}`);

@@ -5,6 +5,7 @@ import { exportXlsx, exportPdf, STT_COL, fileSlug } from '../lib/exportUtils';
 import { IconDownload, IconPrinter } from '../components/Icons.jsx';
 import { viDate } from '../lib/date';
 import { toast } from '../lib/toast';
+import { confirmDialog } from '../lib/confirm';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (Number(n) || 0).toLocaleString('vi-VN');
@@ -58,7 +59,7 @@ export default function Audit() {
     } catch (e) { setError(e.response?.data?.error || 'Lưu thất bại'); }
   }
   async function remove(t) {
-    if (!confirm('Xóa khoản này?')) return;
+    if (!await confirmDialog('Xóa khoản này?')) return;
     try { await api.delete(`/transactions/${t.id}`); load(); }
     catch (e) { toast.err(e.response?.data?.error || 'Không xóa được (khoản của lớp, admin chỉ xem).'); }
   }

@@ -13,6 +13,8 @@ import { getPref, setPref } from '../lib/prefs';
 import { IconColumns, IconDownload, IconFilter, IconPrinter, IconUpload } from '../components/Icons.jsx';
 import { viDate } from '../lib/date';
 import { toast } from '../lib/toast';
+import { SkeletonRows } from '../components/Skeleton.jsx';
+import { confirmDialog } from '../lib/confirm';
 
 const empty = {
   full_name: '', saint_name: '', birth_date: '', gender: '',
@@ -102,6 +104,7 @@ export default function Students() {
   const { user } = useAuth();
   const isTeacher = user?.role === 'teacher';
   const [students, setStudents] = useState([]);
+  const [loaded, setLoaded] = useState(false); // lần tải đầu xong chưa (để hiện khung xương thay vì "Không có học viên")
   const [classes, setClasses] = useState([]);
   const [stats, setStats] = useState({});
   const [search, setSearch] = useState('');
@@ -139,7 +142,7 @@ export default function Students() {
   const afterName = shownCols.filter((c) => c.key !== 'saint');
 
   function load() {
-    api.get('/students').then((r) => setStudents(r.data));
+    api.get('/students').then((r) => { setStudents(r.data); setLoaded(true); });
     api.get('/student-stats').then((r) => setStats(r.data)).catch(() => {});
   }
   useEffect(() => { load(); }, []);
@@ -169,7 +172,7 @@ export default function Students() {
   }
 
   async function remove(s) {
-    if (!confirm(`Xóa học viên "${s.full_name}"?`)) return;
+    if (!await confirmDialog(`Xóa học viên "${s.full_name}"?`)) return;
     await api.delete(`/students/${s.id}`);
     load();
   }
@@ -308,6 +311,7 @@ export default function Students() {
             </tr>
           </thead>
           <tbody>
+            {!loaded && <SkeletonRows rows={6} cols={shownCols.length + 2} />}
             {filtered.map((s) => (
               <tr key={s.id}>
                 {beforeName.map((c) => <td key={c.key}>{c.render(s)}</td>)}
@@ -319,7 +323,7 @@ export default function Students() {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && <tr><td colSpan={shownCols.length + 2} className="muted">Không có học viên</td></tr>}
+            {loaded && filtered.length === 0 && <tr><td colSpan={shownCols.length + 2} className="muted">Không có học viên</td></tr>}
           </tbody>
         </table>
       </div>

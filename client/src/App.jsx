@@ -26,6 +26,7 @@ import { isSuperAdmin } from './lib/superadmin';
 import { useParish } from './parish.jsx';
 import { isPro } from './lib/plans';
 import Toaster from './components/Toaster.jsx';
+import ConfirmHost from './components/ConfirmHost.jsx';
 
 // Bắt link mời / đặt lại mật khẩu (đọc hash trước khi Supabase xoá) — buộc đặt mật khẩu.
 const INVITE_LINK = typeof window !== 'undefined' && /type=(invite|recovery)/i.test(window.location.hash);
@@ -63,6 +64,7 @@ export default function App() {
   return (
     <>
     <Toaster />
+    <ConfirmHost />
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Login initialMode="register" />} />

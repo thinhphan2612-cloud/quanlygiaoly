@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { viError } from '../lib/viError';
 import { toast } from '../lib/toast';
+import { confirmDialog } from '../lib/confirm';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const lsKey = (code) => `exam:${code}`;
@@ -151,7 +152,7 @@ export default function ExamTake() {
         const first = document.getElementById('q-' + missing[0].id); first && first.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return null;
       }
-      if (!confirm('Nộp bài? Sau khi nộp con sẽ chờ công bố kết quả.')) return null;
+      if (!await confirmDialog('Nộp bài? Sau khi nộp con sẽ chờ công bố kết quả.')) return null;
     }
     submittingRef.current = true;
     try {

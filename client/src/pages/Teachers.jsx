@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { toast } from '../lib/toast';
+import { SkeletonRows } from '../components/Skeleton.jsx';
+import { confirmDialog } from '../lib/confirm';
 
 const emptyCreate = { email: '', password: '', full_name: '' };
 
 export default function Teachers() {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [modal, setModal] = useState(null); // {mode:'create'} | {mode:'edit', ...profile}
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -15,7 +18,7 @@ export default function Teachers() {
   const [pwdBusy, setPwdBusy] = useState(false);
   const [pwdMsg, setPwdMsg] = useState('');
 
-  function load() { api.get('/auth/users').then((r) => setUsers(r.data)); }
+  function load() { api.get('/auth/users').then((r) => { setUsers(r.data); setLoaded(true); }); }
   useEffect(() => { if (user?.role === 'admin') load(); }, [user]);
 
   if (user?.role !== 'admin') return <div className="muted">Chỉ quản trị viên được quản lý tài khoản.</div>;
@@ -51,7 +54,7 @@ export default function Teachers() {
   }
 
   async function remove(u) {
-    if (!confirm(`Xóa tài khoản "${u.full_name}"? Giáo lý viên sẽ mất quyền truy cập.`)) return;
+    if (!await confirmDialog(`Xóa tài khoản "${u.full_name}"? Giáo lý viên sẽ mất quyền truy cập.`)) return;
     try { await api.delete(`/auth/users/${u.id}`); load(); }
     catch (err) { toast.err(err.response?.data?.error || 'Xóa thất bại'); }
   }
@@ -70,6 +73,7 @@ export default function Teachers() {
               <tr><th>Họ tên</th><th>Email</th><th>Cấp</th><th>Khu vực</th><th>SĐT</th><th>Lớp phụ trách</th><th>Vai trò</th><th></th></tr>
             </thead>
             <tbody>
+              {!loaded && <SkeletonRows rows={5} cols={8} />}
               {users.map((u) => (
                 <tr key={u.id}>
                   <td>{u.saint_name ? u.saint_name + ' ' : ''}{u.full_name}</td>
@@ -85,7 +89,7 @@ export default function Teachers() {
                   </td>
                 </tr>
               ))}
-              {users.length === 0 && <tr><td colSpan={8} className="muted">Chưa có tài khoản</td></tr>}
+              {loaded && users.length === 0 && <tr><td colSpan={8} className="muted">Chưa có tài khoản</td></tr>}
             </tbody>
           </table>
         </div>

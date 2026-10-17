@@ -5,6 +5,8 @@ import Avatar from '../components/Avatar.jsx';
 import { IconDownload, IconPrinter, IconSliders } from '../components/Icons.jsx';
 import { pickClass, rememberClass } from '../lib/lastClass';
 import { toast } from '../lib/toast';
+import { SkeletonTable } from '../components/Skeleton.jsx';
+import { confirmDialog } from '../lib/confirm';
 
 // Ngày dạng YYYY-MM-DD theo giờ ĐỊA PHƯƠNG (không dùng toISOString vì lệch múi giờ).
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -113,9 +115,11 @@ export default function Attendance() {
 function GiaoLyDay({ classId, date, cls, parish }) {
   const className = cls?.name || '';
   const [rows, setRows] = useState([]);
+  const [loadedKey, setLoadedKey] = useState(''); // lớp + ngày đã tải xong
   const [saved, setSaved] = useState(false);
   useEffect(() => {
-    api.get(`/attendance?class_id=${classId}&date=${date}`).then((r) => setRows(r.data));
+    const key = `${classId}|${date}`;
+    api.get(`/attendance?class_id=${classId}&date=${date}`).then((r) => { setRows(r.data); setLoadedKey(key); });
     setSaved(false);
   }, [classId, date]);
 
@@ -141,6 +145,7 @@ function GiaoLyDay({ classId, date, cls, parish }) {
   ];
   const meta = { title: 'Phiếu điểm danh', subtitle: exportSubtitle({ parish, cls, extra: [`Ngày: ${date.split('-').reverse().join('/')}`] }), columns: attColumns, rows };
 
+  if (loadedKey !== `${classId}|${date}`) return <div className="panel"><SkeletonTable rows={6} cols={3} /></div>;
   if (rows.length === 0) return <div className="panel"><p className="muted">Lớp chưa có học viên.</p></div>;
   return (
     <div className="panel att-panel">
@@ -290,7 +295,7 @@ function ThiengDay({ classId, date }) {
     setNewTask(''); loadTasks();
   }
   async function delTask(id) {
-    if (!confirm('Xóa việc thiêng liêng này? Các bản ghi liên quan cũng bị xóa.')) return;
+    if (!await confirmDialog('Xóa việc thiêng liêng này? Các bản ghi liên quan cũng bị xóa.')) return;
     await api.delete(`/spiritual-tasks/${id}`); loadTasks();
   }
 

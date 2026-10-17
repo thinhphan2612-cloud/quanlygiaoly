@@ -15,6 +15,8 @@ import { IconDownload, IconFlag, IconGradCap, IconLock, IconMegaphone, IconSlide
 import { viDate } from '../lib/date';
 import RowMenu from '../components/RowMenu.jsx';
 import { toast } from '../lib/toast';
+import { SkeletonRows } from '../components/Skeleton.jsx';
+import { confirmDialog } from '../lib/confirm';
 
 const empty = {
   mode: 'new', name: '', year: '', room: '', schedule: '', promotes: true, kind: 'catechism', is_graduation: false, teachers: [],
@@ -52,6 +54,7 @@ export default function Classes() {
   const isFree = !isPro(parish?.plan || 'free');
   const promotionOpen = !!parish?.settings?.promotion_open; // cổng xét lên lớp (lớp giáo lý trong năm)
   const [classes, setClasses] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [teachers, setTeachers] = useState([]);
   const [allStudents, setAllStudents] = useState([]);
   const [modal, setModal] = useState(null);
@@ -68,7 +71,7 @@ export default function Classes() {
   const [rev2, setRev2] = useState({}); // trạng thái đơn review theo class_id
   const [addExisting, setAddExisting] = useState(null); // thêm học viên có sẵn vào lớp này
 
-  function load() { api.get('/classes').then((r) => setClasses(r.data)); }
+  function load() { api.get('/classes').then((r) => { setClasses(r.data); setLoaded(true); }); }
   function loadReviews() {
     api.get('/reviews-pending').then((r) => {
       const m = {}; (r.data || []).forEach((x) => { m[x.class_id] = x; }); setRev2(m);
@@ -84,7 +87,7 @@ export default function Classes() {
   }
   // GLV rút lại yêu cầu đã gửi (khi Admin chưa duyệt).
   async function cancelReview(c) {
-    if (!confirm(`Hủy gửi duyệt lớp "${c.name}"? Lớp sẽ được rút khỏi danh sách chờ của Admin.`)) return;
+    if (!await confirmDialog(`Hủy gửi duyệt lớp "${c.name}"? Lớp sẽ được rút khỏi danh sách chờ của Admin.`)) return;
     try { await api.delete(`/class-review/${c.id}`); loadReviews(); }
     catch (e) { toast.err(e.response?.data?.error || 'Hủy gửi thất bại'); }
   }
@@ -188,7 +191,7 @@ export default function Classes() {
   }
 
   async function remove(c) {
-    if (!confirm(`Xóa lớp "${c.name}"? Học viên trong lớp sẽ trở về "chưa xếp lớp".`)) return;
+    if (!await confirmDialog(`Xóa lớp "${c.name}"? Học viên trong lớp sẽ trở về "chưa xếp lớp".`)) return;
     await api.delete(`/classes/${c.id}`);
     load();
   }
@@ -275,7 +278,7 @@ export default function Classes() {
       const adv = vals.filter((v) => v === 'advance').length;
       msg = `Gửi kết quả lớp "${m.cls.name}" để Admin duyệt?\nLên lớp: ${adv} · Ở lại: ${vals.length - adv}.`;
     }
-    if (!confirm(msg)) return;
+    if (!await confirmDialog(msg)) return;
     // Snapshot chi tiết: tên + điểm cuối kỳ + lý do (khi ở lại/không đạt)
     const details = {};
     (m.students || []).forEach((s) => {
@@ -320,7 +323,7 @@ export default function Classes() {
       summary: `Tổng số học viên: ${list.length}`,
     });
   }
-  async function removeStudent(s) { if (!confirm(`Xóa học viên "${s.full_name}"?`)) return; await api.delete(`/students/${s.id}`); reloadDetail(); }
+  async function removeStudent(s) { if (!await confirmDialog(`Xóa học viên "${s.full_name}"?`)) return; await api.delete(`/students/${s.id}`); reloadDetail(); }
   async function saveStudent() {
     try { await api.put(`/students/${stEdit.id}`, stEdit); setStEdit(null); reloadDetail(); }
     catch (e) { toast.err(e.response?.data?.error || 'Lưu thất bại'); }
@@ -330,7 +333,7 @@ export default function Classes() {
     setMv(null); setDetail((d) => (d ? { ...d, picked: [] } : d)); reloadDetail();
   }
   async function returnStudents(ids) {
-    if (!ids.length || !confirm('Trả các em đã chọn về lớp cũ (trước khi gộp)?')) return;
+    if (!ids.length || !await confirmDialog('Trả các em đã chọn về lớp cũ (trước khi gộp)?')) return;
     const r = await api.post('/students/return', { ids });
     setDetail((d) => (d ? { ...d, picked: [] } : d)); reloadDetail();
     if (!r.data.returned) toast('Các em này không có lớp cũ để trả về.');
@@ -396,12 +399,13 @@ export default function Classes() {
             </tr>
           </thead>
           <tbody>
+            {!loaded && <SkeletonRows rows={4} cols={colCount} />}
             {shown.map((c) => (
               <tr key={c.id}>
                 <td>
                   <span className="link-name" onClick={() => openDetail(c)}>{c.name}</span>
                   {c.merged && <span className="tag-chip merged" style={{ marginLeft: 6 }}>● lớp gộp</span>}
-                  {c.is_graduation && <span className="tag-chip" style={{ marginLeft: 6, background: '#dcfce7', color: '#15803d' }}><IconGradCap className="bi" style={{ width: 13, height: 13, marginRight: 3 }} />lớp tốt nghiệp</span>}
+                  {c.is_graduation && <span className="tag-chip grad" style={{ marginLeft: 6 }}><IconGradCap className="bi" style={{ width: 13, height: 13, marginRight: 3 }} />lớp tốt nghiệp</span>}
                   {reviewBadge(rev2[c.id]?.status)}
                 </td>
                 <td>{c.year || '—'}</td>
@@ -432,7 +436,7 @@ export default function Classes() {
                 )}
               </tr>
             ))}
-            {shown.length === 0 && <tr><td colSpan={colCount} className="muted">{tab === 'external' ? 'Chưa có lớp giáo lý ngoại thường (hôn nhân, dự tòng…).' : 'Chưa có lớp giáo lý trong năm nào.'}</td></tr>}
+            {loaded && shown.length === 0 && <tr><td colSpan={colCount} className="muted">{tab === 'external' ? 'Chưa có lớp giáo lý ngoại thường (hôn nhân, dự tòng…).' : 'Chưa có lớp giáo lý trong năm nào.'}</td></tr>}
           </tbody>
         </table>
       </div>

@@ -8,6 +8,7 @@ import { useEntitlements } from '../entitlements.jsx';
 import { useParish } from '../parish.jsx';
 import { fileToDataUrl, fileToDataUrlWide } from '../lib/img';
 import { IconArchive, IconUpload } from '../components/Icons.jsx';
+import { confirmDialog } from '../lib/confirm';
 
 // Trang cài đặt quản lý của admin: giáo xứ, năm học, lên lớp cuối năm,
 // tùy chọn bật/tắt, danh sách học viên đã ra trường.
@@ -101,7 +102,7 @@ export default function Settings() {
     flash('Đã đặt năm học hiện tại');
   }
   async function delYear(id) {
-    if (!confirm('Xóa năm học này?')) return;
+    if (!await confirmDialog('Xóa năm học này?')) return;
     await api.delete(`/school-years/${id}`);
     api.get('/school-years').then((r) => setYears(r.data));
   }
@@ -111,9 +112,9 @@ export default function Settings() {
     try { cls = (await api.get('/classes')).data || []; } catch { /* noop */ }
     const catechism = cls.filter((c) => c.kind !== 'external');
     if (catechism.length && !catechism.some((c) => c.is_graduation)) {
-      if (!confirm('Bạn CHƯA gắn nhãn "Lớp tốt nghiệp" cho lớp giáo lý nào.\n\nHệ thống sẽ tự lấy lớp bậc cao nhất làm lớp tốt nghiệp. Nên vào "Lớp học" → sửa lớp cao nhất → bật "Đây là lớp tốt nghiệp" để chính xác.\n\nVẫn tiếp tục?')) return;
+      if (!await confirmDialog('Bạn CHƯA gắn nhãn "Lớp tốt nghiệp" cho lớp giáo lý nào.\n\nHệ thống sẽ tự lấy lớp bậc cao nhất làm lớp tốt nghiệp. Nên vào "Lớp học" → sửa lớp cao nhất → bật "Đây là lớp tốt nghiệp" để chính xác.\n\nVẫn tiếp tục?')) return;
     }
-    if (!confirm(
+    if (!await confirmDialog(
       'KẾT THÚC NĂM HỌC & LÊN LỚP\n\n' +
       'Chỉ chạy được khi TẤT CẢ các lớp đã được duyệt (GLV chốt lớp → Admin duyệt ở Tổng quan).\n\n' +
       'Hệ thống áp quyết định từng em: "lên lớp" chuyển lên bậc kế (điểm bắt đầu lại), "ở lại" giữ nguyên lớp năm sau. ' +
