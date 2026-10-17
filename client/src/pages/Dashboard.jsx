@@ -262,39 +262,54 @@ const dm = (s) => (s ? `${s.slice(8, 10)}/${s.slice(5, 7)}` : '');
 const WD = ['CN', 'thứ 2', 'thứ 3', 'thứ 4', 'thứ 5', 'thứ 6', 'thứ 7'];
 const wdOf = (s) => WD[new Date(s + 'T00:00:00').getDay()];
 
-// Khối "Cần chú ý": lớp chưa điểm danh buổi gần nhất, học viên vắng liền, lớp chưa có cột điểm
+// Khối "Cần chú ý": lớp chưa điểm danh buổi gần nhất, học viên vắng liền, lớp chưa có cột điểm.
+// Mặc định thu gọn, chỉ hiện con số theo từng loại; bấm để xổ xuống (nhớ trên máy này).
 function Attention({ att, navigate }) {
+  const [open, setOpen] = useState(() => { try { return localStorage.getItem('dash_attention_open') === '1'; } catch { return false; } });
   const [more, setMore] = useState(false);
   if (!att) return null;
   const { notMarked = [], absentStreak = [], noColumns = [] } = att;
   const total = notMarked.length + absentStreak.length + noColumns.length;
+  const toggle = () => { const v = !open; setOpen(v); try { localStorage.setItem('dash_attention_open', v ? '1' : '0'); } catch { /* noop */ } };
   const goAtt = (cid, date) => { rememberClass(cid); navigate(`/attendance${date ? `?date=${date}` : ''}`); };
   const shownAbs = more ? absentStreak : absentStreak.slice(0, 5);
+  const groups = [
+    notMarked.length && { k: 'm', tone: 'warn', label: `${notMarked.length} lớp chưa điểm danh` },
+    absentStreak.length && { k: 'a', tone: 'bad', label: `${absentStreak.length} em vắng liền từ 3 buổi` },
+    noColumns.length && { k: 'g', tone: 'info', label: `${noColumns.length} lớp chưa có cột điểm` },
+  ].filter(Boolean);
+  if (total === 0) {
+    return <div className="panel dbx-att dbx-att-ok" data-tour="dash-attention"><p className="dbx-ok"><IconCheck className="bi" />Mọi việc đều ổn: các lớp đã điểm danh buổi gần nhất, không em nào vắng liền 3 buổi.</p></div>;
+  }
   return (
-    <div className="panel dbx-att" data-tour="dash-attention">
-      <div className="card-head"><h2><IconAlert className="h-ic" />Cần chú ý</h2>{total > 0 && <span className="dbx-count">{total}</span>}</div>
-      {total === 0 ? (
-        <p className="dbx-ok"><IconCheck className="bi" />Mọi việc đều ổn: các lớp đã điểm danh buổi gần nhất, không em nào vắng liền 3 buổi.</p>
-      ) : (
+    <div className={`panel dbx-att${open ? ' open' : ''}`} data-tour="dash-attention">
+      <button type="button" className="dbx-att-head" onClick={toggle} aria-expanded={open}>
+        <IconAlert className="h-ic" />
+        <span className="dbx-att-title">Cần chú ý</span>
+        <span className="dbx-count">{total}</span>
+        <span className="dbx-att-sum">{groups.map((g) => <span key={g.k} className={`dbx-tag ${g.tone}`}>{g.label}</span>)}</span>
+        <span className="dbx-att-tog">{open ? 'Thu gọn' : 'Xem'}<svg className="dbx-chev" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+      </button>
+      {open && (
         <div className="dbx-att-list">
+          {notMarked.length > 0 && <div className="dbx-sec">Điểm danh ({notMarked.length})</div>}
           {notMarked.map((c) => (
             <div key={'m' + c.class_id} className="dbx-item">
-              <span className="dbx-tag warn">Điểm danh</span>
               <span className="dbx-text"><b>{c.name}</b>{c.never ? ' chưa điểm danh buổi nào' : <> chưa điểm danh buổi {c.today ? 'hôm nay' : `${wdOf(c.expected)} ${dm(c.expected)}`} <span className="muted">(lần gần nhất {dm(c.last)})</span></>}</span>
               <button className="btn ghost sm" onClick={() => goAtt(c.class_id, c.never ? '' : c.expected)}>Điểm danh</button>
             </div>
           ))}
+          {absentStreak.length > 0 && <div className="dbx-sec">Vắng liền từ 3 buổi ({absentStreak.length})</div>}
           {shownAbs.map((s) => (
             <div key={'a' + s.id} className="dbx-item">
-              <span className="dbx-tag bad">Vắng {s.streak} buổi</span>
-              <span className="dbx-text"><span className="link-name" onClick={() => navigate(`/students/${s.id}`)}>{s.name}</span> <span className="muted">· {s.class_name} · vắng liền từ {dm(s.since)}</span></span>
+              <span className="dbx-text"><span className="link-name" onClick={() => navigate(`/students/${s.id}`)}>{s.name}</span> <span className="muted">· {s.class_name} · vắng {s.streak} buổi liền từ {dm(s.since)}</span></span>
               {s.phone ? <a className="btn ghost sm" href={`tel:${s.phone.replace(/[^\d+]/g, '')}`}>Gọi {s.phone}</a> : <span className="muted dbx-nophone">Chưa có SĐT phụ huynh</span>}
             </div>
           ))}
           {absentStreak.length > 5 && <button type="button" className="dbx-more" onClick={() => setMore(!more)}>{more ? 'Thu gọn' : `Xem thêm ${absentStreak.length - 5} em vắng liền`}</button>}
+          {noColumns.length > 0 && <div className="dbx-sec">Điểm số ({noColumns.length})</div>}
           {noColumns.map((c) => (
             <div key={'g' + c.class_id} className="dbx-item">
-              <span className="dbx-tag info">Điểm số</span>
               <span className="dbx-text"><b>{c.name}</b> chưa có cột điểm nào</span>
               <button className="btn ghost sm" onClick={() => navigate(`/grades?class=${c.class_id}`)}>Thêm cột điểm</button>
             </div>
