@@ -1535,6 +1535,36 @@ button.gx-stat:hover { border-color: var(--primary); }
   .hvx-grid, .hvx-grid4 { grid-template-columns: 1fr; }
 }
 
+/* ===== Lớp học (Classes): tiền tố clx- ===== */
+.clx-limit { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.clx-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; margin: 0 0 14px; border-radius: 12px; background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; font-size: 13.5px; }
+.clx-banner .bi { flex: 0 0 auto; }
+.clx-table td.clx-c-act, .clx-stu td.clx-c-act { white-space: nowrap; text-align: right; }
+.clx-c-act > * { vertical-align: middle; margin-left: 4px; }
+.modal.clx-detail { display: flex; flex-direction: column; padding: 0; overflow: hidden; max-width: 900px; }
+.clx-dhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 24px 10px; }
+.clx-dhead h2 { margin: 0; font-size: 19px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.clx-dcount { font-size: 13.5px; font-weight: 500; }
+.clx-x { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 9px; border: none; background: transparent; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
+.clx-x:hover { background: var(--primary-soft); color: var(--heading); }
+.clx-x svg { width: 20px; height: 20px; }
+.clx-dtools { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 24px 12px; border-bottom: 1px solid var(--border); }
+.clx-dbody { flex: 1; min-height: 0; overflow: auto; padding: 12px 24px 20px; }
+.clx-tpsearch { margin-bottom: 8px; }
+:root[data-theme="dark"] .clx-banner { background: rgba(245, 158, 11, .12); border-color: rgba(245, 158, 11, .35); color: #fbbf24; }
+@media (max-width: 640px) {
+  .clx-table thead { display: none; }
+  .clx-table, .clx-table tbody { display: block; }
+  .clx-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 8px; padding: 12px 2px; border-top: 1px solid var(--border); }
+  .clx-table td { display: block; padding: 0; border: 0; white-space: normal; }
+  .clx-table td.clx-c-name { grid-column: 1; grid-row: 1; font-size: 15px; }
+  .clx-table td.clx-c-act { grid-column: 2; grid-row: 1; align-self: start; }
+  .clx-table td[data-label] { grid-column: 1 / -1; font-size: 13px; }
+  .clx-table td[data-label]::before { content: attr(data-label) ': '; color: var(--muted); }
+  .clx-dhead, .clx-dtools, .clx-dbody { padding-left: 16px; padding-right: 16px; }
+  .clx-stu th:nth-child(4), .clx-stu td:nth-child(4), .clx-stu th:nth-child(5), .clx-stu td:nth-child(5), .clx-stu th:nth-child(6), .clx-stu td:nth-child(6) { display: none; }
+}
+
 /* ===== Hướng dẫn sử dụng (Guide / Wiki) ===== */
 .guide-wrap { max-width: 1100px; margin: 0 auto; }
 .guide-head h1 { margin: 0 0 4px; font-size: 26px; }

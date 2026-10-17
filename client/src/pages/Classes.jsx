@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
@@ -6,7 +6,8 @@ import { useRealtime } from '../realtime.jsx';
 import { useParish } from '../parish.jsx';
 import { isPro } from '../lib/plans';
 import { SACRAMENTS, CERT_SUGGESTIONS } from '../components/SacramentBadge.jsx';
-import StudentForm from '../components/StudentForm.jsx';
+import StudentModal from '../components/StudentModal.jsx';
+import PricingModal from '../components/PricingModal.jsx';
 import Avatar from '../components/Avatar.jsx';
 import { byViName } from '../lib/viName';
 import { exportXlsx, exportSubtitle, fileSlug, STT_COL } from '../lib/exportUtils';
@@ -24,6 +25,9 @@ const empty = {
   srcClasses: [], picked: [], leaveOld: false,
 };
 const SCHEDULES = ['Sáng', 'Chiều', 'Tối'];
+const NA = <span className="muted">–</span>;
+const YEAR_RE = /^\d{4}-\d{4}$/;
+const normYear = (y) => String(y || '').replace(/\s+/g, '').replace(/[–—]/g, '-');
 const SAC_RANK = { none: 0, baptism: 1, ruoc_le: 2, them_suc: 3 }; // Rửa tội -> Rước lễ -> Thêm Sức
 const REVIEW_BADGE = {
   submitted: ['Chờ duyệt', 'yellow'],
@@ -71,6 +75,12 @@ export default function Classes() {
   const [reviewModal, setReviewModal] = useState(null); // chốt lớp -> gửi Admin duyệt
   const [rev2, setRev2] = useState({}); // trạng thái đơn review theo class_id
   const [addExisting, setAddExisting] = useState(null); // thêm học viên có sẵn vào lớp này
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false); // chặn bấm Lưu 2 lần liền
+  const modalStart = useRef('');
+  const [pricing, setPricing] = useState(false);
+  const [tpQuery, setTpQuery] = useState(''); // tìm giáo lý viên trong hộp lớp
+  const [moving, setMoving] = useState(false);
 
   function load() { api.get('/classes').then((r) => { setClasses(r.data); setLoaded(true); }); }
   function loadReviews() {
@@ -109,10 +119,18 @@ export default function Classes() {
     setDetail((d) => { if (d) api.get(`/students?class_id=${d.cls.id}`).then((r) => setDetail((x) => (x && x.cls.id === d.cls.id ? { ...x, students: r.data } : x))); return d; });
   }, [rev]);
 
-  function openCreate() { setError(''); setModal({ ...empty, teachers: [] }); }
+  const defaultYear = parish?.settings?.current_school_year
+    || [...new Set(classes.map((c) => c.year).filter(Boolean))].sort().reverse()[0] || '';
+  function openModal(m) { modalStart.current = JSON.stringify(m); setTpQuery(''); setModal(m); }
+  function openCreate() { setError(''); openModal({ ...empty, year: defaultYear, teachers: [] }); }
+  async function closeModal() {
+    if (savingRef.current) return;
+    if (JSON.stringify(modal) !== modalStart.current && !(await confirmDialog('Bỏ các thông tin lớp vừa nhập?\n\nNhững gì chưa lưu sẽ mất.'))) return;
+    setModal(null);
+  }
   function openEdit(c) {
     setError('');
-    setModal({
+    openModal({
       ...c, mode: 'edit', year: c.year || '', room: c.room || '', schedule: c.schedule || '',
       promotes: c.promotes !== false, kind: c.kind === 'external' ? 'external' : 'catechism', is_graduation: !!c.is_graduation,
       teachers: (c.teachers || []).map((t) => ({ teacher_id: t.id, is_primary: t.is_primary })),
@@ -153,22 +171,27 @@ export default function Classes() {
   const seniorToJunior = [...classes].sort((a, b) => b.order_index - a.order_index);
 
   async function save() {
+    if (savingRef.current) return;
     setError('');
-    if (!modal.name.trim()) { setError('Thiếu tên lớp'); return; }
+    const fail = (m) => { setError(m); toast.err(m); };
+    if (!modal.name.trim()) { fail('Vui lòng nhập tên lớp.'); return; }
+    const year = normYear(modal.year);
+    if (!YEAR_RE.test(year)) { fail('Niên khóa ghi dạng 2026-2027. Các trang Điểm số, Lưu trữ lọc lớp theo đúng niên khóa này.'); return; }
+    savingRef.current = true; setSaving(true);
     try {
       if (modal.mode === 'edit') {
         await api.put(`/classes/${modal.id}`, {
-          name: modal.name, year: modal.year, room: modal.room, schedule: modal.schedule,
+          name: modal.name.trim(), year, room: modal.room, schedule: modal.schedule,
           kind: modal.kind, is_graduation: modal.kind === 'catechism' && !!modal.is_graduation, teachers: modal.teachers,
         });
-        setModal(null); load();
+        setModal(null); load(); toast(`Đã lưu lớp ${modal.name.trim()}`);
         return;
       }
       // lớp bật "tự động lên lớp" -> đưa lên trên cùng bảng thứ tự (order lớn nhất)
       const maxOrder = classes.filter((c) => c.promotes).reduce((m, c) => Math.max(m, c.order_index || 0), 0);
       // tạo lớp mới (chế độ 'from' = lớp gộp)
       const r = await api.post('/classes', {
-        name: modal.name, year: modal.year, room: modal.room, schedule: modal.schedule,
+        name: modal.name.trim(), year, room: modal.room, schedule: modal.schedule,
         kind: modal.kind, is_graduation: modal.kind === 'catechism' && !!modal.is_graduation,
         teachers: modal.teachers, merged: modal.mode === 'from' && !!modal.leaveOld,
         order_index: modal.kind === 'catechism' ? maxOrder + 1 : 0,
@@ -184,17 +207,19 @@ export default function Classes() {
           else await api.post('/students/copy', { ids, class_id: newId });
         }
       }
-      setModal(null); load();
+      setModal(null); load(); toast(`Đã tạo lớp ${modal.name.trim()}`);
       if (isAdmin) api.get('/students').then((res) => setAllStudents(res.data)).catch(() => {});
     } catch (err) {
-      setError(err.response?.data?.error || 'Lưu thất bại');
-    }
+      const m = err.response?.data?.error || 'Lưu thất bại, vui lòng thử lại.';
+      setError(m); toast.err(m);
+    } finally { savingRef.current = false; setSaving(false); }
   }
 
   async function remove(c) {
-    if (!await confirmDialog(`Xóa lớp "${c.name}"? Học viên trong lớp sẽ trở về "chưa xếp lớp".`)) return;
-    await api.delete(`/classes/${c.id}`);
-    load();
+    const n = c.student_count || 0;
+    if (!await confirmDialog(`Xóa lớp "${c.name}"?\n\nSẽ xóa luôn các cột điểm và TOÀN BỘ điểm số của lớp, phân công giáo lý viên và đơn xét lên lớp. Không khôi phục được.\n\n${n ? `${n} học viên vẫn giữ hồ sơ, chuyển về "Chưa xếp lớp".` : 'Lớp chưa có học viên.'}\n\nNếu chỉ hết năm học, hãy dùng "Kết thúc năm học" để lưu trữ thay vì xóa.`)) return;
+    try { await api.delete(`/classes/${c.id}`); toast(`Đã xóa lớp ${c.name}`); setDetail((d) => (d && d.cls.id === c.id ? null : d)); load(); }
+    catch (e) { toast.err(e.response?.data?.error || 'Chưa xóa được lớp'); }
   }
 
   // --- sắp xếp thứ tự lớp ---
@@ -204,8 +229,8 @@ export default function Classes() {
     const list = [...orderList]; [list[i], list[j]] = [list[j], list[i]]; setOrderList(list);
   }
   async function saveOrder() {
-    await api.post('/classes/reorder', { ids: orderList.map((c) => c.id) });
-    setOrderList(null); load();
+    try { await api.post('/classes/reorder', { ids: orderList.map((c) => c.id) }); setOrderList(null); load(); toast('Đã lưu thứ tự lên lớp'); }
+    catch (e) { toast.err(e.response?.data?.error || 'Chưa lưu được thứ tự'); }
   }
 
   // --- ghi bí tích / chứng chỉ cả lớp ---
@@ -230,15 +255,16 @@ export default function Classes() {
       }
     }
     try {
+      setSac({ ...sac, busy: true, err: '' });
       if (sac.kind === 'sacrament') {
         const r = await api.post('/students/sacrament', { ids: sac.picked, sacrament: sac.sacrament, date: sac.date });
-        setSac({ ...sac, msg: `Đã ghi bí tích cho ${r.data.count} em`, err: '' });
+        toast(`Đã ghi ${SACRAMENTS[sac.sacrament]?.label || 'bí tích'} cho ${r.data.count} em lớp ${sac.cls.name}`);
       } else {
         const r = await api.post('/students/certificate', { ids: sac.picked, name: sac.certName.trim(), date: sac.date });
-        setSac({ ...sac, msg: `Đã ghi chứng chỉ cho ${r.data.count} em`, err: '' });
+        toast(`Đã ghi chứng chỉ cho ${r.data.count} em lớp ${sac.cls.name}`);
       }
-      load();
-    } catch (e) { setSac({ ...sac, err: e.response?.data?.error || 'Lưu thất bại' }); }
+      setSac(null); load();
+    } catch (e) { setSac((x) => (x ? { ...x, busy: false, err: e.response?.data?.error || 'Lưu thất bại' } : x)); }
   }
 
   // ---- chốt lớp: GLV chọn kết quả từng em -> gửi Admin duyệt (#5) ----
@@ -324,14 +350,21 @@ export default function Classes() {
       summary: `Tổng số học viên: ${list.length}`,
     });
   }
-  async function removeStudent(s) { if (!await confirmDialog(`Xóa học viên "${s.full_name}"?`)) return; await api.delete(`/students/${s.id}`); reloadDetail(); }
-  async function saveStudent() {
-    try { await api.put(`/students/${stEdit.id}`, stEdit); setStEdit(null); reloadDetail(); }
-    catch (e) { toast.err(e.response?.data?.error || 'Lưu thất bại'); }
+  async function removeStudent(s) {
+    const who = [s.saint_name, s.full_name].filter(Boolean).join(' ');
+    if (!await confirmDialog(`Xóa hồ sơ học viên ${who}?\n\nSẽ mất luôn điểm số, điểm danh và việc thiêng liêng của em này, không khôi phục được.\n\nNếu em chỉ chuyển lớp, hãy dùng "Chuyển lớp".`)) return;
+    try { await api.delete(`/students/${s.id}`); toast(`Đã xóa hồ sơ ${who}`); reloadDetail(); }
+    catch (e) { toast.err(e.response?.data?.error || 'Chưa xóa được học viên'); }
   }
   async function doMove() {
-    await api.post('/students/move', { ids: mv.ids, class_id: mv.dest });
-    setMv(null); setDetail((d) => (d ? { ...d, picked: [] } : d)); reloadDetail();
+    if (moving) return;
+    setMoving(true);
+    try {
+      await api.post('/students/move', { ids: mv.ids, class_id: mv.dest });
+      toast(`Đã chuyển ${mv.ids.length} học viên sang lớp ${classes.find((c) => c.id === mv.dest)?.name || ''}`);
+      setMv(null); setDetail((d) => (d ? { ...d, picked: [] } : d)); reloadDetail();
+    } catch (e) { toast.err(e.response?.data?.error || 'Chưa chuyển được lớp'); }
+    finally { setMoving(false); }
   }
   async function returnStudents(ids) {
     if (!ids.length || !await confirmDialog('Trả các em đã chọn về lớp cũ (trước khi gộp)?')) return;
@@ -368,31 +401,37 @@ export default function Classes() {
         return (
         <div className="toolbar">
           {!reached && <button data-tour="class-add" className="btn" onClick={openCreate}>+ Thêm lớp</button>}
-          {!isFree && <button className="btn ghost" onClick={openOrder} disabled={classes.length < 2}><IconSliders className="bi" />Cài đặt lớp học</button>}
+          {!isFree && <button className="btn ghost" onClick={openOrder} disabled={classes.length < 2} title="Sắp bậc lớp từ cao xuống thấp để lên lớp cuối năm cho đúng"><IconSliders className="bi" />Thứ tự lên lớp</button>}
           {!isFree && (
-            <button data-tour="class-promotion" className={`btn ${promotionOpen ? 'danger' : ''} ghost`} onClick={togglePromotion} title="Mở để các lớp giáo lý trong năm gửi kết quả lên lớp / ở lại cho bạn duyệt">
+            <button data-tour="class-promotion" className="btn ghost" onClick={togglePromotion}
+              title={promotionOpen ? 'Đóng lại: giáo lý viên không gửi kết quả được nữa' : 'Mở để giáo lý viên các lớp giáo lý trong năm gửi kết quả lên lớp / ở lại cho bạn duyệt'}>
               {promotionOpen ? <><IconLock className="bi" />Đóng kỳ xét lên lớp</> : <><IconMegaphone className="bi" />Mở kỳ xét lên lớp</>}
             </button>
           )}
-          {!isFree && promotionOpen && <span className="muted" style={{ fontSize: 12, alignSelf: 'center' }}>Đang mở, các lớp giáo lý trong năm có thể gửi kết quả để bạn duyệt.</span>}
           {reached && (
-            <span className="muted" style={{ fontSize: 13 }}>
-              {isFree
-                ? 'Gói Khởi động quản lý 1 lớp. Muốn dùng tiếp thì sửa lại lớp hiện có. Nâng lên Pro để thêm lớp.'
-                : `Đã đạt tối đa ${maxClasses} lớp của mức gói hiện tại. Nâng mức gói (liên hệ tác giả) để thêm lớp.`}
+            <span className="clx-limit">
+              {isFree ? 'Gói Khởi động quản lý 1 lớp.' : `Đã đủ ${maxClasses} lớp của mức gói hiện tại.`}
+              <button type="button" className="btn sm" onClick={() => setPricing(true)}>{isFree ? 'Nâng lên Pro để thêm lớp' : 'Nâng mức gói'}</button>
             </span>
           )}
         </div>
         );
       })()}
 
+      {!isFree && promotionOpen && (
+        <div className="clx-banner">
+          <IconMegaphone className="bi" />
+          <span>{isAdmin ? <>Kỳ xét lên lớp <b>đang mở</b>: giáo lý viên bấm "Kết thúc lớp" để gửi kết quả từng em, bạn duyệt ở trang Tổng quan.</>
+            : <>Kỳ xét lên lớp <b>đang mở</b>: bấm "Kết thúc lớp" ở lớp của bạn để chọn em lên lớp / ở lại rồi gửi ban giáo lý duyệt.</>}</span>
+        </div>
+      )}
       <div className="seg" style={{ marginBottom: 14, maxWidth: 460 }}>
         <button className={`seg-btn ${tab === 'catechism' ? 'on' : ''}`} onClick={() => setTab('catechism')}>Lớp giáo lý trong năm</button>
         <button className={`seg-btn ${tab === 'external' ? 'on' : ''}`} onClick={() => setTab('external')}>Lớp giáo lý ngoại thường{externalCount ? ` (${externalCount})` : ''}</button>
       </div>
 
       <div className="panel">
-        <table>
+        <table className="clx-table">
           <thead>
             <tr>
               <th>Tên lớp</th><th>Niên khóa</th><th>Phòng · Lịch học</th>
@@ -403,18 +442,18 @@ export default function Classes() {
             {!loaded && <SkeletonRows rows={4} cols={colCount} />}
             {shown.map((c) => (
               <tr key={c.id}>
-                <td>
+                <td className="clx-c-name">
                   <span className="link-name" onClick={() => openDetail(c)}>{c.name}</span>
                   {c.merged && <span className="tag-chip merged" style={{ marginLeft: 6 }}>● lớp gộp</span>}
                   {c.is_graduation && <span className="tag-chip grad" style={{ marginLeft: 6 }}><IconGradCap className="bi" style={{ width: 13, height: 13, marginRight: 3 }} />lớp tốt nghiệp</span>}
                   {reviewBadge(rev2[c.id]?.status)}
                 </td>
-                <td>{c.year || '—'}</td>
-                <td>{[c.room, c.schedule].filter(Boolean).join(' · ') || '—'}</td>
-                <td>{c.teacher_name || <span className="muted">Chưa phân công</span>}</td>
-                <td>{c.student_count}</td>
+                <td data-label="Niên khóa">{c.year || NA}</td>
+                <td data-label="Phòng, lịch">{[c.room, c.schedule].filter(Boolean).join(' · ') || NA}</td>
+                <td data-label="Giáo lý viên">{c.teacher_name || <span className="muted">Chưa phân công</span>}</td>
+                <td data-label="Sĩ số">{c.student_count}</td>
                 {showActions && (
-                  <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
+                  <td className="clx-c-act">
                     {!isAdmin && <><button className="btn ghost sm" onClick={() => openSac(c)}>Ghi bí tích</button>{' '}</>}
                     {(() => {
                       const st = rev2[c.id]?.status;
@@ -449,17 +488,21 @@ export default function Classes() {
 
       {/* Danh sách học viên của lớp được chọn */}
       {detail && (
-        <div className="panel">
-          <div className="card-head">
-            <h2>Danh sách lớp {detail.cls.name} {detail.cls.merged && <span className="tag-chip merged">● lớp gộp</span>}</h2>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <button className="btn ghost sm" onClick={() => setSortAbc((v) => !v)}>{sortAbc ? 'Đang xếp A→Z (theo tên)' : 'Sắp xếp A→Z'}</button>
-              <button className="btn ghost sm" onClick={exportClassXlsx} disabled={!detail.students?.length}><IconDownload className="bi" />Xuất Excel</button>
-              <button className="btn ghost sm" onClick={() => openHist(detail.cls)}><IconTrend className="bi" />Lịch sử lớp</button>
-              <span className="link" onClick={() => setDetail(null)}>Đóng ✕</span>
-            </div>
+        <div className="modal-backdrop" onClick={() => setDetail(null)}>
+        <div className="modal wide clx-detail" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="clxDetailT">
+          <div className="clx-dhead">
+            <h2 id="clxDetailT">Lớp {detail.cls.name} {detail.cls.merged && <span className="tag-chip merged">lớp gộp</span>}<span className="muted clx-dcount">{detail.students ? `${detail.students.length} học viên` : ''}</span></h2>
+            <button type="button" className="clx-x" onClick={() => setDetail(null)} aria-label="Đóng">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+          </div>
+          <div className="clx-dtools">
+            <button className="btn ghost sm" onClick={() => setSortAbc((v) => !v)}>{sortAbc ? 'Đang xếp theo tên' : 'Xếp theo tên'}</button>
+            <button className="btn ghost sm" onClick={exportClassXlsx} disabled={!detail.students?.length}><IconDownload className="bi" />Xuất Excel</button>
+            <button className="btn ghost sm" onClick={() => openHist(detail.cls)}><IconTrend className="bi" />Lịch sử lớp</button>
           </div>
           {detail.cls.merged && <p className="muted" style={{ marginTop: -6, fontSize: 13 }}>Lớp gộp: chỉ dùng cho lớp giáo lý hè / ngoại khóa. Sau khi kết thúc, có thể trả từng em về lớp cũ.</p>}
+          <div className="clx-dbody">
           {detail.students === null ? <div className="muted">Đang tải...</div> : (
             <>
               {detail.picked.length > 0 && (
@@ -469,33 +512,38 @@ export default function Classes() {
                   {detail.cls.merged && <button className="btn ghost sm" onClick={() => returnStudents([...detail.picked])}>Trả về lớp cũ</button>}
                 </div>
               )}
-              <table>
+              <table className="clx-stu">
                 <thead><tr>
-                  <th style={{ width: 32 }}><input type="checkbox" checked={dAll} onChange={dToggleAll} /></th>
+                  <th style={{ width: 32 }}><input type="checkbox" checked={dAll} onChange={dToggleAll} aria-label="Chọn tất cả" /></th>
                   <th>Tên thánh</th><th>Họ tên</th><th>Chức vụ</th><th>Ngày sinh</th><th>SĐT phụ huynh</th><th></th>
                 </tr></thead>
                 <tbody>
                   {dStudents.map((s) => (
                     <tr key={s.id}>
                       <td><input type="checkbox" checked={detail.picked.includes(s.id)} onChange={() => dTogglePick(s.id)} /></td>
-                      <td>{s.saint_name || '—'}</td>
+                      <td>{s.saint_name || NA}</td>
                       <td><div className="stu-cell"><Avatar url={s.avatar_url} name={s.full_name} size={28} /><span className="link-name" onClick={() => navigate(`/students/${s.id}`)}>{s.full_name}</span></div></td>
-                      <td>{s.position ? <span className="role-chip">{s.position}</span> : <span className="muted">—</span>}</td>
-                      <td>{viDate(s.birth_date) || '—'}</td>
-                      <td>{s.father_phone || s.mother_phone || s.parent_phone || '—'}</td>
-                      <td style={{ whiteSpace: 'nowrap' }}>
-                        <button className="btn ghost sm" onClick={() => setStEdit({ ...s, class_id: s.class_id || '' })}>Sửa</button>{' '}
-                        <button className="btn ghost sm" onClick={() => setMv({ ids: [s.id], dest: '' })}>Chuyển lớp</button>{' '}
-                        {detail.cls.merged && s.prev_class_id && <button className="btn ghost sm" onClick={() => returnStudents([s.id])}>Trở về lớp cũ</button>}{' '}
-                        <button className="btn danger sm" onClick={() => removeStudent(s)}>Xóa</button>
+                      <td>{s.position ? <span className="role-chip">{s.position}</span> : NA}</td>
+                      <td>{viDate(s.birth_date) || NA}</td>
+                      <td>{s.father_phone || s.mother_phone || s.parent_phone || NA}</td>
+                      <td className="clx-c-act">
+                        <button className="btn ghost sm" onClick={() => setStEdit({ ...s, class_id: s.class_id || '' })}>Sửa</button>
+                        <RowMenu items={[
+                          { label: 'Chuyển lớp', onClick: () => setMv({ ids: [s.id], dest: '' }) },
+                          detail.cls.merged && s.prev_class_id && { label: 'Trở về lớp cũ', onClick: () => returnStudents([s.id]) },
+                          { label: 'Xem hồ sơ', onClick: () => navigate(`/students/${s.id}`) },
+                          { label: 'Xóa học viên…', danger: true, onClick: () => removeStudent(s) },
+                        ]} />
                       </td>
                     </tr>
                   ))}
-                  {detail.students.length === 0 && <tr><td colSpan={7} className="muted">Lớp chưa có học viên.</td></tr>}
+                  {detail.students.length === 0 && <tr><td colSpan={7} className="muted">Lớp chưa có học viên.{isAdmin && <> Dùng menu ⋯ của lớp, chọn "Thêm học viên có sẵn", hoặc thêm ở trang Học viên.</>}</td></tr>}
                 </tbody>
               </table>
             </>
           )}
+          </div>
+        </div>
         </div>
       )}
 
@@ -512,7 +560,7 @@ export default function Classes() {
             </div>
             <div className="modal-actions">
               <button className="btn ghost" onClick={() => setMv(null)}>Hủy</button>
-              <button className="btn" onClick={doMove} disabled={!mv.dest}>Chuyển</button>
+              <button className="btn" onClick={doMove} disabled={!mv.dest || moving}>{moving ? 'Đang chuyển…' : 'Chuyển'}</button>
             </div>
           </div>
         </div>
@@ -520,16 +568,8 @@ export default function Classes() {
 
       {/* Modal sửa học viên */}
       {stEdit && (
-        <div className="modal-backdrop" onClick={() => setStEdit(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Sửa học viên</h2>
-            <StudentForm form={stEdit} setForm={setStEdit} classes={classes} />
-            <div className="modal-actions">
-              <button className="btn ghost" onClick={() => setStEdit(null)}>Hủy</button>
-              <button className="btn" onClick={saveStudent}>Lưu</button>
-            </div>
-          </div>
-        </div>
+        <StudentModal initial={stEdit} classes={classes} requireClass={isTeacher}
+          onClose={() => setStEdit(null)} onSaved={() => { setStEdit(null); reloadDetail(); }} />
       )}
 
       {/* Modal lịch sử lớp */}
@@ -548,7 +588,7 @@ export default function Classes() {
                     {histStudents.map((s) => (
                       <tr key={s.id}>
                         <td>{s.saint_name ? s.saint_name + ' ' : ''}{s.full_name}</td>
-                        {histYears.map((y) => <td key={y} style={{ textAlign: 'center', fontWeight: s.y[y] != null ? 700 : 400 }}>{s.y[y] != null ? s.y[y] : '—'}</td>)}
+                        {histYears.map((y) => <td key={y} style={{ textAlign: 'center', fontWeight: s.y[y] != null ? 700 : 400 }}>{s.y[y] != null ? s.y[y] : NA}</td>)}
                       </tr>
                     ))}
                   </tbody>
@@ -562,7 +602,7 @@ export default function Classes() {
 
       {/* Modal thêm/sửa lớp */}
       {modal && (
-        <div className="modal-backdrop" onClick={() => setModal(null)}>
+        <div className="modal-backdrop" onClick={closeModal}>
           <div className={`modal ${modal.mode === 'from' ? 'wide' : ''}`} onClick={(e) => e.stopPropagation()}>
             <h2>{modal.mode === 'edit' ? 'Sửa lớp' : 'Thêm lớp'}</h2>
 
@@ -581,8 +621,8 @@ export default function Classes() {
                 </div>
                 <div className="grid-2">
                   <div className="field">
-                    <label>Niên khóa</label>
-                    <input value={modal.year} onChange={(e) => setModal({ ...modal, year: e.target.value })} placeholder="VD: 2025-2026" />
+                    <label>Niên khóa *</label>
+                    <input value={modal.year} onChange={(e) => setModal({ ...modal, year: e.target.value })} placeholder="VD: 2026-2027" />
                   </div>
                   <div className="field">
                     <label>Phòng học</label>
@@ -591,7 +631,7 @@ export default function Classes() {
                   <div className="field">
                     <label>Thời gian học</label>
                     <select value={modal.schedule} onChange={(e) => setModal({ ...modal, schedule: e.target.value })}>
-                      <option value="">—</option>
+                      <option value="">Chọn</option>
                       {SCHEDULES.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
@@ -604,7 +644,7 @@ export default function Classes() {
                     <button type="button" className={`seg-btn ${modal.kind === 'external' ? 'on' : ''}`} onClick={() => setModal({ ...modal, kind: 'external', is_graduation: false })}>Lớp giáo lý ngoại thường</button>
                   </div>
                   <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-                    {modal.kind === 'external' ? 'Lớp hôn nhân / dự tòng…: học 1 khóa, tự xét tốt nghiệp, không lên lớp.' : 'Lớp cho học viên chính quy — nằm trong hệ thống lên lớp hằng năm.'}
+                    {modal.kind === 'external' ? 'Lớp hôn nhân / dự tòng…: học 1 khóa, tự xét tốt nghiệp, không lên lớp.' : 'Lớp cho học viên chính quy, nằm trong hệ thống lên lớp hằng năm.'}
                   </p>
                 </div>
                 {!isFree && modal.kind === 'catechism' && (
@@ -616,9 +656,12 @@ export default function Classes() {
 
                 <div className="field">
                   <label>Giáo lý viên phụ trách (chọn nhiều, đánh dấu 1 người chính)</label>
+                  {teachers.length > 6 && (
+                    <input className="clx-tpsearch" type="search" value={tpQuery} onChange={(e) => setTpQuery(e.target.value)} placeholder="Tìm giáo lý viên…" aria-label="Tìm giáo lý viên" />
+                  )}
                   <div className="teacher-picker">
                     {teachers.length === 0 && <div className="muted" style={{ fontSize: 13 }}>Chưa có giáo lý viên nào.</div>}
-                    {teachers.map((t) => (
+                    {teachers.filter((t) => !tpQuery.trim() || isAssigned(t.id) || String(t.full_name || '').toLowerCase().includes(tpQuery.trim().toLowerCase())).map((t) => (
                       <div className="tp-row" key={t.id}>
                         <label className="tp-check">
                           <input type="checkbox" checked={isAssigned(t.id)} onChange={() => toggleTeacher(t.id)} />
@@ -675,12 +718,14 @@ export default function Classes() {
 
             {error && <div className="error">{error}</div>}
             <div className="modal-actions">
-              <button className="btn ghost" onClick={() => setModal(null)}>Hủy</button>
-              <button data-tour="class-form-save" className="btn" onClick={save}>Lưu</button>
+              <button className="btn ghost" onClick={closeModal} disabled={saving}>Hủy</button>
+              <button data-tour="class-form-save" className="btn" onClick={save} disabled={saving}>{saving ? 'Đang lưu…' : modal.mode === 'edit' ? 'Lưu' : 'Tạo lớp'}</button>
             </div>
           </div>
         </div>
       )}
+
+      {pricing && <PricingModal current={parish?.plan} onClose={() => { setPricing(false); reloadParish(); }} />}
 
       {/* Thêm học viên có sẵn vào lớp này */}
       {addExisting && (
@@ -693,7 +738,7 @@ export default function Classes() {
       {orderList && (
         <div className="modal-backdrop" onClick={() => setOrderList(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Cài đặt thứ tự lớp</h2>
+            <h2>Thứ tự lên lớp</h2>
             <p className="muted" style={{ marginTop: 0 }}>
               Sắp xếp bậc lớp cho việc lên lớp cuối năm. <b>Trên cùng là lớp cao nhất</b> (thường là lớp tốt nghiệp, ra trường khi lên lớp),
               dưới cùng là lớp nhỏ nhất. Đánh dấu "lớp tốt nghiệp" ở nút <b>Sửa</b> của lớp cao nhất.
@@ -760,11 +805,10 @@ export default function Classes() {
               {sac.students?.length === 0 && <div className="muted" style={{ fontSize: 13 }}>Lớp chưa có học viên.</div>}
             </div>
 
-            {sac.msg && <div className="info-box">{sac.msg}</div>}
             {sac.err && <div className="error">{sac.err}</div>}
             <div className="modal-actions">
               <button className="btn ghost" onClick={() => setSac(null)}>Đóng</button>
-              <button className="btn" onClick={saveSac} disabled={sac.students === null}>Lưu</button>
+              <button className="btn" onClick={saveSac} disabled={sac.students === null || sac.busy}>{sac.busy ? 'Đang lưu…' : `Ghi cho ${sac.picked.length} em`}</button>
             </div>
           </div>
         </div>
@@ -804,7 +848,7 @@ export default function Classes() {
                   <div key={s.id} className="rv-row" style={{ flexWrap: 'wrap' }}>
                     <span className="rv-name">
                       {s.saint_name ? s.saint_name + ' ' : ''}{s.full_name}
-                      <span className="rv-score" title="Điểm cuối kỳ">{sc != null ? sc : '—'}</span>
+                      <span className="rv-score" title="Điểm cuối kỳ">{sc != null ? sc : '–'}</span>
                     </span>
                     <div className="seg sm">
                       {reviewModal.kind === 'external' ? (
