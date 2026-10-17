@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api';
 import { exportXlsxMulti, exportPdfMulti, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 import Avatar from '../components/Avatar.jsx';
@@ -124,7 +125,9 @@ export default function Attendance() {
   const [tab, setTab] = useState('giaoly'); // giaoly | thieng
   const [classes, setClasses] = useState([]);
   const [classId, setClassId] = useState('');
-  const [date, setDate] = useState(today());
+  const [searchParams] = useSearchParams();
+  // ?date=yyyy-mm-dd (từ Tổng quan: buổi chưa điểm danh)
+  const [date, setDate] = useState(() => (/^\d{4}-\d{2}-\d{2}$/.test(searchParams.get('date') || '') ? searchParams.get('date') : today()));
   const [mode, setMode] = useState('day'); // day (điểm danh) | week | month (thống kê)
   const [parish, setParish] = useState(null);
   const [report, setReport] = useState(false); // modal xuất báo cáo tổng hợp

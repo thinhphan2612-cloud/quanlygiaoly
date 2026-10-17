@@ -46,10 +46,11 @@ const GUIDE = [
   {
     id: 'tongquan', title: 'Tổng quan (Dashboard)', roles: ['admin', 'teacher'],
     tags: 'dashboard tổng quan trang chủ thống kê số liệu chỉ số',
-    summary: 'Màn hình đầu tiên sau khi đăng nhập: các chỉ số nhanh (số lớp, số học viên, điểm danh…) và lối tắt tới việc thường làm.',
+    summary: 'Màn hình đầu tiên sau khi đăng nhập: chỉ số nhanh, những việc cần chú ý, bảng thi đua và kết quả từng lớp.',
     steps: [
-      'Xem nhanh tổng số lớp, học viên và tình hình điểm danh gần đây.',
-      'Bấm vào các thẻ để đi thẳng tới trang tương ứng.',
+      'Xem nhanh số học viên, lớp, giáo lý viên, chuyên cần 4 tuần gần nhất và điểm trung bình (tính theo hệ số cột như trang Điểm số).',
+      'Mục "Cần chú ý" nhắc lớp chưa điểm danh buổi học gần nhất, học viên vắng liền từ 3 buổi (kèm số điện thoại phụ huynh để gọi) và lớp chưa có cột điểm. Bấm nút bên cạnh để làm ngay.',
+      'Bảng xếp hạng thi đua tính theo tỷ lệ giáo xứ đặt ở Cài đặt; bấm vào một lớp ở "Kết quả theo lớp" để mở bảng điểm lớp đó.',
     ],
     tips: ['Giáo lý viên chỉ thấy số liệu của các lớp mình được phân công; quản trị thấy toàn giáo xứ.'],
   },

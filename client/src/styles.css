@@ -1867,6 +1867,43 @@ button.gx-stat:hover { border-color: var(--primary); }
   .aux-table tr.aux-empty { display: block; }
 }
 
+/* ===== Tổng quan (Dashboard): tiền tố dbx- ===== */
+.dbx-loading { opacity: .55; pointer-events: none; transition: opacity .15s; }
+.dbx-st-gold { background: #fff8e6; } .dbx-st-gold .ic { background: #fde9b8; color: #b45309; }
+:root[data-theme="dark"] .dbx-st-gold { background: rgba(245, 158, 11, .12); }
+.dbx-att { margin-bottom: 18px; }
+.dbx-count { min-width: 24px; height: 24px; padding: 0 7px; border-radius: 999px; background: #fee2e2; color: #b91c1c; font-size: 13px; font-weight: 700; display: inline-grid; place-items: center; }
+.dbx-ok { display: flex; align-items: center; gap: 8px; margin: 0; color: #15803d; font-size: 14px; }
+.dbx-ok .bi { width: 18px; height: 18px; }
+.dbx-att-list { display: flex; flex-direction: column; }
+.dbx-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); font-size: 14px; }
+.dbx-item:first-child { border-top: 0; padding-top: 0; }
+.dbx-text { flex: 1; min-width: 0; }
+.dbx-tag { flex: 0 0 auto; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.dbx-tag.warn { background: #fef3c7; color: #92400e; }
+.dbx-tag.bad { background: #fee2e2; color: #b91c1c; }
+.dbx-tag.info { background: var(--primary-soft); color: var(--primary); }
+.dbx-item .btn { flex: 0 0 auto; white-space: nowrap; text-decoration: none; }
+.dbx-nophone { font-size: 12px; white-space: nowrap; }
+.dbx-more { align-self: flex-start; margin: 4px 0 6px; border: 0; background: none; padding: 0; font: inherit; font-size: 13px; font-weight: 600; color: var(--primary); cursor: pointer; }
+:root[data-theme="dark"] .dbx-tag.warn { background: rgba(245, 158, 11, .15); color: #fbbf24; }
+:root[data-theme="dark"] .dbx-tag.bad, :root[data-theme="dark"] .dbx-count { background: rgba(220, 38, 38, .18); color: #f87171; }
+:root[data-theme="dark"] .dbx-ok { color: #4ade80; }
+.dbx-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.dbx-grid > .panel { margin: 0; }
+@media (max-width: 900px) { .dbx-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .dbx-item { flex-wrap: wrap; gap: 6px 10px; }
+  .dbx-text { flex-basis: calc(100% - 110px); }
+  .dbx-item .btn, .dbx-nophone { margin-left: auto; }
+  /* 5 thẻ thống kê: lưới 2 cột gọn thay vì 5 hàng */
+  .dash-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .dash-stats .dash-stat { padding: 14px 16px; }
+  .dash-stats .dash-stat .ic { display: none; }
+  .dash-stats .dash-stat .lbl { font-size: 13px; margin-bottom: 6px; }
+  .dash-stats .dash-stat .num { font-size: 24px; }
+}
+
 /* ===== Hướng dẫn sử dụng (Guide / Wiki) ===== */
 .guide-wrap { max-width: 1100px; margin: 0 auto; }
 .guide-head h1 { margin: 0 0 4px; font-size: 26px; }

@@ -12,6 +12,41 @@ const ok = (data) => Promise.resolve({ data });
 // Mọi lỗi trả về UI đều đi qua viError để thành tiếng Việt dễ hiểu (thông báo đã là tiếng Việt thì giữ nguyên).
 const fail = (status, error) => Promise.reject({ response: { status, data: { error: viError(error) } } });
 const round1 = (n) => Math.round(n * 10) / 10;
+// Supabase trả tối đa 1000 dòng mỗi lần: đọc hết bằng .range() theo trang.
+// build() phải có .order() theo khóa duy nhất để các trang không trùng / sót.
+async function fetchAllRows(build) {
+  const out = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await build().range(from, from + 999);
+    if (error) throw error;
+    out.push(...(data || []));
+    if (!data || data.length < 1000) return out;
+  }
+}
+// Lọc .in(key, ids) theo từng nhóm id (tránh URL quá dài), mỗi nhóm đọc hết các trang
+async function fetchByIds(table, cols, key, ids, order) {
+  const out = [];
+  for (let i = 0; i < ids.length; i += 150) {
+    const chunk = ids.slice(i, i + 150);
+    out.push(...await fetchAllRows(() => order.reduce((qb, o) => qb.order(o), supabase.from(table).select(cols).in(key, chunk))));
+  }
+  return out;
+}
+// Ngày yyyy-mm-dd theo giờ máy (không qua toISOString/UTC)
+const ymdLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// Điểm TB có hệ số của từng học viên (giống trang Điểm số): sum(điểm*hệ số)/sum(hệ số)
+function weightedAvgByStudent(grades, cols) {
+  const w = {}; (cols || []).forEach((c) => { w[c.id] = Number(c.weight) || 1; });
+  const acc = {};
+  (grades || []).forEach((g) => {
+    if (g.score === null || g.score === undefined || g.score === '' || Number.isNaN(Number(g.score))) return;
+    const k = w[g.column_id] ?? 1;
+    const a = acc[g.student_id] || (acc[g.student_id] = { s: 0, w: 0, n: 0 });
+    a.s += Number(g.score) * k; a.w += k; a.n += 1;
+  });
+  const out = {}; Object.entries(acc).forEach(([id, a]) => { out[id] = { avg: a.w ? round1(a.s / a.w) : null, n: a.n }; });
+  return out;
+}
 // "2025-2026" -> "2026-2027"; "2025" -> "2026"; không parse được -> null
 function bumpYear(y) {
   if (!y) return null;
@@ -496,14 +531,16 @@ async function handle(method, rawUrl, body = {}) {
 
     // ---------------- student-stats (cho bộ lọc) ----------------
     if (path === '/student-stats' && method === 'get') {
-      const [{ data: students }, { data: grades }, { data: att }, { data: cols }] = await Promise.all([
-        supabase.from('students').select('id, class_id').eq('graduated', false),
-        supabase.from('grades').select('student_id, score'),
-        supabase.from('attendance').select('student_id, status'),
-        supabase.from('grade_columns').select('id, class_id'),
+      const students = await fetchAllRows(() => supabase.from('students').select('id, class_id').eq('graduated', false).order('id'));
+      const classIds = [...new Set(students.map((x) => x.class_id).filter(Boolean))];
+      const cols = await fetchByIds('grade_columns', 'id, class_id, weight', 'class_id', classIds, ['id']);
+      const [grades, att] = await Promise.all([
+        fetchByIds('grades', 'student_id, column_id, score', 'column_id', cols.map((c) => c.id), ['student_id', 'column_id']),
+        fetchByIds('attendance', 'student_id, date, status', 'student_id', students.map((x) => x.id), ['student_id', 'date']),
       ]);
       const colCountByClass = {};
       (cols || []).forEach((c) => { colCountByClass[c.class_id] = (colCountByClass[c.class_id] || 0) + 1; });
+      const wAvg = weightedAvgByStudent(grades, cols);
       const gByStu = {}, aByStu = {};
       (grades || []).forEach((g) => { (gByStu[g.student_id] = gByStu[g.student_id] || []).push(Number(g.score)); });
       (att || []).forEach((a) => { (aByStu[a.student_id] = aByStu[a.student_id] || []).push(a.status); });
@@ -513,7 +550,7 @@ async function handle(method, rawUrl, body = {}) {
         const as = aByStu[s.id] || [];
         const colCount = colCountByClass[s.class_id] || 0;
         stats[s.id] = {
-          avg: gs.length ? round1(gs.reduce((a, b) => a + b, 0) / gs.length) : null,
+          avg: wAvg[s.id]?.avg ?? null,
           grade_count: gs.length,
           columns: colCount,
           missing: Math.max(colCount - gs.length, 0),
@@ -569,9 +606,9 @@ async function handle(method, rawUrl, body = {}) {
       const ids = (students || []).map((s) => s.id);
       let recs = [];
       if (ids.length) {
-        const { data } = await supabase.from('attendance').select('student_id, date, status')
-          .gte('date', q.from).lte('date', q.to).in('student_id', ids);
-        recs = data || [];
+        // Cả năm của một lớp dễ quá 1000 lượt điểm danh -> đọc theo trang
+        recs = await fetchAllRows(() => supabase.from('attendance').select('student_id, date, status')
+          .gte('date', q.from).lte('date', q.to).in('student_id', ids).order('student_id').order('date'));
       }
       const dates = [...new Set(recs.map((r) => r.date))].sort();
       const rows = sortStudents(students).map((s) => {
@@ -651,9 +688,8 @@ async function handle(method, rawUrl, body = {}) {
       const ids = (students || []).map((s) => s.id);
       let recs = [];
       if (ids.length) {
-        const { data } = await supabase.from('spiritual_records').select('student_id, task_id, date, done')
-          .gte('date', q.from).lte('date', q.to).in('student_id', ids);
-        recs = data || [];
+        recs = await fetchAllRows(() => supabase.from('spiritual_records').select('student_id, task_id, date, done')
+          .gte('date', q.from).lte('date', q.to).in('student_id', ids).order('student_id').order('date').order('task_id'));
       }
       const dates = [...new Set(recs.map((r) => r.date))].sort();
       const rows = sortStudents(students).map((s) => {
@@ -735,12 +771,12 @@ async function handle(method, rawUrl, body = {}) {
     // ---------------- bảng điểm cả lớp ----------------
     if (path === '/grades-class' && method === 'get') {
       if (!q.class_id) return fail(400, 'Cần class_id');
-      const [{ data: students }, { data: columns }, { data: grades }] = await Promise.all([
+      const [{ data: students }, { data: columns }] = await Promise.all([
         supabase.from('students').select('id, full_name, saint_name, avatar_url').eq('class_id', q.class_id).order('full_name'),
         supabase.from('grade_columns').select('*').eq('class_id', q.class_id).order('order_index').order('created_at'),
-        supabase.from('grades').select('student_id, column_id, score')
-          .in('column_id', (await supabase.from('grade_columns').select('id').eq('class_id', q.class_id)).data?.map((c) => c.id) || ['00000000-0000-0000-0000-000000000000']),
       ]);
+      // Lớp đông x nhiều cột có thể quá 1000 ô điểm -> đọc theo trang
+      const grades = await fetchByIds('grades', 'student_id, column_id, score', 'column_id', (columns || []).map((c) => c.id), ['student_id', 'column_id']);
       const scores = {};
       (grades || []).forEach((g) => { (scores[g.student_id] = scores[g.student_id] || {})[g.column_id] = Number(g.score); });
       return ok({ students: sortStudents(students), columns: columns || [], scores });
@@ -1492,87 +1528,117 @@ async function handle(method, rawUrl, body = {}) {
     if (path === '/dashboard' && method === 'get') {
       // xem lại năm cũ qua ?year= (RLS lọc: GLV chỉ thấy lớp mình từng phụ trách)
       const wantYear = q.year || null;
+      const STU_COLS = 'id, origin_id, full_name, saint_name, class_id, avatar_url, parent_phone, father_phone, mother_phone';
       let students, classes;
       if (wantYear) {
         const { data: yc } = await supabase.from('classes').select('id, name').eq('parish_id', pid).eq('school_year', wantYear).order('order_index');
         classes = yc || [];
-        const cids = classes.map((c) => c.id);
-        const { data: ys } = await supabase.from('students')
-          .select('id, origin_id, full_name, saint_name, class_id, avatar_url')
-          .in('class_id', cids.length ? cids : ['00000000-0000-0000-0000-000000000000']);
-        students = ys || [];
+        students = await fetchByIds('students', STU_COLS, 'class_id', classes.map((c) => c.id), ['id']);
       } else {
-        const [{ data: c1 }, { data: s1 }] = await Promise.all([
-          supabase.from('classes').select('id, name').eq('graduated', false),
-          supabase.from('students').select('id, origin_id, full_name, saint_name, class_id, avatar_url').eq('graduated', false),
+        const [{ data: c1 }, s1] = await Promise.all([
+          supabase.from('classes').select('id, name').eq('graduated', false).order('order_index'),
+          fetchAllRows(() => supabase.from('students').select(STU_COLS).eq('graduated', false).order('id')),
         ]);
         classes = c1 || []; students = s1 || [];
       }
-      let [{ data: profiles }, { data: grades }, { data: attend }] = await Promise.all([
-        supabase.from('profiles').select('id, role'),
-        supabase.from('grades').select('student_id, score'),
-        supabase.from('attendance').select('student_id, date, status'),
-      ]);
+      const { data: profiles } = await supabase.from('profiles').select('id, role');
       // J: giáo lý viên chỉ xem số liệu lớp mình phụ trách
       let teacherCount = (profiles || []).filter((u) => u.role === 'teacher').length;
       if (meRole() === 'teacher') {
         const myIds = await myClassIds();
-        classes = (classes || []).filter((c) => myIds.includes(c.id));
-        students = (students || []).filter((s) => myIds.includes(s.class_id));
-        const sIds = new Set(students.map((s) => s.id));
-        grades = (grades || []).filter((g) => sIds.has(g.student_id));
-        attend = (attend || []).filter((a) => sIds.has(a.student_id));
+        classes = classes.filter((c) => myIds.includes(c.id));
+        students = students.filter((s) => myIds.includes(s.class_id));
         const { data: cts } = await supabase.from('class_teachers').select('teacher_id').in('class_id', myIds.length ? myIds : ['00000000-0000-0000-0000-000000000000']);
         teacherCount = new Set((cts || []).map((c) => c.teacher_id)).size;
       }
-      // Chỉ tính điểm/điểm danh của học viên đang hoạt động (bỏ dữ liệu năm đã lưu trữ)
-      const activeIds = new Set((students || []).map((s) => s.id));
-      grades = (grades || []).filter((g) => activeIds.has(g.student_id));
-      attend = (attend || []).filter((a) => activeIds.has(a.student_id));
-      // Điểm danh theo tuần (CN đầu tuần) — tỷ lệ có mặt
+      // Chỉ đọc điểm / điểm danh của đúng các lớp và học viên đang xem (không tải cả giáo xứ, mọi năm)
+      const cols = await fetchByIds('grade_columns', 'id, class_id, weight', 'class_id', classes.map((c) => c.id), ['id']);
+      const [grades, attend] = await Promise.all([
+        fetchByIds('grades', 'student_id, column_id, score', 'column_id', cols.map((c) => c.id), ['student_id', 'column_id']),
+        fetchByIds('attendance', 'student_id, date, status', 'student_id', students.map((s) => s.id), ['student_id', 'date']),
+      ]);
+      const S = students, C = classes;
+      const classOfStu = {}; S.forEach((s) => { classOfStu[s.id] = s.class_id; });
+
+      // Điểm danh theo tuần (Chúa nhật đầu tuần, tính theo giờ máy): có mặt / (có mặt + trễ + vắng), không tính vắng có phép
       const weekMap = {};
-      (attend || []).forEach((a) => {
-        const d = new Date(a.date + 'T00:00:00');
-        const sun = new Date(d); sun.setDate(d.getDate() - d.getDay());
-        const key = sun.toISOString().slice(0, 10);
+      attend.forEach((a) => {
+        if (a.status === 'excused') return;
+        const d = new Date(a.date + 'T00:00:00'); d.setDate(d.getDate() - d.getDay());
+        const key = ymdLocal(d);
         const w = weekMap[key] || (weekMap[key] = { present: 0, total: 0 });
         w.total += 1; if (a.status === 'present') w.present += 1;
       });
       const attendanceByWeek = Object.entries(weekMap).sort((a, b) => a[0].localeCompare(b[0])).slice(-8)
         .map(([wk, v]) => ({ label: wk.slice(8, 10) + '/' + wk.slice(5, 7), rate: v.total ? Math.round((v.present / v.total) * 100) : 0, present: v.present, total: v.total }));
-      const S = students || [], C = classes || [], G = grades || [];
+
+      // Chuyên cần theo học viên (không tính có phép) + 4 tuần gần nhất
+      const attByStu = {};
+      const recentFrom = (() => { const d = new Date(); d.setDate(d.getDate() - 28); return ymdLocal(d); })();
+      let rp = 0, rt = 0;
+      attend.forEach((a) => {
+        const x = attByStu[a.student_id] || (attByStu[a.student_id] = { present: 0, counted: 0 });
+        if (a.status !== 'excused') { x.counted += 1; if (a.date >= recentFrom) rt += 1; }
+        if (a.status === 'present') { x.present += 1; if (a.date >= recentFrom) rp += 1; }
+      });
+
+      // Điểm TB có hệ số (giống trang Điểm số)
+      const wAvg = weightedAvgByStudent(grades, cols);
+      const stuAvgs = S.map((s) => wAvg[s.id]?.avg).filter((v) => v != null);
       const counts = {
         students: new Set(S.map((s) => s.origin_id || s.id)).size, // gộp theo con người (1 em nhiều lớp đếm 1 lần)
         classes: C.length,
         teachers: teacherCount,
-        avgScore: G.length ? round1(G.reduce((a, g) => a + Number(g.score), 0) / G.length) : 0,
+        avgScore: stuAvgs.length ? round1(stuAvgs.reduce((x, y) => x + y, 0) / stuAvgs.length) : null,
+        attRecent: rt ? Math.round((rp / rt) * 100) : null,
       };
-      const studentsPerClass = C.map((c) => ({ name: c.name, count: S.filter((s) => s.class_id === c.id).length }))
-        .sort((a, b) => b.count - a.count);
-      // Tỷ lệ chuyên cần theo học viên
-      const attByStu = {};
-      (attend || []).forEach((a) => { const x = attByStu[a.student_id] || (attByStu[a.student_id] = { present: 0, counted: 0 }); if (a.status !== 'excused') x.counted += 1; if (a.status === 'present') x.present += 1; });
-      const rateOf = (id) => { const x = attByStu[id]; return x && x.counted ? Math.round((x.present / x.counted) * 100) : null; };
-      const classNameOf = (cid) => C.find((c) => c.id === cid)?.name || null;
-
-      const byStudent = {};
-      G.forEach((g) => { (byStudent[g.student_id] = byStudent[g.student_id] || []).push(Number(g.score)); });
-      const topStudents = Object.entries(byStudent).map(([id, arr]) => {
-        const s = S.find((x) => x.id === id) || {};
-        return { id, class_id: s.class_id, class_name: classNameOf(s.class_id), saint_name: s.saint_name, full_name: s.full_name, avatar_url: s.avatar_url, avg: round1(arr.reduce((a, b) => a + b, 0) / arr.length), grade_count: arr.length, rate: rateOf(id) };
-      }).sort((a, b) => b.avg - a.avg).slice(0, 5);
-
+      const colCount = {}; cols.forEach((c) => { colCount[c.class_id] = (colCount[c.class_id] || 0) + 1; });
       const classAverages = C.map((c) => {
         const ids = S.filter((s) => s.class_id === c.id).map((s) => s.id);
-        const scores = G.filter((g) => ids.includes(g.student_id)).map((g) => Number(g.score));
+        const avgs = ids.map((id) => wAvg[id]?.avg).filter((v) => v != null);
         let p = 0, t = 0; ids.forEach((id) => { const x = attByStu[id]; if (x) { p += x.present; t += x.counted; } });
-        return { id: c.id, name: c.name, count: ids.length, avg: scores.length ? round1(scores.reduce((a, b) => a + b, 0) / scores.length) : null, rate: t ? Math.round((p / t) * 100) : null };
+        return { id: c.id, name: c.name, count: ids.length, avg: avgs.length ? round1(avgs.reduce((x, y) => x + y, 0) / avgs.length) : null, rate: t ? Math.round((p / t) * 100) : null };
       }).sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1));
+
+      // Cần chú ý (chỉ năm hiện tại)
+      let attention = null;
+      if (!wantYear) {
+        const todayStr = ymdLocal(new Date());
+        const datesByClass = {};
+        attend.forEach((a) => { const cid = classOfStu[a.student_id]; if (cid) (datesByClass[cid] = datesByClass[cid] || new Set()).add(a.date); });
+        const notMarked = [];
+        C.forEach((c) => {
+          if (!S.some((s) => s.class_id === c.id)) return;
+          const dates = [...(datesByClass[c.id] || [])].sort();
+          if (!dates.length) { notMarked.push({ class_id: c.id, name: c.name, never: true }); return; }
+          // Ngày học thường lệ = thứ xuất hiện nhiều nhất trong các buổi đã điểm danh
+          const freq = [0, 0, 0, 0, 0, 0, 0]; dates.forEach((d) => { freq[new Date(d + 'T00:00:00').getDay()] += 1; });
+          const wd = freq.indexOf(Math.max(...freq));
+          const exp = new Date(); exp.setDate(exp.getDate() - ((exp.getDay() - wd + 7) % 7));
+          const expected = ymdLocal(exp);
+          const last = dates[dates.length - 1];
+          const activeFrom = (() => { const d = new Date(exp); d.setDate(d.getDate() - 21); return ymdLocal(d); })();
+          // Lớp đang học (có buổi trong 3 tuần trước) mà chưa có buổi ngày học gần nhất -> nhắc; nghỉ dài thì không nhắc
+          if (last < expected && last >= activeFrom) notMarked.push({ class_id: c.id, name: c.name, expected, last, today: expected === todayStr });
+        });
+        // Vắng liền: các buổi gần nhất đều vắng không phép (bỏ qua buổi có phép)
+        const recByStu = {};
+        attend.forEach((a) => { (recByStu[a.student_id] = recByStu[a.student_id] || []).push(a); });
+        const absentStreak = [];
+        S.forEach((s) => {
+          const list = (recByStu[s.id] || []).filter((a) => a.status !== 'excused').sort((a, b) => b.date.localeCompare(a.date));
+          let n = 0; for (const a of list) { if (a.status === 'absent') n += 1; else break; }
+          if (n >= 3) absentStreak.push({ id: s.id, name: [s.saint_name, s.full_name].filter(Boolean).join(' '), class_id: s.class_id, class_name: C.find((c) => c.id === s.class_id)?.name || '', streak: n, since: list[n - 1]?.date, phone: s.parent_phone || s.father_phone || s.mother_phone || '' });
+        });
+        absentStreak.sort((a, b) => b.streak - a.streak);
+        const noColumns = C.filter((c) => !colCount[c.id] && S.some((s) => s.class_id === c.id)).map((c) => ({ class_id: c.id, name: c.name }));
+        attention = { notMarked, absentStreak, noColumns };
+      }
       // danh sách năm học (để lọc) + năm hiện tại
       const { data: allCls } = await supabase.from('classes').select('school_year, graduated').eq('parish_id', pid);
       const years = [...new Set((allCls || []).map((c) => c.school_year).filter(Boolean))].sort().reverse();
       const currentYear = (allCls || []).filter((c) => !c.graduated).map((c) => c.school_year).find(Boolean) || null;
-      return ok({ counts, studentsPerClass, topStudents, classAverages, attendanceByWeek, years, currentYear, year: wantYear || currentYear });
+      return ok({ counts, classAverages, attendanceByWeek, attention, years, currentYear, year: wantYear || currentYear });
     }
 
     return fail(404, 'Không tìm thấy: ' + method.toUpperCase() + ' ' + path);
