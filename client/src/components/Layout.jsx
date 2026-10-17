@@ -21,7 +21,7 @@ import ThemeModal from './ThemeModal.jsx';
 import {
   IconHome, IconStudents, IconClass, IconCheck, IconGrades,
   IconDice, IconGame, IconTeacher, IconLogout, IconBell, IconMoney, IconEditImage, IconArchive, IconCert, IconStore, IconExam, IconExt, IconGuide,
-  IconChat, IconSliders, IconKey, IconClock, IconLock, IconAlert,
+  IconChat, IconSliders, IconKey, IconClock, IconLock, IconAlert, IconPalette, IconInstall,
 } from './Icons.jsx';
 
 // group: nhóm hiển thị trên sidebar ('' = không có tiêu đề nhóm). Thứ tự trong mảng = thứ tự hiện.
@@ -116,6 +116,13 @@ export default function Layout({ children }) {
   const notifRev = useRealtime(['notifications']);
   useEffect(() => { if (notifRev) loadNotifs(); }, [notifRev]);
   useEffect(() => { setNavOpen(false); setMenuOpen(false); setBellOpen(false); }, [location.pathname]);
+  // Esc đóng thẻ tài khoản / chuông
+  useEffect(() => {
+    if (!menuOpen && !bellOpen) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') { setMenuOpen(false); setBellOpen(false); } };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [menuOpen, bellOpen]);
 
   async function openBell() {
     setBellOpen((v) => !v);
@@ -294,35 +301,53 @@ export default function Layout({ children }) {
             {menuOpen && (
               <>
                 <div className="menu-backdrop" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }} />
-                <div className="account-card" onClick={(e) => e.stopPropagation()}>
-                  <div className={`ava-wrap lg ${pro ? 'pro' : ''}`}>
-                    <AvatarImg size={92} />
-                    {pro && <span className="pro-badge lg">PRO</span>}
-                    <button className="ava-edit" title="Đổi ảnh đại diện" onClick={() => fileRef.current?.click()} disabled={uploading}>
-                      {uploading ? '…' : <IconEditImage width="15" height="15" />}
-                    </button>
-                    <input ref={fileRef} type="file" accept="image/*" onChange={onPickAvatar} style={{ display: 'none' }} />
-                  </div>
-                  <div className="ac-name">{user?.full_name || 'Tài khoản'}</div>
-                  <div className="ac-role">{user?.role === 'admin' ? 'Quản trị viên' : 'Giáo lý viên'}</div>
-                  <div className="ac-email">{user?.email}</div>
-                  {pro && planExp && (
-                    <div className={`ac-plan ${expired ? 'exp' : expSoon ? 'soon' : ''}`}>
-                      Gói {planName(plan)} · {expired ? `Hết hạn ${fmtD(planExp)}` : `Hạn đến ${fmtD(planExp)}`}
+                <div className="account-card" onClick={(e) => e.stopPropagation()} role="menu" aria-label="Tài khoản">
+                  <div className="ac-head">
+                    <div className={`ava-wrap lg ${pro ? 'pro' : ''}`}>
+                      <AvatarImg size={76} />
+                      {pro && <span className="pro-badge lg">PRO</span>}
+                      <button className="ava-edit" title="Đổi ảnh đại diện" aria-label="Đổi ảnh đại diện" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                        {uploading ? '…' : <IconEditImage width="14" height="14" />}
+                      </button>
+                      <input ref={fileRef} type="file" accept="image/*" onChange={onPickAvatar} style={{ display: 'none' }} />
                     </div>
-                  )}
-
-                  <div className="ac-actions">
-                    {user?.role === 'admin' && (
-                      <button className="user-menu-item" onClick={() => navigate('/settings')}><IconSliders /> Cài đặt quản lý</button>
-                    )}
-                    <button className="user-menu-item" onClick={() => { setMenuOpen(false); window.open('https://ephatastore.com', '_blank', 'noopener'); }}><IconStore /> <span style={{ flex: 1 }}>Đăng nhập Ephata Store</span><IconExt style={{ width: 15, height: 15, opacity: .6 }} /></button>
-                    <button className="user-menu-item" onClick={() => { setMenuOpen(false); setThemeOpen(true); }}><IconSliders /> Giao diện (chế độ tối, màu)</button>
-                    <button className="user-menu-item" onClick={() => { setMenuOpen(false); setInstallOpen(true); }}>Cài đặt ứng dụng</button>
-                    <button className="user-menu-item" onClick={() => { setMenuOpen(false); setPwModal(true); }}><IconKey /> Đổi mật khẩu</button>
-                    <button className="user-menu-item danger" onClick={handleLogout}><IconLogout /> Đăng xuất</button>
+                    <div className="ac-name">{user?.full_name || 'Tài khoản'}</div>
+                    <div className="ac-email" title={user?.email}>{user?.email}</div>
+                    <div className="ac-chips">
+                      <span className="ac-role">{user?.role === 'admin' ? 'Quản trị viên' : 'Giáo lý viên'}</span>
+                      {parish?.name && <span className="ac-parish" title={parish.name}>{parish.name}</span>}
+                    </div>
+                    {/* Dòng gói: admin bấm để xem gói / gia hạn */}
+                    {(() => {
+                      const label = pro && planExp
+                        ? `Gói ${planName(plan)} · ${expired ? `hết hạn ${fmtD(planExp)}` : `hạn đến ${fmtD(planExp)}`}`
+                        : `Gói ${planName(plan)}`;
+                      const cls = `ac-plan ${expired ? 'exp' : expSoon ? 'soon' : ''}`;
+                      return canRenew
+                        ? <button type="button" className={cls} onClick={() => { setMenuOpen(false); setPricing(true); }}>{label}<span className="ac-plan-cta">{pro ? (expired || expSoon ? 'Gia hạn' : 'Xem gói') : 'Nâng cấp'}</span></button>
+                        : <div className={cls}>{label}</div>;
+                    })()}
                   </div>
-                  <div className="ac-foot">https://www.giaoly.com.vn</div>
+
+                  <div className="ac-group">
+                    {user?.role === 'admin' && (
+                      <button className="user-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); navigate('/settings'); }}><IconSliders /> Cài đặt quản lý</button>
+                    )}
+                    <button className="user-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); setThemeOpen(true); }}><IconPalette /> Giao diện<span className="ac-hint">chế độ tối, màu</span></button>
+                    {!isStandalone() && (
+                      <button className="user-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); setInstallOpen(true); }}><IconInstall /> Cài ứng dụng lên máy</button>
+                    )}
+                    <button className="user-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); navigate('/store'); }}><IconStore /> Ephata Store</button>
+                  </div>
+                  <div className="ac-group">
+                    <button className="user-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); setPwModal(true); }}><IconKey /> Đổi mật khẩu</button>
+                    <button className="user-menu-item danger" role="menuitem" onClick={handleLogout}><IconLogout /> Đăng xuất</button>
+                  </div>
+                  <div className="ac-foot">
+                    <button type="button" className="ac-link" onClick={() => { setMenuOpen(false); navigate('/guide'); }}>Hướng dẫn sử dụng</button>
+                    <span aria-hidden="true">·</span>
+                    <a className="ac-link" href="https://www.giaoly.com.vn" target="_blank" rel="noopener noreferrer">giaoly.com.vn</a>
+                  </div>
                 </div>
               </>
             )}

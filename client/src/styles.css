@@ -813,23 +813,34 @@ body { background: #f4f5f7; }
 .pro-badge.lg { font-size: 12px; padding: 2px 12px; bottom: -10px; }
 
 .account-card {
-  position: absolute; top: calc(100% + 12px); right: 0; z-index: 50;
+  position: absolute; top: calc(100% + 12px); right: 0; z-index: 50; cursor: default;
   background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
-  box-shadow: 0 16px 40px rgba(0,0,0,.18); width: 270px; padding: 22px 18px 14px; text-align: center;
+  box-shadow: 0 16px 40px rgba(0,0,0,.18); width: 288px; max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 86px); overflow-y: auto; padding: 18px 10px 10px; text-align: center;
 }
-.account-card .ava-wrap { margin: 6px auto 16px; }
+.ac-head { padding: 0 8px 14px; }
+.account-card .ava-wrap { margin: 2px auto 14px; }
 .ava-edit {
   position: absolute; right: -2px; bottom: -2px; width: 30px; height: 30px; border-radius: 50%;
   border: 2px solid var(--panel); background: var(--primary); color: #fff; cursor: pointer;
   display: grid; place-items: center; font-size: 13px; box-shadow: var(--shadow-sm);
 }
-.ac-name { font-size: 18px; font-weight: 800; color: var(--heading); }
-.ac-role { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 600; color: var(--primary);
-  background: var(--primary-soft); padding: 3px 12px; border-radius: 20px; }
-.ac-email { font-size: 12px; color: var(--muted); margin-top: 8px; }
-.ac-actions { display: flex; flex-direction: column; gap: 2px; margin: 16px 0 10px; text-align: left; }
-.ac-actions .user-menu-item { justify-content: flex-start; }
-.ac-foot { font-size: 12px; color: var(--muted); font-style: italic; border-top: 1px solid var(--border); padding-top: 10px; }
+.ac-name { font-size: 17px; font-weight: 800; color: var(--heading); line-height: 1.25; }
+.ac-email { font-size: 12.5px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ac-chips { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.ac-role, .ac-parish { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ac-role { color: var(--primary); background: var(--primary-soft); }
+.ac-parish { color: var(--text); background: var(--bg); border: 1px solid var(--border); max-width: 160px; }
+.ac-group { display: flex; flex-direction: column; gap: 1px; padding: 6px 0; border-top: 1px solid var(--border); text-align: left; }
+.ac-group .user-menu-item { justify-content: flex-start; gap: 10px; padding: 9px 12px; }
+.ac-group .user-menu-item svg { width: 18px; height: 18px; flex: 0 0 auto; color: var(--muted); }
+.ac-group .user-menu-item:hover svg { color: inherit; }
+.ac-group .user-menu-item.danger { color: var(--danger); }
+.ac-group .user-menu-item.danger svg { color: var(--danger); }
+.ac-hint { margin-left: auto; font-size: 12px; color: var(--muted); }
+.ac-foot { display: flex; justify-content: center; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); padding: 10px 0 4px; }
+.ac-link { border: 0; background: none; padding: 0; font: inherit; font-size: 12px; color: var(--muted); cursor: pointer; text-decoration: none; }
+.ac-link:hover { color: var(--primary); text-decoration: underline; }
 
 /* ---------- Thống kê + xếp hạng điểm danh ---------- */
 .stat-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
@@ -2194,6 +2205,14 @@ a.gmx-link, a.gmx-link:hover { text-decoration: none; }
   .epx-app-logo { width: 22px; height: 22px; }
 }
 
+/* Đang tải mã trang (lazy-load): thanh chạy mảnh ở đầu vùng nội dung, hiện sau 150ms để trang nhanh không nháy */
+.page-loading { position: relative; height: 3px; margin: 2px 0 12px; overflow: hidden; border-radius: 3px; opacity: 0; animation: pl-in .2s .15s forwards; }
+.page-loading-bar { position: absolute; top: 0; bottom: 0; width: 35%; background: var(--primary); border-radius: 3px; animation: pl-run 1s ease-in-out infinite; }
+@keyframes pl-in { to { opacity: 1; } }
+@keyframes pl-run { from { left: -35%; } to { left: 100%; } }
+.page-error { max-width: 520px; margin: 40px auto; text-align: center; }
+.page-error h2 { margin-bottom: 6px; }
+
 /* ===== Hướng dẫn sử dụng (Guide / Wiki) ===== */
 .guide-wrap { max-width: 1100px; margin: 0 auto; }
 .guide-head h1 { margin: 0 0 4px; font-size: 26px; }
@@ -2205,14 +2224,6 @@ a.gmx-link, a.gmx-link:hover { text-decoration: none; }
 .guide-body { display: grid; grid-template-columns: 232px 1fr; gap: 24px; margin-top: 22px; align-items: start; }
 .guide-toc { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 2px; }
 .gd-toc-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 4px 10px 8px; }
-/* Đang tải mã trang (lazy-load): thanh chạy mảnh ở đầu vùng nội dung, hiện sau 150ms để trang nhanh không nháy */
-.page-loading { position: relative; height: 3px; margin: 2px 0 12px; overflow: hidden; border-radius: 3px; opacity: 0; animation: pl-in .2s .15s forwards; }
-.page-loading-bar { position: absolute; top: 0; bottom: 0; width: 35%; background: var(--primary); border-radius: 3px; animation: pl-run 1s ease-in-out infinite; }
-@keyframes pl-in { to { opacity: 1; } }
-@keyframes pl-run { from { left: -35%; } to { left: 100%; } }
-.page-error { max-width: 520px; margin: 40px auto; text-align: center; }
-.page-error h2 { margin-bottom: 6px; }
-
 .guide-toc button { text-align: left; border: 0; border-left: 1px solid var(--border); background: transparent; color: var(--muted); padding: 6px 12px; border-radius: 0; cursor: pointer; font-size: 13.5px; line-height: 1.4; transition: color .12s, border-color .12s; }
 .guide-toc button:hover { color: var(--text); border-left-color: #b8bec8; }
 .guide-toc button.active { color: var(--primary); font-weight: 600; border-left: 2px solid var(--primary); padding-left: 11px; }
@@ -2261,7 +2272,10 @@ a.gmx-link, a.gmx-link:hover { text-decoration: none; }
 .lock-warn { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.55; text-align: left; margin: 0 0 16px; }
 .lock-help { display: block; margin: 14px auto 0; border: none; background: transparent; color: var(--primary); cursor: pointer; font-size: 13.5px; }
 
-.ac-plan { margin: 8px auto 0; font-size: 12.5px; font-weight: 600; color: var(--primary); background: var(--primary-soft); padding: 5px 12px; border-radius: 999px; display: inline-block; }
+.ac-plan { margin: 10px auto 0; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--primary); background: var(--primary-soft); padding: 5px 12px; border: 0; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; }
+button.ac-plan { cursor: pointer; }
+button.ac-plan:hover { filter: brightness(.97); box-shadow: 0 0 0 1px currentColor inset; }
+.ac-plan-cta { font-size: 11.5px; font-weight: 800; padding-left: 8px; border-left: 1px solid currentColor; opacity: .9; }
 .ac-plan.soon { color: #b45309; background: #fff7ed; }
 .ac-plan.exp { color: #b91c1c; background: #fef2f2; }
 
