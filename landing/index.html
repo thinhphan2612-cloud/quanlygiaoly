@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Giáo Lý Số: Quản lý giáo lý Công giáo</title>
 <meta name="description" content="Nền tảng quản lý giáo lý cho giáo xứ, ban giáo lý và giáo lý viên: hồ sơ học viên, bí tích, lớp & điểm danh, điểm số, thi đua và báo cáo." />
+<link rel="canonical" href="https://www.giaoly.com.vn/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Giáo Lý Số" />
+<meta property="og:locale" content="vi_VN" />
+<meta property="og:url" content="https://www.giaoly.com.vn/" />
+<meta property="og:title" content="Giáo Lý Số: Quản lý giáo lý Công giáo cho giáo xứ" />
+<meta property="og:description" content="Quản lý học viên, lớp, điểm danh, điểm số, bí tích và thi online cho giáo xứ, ban giáo lý và giáo lý viên. Bắt đầu miễn phí." />
+<meta property="og:image" content="https://www.giaoly.com.vn/og-image.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png" />
@@ -148,6 +159,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
 .ft-col h4{color:var(--ink);font-size:13px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:15px;font-weight:600}
 .ft-col ul{list-style:none;display:flex;flex-direction:column;gap:10px;font-size:14px;font-weight:400}
 .ft-col a{transition:color .2s}.ft-col a:hover{color:var(--ink)}
+.ft-bottom a{color:inherit;text-decoration:underline;text-underline-offset:2px}.ft-bottom a:hover{color:var(--ink)}
 .ft-muted{opacity:.7}
 .ft-bottom{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:44px;padding-top:22px;font-size:12px}
 @media(max-width:820px){.ft-grid{grid-template-columns:1fr 1fr}}
@@ -157,7 +169,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
 .plans{background:var(--panel);padding:clamp(56px,7vw,88px) 0}
 .plans-h{text-align:center;font-weight:700;text-transform:uppercase;font-size:clamp(2rem,5vw,64px);line-height:1.15;padding-bottom:.32em;margin-bottom:clamp(14px,2.2vw,24px)}
 .plans-sub{text-align:center;color:var(--muted);max-width:580px;margin:0 auto clamp(22px,3vw,30px);font-size:clamp(.95rem,1.3vw,1.08rem);line-height:1.55}
-.plans-ideal{max-width:720px;margin:0 auto clamp(26px,3.5vw,38px);background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:12px;padding:15px 20px;color:var(--ink);font-size:clamp(.9rem,1.15vw,1rem);line-height:1.55}
+.plans-ideal{max-width:720px;margin:0 auto clamp(26px,3.5vw,38px);background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:15px 20px;color:var(--ink);font-size:clamp(.9rem,1.15vw,1rem);line-height:1.55}
 .ptable-wrap{max-width:920px;margin:0 auto;overflow-x:auto;border:1px solid var(--line);border-radius:18px}
 .ptable{width:100%;border-collapse:collapse;min-width:580px}
 .ptable th,.ptable td{padding:15px 18px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
@@ -176,7 +188,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
 .ptable .pcta{padding:22px 18px;text-align:center}
 .ptable .pcta .btn-dark{padding:12px 32px;font-size:14px}
 .plan-note{text-align:center;color:var(--muted);font-size:13px;margin-top:20px;max-width:820px;margin-left:auto;margin-right:auto;line-height:1.6}
-@media(max-width:640px){.ptable th,.ptable td{padding:12px 12px}.ptable .col-plan{width:130px}.ptable .pname{font-size:17px}}
+@media(max-width:640px){.ptable{min-width:0;table-layout:fixed}.ptable th,.ptable td{padding:11px 8px}.ptable .col-plan{width:92px}.ptable .pname{font-size:16px}.ptable .pprice{font-size:11px}.ptable .feat{font-size:13.5px}.ptable .txt{font-size:12.5px}.ptable .pbadge{font-size:9.5px;padding:2px 6px}.ptable .pcta{padding:16px 6px}.ptable .pcta .btn-dark{padding:10px 8px;font-size:12px;width:100%}}
 
 /* FAQ */
 .faq{padding:clamp(72px,11vw,120px) 0}
@@ -286,10 +298,10 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
 .b2s-count{background:#fff;border:1px dashed var(--gold);border-radius:12px;padding:9px 14px;font-size:14px;color:var(--ink);margin-bottom:16px}
 .b2s-count b{color:var(--primary)}
 .b2s-cta{display:inline-block;background:var(--primary);color:#fff;font-family:'Oswald',sans-serif;font-weight:600;text-decoration:none;padding:12px 30px;border-radius:999px;box-shadow:0 10px 26px rgba(243,69,67,.32)}
-.b2s-mini{position:fixed;top:16px;right:16px;z-index:1150;display:none;align-items:center;gap:6px;background:var(--primary);color:#fff;border:none;border-radius:999px;padding:10px 16px;font:inherit;font-weight:600;font-size:13.5px;cursor:pointer;box-shadow:0 10px 26px rgba(243,69,67,.4)}
+.b2s-mini{position:fixed;bottom:16px;left:16px;z-index:1150;display:none;align-items:center;gap:6px;background:var(--primary);color:#fff;border:none;border-radius:999px;padding:10px 16px;font:inherit;font-weight:600;font-size:13.5px;cursor:pointer;box-shadow:0 10px 26px rgba(243,69,67,.4)}
 .b2s-mini.show{display:inline-flex}
 .b2s-mini b{font-size:15px}
-@media(max-width:480px){.zfab{right:14px;bottom:14px}.b2s-mini{top:10px;right:10px;font-size:12.5px;padding:8px 12px}}
+@media(max-width:480px){.zfab{right:14px;bottom:14px}.b2s-mini{bottom:14px;left:14px;font-size:12.5px;padding:8px 12px}}
 </style>
 </head>
 <body>
@@ -354,7 +366,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
  <div class="container">
   <nav>
    <a href="#top" class="brand"><img class="brand-logo" src="/logo-full.png" alt="Giáo Lý Số" /></a>
-   <div class="navlinks"><a href="#services">Tính năng</a><a href="#projects">Vai trò</a><a href="#about">Giới thiệu</a><a href="#pricing">Bảng giá</a><a href="#" onclick="openLp('mInstall');return false;">Cài ứng dụng</a><a href="#cta">Liên hệ</a></div>
+   <div class="navlinks"><a href="#about">Giới thiệu</a><a href="#services">Tính năng</a><a href="#projects">Vai trò</a><a href="#pricing">Bảng giá</a><a href="#" onclick="openLp('mInstall');return false;">Cài ứng dụng</a><a href="#cta">Liên hệ</a></div>
    <div class="nav-cta">
     <a class="nav-login" href="#lienhe" onclick="openLp('mContact');return false;">Liên hệ</a>
     <a class="btn-dark" id="btnRegister" href="#dangky" onclick="openLp('mReg');return false;">Đăng ký</a>
@@ -431,12 +443,12 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
    <div class="cheap-box">
     <img class="cheap-deco a" src="assets/m-crayon.png" alt="">
     <img class="cheap-deco b" src="assets/m-flask.png" alt="">
-    <div class="cheap-eyebrow">Chi phí quá rẻ!</div>
+    <div class="cheap-eyebrow">Chi phí minh bạch</div>
     <h2 class="cheap-h">Chỉ từ <span>20.000đ</span> / lớp / tháng</h2>
-    <p class="cheap-sub">Rẻ hơn một ly cà phê. Cả một lớp giáo lý dùng trọn vẹn mọi tính năng suốt cả tháng, tính theo niên khóa.</p>
+    <p class="cheap-sub">Mỗi lớp giáo lý dùng trọn vẹn mọi tính năng của gói Pro. Phí tính theo niên khóa và theo số lớp của giáo xứ, không phát sinh thêm.</p>
     <div class="cheap-points">
-     <div>Bằng khoảng một ly cà phê mỗi tháng cho mỗi lớp</div>
-     <div>Chia cho cả lớp: mỗi em chỉ vài trăm đồng/tháng</div>
+     <div>Tính theo niên khóa, theo số lớp thực tế</div>
+     <div>Bắt đầu miễn phí với 1 lớp</div>
      <div>Không phí ẩn · không giới hạn giáo lý viên</div>
     </div>
    </div>
@@ -460,7 +472,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
   <h2 class="plans-h hero-heading fade" data-y="40">GÓI DỊCH VỤ</h2>
   <p class="plans-sub fade" data-y="20">Tính theo giáo xứ, mỗi niên khóa. Bắt đầu miễn phí với 1 lớp, nâng lên Pro khi cần mở rộng.</p>
   <div class="plans-ideal fade" data-y="20">
-   <b>💡 Lý tưởng khi áp dụng cho cả giáo xứ</b>, hoặc cả nhóm giáo lý viên các lớp, để mọi người <b>đồng bộ dữ liệu</b> với nhau (hồ sơ học viên, điểm danh, điểm số, bí tích dùng chung một hệ thống). Cá nhân vẫn dùng được với gói <b>Khởi động miễn phí (1 lớp)</b>, nhưng sẽ giới hạn một vài tính năng.
+   <b>Lý tưởng khi áp dụng cho cả giáo xứ</b>, hoặc cả nhóm giáo lý viên các lớp, để mọi người <b>đồng bộ dữ liệu</b> với nhau (hồ sơ học viên, điểm danh, điểm số, bí tích dùng chung một hệ thống). Cá nhân vẫn dùng được với gói <b>Khởi động miễn phí (1 lớp)</b>, nhưng sẽ giới hạn một vài tính năng.
   </div>
   <div class="ptable-wrap fade" data-y="20">
    <table class="ptable">
@@ -476,15 +488,15 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
      <tr><td class="feat">Hồ sơ học viên &amp; bí tích</td><td class="val"><span class="yes">✓</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
      <tr><td class="feat">Điểm danh &amp; điểm số</td><td class="val"><span class="yes">✓</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
      <tr><td class="feat">Xuất Excel / PDF · bốc thăm trả bài</td><td class="val"><span class="yes">✓</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
-     <tr><td class="feat">Nhiều giáo lý viên mỗi lớp</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
-     <tr><td class="feat">Tự động lên lớp cuối năm học</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
-     <tr><td class="feat">Điểm danh việc thiêng liêng + thống kê tuần/tháng</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
-     <tr><td class="feat">Gửi thông báo tới giáo lý viên</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
-     <tr><td class="feat">Kiểm toán thu chi</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
-     <tr><td class="feat">Xuất chứng chỉ Rửa Tội / Rước Lễ / Thêm Sức</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
-     <tr><td class="feat">Lưu trữ &amp; tra cứu các năm học cũ</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
-     <tr><td class="feat">Game học giáo lý</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
-     <tr><td class="feat">Ưu tiên hỗ trợ</td><td class="val"><span class="no">—</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Nhiều giáo lý viên mỗi lớp</td><td class="val"><span class="no" aria-label="Không có">–</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Tự động lên lớp cuối năm học</td><td class="val"><span class="no" aria-label="Không có">–</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Điểm danh việc thiêng liêng + thống kê tuần/tháng</td><td class="val"><span class="no" aria-label="Không có">–</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Gửi thông báo tới giáo lý viên</td><td class="val"><span class="no" aria-label="Không có">–</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Kiểm toán thu chi</td><td class="val"><span class="no" aria-label="Không có">–</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Xuất chứng chỉ Rửa Tội / Rước Lễ / Thêm Sức</td><td class="val"><span class="no" aria-label="Không có">–</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Lưu trữ &amp; tra cứu các năm học cũ</td><td class="val"><span class="no" aria-label="Không có">–</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Game học giáo lý</td><td class="val"><span class="no" aria-label="Không có">–</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
+     <tr><td class="feat">Ưu tiên hỗ trợ</td><td class="val"><span class="no" aria-label="Không có">–</span></td><td class="val col-pro"><span class="yes">✓</span></td></tr>
      <tr>
       <td></td>
       <td class="pcta"><a class="btn-live" href="#dangky" onclick="openLp('mReg');return false;">Bắt đầu miễn phí</a></td>
@@ -506,7 +518,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
    <div class="faq-item open"><button class="faq-q">Giáo Lý Số là gì và dành cho ai?<span class="ic">+</span></button><div class="faq-a"><p>Là nền tảng web quản lý toàn bộ việc dạy giáo lý của giáo xứ: hồ sơ học viên, bí tích, lớp học, điểm danh, điểm số và báo cáo. Dành cho cha sở, ban giáo lý và giáo lý viên.</p></div></div>
    <div class="faq-item"><button class="faq-q">Có cần cài đặt phần mềm gì không?<span class="ic">+</span></button><div class="faq-a"><p>Không. Giáo Lý Số chạy trực tiếp trên trình duyệt (máy tính, điện thoại, máy tính bảng), chỉ cần đăng nhập là dùng được, không phải cài đặt.</p></div></div>
    <div class="faq-item"><button class="faq-q">Chi phí thế nào? Có dùng thử miễn phí không?<span class="ic">+</span></button><div class="faq-a"><p>Có bản dùng thử. Gói dịch vụ tính theo từng giáo xứ và niên khóa. Anh chị để lại thông tin đăng ký, chúng tôi sẽ tư vấn mức phù hợp với quy mô giáo xứ.</p></div></div>
-   <div class="faq-item"><button class="faq-q">Dữ liệu của giáo xứ có riêng tư, an toàn không?<span class="ic">+</span></button><div class="faq-a"><p>Có. Mỗi giáo xứ là một không gian dữ liệu độc lập, cách ly hoàn toàn, không giáo xứ nào thấy dữ liệu của giáo xứ khác. Truy cập được phân quyền chặt chẽ giữa cha sở và giáo lý viên.</p></div></div>
+   <div class="faq-item"><button class="faq-q">Dữ liệu của giáo xứ có riêng tư, an toàn không?<span class="ic">+</span></button><div class="faq-a"><p>Có. Mỗi giáo xứ là một không gian dữ liệu độc lập, cách ly hoàn toàn, không giáo xứ nào thấy dữ liệu của giáo xứ khác. Truy cập được phân quyền chặt chẽ giữa cha sở và giáo lý viên. Xem chi tiết tại <a href="/chinh-sach-bao-mat">Chính sách bảo mật</a>.</p></div></div>
    <div class="faq-item"><button class="faq-q">Cha sở và giáo lý viên được phân quyền ra sao?<span class="ic">+</span></button><div class="faq-a"><p>Cha sở và ban giáo lý quản trị toàn xứ (năm học, lớp, giáo lý viên, báo cáo). Giáo lý viên chỉ thao tác trên lớp mình phụ trách: điểm danh, nhập điểm, nhận xét, theo dõi học viên.</p></div></div>
    <div class="faq-item"><button class="faq-q">Có xuất được bảng điểm và chứng chỉ bí tích không?<span class="ic">+</span></button><div class="faq-a"><p>Có. Xuất bảng điểm, phiếu điểm danh ra Excel và PDF; xuất chứng chỉ Rửa Tội / Rước Lễ / Thêm Sức trang trọng ngay từ hồ sơ học viên.</p></div></div>
    <div class="faq-item"><button class="faq-q">Cuối năm lên lớp và tra cứu năm cũ thế nào?<span class="ic">+</span></button><div class="faq-a"><p>Chỉ một thao tác “Kết thúc năm học”, hệ thống chuyển học viên lên lớp kế tiếp cho niên khóa mới (điểm bắt đầu lại). Dữ liệu các năm cũ được lưu trữ để tra cứu và tải về bất cứ lúc nào.</p></div></div>
@@ -551,12 +563,13 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
     <li><a href="#faq">Câu hỏi thường gặp</a></li>
     <li><a href="#lienhe" onclick="openLp('mContact');return false;">Gửi liên hệ</a></li>
     <li><a href="#about">Giới thiệu</a></li>
-    <li><a href="#top">Về đầu trang</a></li>
+    <li><a href="/chinh-sach-bao-mat">Chính sách bảo mật</a></li>
+    <li><a href="/dieu-khoan">Điều khoản sử dụng</a></li>
    </ul>
   </div>
  </div>
  <div class="container ft-bottom">
-  <span>© 2026 Giáo Lý Số · Quản lý giáo lý Công giáo Việt Nam</span>
+  <span>© 2026 Giáo Lý Số · <a href="/dieu-khoan">Điều khoản</a> · <a href="/chinh-sach-bao-mat">Bảo mật</a></span>
   <span>Đồng hành cùng giáo xứ trên hành trình đức tin ✝&#xFE0E;</span>
  </div>
 </footer>
@@ -608,7 +621,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
   <h3>Cài Giáo Lý Số thành ứng dụng</h3>
   <p class="lp-desc">Cài một lần để mở nhanh như một app riêng trên điện thoại hoặc máy tính, không cần gõ lại đường link mỗi lần.</p>
   <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:10px 12px;font-size:13px;color:#7c2d12;margin:0 0 14px;line-height:1.5">
-   <b>Lưu ý:</b> Hãy cài đúng địa chỉ <b>app.giaoly.com.vn</b> (có chữ <b>“app.”</b> phía trước). Đừng cài <b>giaoly.com.vn</b> — đây là trang giới thiệu, không phải ứng dụng.
+   <b>Lưu ý:</b> Hãy cài đúng địa chỉ <b>app.giaoly.com.vn</b> (có chữ <b>“app.”</b> phía trước). Đừng cài <b>giaoly.com.vn</b>, vì đây là trang giới thiệu, không phải ứng dụng.
   </div>
   <a href="https://app.giaoly.com.vn" target="_blank" rel="noopener" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;padding:11px 18px;font-size:14px;margin-bottom:8px">Mở app.giaoly.com.vn</a>
   <div style="font-size:14px;line-height:1.6;color:#26201a">
@@ -634,19 +647,6 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0
  </div>
 </div>
 
-<!-- Thông báo nổi: gợi ý cài ứng dụng -->
-<div id="installTip" style="position:fixed;left:16px;bottom:16px;z-index:900;max-width:330px;background:#1f2937;color:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 10px 34px rgba(0,0,0,.28);font-family:'Oswald',sans-serif;font-size:14px;line-height:1.5;display:none">
- <div style="display:flex;gap:9px;align-items:flex-start">
-  <div style="flex:1">
-   Cài <b>Giáo Lý Số</b> thành ứng dụng trên máy để mở nhanh như app riêng.
-   <div style="margin-top:9px;display:flex;gap:8px">
-    <button onclick="openLp('mInstall')" style="background:#2563eb;color:#fff;border:0;border-radius:8px;padding:7px 12px;font:inherit;cursor:pointer">Xem hướng dẫn</button>
-    <button onclick="dismissInstallTip()" style="background:transparent;color:#cbd5e1;border:0;font:inherit;cursor:pointer">Để sau</button>
-   </div>
-  </div>
- </div>
-</div>
-
 <script>
 const APP='https://app.giaoly.com.vn';
 const FORM_KEY='93c36314-d9bf-48d7-bc43-3224e8180076'; /* Web3Forms access key -> gửi email tự động về support.giaolyso@gmail.com */
@@ -658,8 +658,6 @@ function saveLead(kind,d){try{fetch(SB_URL+'/rest/v1/leads',{method:'POST',heade
 function openLp(id){const m=document.getElementById(id);if(m){m.hidden=false;document.body.style.overflow='hidden';const i=m.querySelector('input');if(i)setTimeout(()=>i.focus(),50);}}
 function closeLp(id){const m=document.getElementById(id);if(m){m.hidden=true;document.body.style.overflow='';}}
 addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.lp-modal:not([hidden])').forEach(m=>closeLp(m.id));}});
-function dismissInstallTip(){var t=document.getElementById('installTip');if(t)t.style.display='none';try{localStorage.setItem('hideInstallTip','1');}catch(e){}}
-(function(){try{if(localStorage.getItem('hideInstallTip')==='1')return;}catch(e){}var t=document.getElementById('installTip');if(t)setTimeout(function(){t.style.display='block';},1500);})();
 
 document.querySelectorAll('.lp-card form').forEach(f=>{
  f.addEventListener('submit',async e=>{
@@ -738,12 +736,6 @@ if(mag && matchMedia('(min-width:641px)').matches){
   mag.style.transform=within?'translate3d('+(dx/strength)+'px,'+(dy/strength)+'px,0)':'translate3d(0,0,0)';});
 }
 
-/* AnimatedText char reveal */
-const at=document.getElementById('aboutText');
-if(at){const txt=at.textContent;at.textContent='';const sp=[...txt].map(ch=>{const s=document.createElement('span');s.className='c';s.textContent=ch;at.appendChild(s);return s});
- function ab(){const r=at.getBoundingClientRect();const p=(innerHeight*0.8-r.top)/(innerHeight*0.6);const n=Math.max(0,Math.min(1,p))*sp.length;sp.forEach((s,i)=>s.style.opacity=i<n?1:.2);}
- addEventListener('scroll',ab,{passive:true});ab();}
-
 /* Sticky cards scale */
 const cards=[...document.querySelectorAll('.pcard')];const N=cards.length;
 const isDesk=()=>innerWidth>640;
@@ -765,7 +757,7 @@ function copyPromoCode(btn){
 </script>
 
 <!-- ===== Banner Back To School: nâng Pro miễn phí 3 tháng cho 50 giáo xứ đầu ===== -->
-<div class="b2s" id="b2s">
+<div class="b2s hide" id="b2s">
   <div class="b2s-bd" onclick="b2sMin()"></div>
   <div class="b2s-card">
     <button class="b2s-x" aria-label="Đóng" onclick="b2sMin()">✕</button>
@@ -800,7 +792,7 @@ function copyPromoCode(btn){
 
 <script>
 function copyB2s(btn){ try{navigator.clipboard.writeText('BACKTOSCHOOL');}catch(e){} btn.textContent='✓ Đã sao chép'; setTimeout(()=>{btn.textContent='📋 Sao chép';},1600); }
-function b2sMin(){ document.getElementById('b2s').classList.add('hide'); document.getElementById('b2sMini').classList.add('show'); try{sessionStorage.setItem('b2s_min','1');}catch(e){} }
+function b2sMin(){ document.getElementById('b2s').classList.add('hide'); if(window.__b2sLeft!==0) document.getElementById('b2sMini').classList.add('show'); }
 function b2sOpen(){ document.getElementById('b2s').classList.remove('hide'); document.getElementById('b2sMini').classList.remove('show'); }
 function toggleZfab(force){ const z=document.getElementById('zfab'); const open = force===undefined ? !z.classList.contains('open') : force; z.classList.toggle('open', open); }
 function sendZfab(e){ e.preventDefault(); const f=e.target; const st=document.getElementById('zfabStatus');
@@ -817,11 +809,21 @@ function sendZfab(e){ e.preventDefault(); const f=e.target; const st=document.ge
     const d = await r.json();
     if(d && d.remaining!=null){
       const el=document.getElementById('b2sCount');
-      if(d.remaining<=0){ el.innerHTML='Đã hết mã ưu đãi 😢'; document.getElementById('b2sMiniN').textContent='0'; }
-      else { el.innerHTML='Đã dùng <b>'+d.used_count+'/'+d.max_uses+'</b> mã · chỉ còn <b>'+d.remaining+'</b> suất!'; document.getElementById('b2sMiniN').textContent=d.remaining; }
+      window.__b2sLeft=d.remaining;
+      if(d.remaining<=0){ el.innerHTML='Đã hết mã ưu đãi'; document.getElementById('b2sMiniN').textContent='0'; document.getElementById('b2sMini').classList.remove('show'); }
+      else { el.innerHTML='Đã dùng <b>'+d.used_count+'/'+d.max_uses+'</b> mã · còn <b>'+d.remaining+'</b> suất'; document.getElementById('b2sMiniN').textContent=d.remaining; document.getElementById('b2sMini').classList.add('show'); }
     }
   }catch(e){}
-  try{ if(sessionStorage.getItem('b2s_min')) b2sMin(); }catch(e){}
+  // Chỉ tự mở popup khi khách đã đọc tới nửa trang, tối đa 1 lần mỗi ngày.
+  function seenToday(){ try{ return Date.now()-Number(localStorage.getItem('b2s_seen')||0) < 864e5; }catch(e){ return true; } }
+  function onScroll(){
+    const h=document.documentElement; if((h.scrollTop+innerHeight)/h.scrollHeight < 0.5) return;
+    removeEventListener('scroll', onScroll);
+    if(seenToday() || !(window.__b2sLeft>0)) return;
+    try{ localStorage.setItem('b2s_seen', String(Date.now())); }catch(e){}
+    b2sOpen();
+  }
+  addEventListener('scroll', onScroll, {passive:true});
 })();
 </script>
 </body>

@@ -1,0 +1,22 @@
+/* Trang văn bản (Chính sách bảo mật, Điều khoản sử dụng): ưu tiên dễ đọc */
+:root { --bg: #F5EEE0; --panel: #FFFFFF; --ink: #2E2721; --muted: #5F5344; --line: rgba(46, 39, 33, .13); --primary: #F34543; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
+a { color: #b4352f; }
+.lg-top { max-width: 860px; margin: 0 auto; padding: 22px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lg-top img { height: 46px; width: auto; display: block; }
+.lg-top a.back { font-size: 14px; color: var(--muted); text-decoration: none; }
+.lg-top a.back:hover { color: var(--ink); }
+.lg-doc { max-width: 860px; margin: 0 auto 48px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 40px 48px; }
+.lg-doc h1 { font-size: 30px; line-height: 1.25; margin: 0 0 6px; }
+.lg-doc .updated { color: var(--muted); font-size: 14px; margin: 0 0 26px; }
+.lg-doc h2 { font-size: 19px; margin: 30px 0 8px; }
+.lg-doc p, .lg-doc li { color: #3b332b; }
+.lg-doc ul { padding-left: 22px; margin: 6px 0 12px; }
+.lg-doc li { margin: 4px 0; }
+.lg-foot { max-width: 860px; margin: 0 auto 40px; padding: 0 20px; color: var(--muted); font-size: 13.5px; display: flex; gap: 14px; flex-wrap: wrap; }
+.lg-foot a { color: var(--muted); }
+@media (max-width: 640px) {
+  .lg-doc { padding: 26px 20px; border-radius: 14px; margin: 0 12px 36px; }
+  .lg-doc h1 { font-size: 24px; }
+}
