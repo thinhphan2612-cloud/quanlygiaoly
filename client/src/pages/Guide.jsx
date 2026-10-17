@@ -202,10 +202,11 @@ const GUIDE = [
     tags: 'ephata store cửa hàng tính năng mở rộng mua sắm công giáo tài nguyên',
     summary: 'Cửa hàng Công giáo tích hợp: mở khóa thêm tính năng và tài nguyên cho việc dạy giáo lý.',
     steps: [
-      'Vào “Ephata Store” để xem các tính năng/tài nguyên có thể thêm.',
-      'Đăng nhập Ephata Store (menu tài khoản) dùng chung tài khoản để đồng bộ.',
+      'Vào tab “Ephata Store” để xem giới thiệu store, các app nổi bật và tiện ích dành cho Giáo Lý Số. Bấm vào app để mở trang sản phẩm trên store.',
+      'Bấm “Đăng nhập bằng tài khoản Giáo Lý Số”: dùng đúng email và mật khẩu Giáo Lý Số, store tự tạo và liên kết tài khoản.',
+      'Mua bằng point (nạp qua mã VietQR, 100đ = 1 point). Tiện ích mua cho giáo xứ tự mở trong Giáo Lý Số; chỉ quản trị viên giáo xứ mua được.',
     ],
-    tips: ['Tính năng đã sở hữu sẽ hiển thị “Đã kích hoạt”.'],
+    tips: ['Sản phẩm có nhãn “Miễn phí với Pro” dùng miễn phí khi giáo xứ có gói Pro còn hạn.', 'Tiện ích đã mở hiện nhãn “Đã mở” kèm nút “Mở” để vào dùng ngay.'],
   },
   {
     id: 'thuchi', title: 'Thu chi', roles: ['admin', 'teacher'], pro: true,
