@@ -1475,6 +1475,66 @@ button.gx-stat:hover { border-color: var(--primary); }
   .stx-plan .btn { width: 100%; }
 }
 
+/* ===== Học viên (Students, StudentForm, StudentModal): tiền tố hvx- ===== */
+.hvx-count { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: -4px 0 10px; font-size: 13.5px; color: var(--muted); min-height: 24px; }
+.hvx-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font: inherit; font-size: 12.5px; cursor: pointer; }
+.hvx-chip span { color: var(--muted); font-size: 14px; line-height: 1; }
+.hvx-chip:hover { border-color: var(--primary); }
+.hvx-clear { background: none; border: none; padding: 0; color: var(--primary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.hvx-table td.hvx-c-act { white-space: nowrap; text-align: right; }
+.hvx-table td.hvx-c-act > * { vertical-align: middle; margin-left: 4px; }
+.modal.hvx-modal { display: flex; flex-direction: column; padding: 0; overflow: hidden; max-width: 820px; }
+.hvx-mhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 24px 12px; border-bottom: 1px solid var(--border); }
+.hvx-mhead h2 { margin: 0; font-size: 19px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hvx-x { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 9px; border: none; background: transparent; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
+.hvx-x:hover { background: var(--primary-soft); color: var(--heading); }
+.hvx-x svg { width: 20px; height: 20px; }
+.hvx-mbody { flex: 1; min-height: 0; overflow: auto; padding: 4px 24px 12px; }
+.hvx-mfoot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 24px; border-top: 1px solid var(--border); background: var(--panel); }
+.hvx-fnote { margin-right: auto; font-size: 13px; color: #b45309; }
+.hvx-ferr { margin-right: auto; font-size: 13px; color: #c0392b; font-weight: 600; }
+.hvx-sec { border-bottom: 1px solid var(--border); }
+.hvx-sec:last-child { border-bottom: none; }
+.hvx-sec > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 14px 0; font-weight: 700; color: var(--heading); font-size: 15px; }
+.hvx-sec > summary::-webkit-details-marker { display: none; }
+.hvx-sec > summary::before { content: ''; flex: 0 0 auto; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform .15s ease; margin: 0 2px; }
+.hvx-sec[open] > summary::before { transform: rotate(45deg); }
+.hvx-sec > summary small { font-weight: 500; font-size: 12.5px; color: var(--muted); }
+.hvx-sec-body { padding: 0 0 8px; }
+.hvx-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 14px; }
+.hvx-grid4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.hvx-span2 { grid-column: span 2; }
+.hvx-span3 { grid-column: 1 / -1; }
+.hvx-form .field { margin-bottom: 12px; }
+.hvx-form input.hvx-bad { border-color: var(--danger); }
+.hvx-err { display: block; color: #c0392b; font-size: 12px; margin-top: 3px; }
+.hvx-cert { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) 36px; gap: 0 10px; align-items: end; }
+.hvx-del { width: 36px; height: 36px; margin-bottom: 12px; border-radius: 9px; border: none; background: transparent; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
+.hvx-del:hover { color: var(--danger); background: rgba(255, 59, 48, .08); }
+.hvx-del svg { width: 18px; height: 18px; }
+:root[data-theme="dark"] .hvx-fnote { color: #fbbf24; }
+:root[data-theme="dark"] .hvx-ferr, :root[data-theme="dark"] .hvx-err { color: #f87171; }
+@media (max-width: 640px) {
+  .hvx-grid, .hvx-grid4 { grid-template-columns: 1fr 1fr; }
+  .hvx-span2 { grid-column: 1 / -1; }
+  .hvx-mhead, .hvx-mbody, .hvx-mfoot { padding-left: 16px; padding-right: 16px; }
+  .hvx-fnote { display: none; }
+  /* Bảng học viên thành thẻ trên điện thoại */
+  .hvx-table thead { display: none; }
+  .hvx-table, .hvx-table tbody { display: block; }
+  .hvx-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 8px; padding: 10px 2px; border-top: 1px solid var(--border); }
+  .hvx-table td { display: block; padding: 0; border: 0; white-space: normal; }
+  .hvx-table td.hvx-c-name { grid-column: 1; grid-row: 1; }
+  .hvx-table td.hvx-c-act { grid-column: 2; grid-row: 1; align-self: start; }
+  .hvx-table td[data-label] { grid-column: 1 / -1; font-size: 13px; padding-left: 40px; }
+  .hvx-table td[data-label]::before { content: attr(data-label) ': '; color: var(--muted); }
+  .hvx-table td.hvx-c-parents::before { display: block; }
+  .hvx-table tr.hvx-empty { display: block; }
+}
+@media (max-width: 420px) {
+  .hvx-grid, .hvx-grid4 { grid-template-columns: 1fr; }
+}
+
 /* ===== Hướng dẫn sử dụng (Guide / Wiki) ===== */
 .guide-wrap { max-width: 1100px; margin: 0 auto; }
 .guide-head h1 { margin: 0 0 4px; font-size: 26px; }

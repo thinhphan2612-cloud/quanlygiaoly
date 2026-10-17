@@ -4,7 +4,7 @@ import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { useRealtime } from '../realtime.jsx';
 import SacramentBadge, { SACRAMENTS } from '../components/SacramentBadge.jsx';
-import StudentForm from '../components/StudentForm.jsx';
+import StudentModal from '../components/StudentModal.jsx';
 import { IconEdit, IconEditImage, IconPrinter } from '../components/Icons.jsx';
 import { fileToDataUrl } from '../lib/img';
 import { ATT_LABEL } from '../lib/exportUtils';
@@ -70,11 +70,6 @@ export default function StudentProfile() {
     ['Ngày thêm sức', dash(viDate(s.confirmation_date))],
     ['Địa chỉ', dash(s.address)],
   ];
-
-  async function save() {
-    try { await api.put(`/students/${id}`, edit); setEdit(null); load(); }
-    catch (e) { toast.err(e.response?.data?.error || 'Lưu thất bại'); }
-  }
 
   return (
     <div>
@@ -208,16 +203,8 @@ export default function StudentProfile() {
 
       {/* Modal sửa thông tin */}
       {edit && (
-        <div className="modal-backdrop" onClick={() => setEdit(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Sửa thông tin học viên</h2>
-            <StudentForm form={edit} setForm={setEdit} classes={classes} />
-            <div className="modal-actions">
-              <button className="btn ghost" onClick={() => setEdit(null)}>Hủy</button>
-              <button className="btn" onClick={save}>Lưu</button>
-            </div>
-          </div>
-        </div>
+        <StudentModal initial={edit} classes={classes} requireClass={user?.role === 'teacher'}
+          onClose={() => setEdit(null)} onSaved={() => { setEdit(null); load(); }} />
       )}
     </div>
   );

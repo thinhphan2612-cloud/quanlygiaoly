@@ -6,11 +6,12 @@ import { useAuth } from '../auth.jsx';
 import BulkImport from '../components/BulkImport.jsx';
 import SacramentBadge from '../components/SacramentBadge.jsx';
 import Avatar from '../components/Avatar.jsx';
-import StudentForm from '../components/StudentForm.jsx';
+import StudentModal from '../components/StudentModal.jsx';
+import RowMenu from '../components/RowMenu.jsx';
 import { byViName } from '../lib/viName';
 import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 import { getPref, setPref } from '../lib/prefs';
-import { IconColumns, IconDownload, IconFilter, IconPrinter, IconUpload } from '../components/Icons.jsx';
+import { IconColumns, IconDownload, IconFilter, IconUpload } from '../components/Icons.jsx';
 import { viDate } from '../lib/date';
 import { toast } from '../lib/toast';
 import { SkeletonRows } from '../components/Skeleton.jsx';
@@ -58,7 +59,10 @@ function parentLines(s) {
   if (!lines.length && (s.parent_name || s.parent_phone)) lines.push({ who: '', name: s.parent_name, phone: s.parent_phone });
   return lines;
 }
-const dash = <span className="muted">—</span>;
+const dash = <span className="muted">–</span>;
+// Bỏ dấu tiếng Việt để tìm kiếm (gõ "nguyen" vẫn ra "Nguyễn")
+const fold = (v) => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+const NO_CLASS = '__none';
 
 // Các cột có thể hiện trong bảng. Họ tên luôn hiện; người dùng tự chọn các cột còn lại.
 const DISPLAY_COLS = [
@@ -111,7 +115,6 @@ export default function Students() {
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(null);
   const [bulkOpen, setBulkOpen] = useState(false);
-  const [error, setError] = useState('');
   const [showFilter, setShowFilter] = useState(false);
   const [f, setF] = useState(defaultFilter);
   const [parish, setParish] = useState(null);
@@ -153,36 +156,24 @@ export default function Students() {
   useEffect(() => { if (rev) { load(); api.get('/classes').then((r) => setClasses(r.data)); } }, [rev]);
 
   // GLV chỉ thêm được vào lớp mình -> mặc định chọn sẵn lớp đầu tiên của họ.
-  function openCreate() { setError(''); setModal({ ...empty, class_id: isTeacher && classes.length ? classes[0].id : '' }); }
-  function openEdit(s) { setError(''); setModal({ ...s, class_id: s.class_id || '' }); }
-
-  async function save() {
-    setError('');
-    if (isTeacher && !modal.class_id) {
-      setError('Vui lòng chọn lớp cho học viên. Giáo lý viên chỉ thêm hoặc sửa học viên trong lớp mình phụ trách.');
-      return;
-    }
-    try {
-      if (modal.id) await api.put(`/students/${modal.id}`, modal);
-      else await api.post('/students', modal);
-      setModal(null);
-      load();
-    } catch (err) {
-      setError(err.response?.data?.error || 'Lưu thất bại');
-    }
-  }
+  function openCreate() { setModal({ ...empty, class_id: isTeacher && classes.length ? classes[0].id : '' }); }
+  function openEdit(s) { setModal({ ...s, class_id: s.class_id || '' }); }
 
   async function remove(s) {
-    if (!await confirmDialog(`Xóa học viên "${s.full_name}"?`)) return;
-    await api.delete(`/students/${s.id}`);
-    load();
+    const who = [s.saint_name, s.full_name].filter(Boolean).join(' ');
+    if (!await confirmDialog(`Xóa hồ sơ học viên ${who}?\n\nSẽ mất luôn điểm số, điểm danh và việc thiêng liêng của em này, không khôi phục được.\n\nNếu em chỉ chuyển lớp hoặc nghỉ học, hãy sửa lớp thay vì xóa.`)) return;
+    try { await api.delete(`/students/${s.id}`); toast(`Đã xóa hồ sơ ${who}`); load(); }
+    catch (err) { toast.err(err.response?.data?.error || 'Chưa xóa được học viên'); }
   }
 
   // ----- áp dụng bộ lọc -----
   const st = (id) => stats[id] || {};
+  const q = fold(search.trim());
+  const haystack = (s) => fold([s.saint_name, s.full_name, s.father_saint, s.father_name, s.mother_saint, s.mother_name, s.parent_name,
+    s.godparent_name, s.father_phone, s.mother_phone, s.parent_phone, s.student_phone].filter(Boolean).join(' '));
   let filtered = students.filter((s) => {
-    if (search && !s.full_name.toLowerCase().includes(search.toLowerCase())) return false;
-    if (f.classes.length && !f.classes.includes(s.class_id)) return false;
+    if (q && !haystack(s).includes(q)) return false;
+    if (f.classes.length && !f.classes.includes(s.class_id || NO_CLASS)) return false;
     if (f.sacrament && (s.sacrament || 'none') !== f.sacrament) return false;
     return true;
   });
@@ -211,21 +202,32 @@ export default function Students() {
   };
   const exportName = 'danh-sach-hoc-vien';
 
+  const SAC_LABEL = { baptism: 'Đã Rửa tội', ruoc_le: 'Đã Rước lễ', them_suc: 'Đã Thêm sức', none: 'Chưa có bí tích' };
+  const SORT_LABEL = { absent: 'Vắng nhiều nhất', diligent: 'Chuyên cần nhất' };
+  const chips = [
+    ...f.classes.map((id) => ({ key: 'c' + id, label: id === NO_CLASS ? 'Chưa xếp lớp' : (classes.find((c) => c.id === id)?.name || 'Lớp'), clear: () => toggleClass(id) })),
+    f.sacrament && { key: 'sac', label: SAC_LABEL[f.sacrament], clear: () => setF((p) => ({ ...p, sacrament: '' })) },
+    f.sortBy !== 'name' && { key: 'sort', label: `Xếp: ${SORT_LABEL[f.sortBy]}`, clear: () => setF((p) => ({ ...p, sortBy: 'name' })) },
+  ].filter(Boolean);
+  const noClassCount = students.filter((s) => !s.class_id).length;
+  const doExport = (kind) => (kind === 'excel' ? exportXlsx({ filename: `${exportName}.xlsx`, sheetName: 'Học viên', ...exportMeta }) : exportPdf(exportMeta));
+
   const toggleClass = (id) => setF((p) => ({ ...p, classes: p.classes.includes(id) ? p.classes.filter((x) => x !== id) : [...p.classes, id] }));
 
   return (
     <div>
       <PageHeader title="Quản lý học viên" subtitle="Hồ sơ học viên của giáo xứ: tìm, lọc, nhập từ Excel và xuất danh sách." />
       <div className="toolbar">
-        <input data-tour="stu-search" className="grow stu-search" placeholder="Tìm theo tên..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input data-tour="stu-search" className="grow stu-search" type="search" placeholder="Tìm tên, tên thánh, phụ huynh, SĐT…" value={search} onChange={(e) => setSearch(e.target.value)} />
         <button data-tour="stu-filter" className={`btn ghost ${activeCount ? 'has-badge' : ''}`} onClick={() => setShowFilter((v) => !v)}>
           <IconFilter className="bi" />Lọc / Sắp xếp{activeCount ? ` (${activeCount})` : ''}
         </button>
         <button data-tour="stu-cols" className="btn ghost" onClick={() => setShowCols((v) => !v)}><IconColumns className="bi" />Cột hiển thị</button>
         <button data-tour="stu-import" className="btn ghost" onClick={() => setBulkOpen(true)}><IconUpload className="bi" />Nhập hàng loạt</button>
-        <button className="btn ghost" disabled={filtered.length === 0}
-          onClick={() => exportXlsx({ filename: `${exportName}.xlsx`, sheetName: 'Học viên', ...exportMeta })}><IconDownload className="bi" />Excel</button>
-        <button className="btn ghost" disabled={filtered.length === 0} onClick={() => exportPdf(exportMeta)}><IconPrinter className="bi" />PDF</button>
+        {filtered.length > 0 && (
+          <RowMenu label="Xuất danh sách đang hiện" triggerClass="btn ghost" trigger={<><IconDownload className="bi" />Xuất</>}
+            items={[{ label: 'Excel (.xlsx)', onClick: () => doExport('excel') }, { label: 'PDF (in)', onClick: () => doExport('pdf') }]} />
+        )}
         <button className="btn" onClick={openCreate}>+ Thêm học viên</button>
       </div>
 
@@ -235,6 +237,12 @@ export default function Students() {
             <div className="fp-col">
               <div className="fp-label">Lọc theo lớp (tích nhiều lớp)</div>
               <div className="fp-classes">
+                {noClassCount > 0 && (
+                  <label className="fp-chk">
+                    <input type="checkbox" checked={f.classes.includes(NO_CLASS)} onChange={() => toggleClass(NO_CLASS)} />
+                    <span>Chưa xếp lớp ({noClassCount})</span>
+                  </label>
+                )}
                 {classes.map((c) => (
                   <label key={c.id} className="fp-chk">
                     <input type="checkbox" checked={f.classes.includes(c.id)} onChange={() => toggleClass(c.id)} />
@@ -294,7 +302,13 @@ export default function Students() {
         </div>
       )}
 
-      <div className="panel">
+      <div className="hvx-count">
+        <span>{loaded ? (filtered.length === students.length ? `${students.length} học viên` : `Đang hiện ${filtered.length} / ${students.length} học viên`) : ''}</span>
+        {chips.map((c) => <button type="button" key={c.key} className="hvx-chip" onClick={c.clear} title="Bỏ điều kiện này">{c.label}<span aria-hidden="true">×</span></button>)}
+        {(chips.length > 0 || search) && <button type="button" className="hvx-clear" onClick={() => { setF(defaultFilter); setSearch(''); }}>Bỏ lọc</button>}
+      </div>
+
+      <div className="panel hvx-panel">
         <div className="sac-legend">
           <span>Bí tích:</span>
           <span className="it"><SacramentBadge value="baptism" /> Rửa tội</span>
@@ -302,7 +316,7 @@ export default function Students() {
           <span className="it"><SacramentBadge value="them_suc" /> Thêm Sức</span>
           <span className="it">(không icon = chưa nhận)</span>
         </div>
-        <table>
+        <table className="hvx-table">
           <thead>
             <tr>
               {beforeName.map((c) => <th key={c.key}>{c.label}</th>)}
@@ -315,32 +329,26 @@ export default function Students() {
             {!loaded && <SkeletonRows rows={6} cols={shownCols.length + 2} />}
             {filtered.map((s) => (
               <tr key={s.id}>
-                {beforeName.map((c) => <td key={c.key}>{c.render(s)}</td>)}
-                <td><div className="stu-cell"><Avatar url={s.avatar_url} name={s.full_name} size={30} /><span data-tour="stu-name" className="link-name" onClick={() => navigate(`/students/${s.id}`)}>{s.full_name}</span><SacramentBadge value={s.sacrament} /></div></td>
-                {afterName.map((c) => <td key={c.key}>{c.render(s)}</td>)}
-                <td style={{ whiteSpace: 'nowrap' }}>
-                  <button className="btn ghost sm" onClick={() => openEdit(s)}>Sửa</button>{' '}
-                  <button className="btn danger sm" onClick={() => remove(s)}>Xóa</button>
+                {beforeName.map((c) => <td key={c.key} data-label={c.label} className={`hvx-c-${c.key}`}>{c.render(s)}</td>)}
+                <td className="hvx-c-name"><div className="stu-cell"><Avatar url={s.avatar_url} name={s.full_name} size={30} /><span data-tour="stu-name" className="link-name" onClick={() => navigate(`/students/${s.id}`)}>{s.full_name}</span><SacramentBadge value={s.sacrament} /></div></td>
+                {afterName.map((c) => <td key={c.key} data-label={c.label} className={`hvx-c-${c.key}`}>{c.render(s)}</td>)}
+                <td className="hvx-c-act">
+                  <button className="btn ghost sm" onClick={() => openEdit(s)}>Sửa</button>
+                  <RowMenu items={[
+                    { label: 'Xem hồ sơ', onClick: () => navigate(`/students/${s.id}`) },
+                    { label: 'Xóa học viên…', danger: true, onClick: () => remove(s) },
+                  ]} />
                 </td>
               </tr>
             ))}
-            {loaded && filtered.length === 0 && <tr><td colSpan={shownCols.length + 2} className="muted">Không có học viên</td></tr>}
+            {loaded && filtered.length === 0 && <tr className="hvx-empty"><td colSpan={shownCols.length + 2} className="muted">{students.length ? 'Không có học viên nào khớp tìm kiếm hoặc bộ lọc.' : 'Chưa có học viên. Bấm "Thêm học viên" hoặc "Nhập hàng loạt" từ Excel.'}</td></tr>}
           </tbody>
         </table>
       </div>
 
       {modal && (
-        <div className="modal-backdrop" onClick={() => setModal(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>{modal.id ? 'Sửa học viên' : 'Thêm học viên'}</h2>
-            <StudentForm form={modal} setForm={setModal} classes={classes} />
-            {error && <div className="error">{error}</div>}
-            <div className="modal-actions">
-              <button className="btn ghost" onClick={() => setModal(null)}>Hủy</button>
-              <button className="btn" onClick={save}>Lưu</button>
-            </div>
-          </div>
-        </div>
+        <StudentModal initial={modal} classes={classes} requireClass={isTeacher}
+          onClose={() => setModal(null)} onSaved={() => { setModal(null); load(); }} />
       )}
 
       {bulkOpen && (

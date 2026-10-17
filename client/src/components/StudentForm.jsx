@@ -1,10 +1,45 @@
 import { SACRAMENTS, SACRAMENT_OPTIONS, CERT_SUGGESTIONS } from './SacramentBadge.jsx';
 
+// Ngày bí tích -> trạng thái tối thiểu tương ứng (nhập ngày thì trạng thái tự nâng lên, không bị lệch)
+const SAC_BY_DATE = { baptism_date: 'baptism', first_communion_date: 'ruoc_le', confirmation_date: 'them_suc' };
+const sacRank = (k) => SACRAMENT_OPTIONS.indexOf(k || 'none');
+const PHONE_RE = /^[0-9+\s.()-]{8,16}$/;
+const PHONE_FIELDS = [['father_phone', 'SĐT cha'], ['mother_phone', 'SĐT mẹ'], ['student_phone', 'SĐT học viên']];
+
+// Kiểm tra trước khi lưu. Trả về câu lỗi (tiếng Việt) hoặc '' nếu hợp lệ.
+export function validateStudent(form, { requireClass } = {}) {
+  if (!String(form.full_name || '').trim()) return 'Vui lòng nhập họ tên học viên.';
+  if (requireClass && !form.class_id) return 'Vui lòng chọn lớp. Giáo lý viên chỉ thêm hoặc sửa học viên trong lớp mình phụ trách.';
+  for (const [k, label] of PHONE_FIELDS) {
+    const v = String(form[k] || '').trim();
+    if (v && !PHONE_RE.test(v)) return `${label} chưa đúng (chỉ gồm số, 8 đến 16 ký tự).`;
+  }
+  return '';
+}
+
+// Một nhóm thông tin có thể thu gọn
+function Section({ title, hint, open, children }) {
+  return (
+    <details className="hvx-sec" open={open}>
+      <summary><span>{title}</span>{hint && <small>{hint}</small>}</summary>
+      <div className="hvx-sec-body">{children}</div>
+    </details>
+  );
+}
+
 // Form thông tin học viên dùng chung (Thêm/Sửa ở trang Học viên và Hồ sơ).
 // classes: nếu truyền, hiện ô chọn lớp.
 export default function StudentForm({ form, setForm, classes }) {
-  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+  const set = (k) => (e) => {
+    const v = e.target.value;
+    const next = { ...form, [k]: v };
+    const need = SAC_BY_DATE[k];
+    if (need && v && sacRank(next.sacrament) < sacRank(need)) next.sacrament = need;
+    setForm(next);
+  };
   const F = (k) => form[k] || '';
+  const filled = (...ks) => ks.some((k) => String(form[k] || '').trim());
+  const phoneBad = (k) => { const v = String(form[k] || '').trim(); return v && !PHONE_RE.test(v); };
 
   // ----- chứng chỉ/khóa: danh sách dòng {name, date} -----
   const certs = Array.isArray(form.certificates) ? form.certificates : [];
@@ -13,88 +48,97 @@ export default function StudentForm({ form, setForm, classes }) {
   const updCert = (i, k, v) => setCerts(certs.map((c, idx) => (idx === i ? { ...c, [k]: v } : c)));
   const delCert = (i) => setCerts(certs.filter((_, idx) => idx !== i));
 
+  const field = (k, label, props = {}) => (
+    <div className={`field${props.span ? ' hvx-span' + props.span : ''}`}>
+      <label>{label}</label>
+      <input value={F(k)} onChange={set(k)} type={props.type || 'text'} placeholder={props.placeholder}
+        inputMode={props.inputMode} className={props.phone && phoneBad(k) ? 'hvx-bad' : ''} autoFocus={props.autoFocus} />
+      {props.phone && phoneBad(k) && <small className="hvx-err">Chỉ gồm số, 8 đến 16 ký tự</small>}
+    </div>
+  );
+
   return (
-    <>
-      <div className="row">
-        <div className="field"><label>Tên thánh</label><input value={F('saint_name')} onChange={set('saint_name')} /></div>
-        <div className="field"><label>Họ tên *</label><input value={F('full_name')} onChange={set('full_name')} /></div>
-      </div>
-      <div className="row">
-        <div className="field"><label>Ngày sinh</label><input type="date" value={F('birth_date')} onChange={set('birth_date')} /></div>
-        <div className="field"><label>Giới tính</label><select value={F('gender')} onChange={set('gender')}><option value="">—</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></div>
-        <div className="field"><label>Chức vụ</label><input value={F('position')} onChange={set('position')} placeholder="VD: Lớp trưởng" /></div>
-      </div>
-      {classes && (
-        <div className="field"><label>Lớp</label>
-          <select value={F('class_id')} onChange={set('class_id')}>
-            <option value="">Chưa xếp lớp</option>
-            {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </div>
-      )}
-
-      <div className="form-section">Thông tin cha</div>
-      <div className="row">
-        <div className="field"><label>Tên thánh cha</label><input value={F('father_saint')} onChange={set('father_saint')} /></div>
-        <div className="field"><label>Họ tên cha</label><input value={F('father_name')} onChange={set('father_name')} /></div>
-        <div className="field"><label>SĐT cha</label><input value={F('father_phone')} onChange={set('father_phone')} /></div>
-      </div>
-
-      <div className="form-section">Thông tin mẹ</div>
-      <div className="row">
-        <div className="field"><label>Tên thánh mẹ</label><input value={F('mother_saint')} onChange={set('mother_saint')} /></div>
-        <div className="field"><label>Họ tên mẹ</label><input value={F('mother_name')} onChange={set('mother_name')} /></div>
-        <div className="field"><label>SĐT mẹ</label><input value={F('mother_phone')} onChange={set('mother_phone')} /></div>
-      </div>
-
-      <div className="row">
-        <div className="field"><label>Người đỡ đầu</label><input value={F('godparent_name')} onChange={set('godparent_name')} placeholder="Họ tên người đỡ đầu" /></div>
-        <div className="field"><label>SĐT học sinh</label><input value={F('student_phone')} onChange={set('student_phone')} /></div>
-      </div>
-
-      <div className="form-section">Bí tích</div>
-      <div className="row">
-        <div className="field"><label>Trạng thái</label><select value={F('sacrament') || 'none'} onChange={set('sacrament')}>{SACRAMENT_OPTIONS.map((k) => <option key={k} value={k}>{SACRAMENTS[k].label}</option>)}</select></div>
-        <div className="field"><label>Ngày rửa tội</label><input type="date" value={F('baptism_date')} onChange={set('baptism_date')} /></div>
-        <div className="field"><label>Ngày rước lễ</label><input type="date" value={F('first_communion_date')} onChange={set('first_communion_date')} /></div>
-        <div className="field"><label>Ngày thêm sức</label><input type="date" value={F('confirmation_date')} onChange={set('confirmation_date')} /></div>
-      </div>
-
-      <div className="form-section">Chi tiết cho chứng chỉ Rửa Tội &amp; Thêm Sức</div>
-      <div className="row">
-        <div className="field"><label>Nơi sinh</label><input value={F('birth_place')} onChange={set('birth_place')} /></div>
-        <div className="field"><label>Nguyên quán</label><input value={F('origin_place')} onChange={set('origin_place')} /></div>
-        <div className="field"><label>Trú quán</label><input value={F('residence')} onChange={set('residence')} /></div>
-      </div>
-      <div className="row">
-        <div className="field"><label>Nhà thờ Rửa Tội</label><input value={F('baptism_church')} onChange={set('baptism_church')} /></div>
-        <div className="field"><label>Số trích sổ Rửa Tội</label><input value={F('baptism_book_no')} onChange={set('baptism_book_no')} /></div>
-        <div className="field"><label>Linh mục Rửa Tội</label><input value={F('baptism_priest')} onChange={set('baptism_priest')} /></div>
-      </div>
-      <div className="row">
-        <div className="field"><label>Nhà thờ Thêm Sức</label><input value={F('confirmation_church')} onChange={set('confirmation_church')} /></div>
-        <div className="field"><label>Giám mục Thêm Sức</label><input value={F('confirmation_bishop')} onChange={set('confirmation_bishop')} /></div>
-      </div>
-      <div className="row">
-        <div className="field"><label>Người đỡ đầu Thêm Sức</label><input value={F('confirmation_godparent')} onChange={set('confirmation_godparent')} /></div>
-        <div className="field"><label>Số trích sổ Thêm Sức</label><input value={F('confirmation_book_no')} onChange={set('confirmation_book_no')} /></div>
-      </div>
-
-      <div className="form-section">Chứng chỉ / khóa hoàn thành</div>
-      <datalist id="cert-suggest">{CERT_SUGGESTIONS.map((s) => <option key={s} value={s} />)}</datalist>
-      {certs.map((c, i) => (
-        <div className="row" key={i} style={{ alignItems: 'flex-end' }}>
-          <div className="field" style={{ flex: 2 }}><label>Tên chứng chỉ</label>
-            <input list="cert-suggest" value={c.name || ''} onChange={(e) => updCert(i, 'name', e.target.value)} placeholder="VD: Hoàn thành giáo lý hôn nhân" />
+    <div className="hvx-form">
+      <Section title="Thông tin chính" open>
+        <div className="hvx-grid">
+          {field('saint_name', 'Tên thánh')}
+          {field('full_name', 'Họ tên *', { span: 2, autoFocus: !form.id })}
+          {field('birth_date', 'Ngày sinh', { type: 'date' })}
+          <div className="field"><label>Giới tính</label>
+            <select value={F('gender')} onChange={set('gender')}><option value="">Chọn</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select>
           </div>
-          <div className="field"><label>Ngày</label><input type="date" value={c.date || ''} onChange={(e) => updCert(i, 'date', e.target.value)} /></div>
-          <button type="button" className="btn danger sm" style={{ marginBottom: 2 }} onClick={() => delCert(i)}>Xóa</button>
+          {field('position', 'Chức vụ', { placeholder: 'VD: Lớp trưởng' })}
+          {classes && (
+            <div className="field hvx-span3"><label>Lớp</label>
+              <select value={F('class_id')} onChange={set('class_id')}>
+                <option value="">Chưa xếp lớp</option>
+                {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+          )}
         </div>
-      ))}
-      <button type="button" className="btn ghost sm" onClick={addCert}>+ Thêm chứng chỉ</button>
+      </Section>
 
-      <div className="field" style={{ marginTop: 12 }}><label>Địa chỉ</label><input value={F('address')} onChange={set('address')} /></div>
-      <div className="field"><label>Ghi chú</label><textarea rows={2} value={F('notes')} onChange={set('notes')} /></div>
-    </>
+      <Section title="Cha mẹ và người đỡ đầu" open>
+        <div className="hvx-grid">
+          {field('father_saint', 'Tên thánh cha')}
+          {field('father_name', 'Họ tên cha')}
+          {field('father_phone', 'SĐT cha', { inputMode: 'tel', phone: true })}
+          {field('mother_saint', 'Tên thánh mẹ')}
+          {field('mother_name', 'Họ tên mẹ')}
+          {field('mother_phone', 'SĐT mẹ', { inputMode: 'tel', phone: true })}
+          {field('godparent_name', 'Người đỡ đầu', { span: 2, placeholder: 'Họ tên người đỡ đầu' })}
+          {field('student_phone', 'SĐT học viên', { inputMode: 'tel', phone: true })}
+        </div>
+      </Section>
+
+      <Section title="Bí tích" hint="Nhập ngày lãnh nhận, trạng thái tự cập nhật theo" open>
+        <div className="hvx-grid hvx-grid4">
+          <div className="field"><label>Trạng thái</label>
+            <select value={F('sacrament') || 'none'} onChange={set('sacrament')}>{SACRAMENT_OPTIONS.map((k) => <option key={k} value={k}>{SACRAMENTS[k].label}</option>)}</select>
+          </div>
+          {field('baptism_date', 'Ngày Rửa Tội', { type: 'date' })}
+          {field('first_communion_date', 'Ngày Rước Lễ', { type: 'date' })}
+          {field('confirmation_date', 'Ngày Thêm Sức', { type: 'date' })}
+        </div>
+      </Section>
+
+      <Section title="Chi tiết in trên chứng chỉ Rửa Tội và Thêm Sức" hint="Chỉ cần khi in chứng chỉ"
+        open={filled('birth_place', 'origin_place', 'residence', 'baptism_church', 'baptism_book_no', 'baptism_priest', 'confirmation_church', 'confirmation_bishop', 'confirmation_godparent', 'confirmation_book_no')}>
+        <div className="hvx-grid">
+          {field('birth_place', 'Nơi sinh')}
+          {field('origin_place', 'Nguyên quán')}
+          {field('residence', 'Trú quán')}
+          {field('baptism_church', 'Nhà thờ Rửa Tội')}
+          {field('baptism_book_no', 'Số trích sổ Rửa Tội')}
+          {field('baptism_priest', 'Linh mục Rửa Tội')}
+          {field('confirmation_church', 'Nhà thờ Thêm Sức')}
+          {field('confirmation_bishop', 'Giám mục Thêm Sức')}
+          {field('confirmation_godparent', 'Người đỡ đầu Thêm Sức')}
+          {field('confirmation_book_no', 'Số trích sổ Thêm Sức')}
+        </div>
+      </Section>
+
+      <Section title="Chứng chỉ, khóa đã hoàn thành" hint={certs.length ? `${certs.length} mục` : 'Không bắt buộc'} open={certs.length > 0}>
+        <datalist id="cert-suggest">{CERT_SUGGESTIONS.map((s) => <option key={s} value={s} />)}</datalist>
+        {certs.map((c, i) => (
+          <div className="hvx-cert" key={i}>
+            <div className="field"><label>Tên chứng chỉ</label>
+              <input list="cert-suggest" value={c.name || ''} onChange={(e) => updCert(i, 'name', e.target.value)} placeholder="VD: Hoàn thành giáo lý hôn nhân" />
+            </div>
+            <div className="field"><label>Ngày</label><input type="date" value={c.date || ''} onChange={(e) => updCert(i, 'date', e.target.value)} /></div>
+            <button type="button" className="hvx-del" onClick={() => delCert(i)} title="Bỏ dòng này" aria-label="Bỏ chứng chỉ này">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
+            </button>
+          </div>
+        ))}
+        <button type="button" className="btn ghost sm" onClick={addCert}>+ Thêm chứng chỉ</button>
+      </Section>
+
+      <Section title="Địa chỉ và ghi chú" open>
+        <div className="field"><label>Địa chỉ</label><input value={F('address')} onChange={set('address')} /></div>
+        <div className="field"><label>Ghi chú</label><textarea rows={2} value={F('notes')} onChange={set('notes')} /></div>
+      </Section>
+    </div>
   );
 }

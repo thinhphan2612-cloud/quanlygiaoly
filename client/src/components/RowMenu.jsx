@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 // Nút "⋯" mở menu thao tác phụ của một dòng trong bảng.
 // items: [{ label, onClick, danger? }]. Menu định vị theo màn hình (fixed) để không bị khung bảng cắt mất.
-export default function RowMenu({ items, label = 'Thao tác khác' }) {
+export default function RowMenu({ items, label = 'Thao tác khác', trigger, triggerClass }) {
   const [pos, setPos] = useState(null);
   const btn = useRef(null);
 
@@ -32,7 +32,7 @@ export default function RowMenu({ items, label = 'Thao tác khác' }) {
 
   return (
     <>
-      <button ref={btn} type="button" className="row-menu-btn" aria-label={label} title={label} onClick={toggle}>⋯</button>
+      <button ref={btn} type="button" className={triggerClass || 'row-menu-btn'} aria-label={label} title={label} onClick={toggle} aria-haspopup="menu" aria-expanded={!!pos}>{trigger || '⋯'}</button>
       {pos && (
         <>
           <div className="row-menu-backdrop" onClick={() => setPos(null)} />
