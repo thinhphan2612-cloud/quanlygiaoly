@@ -145,10 +145,10 @@ async function handle(method, rawUrl, body = {}) {
   try {
     // ---------------- classes ----------------
     if (path === '/classes' && method === 'get') {
-      const [{ data: classes, error: e1 }, { data: cts }, { data: studs }] = await Promise.all([
+      const [{ data: classes, error: e1 }, cts, studs] = await Promise.all([
         supabase.from('classes').select('*').eq('graduated', false).order('order_index').order('name'),
-        supabase.from('class_teachers').select('class_id, teacher_id, is_primary, profiles(full_name)'),
-        supabase.from('students').select('class_id').eq('graduated', false),
+        fetchAllRows(() => supabase.from('class_teachers').select('class_id, teacher_id, is_primary, profiles(full_name)').order('id')),
+        fetchAllRows(() => supabase.from('students').select('class_id').eq('graduated', false).order('id')),
       ]);
       if (e1) return fail(400, e1.message);
       const countByClass = {};
@@ -247,11 +247,12 @@ async function handle(method, rawUrl, body = {}) {
 
     // ---------------- profiles (auth/users) ----------------
     if (path === '/auth/users' && method === 'get') {
-      const [{ data, error }, { data: cts }] = await Promise.all([
+      const [{ data, error }, cts] = await Promise.all([
         supabase.from('profiles')
           .select('id, full_name, role, email, saint_name, birth_date, address, area, glv_level, occupation, phone')
           .order('full_name'),
-        supabase.from('class_teachers').select('teacher_id, is_primary, classes(name, graduated)'),
+        // phân công lớp tích lũy qua các năm nên có thể quá 1000 dòng
+        fetchAllRows(() => supabase.from('class_teachers').select('teacher_id, is_primary, classes(name, graduated)').order('id')),
       ]);
       if (error) return fail(400, error.message);
       const classesByTeacher = {};
@@ -384,17 +385,17 @@ async function handle(method, rawUrl, body = {}) {
 
     // ---------------- students ----------------
     if (path === '/students' && method === 'get') {
-      let query = supabase.from('students').select('*, classes(name)').order('full_name');
-      query = query.eq('graduated', q.graduated === '1');
-      if (q.class_id) query = query.eq('class_id', q.class_id);
       // J: giáo lý viên chỉ thấy học viên lớp mình phụ trách
-      if (meRole() === 'teacher') {
-        const ids = await myClassIds();
-        query = query.in('class_id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000']);
-      }
-      const { data, error } = await query;
-      if (error) return fail(400, error.message);
-      return ok(sortStudents((data || []).map((s) => ({ ...s, class_name: s.classes?.name || null }))));
+      const myIds = meRole() === 'teacher' ? await myClassIds() : null;
+      // Giáo xứ lớn có thể quá 1000 học viên -> đọc theo trang (thêm id để thứ tự giữa các trang cố định)
+      const data = await fetchAllRows(() => {
+        let query = supabase.from('students').select('*, classes(name)').order('full_name').order('id');
+        query = query.eq('graduated', q.graduated === '1');
+        if (q.class_id) query = query.eq('class_id', q.class_id);
+        if (myIds) query = query.in('class_id', myIds.length ? myIds : ['00000000-0000-0000-0000-000000000000']);
+        return query;
+      });
+      return ok(sortStudents(data.map((s) => ({ ...s, class_name: s.classes?.name || null }))));
     }
     if (path === '/students' && method === 'post') {
       if (!body.full_name) return fail(400, 'Thiếu họ tên học viên');
@@ -660,9 +661,9 @@ async function handle(method, rawUrl, body = {}) {
       const ids = (students || []).map((s) => s.id);
       let recs = [];
       if (ids.length) {
-        const { data } = await supabase.from('spiritual_records').select('student_id, task_id, done')
-          .eq('date', q.date).in('student_id', ids);
-        recs = data || [];
+        // số em x số việc trong một ngày có thể quá 1000
+        recs = await fetchAllRows(() => supabase.from('spiritual_records').select('student_id, task_id, done')
+          .eq('date', q.date).in('student_id', ids).order('student_id').order('task_id'));
       }
       return ok(sortStudents((students || []).map((s) => {
         const done = {};
@@ -959,9 +960,10 @@ async function handle(method, rawUrl, body = {}) {
 
       // CỔNG DUYỆT: chỉ các lớp GIÁO LÝ CHÍNH QUY phải có đơn review 'approved'.
       // Lớp giáo lý ngoại thường duyệt RIÊNG (đóng ngay khi Admin duyệt), KHÔNG chặn kết thúc năm học.
-      const { data: reviews } = await supabase.from('class_reviews')
-        .select('class_id, status, decisions').eq('parish_id', pid);
-      const revByClass = {}; (reviews || []).forEach((r) => { revByClass[r.class_id] = r; });
+      // đơn duyệt tích lũy qua các năm (mỗi lớp một đơn) -> đọc theo trang
+      const reviews = await fetchAllRows(() => supabase.from('class_reviews')
+        .select('class_id, status, decisions').eq('parish_id', pid).order('id'));
+      const revByClass = {}; reviews.forEach((r) => { revByClass[r.class_id] = r; });
       const pending = chain.filter((c) => revByClass[c.id]?.status !== 'approved');
       if (pending.length) return fail(400, `Còn ${pending.length} lớp giáo lý trong năm chưa được duyệt: ${pending.map((c) => c.name).join(', ')}. Cần GLV gửi và Admin duyệt đủ các lớp giáo lý trong năm trước khi kết thúc năm học.`);
 
@@ -1095,9 +1097,9 @@ async function handle(method, rawUrl, body = {}) {
       const { data: active } = await supabase.from('classes')
         .select('id, name, kind, is_graduation, order_index').eq('parish_id', pid).eq('graduated', false).order('order_index');
       const activeList = active || [];
-      const { data: reviews } = await supabase.from('class_reviews').select('*').eq('parish_id', pid);
-      const byClass = {}; (reviews || []).forEach((r) => { byClass[r.class_id] = r; });
-      const subIds = [...new Set((reviews || []).map((r) => r.submitted_by).filter(Boolean))];
+      const reviews = await fetchAllRows(() => supabase.from('class_reviews').select('*').eq('parish_id', pid).order('id'));
+      const byClass = {}; reviews.forEach((r) => { byClass[r.class_id] = r; });
+      const subIds = [...new Set(reviews.map((r) => r.submitted_by).filter(Boolean))];
       const names = {};
       if (subIds.length) {
         const { data: profs } = await supabase.from('profiles').select('id, full_name').in('id', subIds);
@@ -1143,9 +1145,10 @@ async function handle(method, rawUrl, body = {}) {
 
     // ---------------- lưu trữ (tra cứu năm cũ) ----------------
     if (path === '/archive-years' && method === 'get') {
-      const [{ data: cls }, { data: studs }] = await Promise.all([
-        supabase.from('classes').select('id, school_year').eq('parish_id', pid).eq('graduated', true),
-        supabase.from('students').select('class_id').eq('graduated', true),
+      // học viên các năm cũ dồn lại rất nhanh quá 1000 -> đọc theo trang
+      const [cls, studs] = await Promise.all([
+        fetchAllRows(() => supabase.from('classes').select('id, school_year').eq('parish_id', pid).eq('graduated', true).order('id')),
+        fetchAllRows(() => supabase.from('students').select('class_id').eq('graduated', true).order('id')),
       ]);
       const yearByClass = {}; (cls || []).forEach((c) => { yearByClass[c.id] = c.school_year || 'Không rõ năm'; });
       const agg = {};
@@ -1161,8 +1164,9 @@ async function handle(method, rawUrl, body = {}) {
       const ids = (cls || []).map((c) => c.id);
       const counts = {};
       if (ids.length) {
-        const { data: studs } = await supabase.from('students').select('class_id').eq('graduated', true).in('class_id', ids);
-        (studs || []).forEach((s) => { counts[s.class_id] = (counts[s.class_id] || 0) + 1; });
+        // cả một năm có thể quá 1000 học viên; lọc graduated ở máy vì fetchByIds chỉ lọc theo id
+        const studs = await fetchByIds('students', 'class_id, graduated', 'class_id', ids, ['id']);
+        studs.forEach((s) => { if (s.graduated === true) counts[s.class_id] = (counts[s.class_id] || 0) + 1; });
       }
       return ok((cls || []).map((c) => ({ ...c, year: c.school_year, student_count: counts[c.id] || 0 })));
     }
@@ -1174,8 +1178,8 @@ async function handle(method, rawUrl, body = {}) {
         supabase.from('grade_columns').select('*').eq('class_id', q.class_id).order('order_index').order('created_at'),
       ]);
       const colIds = (columns || []).map((c) => c.id);
-      let grades = [];
-      if (colIds.length) { const { data } = await supabase.from('grades').select('student_id, column_id, score').in('column_id', colIds); grades = data || []; }
+      // lớp đông x nhiều cột có thể quá 1000 ô điểm
+      const grades = await fetchByIds('grades', 'student_id, column_id, score', 'column_id', colIds, ['student_id', 'column_id']);
       const scores = {};
       grades.forEach((g) => { (scores[g.student_id] = scores[g.student_id] || {})[g.column_id] = Number(g.score); });
       return ok({
@@ -1187,11 +1191,11 @@ async function handle(method, rawUrl, body = {}) {
     // ---------------- học sinh đã ra trường / xét tốt nghiệp ----------------
     // Nguồn: students.grad_passed (true=tốt nghiệp, false=không đạt). Kèm năm + loại lớp.
     if (path === '/graduates' && method === 'get') {
-      const { data, error } = await supabase.from('students')
+      // tích lũy qua các năm -> đọc theo trang
+      const data = await fetchAllRows(() => supabase.from('students')
         .select('id, full_name, saint_name, birth_date, gender, sacrament, avatar_url, grad_passed, classes(name, school_year, kind)')
-        .not('grad_passed', 'is', null);
-      if (error) return fail(400, error.message);
-      const grads = (data || []).map((s) => ({
+        .not('grad_passed', 'is', null).order('id'));
+      const grads = data.map((s) => ({
         id: s.id, full_name: s.full_name, saint_name: s.saint_name, birth_date: s.birth_date,
         gender: s.gender, sacrament: s.sacrament, avatar_url: s.avatar_url,
         passed: s.grad_passed === true,
@@ -1321,20 +1325,23 @@ async function handle(method, rawUrl, body = {}) {
 
     // ---------------- thi online (GLV) ----------------
     if (path === '/exams' && method === 'get') {
-      const { data: exams, error } = await supabase.from('exams')
-        .select('*, classes(name)').eq('parish_id', pid).order('created_at', { ascending: false });
-      if (error) { if (/exams/i.test(error.message || '')) return ok([]); return fail(400, error.message); }
-      const ids = (exams || []).map((e) => e.id);
+      let exams;
+      try {
+        exams = await fetchAllRows(() => supabase.from('exams')
+          .select('*, classes(name)').eq('parish_id', pid).order('created_at', { ascending: false }).order('id'));
+      } catch (error) { if (/exams/i.test(error.message || '')) return ok([]); return fail(400, error.message); }
+      const ids = exams.map((e) => e.id);
       const joined = {}, subs = {}, qc = {};
       if (ids.length) {
-        const [{ data: att }, { data: qs }] = await Promise.all([
-          supabase.from('exam_attempts').select('exam_id, status').in('exam_id', ids),
-          supabase.from('exam_questions').select('exam_id').in('exam_id', ids),
+        // số lượt làm bài / số câu của mọi đề cộng lại dễ quá 1000 dòng
+        const [att, qs] = await Promise.all([
+          fetchByIds('exam_attempts', 'exam_id, status', 'exam_id', ids, ['id']),
+          fetchByIds('exam_questions', 'exam_id', 'exam_id', ids, ['id']),
         ]);
-        (att || []).forEach((a) => { joined[a.exam_id] = (joined[a.exam_id] || 0) + 1; if (a.status === 'submitted') subs[a.exam_id] = (subs[a.exam_id] || 0) + 1; });
-        (qs || []).forEach((q) => { qc[q.exam_id] = (qc[q.exam_id] || 0) + 1; });
+        att.forEach((a) => { joined[a.exam_id] = (joined[a.exam_id] || 0) + 1; if (a.status === 'submitted') subs[a.exam_id] = (subs[a.exam_id] || 0) + 1; });
+        qs.forEach((q) => { qc[q.exam_id] = (qc[q.exam_id] || 0) + 1; });
       }
-      return ok((exams || []).map((e) => ({ ...e, class_name: e.classes?.name || null, joined: joined[e.id] || 0, submitted: subs[e.id] || 0, num_questions: qc[e.id] || 0 })));
+      return ok(exams.map((e) => ({ ...e, class_name: e.classes?.name || null, joined: joined[e.id] || 0, submitted: subs[e.id] || 0, num_questions: qc[e.id] || 0 })));
     }
     if (path === '/exams' && method === 'post') {
       const qs = Array.isArray(body.questions) ? body.questions : [];
@@ -1468,11 +1475,11 @@ async function handle(method, rawUrl, body = {}) {
     }
     // admin xem lịch sử đã gửi (mỗi người nhận một dòng; trang Thông báo gom theo lần gửi)
     if (path === '/notifications/sent' && method === 'get') {
-      const { data, error } = await supabase.from('notifications')
+      // mỗi người nhận một dòng nên vài chục lần gửi đã quá 1000; cắt ở 1000 làm lần gửi cũ nhất thiếu người nhận
+      const data = await fetchAllRows(() => supabase.from('notifications')
         .select('id, title, content, created_at, read, sender_id, recipient_id, recipient:profiles!notifications_recipient_id_fkey(full_name, saint_name), sender:profiles!notifications_sender_id_fkey(full_name)')
-        .eq('type', 'admin').order('created_at', { ascending: false }).limit(1000);
-      if (error) return fail(400, error.message);
-      return ok((data || []).map(({ recipient, sender, ...n }) => ({
+        .eq('type', 'admin').order('created_at', { ascending: false }).order('id'));
+      return ok(data.map(({ recipient, sender, ...n }) => ({
         ...n,
         recipient_name: [recipient?.saint_name, recipient?.full_name].filter(Boolean).join(' '),
         sender_name: sender?.full_name || '',
@@ -1489,11 +1496,13 @@ async function handle(method, rawUrl, body = {}) {
 
     // ---------------- kiểm toán thu chi ----------------
     if (path === '/transactions' && method === 'get') {
-      let query = supabase.from('transactions').select('*, classes(name)').order('date', { ascending: false }).order('created_at', { ascending: false });
-      if (q.class_id) query = query.eq('class_id', q.class_id);
-      const { data, error } = await query;
-      if (error) return fail(400, error.message);
-      return ok((data || []).map((t) => ({ ...t, class_name: t.classes?.name || null })));
+      // sổ thu chi cả giáo xứ qua nhiều năm có thể quá 1000 khoản
+      const data = await fetchAllRows(() => {
+        let query = supabase.from('transactions').select('*, classes(name)').order('date', { ascending: false }).order('created_at', { ascending: false }).order('id');
+        if (q.class_id) query = query.eq('class_id', q.class_id);
+        return query;
+      });
+      return ok(data.map((t) => ({ ...t, class_name: t.classes?.name || null })));
     }
     if (path === '/transactions' && method === 'post') {
       if (!body.content || !(Number(body.amount) > 0)) return fail(400, 'Cần nội dung và số tiền lớn hơn 0');
@@ -1635,9 +1644,10 @@ async function handle(method, rawUrl, body = {}) {
         attention = { notMarked, absentStreak, noColumns };
       }
       // danh sách năm học (để lọc) + năm hiện tại
-      const { data: allCls } = await supabase.from('classes').select('school_year, graduated').eq('parish_id', pid);
-      const years = [...new Set((allCls || []).map((c) => c.school_year).filter(Boolean))].sort().reverse();
-      const currentYear = (allCls || []).filter((c) => !c.graduated).map((c) => c.school_year).find(Boolean) || null;
+      // lớp của mọi năm cộng dồn có thể quá 1000
+      const allCls = await fetchAllRows(() => supabase.from('classes').select('school_year, graduated').eq('parish_id', pid).order('id'));
+      const years = [...new Set(allCls.map((c) => c.school_year).filter(Boolean))].sort().reverse();
+      const currentYear = allCls.filter((c) => !c.graduated).map((c) => c.school_year).find(Boolean) || null;
       return ok({ counts, classAverages, attendanceByWeek, attention, years, currentYear, year: wantYear || currentYear });
     }
 
