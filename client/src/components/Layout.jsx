@@ -19,7 +19,7 @@ import TourRunner from './TourRunner.jsx';
 import {
   IconHome, IconStudents, IconClass, IconCheck, IconGrades,
   IconDice, IconGame, IconTeacher, IconLogout, IconBell, IconMoney, IconEditImage, IconArchive, IconCert, IconStore, IconExam, IconExt, IconGuide,
-  IconChat, IconSliders, IconKey, IconClock, IconLock, IconAlert, IconCopy,
+  IconChat, IconSliders, IconKey, IconClock, IconLock, IconAlert,
 } from './Icons.jsx';
 
 // group: nhóm hiển thị trên sidebar ('' = không có tiêu đề nhóm). Thứ tự trong mảng = thứ tự hiện.
@@ -85,20 +85,6 @@ export default function Layout({ children }) {
   const [installBarHidden, setInstallBarHidden] = useState(() => { try { return localStorage.getItem('hideInstallBar') === '1'; } catch { return false; } });
   const showInstallBar = !installBarHidden && !isStandalone();
   const [pricing, setPricing] = useState(false);
-  const [promoOpen, setPromoOpen] = useState(true); // banner khuyến mãi: hiện mỗi lần tải trang (F5), tắt khi bấm X
-  const [promoCopied, setPromoCopied] = useState(false);
-  const copyPromo = () => {
-    const code = 'GIAOLYSO50';
-    try {
-      const ta = document.createElement('textarea');
-      ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); } catch { /* noop */ }
-      document.body.removeChild(ta);
-    } catch { /* noop */ }
-    navigator.clipboard?.writeText(code).catch(() => {});
-    setPromoCopied(true); setTimeout(() => setPromoCopied(false), 1800);
-  };
   const [feedback, setFeedback] = useState(false);
   const [pwModal, setPwModal] = useState(false);
   const [notifs, setNotifs] = useState([]);
@@ -388,20 +374,6 @@ export default function Layout({ children }) {
         </div>
       )}
 
-      {/* Banner khuyến mãi cho user gói free (hiện mỗi lần tải trang, tắt bằng X hoặc nền) */}
-      {!pro && !sa && promoOpen && (
-        <div className="promo-overlay" onClick={() => setPromoOpen(false)}>
-          <div className="promo-box" onClick={(e) => e.stopPropagation()}>
-            <button className="promo-close" onClick={() => setPromoOpen(false)} aria-label="Đóng">✕</button>
-            <img className="promo-img" src="/coupon50.png" alt="Giảm 50%, nhập mã GIAOLYSO50"
-              onClick={() => { setPromoOpen(false); setPricing(true); }} />
-            <div className="promo-code">
-              <span>Mã ưu đãi: <b>GIAOLYSO50</b></span>
-              <button className="btn sm" onClick={copyPromo}>{promoCopied ? '✓ Đã sao chép' : <><IconCopy className="bi" />Sao chép mã</>}</button>
-            </div>
-          </div>
-        </div>
-      )}
       {feedback && <FeedbackModal user={user} parish={parish} onClose={() => setFeedback(false)} />}
       {pwModal && <ChangePasswordModal email={user?.email} onClose={() => setPwModal(false)} />}
     </div>
