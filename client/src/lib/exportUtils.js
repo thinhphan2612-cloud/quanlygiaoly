@@ -1,4 +1,12 @@
-import * as XLSX from 'xlsx';
+import { toast } from './toast';
+
+// Thư viện Excel (~140 KB nén) chỉ tải khi thật sự xuất / nhập Excel, không kéo theo khi mở trang.
+let xlsxP = null;
+export function loadXlsx() {
+  if (!xlsxP) xlsxP = import('xlsx').catch((e) => { xlsxP = null; throw e; });
+  return xlsxP;
+}
+const xlsxFail = () => toast.err('Không tải được bộ xuất Excel, kiểm tra mạng rồi thử lại');
 
 // columns: [{ label, get: (row) => value, width? }]
 // subtitle: chuỗi 1 dòng HOẶC mảng nhiều dòng
@@ -14,7 +22,8 @@ function headerRows(title, subtitle) {
 }
 
 // Xuất Excel (.xlsx). totalsRow: mảng theo cột (dòng tổng); summary: dòng chú thích cuối.
-export function exportXlsx({ filename, sheetName = 'Sheet1', title, subtitle, columns, rows, totalsRow, summary }) {
+export async function exportXlsx({ filename, sheetName = 'Sheet1', title, subtitle, columns, rows, totalsRow, summary }) {
+  let XLSX; try { XLSX = await loadXlsx(); } catch { xlsxFail(); return; }
   const aoa = [
     ...headerRows(title, subtitle),
     columns.map((c) => c.label),
@@ -30,7 +39,8 @@ export function exportXlsx({ filename, sheetName = 'Sheet1', title, subtitle, co
 }
 
 // Xuất Excel nhiều sheet: sheets = [{ name, title, subtitle, columns, rows }]
-export function exportXlsxMulti({ filename, sheets }) {
+export async function exportXlsxMulti({ filename, sheets }) {
+  let XLSX; try { XLSX = await loadXlsx(); } catch { xlsxFail(); return; }
   const wb = XLSX.utils.book_new();
   const used = new Set();
   sheets.forEach((sh, i) => {

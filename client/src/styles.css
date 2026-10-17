@@ -2205,6 +2205,14 @@ a.gmx-link, a.gmx-link:hover { text-decoration: none; }
 .guide-body { display: grid; grid-template-columns: 232px 1fr; gap: 24px; margin-top: 22px; align-items: start; }
 .guide-toc { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 2px; }
 .gd-toc-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 4px 10px 8px; }
+/* Đang tải mã trang (lazy-load): thanh chạy mảnh ở đầu vùng nội dung, hiện sau 150ms để trang nhanh không nháy */
+.page-loading { position: relative; height: 3px; margin: 2px 0 12px; overflow: hidden; border-radius: 3px; opacity: 0; animation: pl-in .2s .15s forwards; }
+.page-loading-bar { position: absolute; top: 0; bottom: 0; width: 35%; background: var(--primary); border-radius: 3px; animation: pl-run 1s ease-in-out infinite; }
+@keyframes pl-in { to { opacity: 1; } }
+@keyframes pl-run { from { left: -35%; } to { left: 100%; } }
+.page-error { max-width: 520px; margin: 40px auto; text-align: center; }
+.page-error h2 { margin-bottom: 6px; }
+
 .guide-toc button { text-align: left; border: 0; border-left: 1px solid var(--border); background: transparent; color: var(--muted); padding: 6px 12px; border-radius: 0; cursor: pointer; font-size: 13.5px; line-height: 1.4; transition: color .12s, border-color .12s; }
 .guide-toc button:hover { color: var(--text); border-left-color: #b8bec8; }
 .guide-toc button.active { color: var(--primary); font-weight: 600; border-left: 2px solid var(--primary); padding-left: 11px; }

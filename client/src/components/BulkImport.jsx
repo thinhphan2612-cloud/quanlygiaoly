@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import * as XLSX from 'xlsx';
+import { loadXlsx } from '../lib/exportUtils';
 import api from '../api';
 import { COLUMNS, parseStudents, parseAoa, templateAoa } from '../lib/parseStudents';
 import { IconDownload, IconUpload } from './Icons.jsx';
@@ -28,8 +28,9 @@ export default function BulkImport({ classes, onClose, onDone }) {
     const name = (file.name || '').toLowerCase();
     if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
       const reader = new FileReader();
-      reader.onload = () => {
+      reader.onload = async () => {
         try {
+          const XLSX = await loadXlsx(); // chỉ tải thư viện Excel khi nhập file
           const wb = XLSX.read(reader.result, { type: 'array' });
           const ws = wb.Sheets[wb.SheetNames[0]];
           const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
@@ -49,7 +50,9 @@ export default function BulkImport({ classes, onClose, onDone }) {
     e.target.value = '';
   }
 
-  function downloadTemplate() {
+  async function downloadTemplate() {
+    let XLSX;
+    try { XLSX = await loadXlsx(); } catch { setError('Không tải được form mẫu, kiểm tra mạng rồi thử lại'); return; }
     const ws = XLSX.utils.aoa_to_sheet(templateAoa());
     ws['!cols'] = COLUMNS.map((h) => ({ wch: Math.max(14, h.length + 2) }));
     const wb = XLSX.utils.book_new();
