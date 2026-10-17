@@ -1460,7 +1460,7 @@ async function handle(method, rawUrl, body = {}) {
       return ok((data || []).map((t) => ({ ...t, class_name: t.classes?.name || null })));
     }
     if (path === '/transactions' && method === 'post') {
-      if (!body.content || body.amount === undefined || body.amount === '') return fail(400, 'Cần nội dung và số tiền');
+      if (!body.content || !(Number(body.amount) > 0)) return fail(400, 'Cần nội dung và số tiền lớn hơn 0');
       const { data, error } = await supabase.from('transactions').insert({
         parish_id: pid, class_id: nn(body.class_id), content: body.content,
         type: body.type === 'chi' ? 'chi' : 'thu', amount: Number(body.amount) || 0,
@@ -1469,9 +1469,22 @@ async function handle(method, rawUrl, body = {}) {
       if (error) return fail(400, error.message);
       return ok(data);
     }
-    if (seg[0] === 'transactions' && seg[1] && method === 'delete') {
-      const { error } = await supabase.from('transactions').delete().eq('id', seg[1]);
+    // Sửa một khoản (không đổi lớp; RLS: GLV chỉ sửa khoản lớp mình, admin chỉ sửa khoản chung)
+    if (seg[0] === 'transactions' && seg[1] && method === 'put') {
+      if (!body.content || !(Number(body.amount) > 0)) return fail(400, 'Cần nội dung và số tiền lớn hơn 0');
+      const { data, error } = await supabase.from('transactions').update({
+        content: body.content, type: body.type === 'chi' ? 'chi' : 'thu', amount: Number(body.amount),
+        date: body.date || new Date().toISOString().slice(0, 10), note: nn(body.note),
+      }).eq('id', seg[1]).select();
       if (error) return fail(400, error.message);
+      if (!data?.length) return fail(403, 'Bạn không có quyền sửa khoản này');
+      return ok(data[0]);
+    }
+    if (seg[0] === 'transactions' && seg[1] && method === 'delete') {
+      // RLS chặn thì không báo lỗi mà xóa 0 dòng -> phải tự kiểm
+      const { data, error } = await supabase.from('transactions').delete().eq('id', seg[1]).select('id');
+      if (error) return fail(400, error.message);
+      if (!data?.length) return fail(403, 'Bạn không có quyền xóa khoản này');
       return ok({ ok: true });
     }
 

@@ -1800,6 +1800,73 @@ button.gx-stat:hover { border-color: var(--primary); }
   .crx-bar { padding: 8px 10px; border-radius: 12px; }
 }
 
+/* ===== Thu chi (Audit): tiền tố aux- ===== */
+.aux-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.aux-filters select { width: auto; min-width: 180px; }
+.aux-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.aux-chip { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.aux-chip.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.aux-range { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.aux-range input { width: auto; }
+.aux-hint { font-size: 12px; }
+.aux-h { margin: 0 0 12px; font-size: 16px; }
+.aux-h .muted { font-size: 13px; font-weight: 400; }
+.aux-form { display: grid; grid-template-columns: auto minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 0 12px; align-items: end; }
+.aux-f-note { grid-column: 2 / 4; }
+.aux-f-btn { grid-column: 4; }
+.aux-f-btn .btn { width: 100%; }
+.aux-type { display: inline-flex; padding: 3px; gap: 3px; border-radius: 10px; background: var(--primary-soft); }
+.aux-type button { border: 0; background: none; padding: 8px 16px; border-radius: 8px; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; }
+.aux-type button.on.thu { background: #16a34a; color: #fff; }
+.aux-type button.on.chi { background: #dc2626; color: #fff; }
+.aux-money { position: relative; }
+.aux-money input { padding-right: 28px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.aux-money span { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.btn.aux-btn-chi { background: #dc2626; border-color: #dc2626; }
+.aux-listbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.aux-search { flex: 1 1 220px; max-width: 320px; }
+.aux-spacer { flex: 1; }
+.aux-table td, .aux-table th, .aux-perclass td, .aux-perclass th { vertical-align: middle; }
+.aux-table .num, .aux-perclass .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.aux-thu { color: var(--success); }
+.aux-chi { color: var(--danger); }
+.aux-bal { font-weight: 600; }
+.aux-perclass .aux-bal { font-weight: 700; }
+.aux-perclass tr.aux-sel td { background: var(--primary-soft); }
+.aux-month td { background: var(--bg); font-weight: 700; font-size: 13px; color: var(--heading); padding-top: 8px; padding-bottom: 8px; }
+.aux-c-content small { display: block; font-size: 12px; }
+.aux-c-date { white-space: nowrap; }
+.aux-table td.aux-c-act { text-align: right; white-space: nowrap; }
+.aux-c-act .row-links { margin-top: 0; }
+.aux-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+@media (max-width: 900px) {
+  .aux-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .aux-f-type, .aux-f-content, .aux-f-note, .aux-f-btn { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .aux-filters select, .aux-search { flex: 1 1 100%; max-width: none; }
+  .aux-table thead { display: none; }
+  .aux-table, .aux-table tbody { display: block; }
+  .aux-table tr.aux-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 10px 2px; border-top: 1px solid var(--border); }
+  .aux-table tr.aux-row td { display: block; padding: 0; border: 0; }
+  .aux-table td.aux-c-content { grid-column: 1; grid-row: 1; font-weight: 600; }
+  .aux-table td.aux-c-date { grid-column: 1; grid-row: 2; font-size: 12px; color: var(--muted); }
+  .aux-table tr.aux-row td.aux-thu, .aux-table tr.aux-row td.aux-chi { grid-column: 2; grid-row: 1; font-size: 15px; font-weight: 700; }
+  .aux-table tr.aux-row td.aux-thu:empty, .aux-table tr.aux-row td.aux-chi:empty { display: none; }
+  .aux-table tr.aux-row td.aux-bal { grid-column: 2; grid-row: 2; font-size: 12px; font-weight: 500; color: var(--muted); }
+  .aux-table tr.aux-row td.aux-bal::before { content: 'Dư '; }
+  .aux-table tr.aux-row td[data-label="Lớp"] { grid-column: 1; font-size: 12px; color: var(--muted); }
+  .aux-table td.aux-c-act { grid-column: 1 / -1; text-align: left; }
+  .aux-table tr.aux-month { display: flex; justify-content: space-between; gap: 10px; padding: 0; }
+  .aux-table tr.aux-month td { display: block; border: 0; padding: 8px 4px; background: none; }
+  .aux-table tr.aux-month td:empty { display: none; }
+  .aux-table tr.aux-month td:first-child { margin-right: auto; }
+  .aux-table tr.aux-month td.aux-thu::before { content: 'Thu '; font-weight: 500; }
+  .aux-table tr.aux-month td.aux-chi::before { content: 'Chi '; font-weight: 500; }
+  .aux-table tr.aux-month { background: var(--bg); border-radius: 8px; margin-top: 8px; }
+  .aux-table tr.aux-empty { display: block; }
+}
+
 /* ===== Hướng dẫn sử dụng (Guide / Wiki) ===== */
 .guide-wrap { max-width: 1100px; margin: 0 auto; }
 .guide-head h1 { margin: 0 0 4px; font-size: 26px; }
