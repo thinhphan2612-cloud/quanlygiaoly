@@ -150,3 +150,15 @@ export const IconClock = (p) => (
 export const IconCopy = (p) => (
   <svg {...base} {...p}><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2" /><path d="M15.5 8.5V6A1.5 1.5 0 0 0 14 4.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5" /></svg>
 );
+export const IconVolume = (p) => (
+  <svg {...base} {...p}><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" /><path d="M15.5 9a4 4 0 0 1 0 6" /><path d="M18 6.5a7.5 7.5 0 0 1 0 11" /></svg>
+);
+export const IconVolumeOff = (p) => (
+  <svg {...base} {...p}><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" /><path d="m16 9.5 5 5" /><path d="m21 9.5-5 5" /></svg>
+);
+export const IconExpand = (p) => (
+  <svg {...base} {...p}><path d="M4 9V4h5" /><path d="M20 9V4h-5" /><path d="M4 15v5h5" /><path d="M20 15v5h-5" /></svg>
+);
+export const IconShuffle = (p) => (
+  <svg {...base} {...p}><path d="M3 7h3.5c2 0 3.2 1 4.3 2.7l2.4 4.6c1.1 1.7 2.3 2.7 4.3 2.7H21" /><path d="M3 17h3.5c1.4 0 2.4-.5 3.2-1.4" /><path d="M13.3 8.4c.8-.9 1.8-1.4 3.2-1.4H21" /><path d="m18.5 4.5 2.5 2.5-2.5 2.5" /><path d="m18.5 14.5 2.5 2.5-2.5 2.5" /></svg>
+);

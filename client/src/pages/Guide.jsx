@@ -177,11 +177,14 @@ const GUIDE = [
   {
     id: 'trabai', title: 'Chọn trả bài (bốc thăm)', roles: ['admin', 'teacher'],
     tags: 'chọn trả bài bốc thăm ngẫu nhiên random gọi tên kiểm tra bài cũ',
-    summary: 'Bốc thăm ngẫu nhiên một học viên trong lớp để trả bài cho công bằng và sinh động.',
+    summary: 'Bốc thăm ngẫu nhiên học viên lên trả bài bằng nhiều kiểu vui (Đua, Vòng quay, Lật thẻ, Quay số), hoặc chia nhóm ngẫu nhiên.',
     steps: [
-      'Chọn lớp, bấm bốc thăm; hệ thống chọn ngẫu nhiên một học viên.',
+      'Chọn lớp và kiểu bốc, bấm nút bốc. Em được chọn hiện to giữa màn hình, bấm "Thuộc bài" hoặc "Chưa thuộc".',
+      'Bật "Bỏ qua em vắng hôm nay" để không gọi trúng em đã điểm danh vắng; "Không gọi lại em đã gọi" để mỗi em chỉ lên một lần (em chưa thuộc vẫn được gọi lại).',
+      'Bấm "Chiếu" để hiện toàn màn hình khi nối máy chiếu hoặc TV. Có thể tắt âm thanh ở góc trên.',
+      'Tab "Chia nhóm": chọn số nhóm hoặc số em mỗi nhóm, có thể đặt tên nhóm theo 12 Tông đồ, rồi sao chép danh sách gửi Zalo.',
     ],
-    tips: ['Dùng đầu giờ để kiểm tra bài cũ, tạo không khí và sự công bằng.'],
+    tips: ['Danh sách đã gọi và kết quả thuộc bài được nhớ trên máy này trong ngày, tải lại trang không mất. Danh sách này không ghi vào bảng điểm.'],
   },
   {
     id: 'game', title: 'Game học giáo lý', roles: ['admin', 'teacher'],

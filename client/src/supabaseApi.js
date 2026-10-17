@@ -1535,8 +1535,14 @@ async function handle(method, rawUrl, body = {}) {
 
     // ---------------- dashboard ----------------
     if (path === '/dashboard' && method === 'get') {
-      // xem lại năm cũ qua ?year= (RLS lọc: GLV chỉ thấy lớp mình từng phụ trách)
-      const wantYear = q.year || null;
+      // xem lại năm cũ qua ?year= (RLS lọc: GLV chỉ thấy lớp mình từng phụ trách).
+      // ?year= trùng năm hiện tại -> xử lý như năm hiện tại (trước đây tải lại tự động gửi kèm năm
+      // hiện tại nên bị coi là năm cũ và khối "Cần chú ý" biến mất).
+      // lớp của mọi năm cộng dồn có thể quá 1000
+      const allCls = await fetchAllRows(() => supabase.from('classes').select('school_year, graduated').eq('parish_id', pid).order('id'));
+      const years = [...new Set(allCls.map((c) => c.school_year).filter(Boolean))].sort().reverse();
+      const currentYear = allCls.filter((c) => !c.graduated).map((c) => c.school_year).find(Boolean) || null;
+      const wantYear = q.year && q.year !== currentYear ? q.year : null;
       const STU_COLS = 'id, origin_id, full_name, saint_name, class_id, avatar_url, parent_phone, father_phone, mother_phone';
       let students, classes;
       if (wantYear) {
@@ -1643,11 +1649,6 @@ async function handle(method, rawUrl, body = {}) {
         const noColumns = C.filter((c) => !colCount[c.id] && S.some((s) => s.class_id === c.id)).map((c) => ({ class_id: c.id, name: c.name }));
         attention = { notMarked, absentStreak, noColumns };
       }
-      // danh sách năm học (để lọc) + năm hiện tại
-      // lớp của mọi năm cộng dồn có thể quá 1000
-      const allCls = await fetchAllRows(() => supabase.from('classes').select('school_year, graduated').eq('parish_id', pid).order('id'));
-      const years = [...new Set(allCls.map((c) => c.school_year).filter(Boolean))].sort().reverse();
-      const currentYear = allCls.filter((c) => !c.graduated).map((c) => c.school_year).find(Boolean) || null;
       return ok({ counts, classAverages, attendanceByWeek, attention, years, currentYear, year: wantYear || currentYear });
     }
 
