@@ -1743,6 +1743,62 @@ button.gx-stat:hover { border-color: var(--primary); }
   .exx-filters select { flex: 1 1 100%; }
 }
 
+/* ===== Chứng chỉ (Certificates): tiền tố crx- ===== */
+.crx-h { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 16px; }
+.crx-h > span { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 12px; font-weight: 700; }
+.crx-seg { flex-wrap: wrap; }
+.crx-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 14px; }
+.crx-grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 0 14px; }
+.crx-hint { font-size: 12px; margin: 4px 0 0; }
+.crx-warn { color: #c2410c; font-weight: 600; }
+.crx-link { border: 0; background: none; padding: 0; font: inherit; font-size: 13px; font-weight: 600; color: var(--primary); cursor: pointer; }
+.crx-under { display: block; margin-top: 4px; font-size: 12.5px; }
+.crx-listhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 4px 0 6px; font-size: 13px; color: var(--muted); }
+.crx-listhead b { color: var(--heading); }
+.crx-list { border: 1px solid var(--border); border-radius: 10px; padding: 4px 10px; max-height: 360px; overflow-y: auto; }
+.crx-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.crx-row:last-child { border-bottom: 0; }
+.crx-row.on .crx-name > span { color: var(--heading); font-weight: 500; }
+.crx-name { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 8px; margin: 0; font-size: 14px; color: var(--text); font-weight: 400; cursor: pointer; }
+.crx-name input { flex: 0 0 auto; width: 16px; height: 16px; margin-top: 2px; accent-color: var(--primary); }
+.crx-name > span { display: flex; flex-direction: column; }
+.crx-miss { display: inline-flex; align-items: center; gap: 4px; color: #c2410c; font-size: 11.5px; font-weight: 500; }
+.crx-miss .bi { width: 12px; height: 12px; }
+.crx .crx-rank { flex: 0 0 96px; width: 96px; padding: 6px 8px; font-size: 13px; }
+.crx .crx-role { flex: 0 0 76px; width: 76px; padding: 6px 8px; font-size: 13px; }
+.crx-pvhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.crx-pvhead .crx-h { margin-bottom: 4px; }
+.crx-pvnav { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.crx-pv { margin-top: 10px; max-width: 640px; }
+.crx-pv.port { max-width: 440px; }
+.crx-pv iframe { display: block; width: 100%; border: 1px solid var(--border); border-radius: 8px; background: #fff; aspect-ratio: 4000 / 2828; }
+.crx-pv.port iframe { aspect-ratio: 2475 / 3500; }
+.crx-adv { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+.crx-adv summary { cursor: pointer; font-weight: 600; color: var(--heading); font-size: 14px; }
+.crx-frames { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start; margin-top: 12px; }
+.crx-frame { position: relative; width: 132px; cursor: pointer; margin: 0; }
+.crx-frame.port { width: 86px; }
+.crx-fimg { height: 94px; border: 1px solid var(--border); border-radius: 6px; background: #fff; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.crx-frame.port .crx-fimg { height: 122px; }
+.crx-fimg img { width: 100%; height: 100%; object-fit: contain; }
+.crx-frame.on .crx-fimg { border: 2px solid var(--primary); box-shadow: 0 0 0 2px rgba(37, 99, 235, .25); }
+.crx-fname { font-size: 11px; margin-top: 3px; text-align: center; line-height: 1.2; color: var(--muted); }
+.crx-fadd .crx-fimg { border-style: dashed; color: var(--muted); font-size: 12px; text-align: center; }
+.crx-fdel { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; border: none; background: #ef4444; color: #fff; cursor: pointer; line-height: 20px; padding: 0; font-size: 15px; }
+.crx-insets { margin-top: 12px; display: grid; gap: 6px; max-width: 360px; }
+.crx-inset { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.crx-inset > span { width: 64px; }
+.crx .crx-inset input { width: 72px; padding: 6px 8px; text-align: center; }
+.crx-bar { position: sticky; bottom: 0; z-index: 20; display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 16px; padding: 10px 14px; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 -6px 18px rgba(15, 23, 42, .08); }
+.crx-bar-info { margin-right: auto; font-size: 13.5px; color: var(--muted); }
+.crx-bar-info b { color: var(--heading); }
+.crx-foot { margin-top: 8px; }
+@media (max-width: 640px) {
+  .crx-grid3, .crx-grid2 { grid-template-columns: 1fr; }
+  .crx-list { max-height: none; }
+  .crx-bar { padding: 8px 10px; border-radius: 12px; }
+}
+
 /* ===== Hướng dẫn sử dụng (Guide / Wiki) ===== */
 .guide-wrap { max-width: 1100px; margin: 0 auto; }
 .guide-head h1 { margin: 0 0 4px; font-size: 26px; }

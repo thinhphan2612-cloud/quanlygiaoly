@@ -89,7 +89,7 @@ function marriageHtml({ parish, student: s, extra = {}, frame, inset }) {
     <div class="content" style="top:22%;left:9%;right:9%;bottom:9%;align-items:center;text-align:center">
       <div class="title2 m-title">CHỨNG CHỈ GIÁO LÝ HÔN NHÂN</div>
       <div class="m-cert"><b>${esc(extra.certify_line || ('Linh mục ' + gx + ' chứng nhận'))}</b></div>
-      <div class="m-name">${esc(extra.role || 'Anh')}: ${esc(fullName(s))}</div>
+      <div class="m-name">${esc(s?._role || extra.role || 'Anh')}: ${esc(fullName(s))}</div>
       <div class="m-line">Sinh ngày: ${esc(dmy(s?.birth_date))}</div>
       <div class="m-parents"><span>Con Ông: ${esc(parentName(s?.father_saint, s?.father_name))}</span><span>Và Bà: ${esc(parentName(s?.mother_saint, s?.mother_name))}</span></div>
       <div class="m-line">Đã hoàn thành chương trình giáo lý hôn nhân</div>
@@ -139,6 +139,7 @@ function scoutHtml({ parish, student: s, extra = {}, frame, inset }) {
 // ---------- Giấy khen (khổ ngang) ----------
 function meritHtml({ parish, student: s, extra = {}, frame, inset }) {
   const place = extra.place || parish?.name || '';
+  const rank = s?._rank ?? extra.rank ?? ''; // vị thứ riêng từng em; trống thì không in dòng này
   const nameUp = (parish?.name || '').replace(/^Giáo xứ\s*/i, '').toUpperCase();
   return `
   <div class="cert landscape">
@@ -151,7 +152,7 @@ function meritHtml({ parish, student: s, extra = {}, frame, inset }) {
       <div class="k-sub">LINH MỤC QUẢN XỨ ${esc(nameUp)}</div>
       <div class="k-sub2">TẶNG KHEN GIÁO LÝ SINH</div>
       <div class="k-name">${esc(fullName(s))}</div>
-      <div class="k-fields"><span><span class="k-lb">LỚP:</span> <b>${esc(extra.class_name || '')}</b></span><span><span class="k-lb">VỊ THỨ:</span> <b>${esc(extra.rank || '')}</b></span></div>
+      <div class="k-fields"><span><span class="k-lb">LỚP:</span> <b>${esc(extra.class_name || '')}</b></span>${rank ? `<span><span class="k-lb">VỊ THỨ:</span> <b>${esc(rank)}</b></span>` : ''}</div>
       <div class="k-reason">${esc((extra.merit_reason || 'Đã chuyên chăm học giáo lý và siêng năng tham dự Thánh Lễ').toUpperCase())}</div>
       ${extra.year ? `<div class="k-year">NĂM HỌC: ${esc(extra.year)}</div>` : ''}
       <div class="k-sign">
@@ -231,14 +232,15 @@ const RENDERERS = {
   merit: { render: meritHtml, orient: 'landscape' },
 };
 // Khung dựng sẵn theo loại (user chọn; admin có thể thêm khung tùy chỉnh).
+// inset = lề mặc định (% tờ) để nội dung không đè hoa văn; giáo xứ lưu lề riêng thì dùng lề đã lưu.
 export const BUILTIN_FRAMES = {
   baptism: [
     { id: 'bt1', name: 'Cổ điển (viền lá)', url: '/certs/frame-baptism-1.png' },
     { id: 'bt2', name: 'Hoa văn góc', url: '/certs/frame-baptism-2.png' },
   ],
-  marriage: [{ id: 'mr1', name: 'Chuẩn', url: '/certs/frame-marriage.png' }],
+  marriage: [{ id: 'mr1', name: 'Chuẩn', url: '/certs/frame-marriage.png', inset: { top: 2.5, right: 2.5, bottom: 2, left: 2.5 } }],
   scout: [{ id: 'sc1', name: 'Chuẩn', url: '/certs/frame-scout.png' }],
-  merit: [{ id: 'mrt1', name: 'Chuẩn', url: '/certs/frame-merit.jpg' }],
+  merit: [{ id: 'mrt1', name: 'Chuẩn', url: '/certs/frame-merit.jpg', inset: { top: 6, right: 5, bottom: 7, left: 5 } }],
 };
 export const CERT_ORIENT = { baptism: 'portrait', marriage: 'landscape', scout: 'landscape', merit: 'landscape' };
 
@@ -261,23 +263,27 @@ export function certPageHtml({ type = 'baptism', frame, inset, parish, students 
   return pageHtml(inner, r.orient);
 }
 
-// In ra PDF qua iframe ẩn (trình duyệt render tiếng Việt + font chuẩn)
+// In ra PDF qua iframe ẩn (trình duyệt render tiếng Việt + font chuẩn).
+// Trả về Promise xong khi hộp thoại in đóng (Chrome/Edge chặn ở print(); Safari iOS trả về ngay).
 export function printCert(opts) {
-  const html = certPageHtml(opts);
-  const iframe = document.createElement('iframe');
-  Object.assign(iframe.style, { position: 'fixed', right: '0', bottom: '0', width: '0', height: '0', border: '0' });
-  document.body.appendChild(iframe);
-  const win = iframe.contentWindow;
-  const doc = win.document; doc.open(); doc.write(html); doc.close();
-  let done = false;
-  const go = () => {
-    if (done) return; done = true;
-    win.focus(); win.print(); setTimeout(() => document.body.removeChild(iframe), 1500);
-  };
-  // ĐỢI cả font VÀ ảnh frame tải xong mới in (frame nặng, nếu in sớm sẽ mất khung).
-  const imgs = [...doc.images];
-  const imgReady = Promise.all(imgs.map((img) => (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise((r) => { img.onload = r; img.onerror = r; })));
-  const fontsReady = doc.fonts?.ready || Promise.resolve();
-  Promise.all([imgReady, fontsReady]).then(() => setTimeout(go, 250));
-  setTimeout(go, 8000); // phòng hờ nếu có ảnh không tải được
+  return new Promise((resolve) => {
+    const html = certPageHtml(opts);
+    const iframe = document.createElement('iframe');
+    Object.assign(iframe.style, { position: 'fixed', right: '0', bottom: '0', width: '0', height: '0', border: '0' });
+    document.body.appendChild(iframe);
+    const win = iframe.contentWindow;
+    const doc = win.document; doc.open(); doc.write(html); doc.close();
+    let done = false;
+    const go = () => {
+      if (done) return; done = true;
+      win.focus(); win.print(); resolve();
+      setTimeout(() => document.body.removeChild(iframe), 1500);
+    };
+    // ĐỢI cả font VÀ ảnh frame tải xong mới in (frame nặng, nếu in sớm sẽ mất khung).
+    const imgs = [...doc.images];
+    const imgReady = Promise.all(imgs.map((img) => (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise((r) => { img.onload = r; img.onerror = r; })));
+    const fontsReady = doc.fonts?.ready || Promise.resolve();
+    Promise.all([imgReady, fontsReady]).then(() => setTimeout(go, 250));
+    setTimeout(go, 8000); // phòng hờ nếu có ảnh không tải được
+  });
 }
