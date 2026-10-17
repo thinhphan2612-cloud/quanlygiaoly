@@ -1,6 +1,6 @@
 // Hộp xác nhận của ứng dụng, thay cho confirm() của trình duyệt.
 // Dùng: if (!(await confirmDialog('Xóa lớp "A"? Học viên sẽ về "chưa xếp lớp".'))) return;
-// Có thể truyền object: { message, okText, danger }.
+// Có thể truyền object: { message, okText, cancelText, danger }.
 let push = null;
 
 export function confirmDialog(opts) {

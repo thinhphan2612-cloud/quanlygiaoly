@@ -9,6 +9,7 @@ import { SkeletonTable } from '../components/Skeleton.jsx';
 import { confirmDialog } from '../lib/confirm';
 import PageHeader from '../components/PageHeader.jsx';
 import RowMenu from '../components/RowMenu.jsx';
+import { keepOptionOrder } from '../lib/examOrder';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const KINDS = [{ v: '15p', l: '15 phút', dur: 15 }, { v: '1tiet', l: '1 tiết', dur: 45 }, { v: 'hocky', l: 'Học kỳ', dur: 60 }, { v: 'khac', l: 'Khác' }];
@@ -126,9 +127,16 @@ export default function Exams() {
 }
 
 /* ---------------- Soạn đề (tạo mới / sửa nháp / nhân bản) ---------------- */
+const MAX_DUR = 180;
+const draftKey = (mode, src) => (mode === 'edit' ? `examDraft:edit:${src?.id}` : 'examDraft:new');
+function readDraft(key) { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } }
+function writeDraft(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* bộ nhớ trình duyệt bị chặn */ } }
+function dropDraft(key) { try { localStorage.removeItem(key); } catch { /* noop */ } }
+
 function ExamBuilder({ classes, draft, onDone, onCancel }) {
   const src = draft?.exam;
   const mode = draft?.mode || 'new';
+  const key = draftKey(mode, src);
   const init = useMemo(() => {
     if (!src) return { title: '', classId: '', kind: '15p', weight: 1, duration: 15, picked: {} };
     const picked = {};
@@ -148,46 +156,78 @@ function ExamBuilder({ classes, draft, onDone, onCancel }) {
   const [topicId, setTopicId] = useState('');
   const [n, setN] = useState(10);
   const [bq, setBq] = useState('');            // tìm trong ngân hàng
-  const [picked, setPicked] = useState(init.picked); // qid -> question (giữ thứ tự chèn)
-  const [err, setErr] = useState('');
+  const [peek, setPeek] = useState(null);      // câu ngân hàng đang xem đáp án
+  const [picked, setPicked] = useState(init.picked); // qid -> question (thứ tự chèn = thứ tự câu)
+  const [errs, setErrs] = useState({});
   const [saving, setSaving] = useState(false);
   const busy = useRef(false);
   const [editing, setEditing] = useState(null); // câu đang sửa / thêm mới
-  const [qtab, setQtab] = useState(src ? 'chosen' : 'bank'); // bank | chosen
+  const [qtab, setQtab] = useState(src ? 'chosen' : 'bank'); // điện thoại: bank | chosen
   const snap = (v) => JSON.stringify([v.title, v.classId, v.kind, String(v.weight), String(v.duration), Object.values(v.picked).map((q) => [q.id, q.text, q.options, q.correct])]);
-  const dirty = snap({ title, classId, kind, weight, duration, picked }) !== snap(init) || (mode === 'copy');
+  const cur = { title, classId, kind, weight, duration, picked };
+  const dirty = snap(cur) !== snap(init) || mode === 'copy';
 
   useEffect(() => {
     fetch('/exam-question-bank.json').then((r) => r.json()).then((b) => {
       setBank(b); setTopicId(b.topics?.[0]?.id || '');
     }).catch(() => setBank({ topics: [] }));
   }, []);
+  // Khôi phục bản nháp soạn dở (lưu trong trình duyệt này)
+  useEffect(() => {
+    if (mode === 'copy') return;
+    const d = readDraft(key);
+    if (!d || snap(d) === snap(init)) return;
+    const t = new Date(d.ts || Date.now()); const p2 = (x) => String(x).padStart(2, '0');
+    const when = `${p2(t.getHours())}:${p2(t.getMinutes())} ngày ${p2(t.getDate())}/${p2(t.getMonth() + 1)}`;
+    const cnt = Object.keys(d.picked || {}).length;
+    confirmDialog({ message: `Khôi phục đề đang soạn dở${d.title ? ` "${d.title}"` : ''}?\n\nBản nháp có ${cnt} câu, lưu lúc ${when} trên máy này.`, okText: 'Khôi phục', cancelText: 'Bắt đầu lại' })
+      .then((yes) => {
+        if (!yes) { dropDraft(key); return; }
+        setTitle(d.title || ''); setClassId(d.classId || ''); setKind(d.kind || '15p');
+        setWeight(d.weight ?? 1); setDuration(d.duration ?? 0); setPicked(d.picked || {});
+        if (cnt) setQtab('chosen');
+      });
+  }, []); // eslint-disable-line
+  // Tự lưu bản nháp khi có thay đổi
+  useEffect(() => {
+    if (!dirty || saving) return undefined;
+    const t = setTimeout(() => writeDraft(key, { ...cur, ts: Date.now() }), 600);
+    return () => clearTimeout(t);
+  }, [title, classId, kind, weight, duration, picked]); // eslint-disable-line
+  // Cảnh báo khi tải lại / đóng tab lúc đang soạn
+  useEffect(() => {
+    if (!dirty) return undefined;
+    const h = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', h);
+    return () => window.removeEventListener('beforeunload', h);
+  }, [dirty]);
 
   const topic = bank?.topics?.find((t) => t.id === topicId);
   const fq = fold(bq.trim());
-  const bankShown = (topic?.questions || []).filter((q) => !fq || fold(q.text).includes(fq));
+  const bankShown = (topic?.questions || []).filter((q) => !fq || fold([q.text, ...(q.options || [])].join(' ')).includes(fq));
   const pickedList = Object.values(picked);
+  const perTopic = pickedList.reduce((m, q) => { if (q._topic) m[q._topic] = (m[q._topic] || 0) + 1; return m; }, {});
   const isPicked = (q) => !!picked[q.id];
   function toggle(q) { setPicked((p) => { const c = { ...p }; if (c[q.id]) delete c[q.id]; else c[q.id] = { ...q, _topic: topicId }; return c; }); }
   function pickRandom() {
     if (!topic) return;
-    const pool = topic.questions.filter((q) => !picked[q.id]);
+    const pool = bankShown.filter((q) => !picked[q.id]); // đang tìm thì bốc trong kết quả tìm
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
     const add = pool.slice(0, Math.max(0, Number(n) || 0));
-    if (!add.length) { toast.err('Đã chọn hết câu của ngân hàng này'); return; }
+    if (!add.length) { toast.err(fq ? 'Đã chọn hết các câu khớp tìm kiếm' : 'Đã chọn hết câu của cấp này'); return; }
     setPicked((p) => { const c = { ...p }; add.forEach((q) => { c[q.id] = { ...q, _topic: topicId }; }); return c; });
     toast(`Đã thêm ${add.length} câu vào đề`);
   }
-  function clearTopic() { setPicked((p) => { const c = { ...p }; (topic?.questions || []).forEach((q) => delete c[q.id]); return c; }); }
+  function clearTopic() { setPicked((p) => Object.fromEntries(Object.entries(p).filter(([, q]) => q._topic !== topicId))); }
   function saveQuestion(q) {
     setPicked((p) => {
       const id = q.id || ('c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5));
-      return { ...p, [id]: { ...q, id } };
+      return { ...p, [id]: { ...p[id], ...q, id } };
     });
     setEditing(null);
   }
   function removeQ(id) { setPicked((p) => { const c = { ...p }; delete c[id]; return c; }); }
-  // Đổi thứ tự câu: dựng lại object theo thứ tự mới (thứ tự chèn = thứ tự câu)
+  // Đổi thứ tự câu: dựng lại object theo thứ tự mới
   function moveQ(i, d) {
     const list = Object.values(picked); const j = i + d;
     if (j < 0 || j >= list.length) return;
@@ -202,123 +242,171 @@ function ExamBuilder({ classes, draft, onDone, onCancel }) {
   async function leave() {
     if (busy.current) return;
     if (dirty && !(await confirmDialog(mode === 'edit' ? 'Bỏ các thay đổi chưa lưu của đề này?' : 'Bỏ đề đang soạn? Các câu đã chọn sẽ mất.'))) return;
+    dropDraft(key);
     onCancel();
   }
 
+  function validate() {
+    const e = {};
+    const w = Number(weight); const d = Number(duration);
+    if (!title.trim()) e.title = 'Nhập tên đề thi';
+    if (!classId) e.classId = 'Chọn lớp thi';
+    if (!(w >= 0.5 && w <= 10)) e.weight = 'Hệ số từ 0,5 đến 10';
+    if (!(Number.isInteger(d) && d >= 0 && d <= MAX_DUR)) e.duration = `Số phút nguyên từ 0 đến ${MAX_DUR}`;
+    if (!pickedList.length) e.questions = 'Chọn ít nhất 1 câu hỏi';
+    return e;
+  }
   async function save() {
     if (busy.current) return;
-    setErr('');
-    if (!title.trim()) return setErr('Nhập tên đề thi');
-    if (!classId) return setErr('Chọn lớp thi');
-    if (!pickedList.length) return setErr('Chọn ít nhất 1 câu hỏi');
+    const e = validate();
+    setErrs(e);
+    const first = ['title', 'classId', 'weight', 'duration', 'questions'].find((k) => e[k]);
+    if (first) {
+      if (first === 'questions') setQtab('bank');
+      document.querySelector(`[data-err="${first}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      toast.err(e[first]);
+      return;
+    }
     busy.current = true; setSaving(true);
     try {
       const questions = pickedList.map((q) => ({ text: q.text, options: q.options, correct: q.correct }));
-      const payload = { title: title.trim(), class_id: classId, kind, weight: Number(weight) || 1, duration_min: Number(duration) || null, questions };
-      if (mode === 'edit') { await api.put(`/exams/${src.id}`, payload); toast('Đã lưu đề'); onDone(src.id); }
-      else { const { data } = await api.post('/exams', payload); toast(`Đã tạo đề "${payload.title}"`); onDone(data.id); }
-    } catch (e) { setErr(errMsg(e, mode === 'edit' ? 'Lưu đề thất bại' : 'Tạo đề thất bại')); busy.current = false; setSaving(false); }
+      const payload = { title: title.trim(), class_id: classId, kind, weight: Number(weight), duration_min: Number(duration) || null, questions };
+      let id;
+      if (mode === 'edit') { await api.put(`/exams/${src.id}`, payload); id = src.id; toast('Đã lưu đề'); }
+      else { const { data } = await api.post('/exams', payload); id = data.id; toast(`Đã tạo đề "${payload.title}"`); }
+      dropDraft(key);
+      onDone(id);
+    } catch (err) { toast.err(errMsg(err, mode === 'edit' ? 'Lưu đề thất bại' : 'Tạo đề thất bại')); busy.current = false; setSaving(false); }
   }
+  const fieldErr = (k) => errs[k] && <div className="exx-ferr">{errs[k]}</div>;
+  const clearErr = (k) => errs[k] && setErrs((x) => ({ ...x, [k]: '' }));
 
   const heading = mode === 'edit' ? 'Sửa đề thi' : mode === 'copy' ? 'Nhân bản đề thi' : 'Soạn đề thi';
+  const className = classes.find((c) => c.id === classId)?.name;
   return (
-    <div>
+    <div className="exx-builder">
       <div className="att-head"><h1 style={{ margin: 0 }}>{heading}</h1>
         <button className="btn ghost" onClick={leave}>← Quay lại</button></div>
       {mode === 'copy' && <p className="muted exx-sub">Chọn lớp cho bản sao. Đề gốc giữ nguyên.</p>}
 
-      <div className="panel">
-        <div className="row">
-          <div className="field" style={{ flex: 2 }}><label>Tên đề *</label><input data-tour="exam-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="VD: Kiểm tra 15 phút Bài 5" /></div>
-          <div data-tour="exam-class" className="field" style={{ flex: 1 }}><label>Lớp thi *</label>
-            <select value={classId} onChange={(e) => setClassId(e.target.value)}>
+      <div className="panel exx-setup">
+        <div className="exx-set1">
+          <div className="field" data-err="title"><label>Tên đề *</label>
+            <input data-tour="exam-title" className={errs.title ? 'invalid' : ''} value={title} onChange={(e) => { setTitle(e.target.value); clearErr('title'); }} placeholder="VD: Kiểm tra 15 phút Bài 5" />
+            {fieldErr('title')}
+          </div>
+          <div data-tour="exam-class" className="field" data-err="classId"><label>Lớp thi *</label>
+            <select className={errs.classId ? 'invalid' : ''} value={classId} onChange={(e) => { setClassId(e.target.value); clearErr('classId'); }}>
               <option value="">Chọn lớp</option>
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
+            {fieldErr('classId')}
           </div>
         </div>
-        <div className="row">
-          <div className="field" style={{ flex: 1 }}><label>Loại bài</label>
+        <div className="exx-set2">
+          <div className="field"><label>Loại bài</label>
             <select value={kind} onChange={(e) => changeKind(e.target.value)}>{KINDS.map((k) => <option key={k.v} value={k.v}>{k.l}</option>)}</select>
           </div>
-          <div className="field" style={{ flex: 1 }}><label>Hệ số điểm</label>
-            <input type="number" min="1" step="0.5" value={weight} onChange={(e) => setWeight(e.target.value)} />
+          <div className="field" data-err="weight"><label>Hệ số</label>
+            <input className={errs.weight ? 'invalid' : ''} type="number" inputMode="decimal" min="0.5" max="10" step="0.5" value={weight} onChange={(e) => { setWeight(e.target.value); clearErr('weight'); }} />
+            {fieldErr('weight')}
           </div>
-          <div className="field" style={{ flex: 1 }}><label>Thời lượng (phút, 0 = không giới hạn)</label>
-            <input type="number" min="0" value={duration} onChange={(e) => setDuration(e.target.value)} />
+          <div className="field" data-err="duration"><label>Phút làm bài</label>
+            <input className={errs.duration ? 'invalid' : ''} type="number" inputMode="numeric" min="0" max={MAX_DUR} step="1" value={duration} onChange={(e) => { setDuration(e.target.value); clearErr('duration'); }} />
+            {fieldErr('duration') || <div className="exx-fhint">0 = không giới hạn</div>}
           </div>
         </div>
       </div>
 
-      <div className="panel">
-        <div className="seg" style={{ flexWrap: 'wrap', marginBottom: 12 }}>
-          <button type="button" className={`seg-btn ${qtab === 'bank' ? 'on' : ''}`} onClick={() => setQtab('bank')}>Ngân hàng câu hỏi</button>
-          <button type="button" className={`seg-btn ${qtab === 'chosen' ? 'on' : ''}`} onClick={() => setQtab('chosen')}>Câu hỏi trong đề ({pickedList.length})</button>
+      <div className={`exx-qwrap on-${qtab}`} data-err="questions">
+        <div className="seg exx-tabs">
+          <button type="button" className={`seg-btn ${qtab === 'bank' ? 'on' : ''}`} onClick={() => setQtab('bank')}>Ngân hàng</button>
+          <button type="button" className={`seg-btn ${qtab === 'chosen' ? 'on' : ''}`} onClick={() => setQtab('chosen')}>Trong đề ({pickedList.length})</button>
         </div>
 
-        {qtab === 'bank' ? (
-          !bank ? <p className="muted">Đang tải ngân hàng câu hỏi…</p> : (
+        <div className="panel exx-pane exx-pane-bank">
+          <h2 className="exx-ph">Ngân hàng câu hỏi</h2>
+          {!bank ? <p className="muted">Đang tải ngân hàng câu hỏi…</p> : (
             <>
-              <div className="row" style={{ alignItems: 'flex-end' }}>
-                <div className="field" style={{ flex: '1 1 200px' }}><label>Ngân hàng (theo cấp)</label>
-                  <select value={topicId} onChange={(e) => setTopicId(e.target.value)}>
-                    {bank.topics.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.count} câu)</option>)}
-                  </select>
-                </div>
-                <div className="field" style={{ flex: '0 0 100px' }}><label>Số câu bốc</label><input type="number" min="1" value={n} onChange={(e) => setN(e.target.value)} /></div>
-                <div className="field" style={{ flex: '1 1 auto' }}><button data-tour="exam-random" className="btn ghost" style={{ width: '100%' }} onClick={pickRandom}><IconDice className="bi" />Bốc ngẫu nhiên</button></div>
-                <div className="field" style={{ flex: '1 1 auto' }}><button className="btn ghost" style={{ width: '100%' }} onClick={clearTopic}>Bỏ chọn cấp này</button></div>
+              <div className="field"><label>Cấp</label>
+                <select value={topicId} onChange={(e) => { setTopicId(e.target.value); setPeek(null); }}>
+                  {bank.topics.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.count} câu{perTopic[t.id] ? `, đã chọn ${perTopic[t.id]}` : ''})</option>)}
+                </select>
               </div>
-              <input className="exx-bsearch" type="search" value={bq} onChange={(e) => setBq(e.target.value)} placeholder="Tìm câu hỏi trong ngân hàng này…" aria-label="Tìm câu hỏi" />
-              <div className="pick-list exx-bank" style={{ maxHeight: '52vh' }}>
+              <div className="exx-pickrow">
+                <input className="exx-n" type="number" min="1" value={n} onChange={(e) => setN(e.target.value)} aria-label="Số câu bốc" />
+                <button data-tour="exam-random" className="btn ghost" onClick={pickRandom}><IconDice className="bi" />{fq ? 'Bốc trong kết quả tìm' : 'Bốc ngẫu nhiên'}</button>
+              </div>
+              <input className="exx-bsearch" type="search" value={bq} onChange={(e) => setBq(e.target.value)} placeholder="Tìm câu hỏi hoặc đáp án…" aria-label="Tìm câu hỏi" />
+              <div className="exx-bankmeta">
+                <span className="muted">{fq ? `${bankShown.length} câu khớp` : `${bankShown.length} câu`}{perTopic[topicId] ? ` · đã chọn ${perTopic[topicId]}` : ''}</span>
+                {perTopic[topicId] > 0 && <button type="button" className="exx-linkbtn" onClick={clearTopic}>Bỏ các câu đã chọn ở cấp này</button>}
+              </div>
+              <div className="pick-list exx-bank exx-scroll">
                 {bankShown.map((q) => (
-                  <label key={q.id} className="fp-chk" style={{ alignItems: 'flex-start' }}>
-                    <input type="checkbox" checked={isPicked(q)} onChange={() => toggle(q)} style={{ marginTop: 3 }} />
-                    <span style={{ fontSize: 13.5 }}>{q.text}</span>
-                  </label>
+                  <div key={q.id} className={`exx-bq${isPicked(q) ? ' on' : ''}`}>
+                    <label className="fp-chk">
+                      <input type="checkbox" checked={isPicked(q)} onChange={() => toggle(q)} />
+                      <span>{q.text}</span>
+                    </label>
+                    <button type="button" className="exx-peek" onClick={() => setPeek(peek === q.id ? null : q.id)} aria-expanded={peek === q.id}>{peek === q.id ? 'Ẩn' : 'Đáp án'}</button>
+                    {peek === q.id && (
+                      <div className="exx-bopts">
+                        {(q.options || []).map((opt, idx) => (
+                          <div key={idx} className={`rv-opt ${idx === q.correct ? 'correct' : ''}`}><b>{LETTERS[idx]}.</b> {opt}{idx === q.correct && <span className="rv-tag ok"> đáp án</span>}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
                 {bankShown.length === 0 && <p className="muted">Không có câu nào khớp.</p>}
               </div>
             </>
-          )
-        ) : (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-              <button className="btn ghost sm" onClick={() => setEditing({ text: '', options: ['', ''], correct: 0 })}><IconPlus className="bi" />Thêm câu tự soạn</button>
-            </div>
-            {pickedList.length === 0 ? (
-              <p className="muted">Chưa có câu nào. Sang tab <b>Ngân hàng câu hỏi</b> để bốc, hoặc bấm "Thêm câu tự soạn". Câu nào cũng sửa, xóa, đổi thứ tự được trước khi lưu đề.</p>
-            ) : (
-              <div className="pick-list" style={{ maxHeight: '56vh' }}>
-                {pickedList.map((q, i) => (
-                  <div className="rv-q" key={q.id}>
-                    <div className="rv-q-t exx-qrow">
-                      <span className="exx-qtext"><b>Câu {i + 1}.</b> {q.text}{q.custom ? <span className="muted" style={{ fontSize: 11 }}> · tự soạn</span> : ''}</span>
-                      <span className="row-links exx-qact">
-                        <button onClick={() => moveQ(i, -1)} disabled={i === 0} title="Đưa lên" aria-label="Đưa lên">↑</button>
-                        <button onClick={() => moveQ(i, 1)} disabled={i === pickedList.length - 1} title="Đưa xuống" aria-label="Đưa xuống">↓</button>
-                        <button onClick={() => setEditing(q)}>Sửa</button>
-                        <button className="danger" onClick={() => removeQ(q.id)}>Xóa</button>
-                      </span>
-                    </div>
-                    {(q.options || []).map((opt, idx) => (
-                      <div key={idx} className={`rv-opt ${idx === q.correct ? 'correct' : ''}`}>
-                        <b>{LETTERS[idx]}.</b> {opt}{idx === q.correct && <span className="rv-tag ok"> đáp án</span>}
-                      </div>
-                    ))}
+          )}
+        </div>
+
+        <div className="panel exx-pane exx-pane-chosen">
+          <div className="exx-chead">
+            <h2 className="exx-ph">Câu hỏi trong đề ({pickedList.length})</h2>
+            <button className="btn ghost sm" onClick={() => setEditing({ text: '', options: ['', ''], correct: 0 })}><IconPlus className="bi" />Thêm câu tự soạn</button>
+          </div>
+          {pickedList.length > 1 && <p className="muted exx-fhint">Thứ tự dưới đây dùng cho đề in giấy. Thi online, mỗi em được xáo thứ tự câu khác nhau.</p>}
+          {errs.questions && !pickedList.length && <div className="exx-ferr">{errs.questions}</div>}
+          {pickedList.length === 0 ? (
+            <p className="muted">Chưa có câu nào. Chọn câu ở ngân hàng, bấm "Bốc ngẫu nhiên", hoặc "Thêm câu tự soạn".</p>
+          ) : (
+            <div className="pick-list exx-scroll">
+              {pickedList.map((q, i) => (
+                <div className="rv-q" key={q.id}>
+                  <div className="rv-q-t exx-qrow">
+                    <span className="exx-qtext"><b>Câu {i + 1}.</b> {q.text}
+                      {q.custom ? <span className="exx-qtag">tự soạn</span> : q.edited ? <span className="exx-qtag">đã sửa</span> : null}
+                      {keepOptionOrder(q.options) && <span className="exx-qtag" title="Đáp án kiểu &quot;Cả A và B&quot;, &quot;các ý trên&quot; nên khi thi online không xáo thứ tự đáp án">giữ thứ tự đáp án</span>}
+                    </span>
+                    <span className="row-links exx-qact">
+                      <button onClick={() => moveQ(i, -1)} disabled={i === 0} title="Đưa lên" aria-label="Đưa lên">↑</button>
+                      <button onClick={() => moveQ(i, 1)} disabled={i === pickedList.length - 1} title="Đưa xuống" aria-label="Đưa xuống">↓</button>
+                      <button onClick={() => setEditing(q)}>Sửa</button>
+                      <button className="danger" onClick={() => removeQ(q.id)}>Xóa</button>
+                    </span>
                   </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
+                  {(q.options || []).map((opt, idx) => (
+                    <div key={idx} className={`rv-opt ${idx === q.correct ? 'correct' : ''}`}>
+                      <b>{LETTERS[idx]}.</b> {opt}{idx === q.correct && <span className="rv-tag ok"> đáp án</span>}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {err && <div className="error">{err}</div>}
-      <div className="modal-actions">
+      <div className="exx-bar">
+        <span className="exx-bar-info"><b>{pickedList.length} câu</b>{className ? ` · ${className}` : ''}{Number(duration) > 0 ? ` · ${duration} phút` : ''}</span>
         <button className="btn ghost" onClick={leave} disabled={saving}>Hủy</button>
         <button data-tour="exam-save" className="btn" onClick={save} disabled={saving}>
-          {saving ? 'Đang lưu…' : mode === 'edit' ? `Lưu đề (${pickedList.length} câu)` : `Tạo đề (${pickedList.length} câu)`}
+          {saving ? 'Đang lưu…' : mode === 'edit' ? 'Lưu đề' : 'Tạo đề'}
         </button>
       </div>
 
@@ -347,14 +435,19 @@ function QuestionEditor({ init, onSave, onClose }) {
     const opts = options.map((s) => s.trim()).filter(Boolean);
     if (!text.trim()) return toast.err('Nhập nội dung câu hỏi');
     if (opts.length < 2) return toast.err('Cần ít nhất 2 đáp án');
-    onSave({ id: init.id, text: text.trim(), options: opts, correct: Math.min(correct, opts.length - 1), custom: true });
+    if (!options[correct]?.trim()) return toast.err('Đáp án đúng đang để trống');
+    if (new Set(opts.map((o) => o.toLowerCase())).size < opts.length) return toast.err('Có hai đáp án giống nhau');
+    // Chỉ số đáp án đúng tính lại sau khi bỏ các ô trống
+    const right = opts.indexOf(options[correct].trim());
+    if (!dirty && init.id) { onClose(); return; }
+    onSave({ id: init.id, text: text.trim(), options: opts, correct: right, custom: init.custom || !init.id, edited: !!init.id && !init.custom });
   }
   return (
     <div className="modal-backdrop" onClick={close}>
       <div className="modal wide" onClick={(e) => e.stopPropagation()}>
         <h2 style={{ marginTop: 0 }}>{init.id ? 'Sửa câu hỏi' : 'Thêm câu hỏi'}</h2>
         <div className="field"><label>Nội dung câu hỏi *</label>
-          <textarea rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="VD: Bí tích nào Chúa Giêsu lập trong bữa Tiệc Ly?" /></div>
+          <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="VD: Bí tích nào Chúa Giêsu lập trong bữa Tiệc Ly?" /></div>
         <div className="field" style={{ marginBottom: 6 }}><label>Các đáp án <span className="muted" style={{ fontWeight: 400 }}>(chấm ô tròn ở đáp án ĐÚNG)</span></label></div>
         {options.map((o, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -367,6 +460,7 @@ function QuestionEditor({ init, onSave, onClose }) {
           </div>
         ))}
         {options.length < 6 && <button className="btn ghost sm" type="button" onClick={addOpt} style={{ marginTop: 2 }}>+ Thêm đáp án</button>}
+        <p className="muted exx-fhint">Đáp án kiểu "Cả A và B đều đúng" hay "Tất cả các ý trên" sẽ được giữ nguyên thứ tự khi thi online.</p>
         <div className="modal-actions">
           <button className="btn ghost" onClick={close}>Hủy</button>
           <button className="btn" onClick={save}>Lưu câu</button>

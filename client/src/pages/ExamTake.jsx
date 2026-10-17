@@ -4,6 +4,7 @@ import { supabase } from '../supabase';
 import { viError } from '../lib/viError';
 import { toast } from '../lib/toast';
 import { confirmDialog } from '../lib/confirm';
+import { pinnedOptions } from '../lib/examOrder';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const lsKey = (code) => `exam:${code}`;
@@ -13,7 +14,14 @@ function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; le
 function shuffle(arr, rnd) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function buildDisplay(questions, seedStr) {
   const rnd = mulberry32(seedFrom(seedStr));
-  return shuffle(questions, rnd).map((q) => ({ id: q.id, text: q.text, opts: shuffle((q.options || []).map((text, orig) => ({ text, orig })), rnd) }));
+  return shuffle(questions, rnd).map((q) => {
+    const opts = (q.options || []).map((text, orig) => ({ text, orig }));
+    // Đáp án kiểu "Cả A và B" / "các ý trên" đứng yên, các đáp án còn lại vẫn xáo
+    const pin = new Set(pinnedOptions(q.options));
+    const free = shuffle(opts.filter((o) => !pin.has(o.orig)), rnd);
+    let k = 0;
+    return { id: q.id, text: q.text, opts: opts.map((o) => (pin.has(o.orig) ? o : free[k++])) };
+  });
 }
 const fmt = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
 

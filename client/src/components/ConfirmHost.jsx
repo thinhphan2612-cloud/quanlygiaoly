@@ -45,7 +45,7 @@ export default function ConfirmHost() {
         <h2 id="confirm-title" className={danger ? 'danger' : ''}>{title}</h2>
         {body && <p className="confirm-body">{body}</p>}
         <div className="modal-actions">
-          <button ref={cancelRef} className="btn ghost" onClick={() => close(false)}>Quay lại</button>
+          <button ref={cancelRef} className="btn ghost" onClick={() => close(false)}>{req?.cancelText || 'Quay lại'}</button>
           <button ref={okRef} className={`btn ${danger ? 'btn-danger-solid' : ''}`} onClick={() => close(true)}>{okText}</button>
         </div>
       </div>
