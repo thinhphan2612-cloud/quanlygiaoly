@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { IconSearch } from '../components/Icons.jsx';
+import PageHeader from '../components/PageHeader.jsx';
 
 // Bỏ dấu tiếng Việt để tìm kiếm không dấu.
 const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
@@ -330,8 +331,7 @@ export default function Guide() {
   return (
     <div className="guide-wrap">
       <div className="guide-head">
-        <h1>Hướng dẫn sử dụng</h1>
-        <p className="muted">Giới thiệu các chức năng và quy trình vận hành của Giáo Lý Số. Mục có nhãn <b>PRO</b> là tính năng của gói Pro. Gõ từ khóa để tìm nhanh (không cần dấu).</p>
+        <PageHeader title="Hướng dẫn sử dụng" subtitle={<>Giới thiệu các chức năng và quy trình vận hành của Giáo Lý Số. Mục có nhãn <b>PRO</b> là tính năng của gói Pro. Gõ từ khóa để tìm nhanh (không cần dấu).</>} />
         <div className="guide-search">
           <IconSearch />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm chức năng… vd: điểm danh, thi online, chứng chỉ, lên lớp" autoFocus />

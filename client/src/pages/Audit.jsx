@@ -6,6 +6,7 @@ import { IconDownload, IconPrinter } from '../components/Icons.jsx';
 import { viDate } from '../lib/date';
 import { toast } from '../lib/toast';
 import { confirmDialog } from '../lib/confirm';
+import PageHeader from '../components/PageHeader.jsx';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (Number(n) || 0).toLocaleString('vi-VN');
@@ -81,7 +82,7 @@ export default function Audit() {
 
   return (
     <div>
-      <h1>{isAdmin ? 'Thu chi giáo xứ' : 'Thu chi lớp'}</h1>
+      <PageHeader title={isAdmin ? 'Thu chi giáo xứ' : 'Thu chi lớp'} subtitle={isAdmin ? 'Theo dõi các khoản thu, chi của giáo xứ và từng lớp.' : 'Theo dõi các khoản thu, chi của lớp bạn phụ trách.'} />
 
       <div className="audit-summary">
         <div className="audit-card thu"><div className="lbl">Tổng thu</div><div className="num">{fmt(thu)}đ</div></div>

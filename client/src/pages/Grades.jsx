@@ -11,6 +11,7 @@ import { pickClass, rememberClass } from '../lib/lastClass';
 import { toast } from '../lib/toast';
 import { SkeletonTable } from '../components/Skeleton.jsx';
 import { confirmDialog } from '../lib/confirm';
+import PageHeader from '../components/PageHeader.jsx';
 
 const round1 = (n) => Math.round(n * 10) / 10;
 
@@ -167,10 +168,9 @@ export default function Grades() {
 
   return (
     <div>
-      <div className="att-head">
-        <h1 style={{ margin: 0 }}>Điểm số</h1>
+      <PageHeader title="Điểm số" subtitle="Nhập điểm theo cột điểm của từng lớp, xem điểm trung bình và thứ hạng.">
         {isAdmin && isCurrent && !isFree && <button className="btn ghost sm" onClick={endYear} title="Chuyển cả giáo xứ sang năm học mới (làm một lần vào cuối năm)"><IconFlag className="bi" />Kết thúc năm học</button>}
-      </div>
+      </PageHeader>
       <div className="toolbar">
         {yearList.length > 1 && (
           <select value={year} onChange={(e) => setYear(e.target.value)} style={{ width: 180 }}>

@@ -7,6 +7,7 @@ import { IconAlert, IconClock, IconDice, IconDownload, IconPlus, IconPrinter, Ic
 import { toast } from '../lib/toast';
 import { SkeletonTable } from '../components/Skeleton.jsx';
 import { confirmDialog } from '../lib/confirm';
+import PageHeader from '../components/PageHeader.jsx';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const KINDS = [{ v: '15p', l: '15 phút' }, { v: '1tiet', l: '1 tiết' }, { v: 'hocky', l: 'Học kỳ' }, { v: 'khac', l: 'Khác' }];
@@ -34,8 +35,9 @@ export default function Exams() {
 
   return (
     <div>
-      <div className="att-head"><h1 style={{ margin: 0 }}>Đề thi &amp; thi online</h1>
-        <button className="btn" onClick={() => setView('build')}>+ Tạo đề</button></div>
+      <PageHeader title="Đề thi & thi online" subtitle="Soạn đề trắc nghiệm, mở phòng thi online cho học viên và chấm điểm tự động.">
+        <button className="btn" onClick={() => setView('build')}>+ Tạo đề</button>
+      </PageHeader>
       <div className="panel">
         {!loaded ? <SkeletonTable rows={3} cols={6} /> : exams.length === 0 ? <p className="muted">Chưa có đề thi nào. Bấm "Tạo đề" để soạn đề trắc nghiệm cho học viên thi online.</p> : (
           <div className="table-scroll"><table>

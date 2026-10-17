@@ -8,6 +8,7 @@ import { supabase } from '../supabase';
 import { exportXlsx } from '../lib/exportUtils';
 import { setAdminCounts } from '../lib/adminCounts';
 import { confirmDialog } from '../lib/confirm';
+import PageHeader from '../components/PageHeader.jsx';
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString('vi-VN') : '-');
 const fmtVnd = (n) => (Number(n) || 0).toLocaleString('vi-VN') + 'đ';
@@ -394,10 +395,9 @@ export default function Admin() {
 
   return (
     <div className="admin-page">
-      <div className="att-head">
-        <h1 style={{ margin: 0 }}>Quản trị hệ thống</h1>
+      <PageHeader title="Quản trị hệ thống" subtitle="Theo dõi giáo xứ, đơn hàng, thanh toán và vận hành toàn hệ thống.">
         <button className="btn ghost" onClick={() => refresh()} disabled={refreshing}>{refreshing ? 'Đang tải…' : '↻ Tải lại'}</button>
-      </div>
+      </PageHeader>
 
       <div className="admin-strip">
         <LoadMonitor />

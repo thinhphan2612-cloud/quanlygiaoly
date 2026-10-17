@@ -4,6 +4,7 @@ import { useAuth } from '../auth.jsx';
 import { toast } from '../lib/toast';
 import { SkeletonRows } from '../components/Skeleton.jsx';
 import { confirmDialog } from '../lib/confirm';
+import PageHeader from '../components/PageHeader.jsx';
 
 const emptyCreate = { email: '', password: '', full_name: '' };
 
@@ -61,10 +62,9 @@ export default function Teachers() {
 
   return (
     <div>
-      <h1>Quản lý giáo lý viên</h1>
-      <div className="toolbar">
+      <PageHeader title="Quản lý giáo lý viên" subtitle="Tài khoản đăng nhập của giáo lý viên và lớp mỗi người phụ trách.">
         <button className="btn" onClick={openCreate}>+ Thêm giáo lý viên</button>
-      </div>
+      </PageHeader>
 
       <div className="panel">
         <div className="table-scroll">

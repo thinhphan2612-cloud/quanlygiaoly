@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import api from '../api';
 import { IconFlag, IconTrophy } from '../components/Icons.jsx';
 import { pickClass, rememberClass } from '../lib/lastClass';
+import PageHeader from '../components/PageHeader.jsx';
 
 const COLORS = ['#2563eb', '#f59e0b', '#15803d', '#db2777', '#7c3aed', '#0891b2', '#dc2626', '#0ea5e9', '#e0a800', '#16a34a'];
 const initials = (name = '') => { const p = name.trim().split(/\s+/); return ((p[p.length - 2]?.[0] || '') + (p[p.length - 1]?.[0] || '')).toUpperCase() || '?'; };
@@ -80,7 +81,7 @@ export default function RandomPicker() {
 
   return (
     <div>
-      <h1>Chọn học sinh trả bài</h1>
+      <PageHeader title="Chọn học sinh trả bài" subtitle="Bốc thăm ngẫu nhiên học viên lên trả bài bằng một cuộc đua vui nhộn." />
       <div className="toolbar">
         <select value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 220 }}>
           <option value="">-- Chọn lớp --</option>

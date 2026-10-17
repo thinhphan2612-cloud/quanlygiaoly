@@ -9,6 +9,7 @@ import { useParish } from '../parish.jsx';
 import { fileToDataUrl, fileToDataUrlWide } from '../lib/img';
 import { IconArchive, IconUpload } from '../components/Icons.jsx';
 import { confirmDialog } from '../lib/confirm';
+import PageHeader from '../components/PageHeader.jsx';
 
 // Trang cài đặt quản lý của admin: giáo xứ, năm học, lên lớp cuối năm,
 // tùy chọn bật/tắt, danh sách học viên đã ra trường.
@@ -132,7 +133,7 @@ export default function Settings() {
 
   return (
     <div>
-      <h1>Cài đặt quản lý</h1>
+      <PageHeader title="Cài đặt quản lý" subtitle="Thông tin giáo xứ, giao diện, tùy chọn quản lý và gói dịch vụ." />
       {msg && <div className="info-box">{msg}</div>}
       {err && <div className="error">{err}</div>}
 

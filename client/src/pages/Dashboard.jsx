@@ -11,6 +11,7 @@ import { IconCheck, IconClass, IconDice, IconFlag, IconGradCap, IconGrades, Icon
 import { toast } from '../lib/toast';
 import { SkeletonDashboard } from '../components/Skeleton.jsx';
 import { confirmDialog } from '../lib/confirm';
+import PageHeader from '../components/PageHeader.jsx';
 
 const PALETTE = ['#2563eb', '#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#f43f5e', '#14b8a6', '#0ea5e9'];
 
@@ -267,19 +268,13 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="dash-head">
-        <div>
-          <h1 style={{ marginBottom: 4 }}>Tổng quan</h1>
-          <p className="muted" style={{ marginTop: 0 }}>
-            {isCurrent ? 'Điều hành lớp giáo lý cùng hệ thống quản lý.' : `Đang xem lại dữ liệu năm học ${year} (đã lưu trữ).`}
-          </p>
-        </div>
+      <PageHeader title="Tổng quan" subtitle={isCurrent ? 'Tình hình lớp giáo lý của giáo xứ trong năm học.' : `Đang xem lại dữ liệu năm học ${year} (đã lưu trữ).`}>
         {data.years?.length > 1 && (
           <select value={year} onChange={(e) => loadDash(e.target.value)} style={{ width: 190 }}>
             {data.years.map((y) => <option key={y} value={y}>Năm học {y}{y === data.currentYear ? ' (hiện tại)' : ''}</option>)}
           </select>
         )}
-      </div>
+      </PageHeader>
 
       {/* Thẻ thống kê */}
       <div className="dash-stats">

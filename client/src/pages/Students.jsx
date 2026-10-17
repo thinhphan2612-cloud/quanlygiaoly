@@ -15,6 +15,7 @@ import { viDate } from '../lib/date';
 import { toast } from '../lib/toast';
 import { SkeletonRows } from '../components/Skeleton.jsx';
 import { confirmDialog } from '../lib/confirm';
+import PageHeader from '../components/PageHeader.jsx';
 
 const empty = {
   full_name: '', saint_name: '', birth_date: '', gender: '',
@@ -214,7 +215,7 @@ export default function Students() {
 
   return (
     <div>
-      <h1>Quản lý học viên</h1>
+      <PageHeader title="Quản lý học viên" subtitle="Hồ sơ học viên của giáo xứ: tìm, lọc, nhập từ Excel và xuất danh sách." />
       <div className="toolbar">
         <input className="grow stu-search" placeholder="Tìm theo tên..." value={search} onChange={(e) => setSearch(e.target.value)} />
         <button className={`btn ghost ${activeCount ? 'has-badge' : ''}`} onClick={() => setShowFilter((v) => !v)}>

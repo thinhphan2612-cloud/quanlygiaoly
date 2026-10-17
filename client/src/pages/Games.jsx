@@ -3,6 +3,7 @@ import api from '../api';
 import { IconExt } from '../components/Icons.jsx';
 import { toast } from '../lib/toast';
 import { confirmDialog } from '../lib/confirm';
+import PageHeader from '../components/PageHeader.jsx';
 
 const STORE_URL = 'https://ephatastore.com';
 
@@ -79,13 +80,9 @@ export default function Games() {
 
   return (
     <div>
-      <div className="att-head">
-        <h1 style={{ margin: 0 }}>Game học giáo lý</h1>
+      <PageHeader title="Game học giáo lý" subtitle={<>Game mặc định có sẵn cho mọi tài khoản. Muốn thêm game riêng, chọn ở <b>Ephata Store</b> rồi bấm "Thêm vào Giáo Lý Số".</>}>
         <a className="btn btn-ext" href={STORE_URL} target="_blank" rel="noopener noreferrer">Thêm game từ Ephata Store <IconExt /></a>
-      </div>
-      <p className="muted" style={{ marginTop: -6 }}>
-        Game mặc định có sẵn cho mọi tài khoản. Muốn thêm game riêng, chọn ở <b>Ephata Store</b> rồi bấm "Thêm vào Giáo Lý Số".
-      </p>
+      </PageHeader>
 
       {loading ? (
         <div className="panel"><p className="muted">Đang tải…</p></div>

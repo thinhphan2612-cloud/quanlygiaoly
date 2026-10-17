@@ -17,6 +17,7 @@ import RowMenu from '../components/RowMenu.jsx';
 import { toast } from '../lib/toast';
 import { SkeletonRows } from '../components/Skeleton.jsx';
 import { confirmDialog } from '../lib/confirm';
+import PageHeader from '../components/PageHeader.jsx';
 
 const empty = {
   mode: 'new', name: '', year: '', room: '', schedule: '', promotes: true, kind: 'catechism', is_graduation: false, teachers: [],
@@ -360,7 +361,7 @@ export default function Classes() {
 
   return (
     <div>
-      <h1>Quản lý lớp học</h1>
+      <PageHeader title="Quản lý lớp học" subtitle="Tạo lớp, phân công giáo lý viên, theo dõi sĩ số và xét lên lớp cuối năm." />
       {isAdmin && (() => {
         const maxClasses = isFree ? 1 : (parish?.plan_max_classes || null); // null = không giới hạn
         const reached = maxClasses != null && classes.length >= maxClasses;

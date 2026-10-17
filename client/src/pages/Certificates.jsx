@@ -8,6 +8,7 @@ import { fileToPngBlob } from '../lib/img';
 import { IconPrinter, IconSave } from '../components/Icons.jsx';
 import { toast } from '../lib/toast';
 import { confirmDialog } from '../lib/confirm';
+import PageHeader from '../components/PageHeader.jsx';
 
 const TYPES = [
   { key: 'marriage', label: 'Giáo Lý Hôn Nhân' },
@@ -199,7 +200,7 @@ export default function Certificates() {
 
   return (
     <div>
-      <div className="att-head"><h1 style={{ margin: 0 }}>Cấp chứng chỉ / Giấy khen</h1></div>
+      <PageHeader title="Cấp chứng chỉ / Giấy khen" subtitle="Chọn khung, căn vị trí nội dung rồi cấp và in cho học viên." />
 
       <div className="panel">
         <div className="field">

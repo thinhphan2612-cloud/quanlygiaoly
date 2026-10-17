@@ -7,6 +7,7 @@ import { pickClass, rememberClass } from '../lib/lastClass';
 import { toast } from '../lib/toast';
 import { SkeletonTable } from '../components/Skeleton.jsx';
 import { confirmDialog } from '../lib/confirm';
+import PageHeader from '../components/PageHeader.jsx';
 
 // Ngày dạng YYYY-MM-DD theo giờ ĐỊA PHƯƠNG (không dùng toISOString vì lệch múi giờ).
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -72,13 +73,12 @@ export default function Attendance() {
 
   return (
     <div>
-      <div className="att-head">
-        <h1 style={{ margin: 0 }}>Điểm danh</h1>
+      <PageHeader title="Điểm danh" subtitle="Ghi nhận có mặt, đi trễ, vắng của từng buổi học và việc thiêng liêng.">
         <div className="seg">
           <button className={tab === 'giaoly' ? 'on' : ''} onClick={() => { setTab('giaoly'); setMode('day'); }}>Giáo lý</button>
           <button className={tab === 'thieng' ? 'on' : ''} onClick={() => { setTab('thieng'); setMode('day'); }}>Việc Thiêng liêng</button>
         </div>
-      </div>
+      </PageHeader>
 
       <div className="toolbar">
         <select value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 200 }}>

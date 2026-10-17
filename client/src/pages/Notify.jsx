@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
+import PageHeader from '../components/PageHeader.jsx';
 
 export default function Notify() {
   const { user } = useAuth();
@@ -38,7 +39,7 @@ export default function Notify() {
 
   return (
     <div>
-      <h1>Thông báo đến giáo lý viên</h1>
+      <PageHeader title="Thông báo đến giáo lý viên" subtitle="Gửi thông báo trong ứng dụng tới giáo lý viên của giáo xứ." />
       {msg && <div className="info-box">{msg}</div>}
       {err && <div className="error">{err}</div>}
 

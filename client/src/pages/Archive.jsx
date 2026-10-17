@@ -5,6 +5,7 @@ import { useAuth } from '../auth.jsx';
 import { exportXlsx, exportXlsxMulti, exportPdf, STT_COL, exportSubtitle, fileSlug } from '../lib/exportUtils';
 import { SACRAMENTS } from '../components/SacramentBadge.jsx';
 import { IconDownload, IconGradCap, IconPrinter } from '../components/Icons.jsx';
+import PageHeader from '../components/PageHeader.jsx';
 
 // Tính điểm TB có trọng số cho 1 học viên từ cột điểm + điểm số
 function avgOf(columns, rowScores) {
@@ -110,10 +111,7 @@ export default function Archive() {
 
   return (
     <div>
-      <h1>Lưu trữ theo năm học</h1>
-      <p className="muted" style={{ marginTop: -6 }}>
-        Dữ liệu các năm đã kết thúc được đóng băng tại đây. Mở năm → chọn lớp để xem học viên và điểm của năm đó.
-      </p>
+      <PageHeader title="Lưu trữ theo năm học" subtitle="Dữ liệu các năm đã kết thúc được đóng băng tại đây. Mở năm rồi chọn lớp để xem học viên và điểm của năm đó." />
       {msg && <div className="info-box">{msg}</div>}
 
       {years.length === 0 && <div className="panel muted">Chưa có năm học nào được lưu trữ. Sau khi "Kết thúc năm học & lên lớp", năm cũ sẽ hiện ở đây.</div>}

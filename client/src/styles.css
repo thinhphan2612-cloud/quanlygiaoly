@@ -1152,6 +1152,18 @@ body { background: #f4f5f7; }
 .btn.btn-danger-solid { background: #dc2626; color: #fff; }
 .btn.btn-danger-solid:hover { background: #b91c1c; }
 
+/* Đầu trang dùng chung (PageHeader) */
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; margin-bottom: 20px; }
+.page-head .ph-text { min-width: 0; flex: 1 1 320px; }
+.page-head h1 { margin: 0; }
+.page-head .ph-sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 720px; }
+.page-head .ph-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .page-head { margin-bottom: 14px; }
+  .page-head .ph-sub { font-size: 13px; }
+  .page-head .ph-actions { width: 100%; }
+}
+
 /* Trang Quản trị trên điện thoại: ô việc cần xử lý 2 cột, bộ lọc full-width, bảng chuyển thành thẻ */
 @media (max-width: 640px) {
   .admin-todo { grid-template-columns: repeat(2, 1fr); gap: 8px; }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import { IconExt } from '../components/Icons.jsx';
+import PageHeader from '../components/PageHeader.jsx';
 
 const STORE_URL = 'https://ephatastore.com';
 
@@ -21,13 +22,9 @@ export default function EphataStore() {
 
   return (
     <div>
-      <div className="att-head" style={{ alignItems: 'center' }}>
-        <h1 style={{ margin: 0 }}>Ephata Store</h1>
+      <PageHeader title="Ephata Store" subtitle={<>Kho ứng dụng &amp; tiện ích Công giáo. Đăng nhập bằng <b>chính tài khoản Giáo Lý Số</b> của bạn. Tính năng đã mua sẽ hiện tại đây để dùng ngay.</>}>
         <a className="btn btn-ext" href={STORE_URL} target="_blank" rel="noopener noreferrer">Đăng nhập Ephata Store <IconExt /></a>
-      </div>
-      <p className="muted" style={{ marginTop: -6 }}>
-        Kho ứng dụng &amp; tiện ích Công giáo. Đăng nhập bằng <b>chính tài khoản Giáo Lý Số</b> của bạn. Tài khoản tự liên kết. Tính năng đã mua / thêm sẽ hiện tại đây để dùng ngay trong ứng dụng.
-      </p>
+      </PageHeader>
 
       {loading ? <div className="panel"><p className="muted">Đang tải…</p></div> : (
         <>
