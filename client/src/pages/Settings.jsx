@@ -2,32 +2,49 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
-import { ACCENTS, applyTheme, loadTheme } from '../theme.js';
 import { isPro } from '../lib/plans';
 import { useEntitlements } from '../entitlements.jsx';
 import { useParish } from '../parish.jsx';
 import { fileToDataUrl, fileToDataUrlWide } from '../lib/img';
+import { viDate } from '../lib/date';
+import { toast } from '../lib/toast';
 import { IconArchive, IconUpload } from '../components/Icons.jsx';
 import { confirmDialog } from '../lib/confirm';
 import PageHeader from '../components/PageHeader.jsx';
+import ToggleRow from '../components/ToggleRow.jsx';
+import PricingModal from '../components/PricingModal.jsx';
 import { DEFAULT_RANKING, RANKING_PARTS, rankingWeights, rankingPoints } from '../lib/ranking';
 
-// Trang cài đặt quản lý của admin: giáo xứ, năm học, lên lớp cuối năm,
-// tùy chọn bật/tắt, danh sách học viên đã ra trường.
+// Tab của trang + mã trên địa chỉ (#...) để mở thẳng từ nơi khác
+const TABS = [
+  { key: 'giaoxu', label: 'Giáo xứ', hash: '#giao-xu' },
+  { key: 'namhoc', label: 'Năm học', hash: '#nam-hoc' },
+  { key: 'thidua', label: 'Thi đua', hash: '#thi-dua' },
+  { key: 'goi', label: 'Gói, quản trị viên', hash: '#goi' },
+];
+const tabFromHash = () => (TABS.find((t) => t.hash === window.location.hash) || TABS[0]).key;
+// Tính năng đi kèm gói Pro (không cần mua thêm)
+const PRO_INCLUDED = ['exam', 'certificate'];
+const TrashIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
+);
+
+// Trang cài đặt quản lý của admin: giáo xứ, năm học, thi đua, gói và quản trị viên.
 export default function Settings() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { parish, saveParish: ctxSave, reload: reloadParish } = useParish();
+  const [tab, setTab] = useState(tabFromHash);
   const [pInfo, setPInfo] = useState({ name: '', diocese: '', priest: '' });
   const [years, setYears] = useState([]);
   const [newYear, setNewYear] = useState('');
-  const [msg, setMsg] = useState('');
-  const [err, setErr] = useState('');
-  const [theme, setTheme] = useState(loadTheme());
   const [features, setFeatures] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [adminForm, setAdminForm] = useState({ email: '', password: '', full_name: '' });
+  const [showPw, setShowPw] = useState(false);
   const [addingAdmin, setAddingAdmin] = useState(false);
+  const [savingInfo, setSavingInfo] = useState(false);
+  const [pricing, setPricing] = useState(false);
   const ent = useEntitlements();
 
   const settings = parish?.settings || {};
@@ -37,91 +54,78 @@ export default function Settings() {
   function loadAdmins() {
     api.get('/auth/users').then((r) => setAdmins((r.data || []).filter((u) => u.role === 'admin'))).catch(() => {});
   }
-  function loadAll() {
-    api.get('/school-years').then((r) => setYears(r.data));
+  function loadYears() { api.get('/school-years').then((r) => setYears(r.data)).catch(() => {}); }
+  useEffect(() => {
+    loadYears();
     api.get('/features').then((r) => setFeatures(r.data)).catch(() => {});
     loadAdmins();
-  }
-
-  async function addAdmin() {
-    const f = adminForm;
-    if (!f.email.trim() || f.password.length < 6) { fail('Cần email và mật khẩu tối thiểu 6 ký tự'); return; }
-    setAddingAdmin(true);
-    try {
-      await api.post('/auth/users', { email: f.email.trim(), password: f.password, full_name: f.full_name.trim(), role: 'admin' });
-      setAdminForm({ email: '', password: '', full_name: '' });
-      loadAdmins();
-      flash('Đã thêm quản trị viên');
-    } catch (e) { fail(e.response?.data?.error || 'Thêm quản trị viên thất bại'); }
-    finally { setAddingAdmin(false); }
-  }
-  useEffect(() => { loadAll(); }, []);
+  }, []);
   // Đồng bộ ô nhập tên/giáo phận khi tải xong thông tin giáo xứ
-  useEffect(() => { if (parish) setPInfo({ name: parish.name || '', diocese: parish.diocese || '', priest: parish.settings?.priest_name || '' }); }, [parish?.id]);
-
-  // Mở từ link "Đổi cách tính" ở bảng xếp hạng: cuộn tới đúng mục
+  useEffect(() => { if (parish) setPInfo({ name: parish.name || '', diocese: parish.diocese || '', priest: parish.settings?.priest_name || '' }); }, [parish?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Mở bằng #thi-dua, #goi...: chọn đúng tab
   useEffect(() => {
-    if (!parish || window.location.hash !== '#thi-dua') return;
-    setTimeout(() => document.getElementById('thi-dua')?.scrollIntoView({ block: 'start' }), 50);
-  }, [parish?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    const onHash = () => setTab(tabFromHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  // Trên điện thoại thanh tab cuộn ngang: đưa tab đang chọn vào khung nhìn
+  useEffect(() => { document.querySelector('.stx-tab.on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }, [tab, parish?.id]);
 
   if (user?.role !== 'admin') return <div className="muted">Chỉ quản trị viên được truy cập cài đặt.</div>;
   if (!parish) return <div className="muted">Đang tải...</div>;
 
-  function flash(m) { setMsg(m); setErr(''); setTimeout(() => setMsg(''), 2500); }
-  function fail(e) { setErr(e); setMsg(''); }
-
-  async function saveParish(patch) {
-    try { await ctxSave(patch); flash('Đã lưu'); }
-    catch (e) { fail(e.response?.data?.error || 'Lưu thất bại'); }
+  function openTab(k) {
+    setTab(k);
+    const h = TABS.find((t) => t.key === k)?.hash || '';
+    window.history.replaceState(null, '', window.location.pathname + h);
   }
-
-  async function toggle(k) {
-    await saveParish({ settings: { ...settings, [k]: !flag(k) } });
+  async function saveParish(patch, okMsg = 'Đã lưu') {
+    try { await ctxSave(patch); toast(okMsg); return true; }
+    catch (e) { toast.err(e.response?.data?.error || 'Lưu thất bại'); return false; }
   }
+  const toggle = (k) => saveParish({ settings: { ...settings, [k]: !flag(k) } });
 
-  function setAccent(a) { const t = { ...theme, accent: a }; applyTheme(t); setTheme(t); }
-  function setMode(m) { const t = { ...theme, mode: m }; applyTheme(t); setTheme(t); }
-  function setBgImage(on) { const t = { ...theme, bgImage: on }; applyTheme(t); setTheme(t); }
+  const infoDirty = pInfo.name !== (parish.name || '') || pInfo.diocese !== (parish.diocese || '') || pInfo.priest !== (settings.priest_name || '');
+  async function saveInfo() {
+    if (!pInfo.name.trim()) { toast.err('Tên giáo xứ không được để trống'); return; }
+    setSavingInfo(true);
+    await saveParish({ name: pInfo.name.trim(), diocese: pInfo.diocese.trim(), settings: { ...settings, priest_name: pInfo.priest.trim() } }, 'Đã lưu thông tin giáo xứ');
+    setSavingInfo(false);
+  }
   async function uploadLogo(e) {
-    const file = e.target.files?.[0]; if (!file) return;
-    try { const url = await fileToDataUrl(file); await saveParish({ logo_url: url }); }
-    catch { fail('Không đọc được ảnh'); }
+    const file = e.target.files?.[0]; e.target.value = ''; if (!file) return;
+    try { const url = await fileToDataUrl(file); await saveParish({ logo_url: url }, 'Đã cập nhật logo'); }
+    catch { toast.err('Không đọc được ảnh'); }
   }
   async function uploadSig(e) {
-    const file = e.target.files?.[0]; if (!file) return;
-    try { const url = await fileToDataUrlWide(file, 640); await saveParish({ settings: { ...settings, priest_signature: url } }); }
-    catch { fail('Không đọc được ảnh'); }
+    const file = e.target.files?.[0]; e.target.value = ''; if (!file) return;
+    try { const url = await fileToDataUrlWide(file, 640); await saveParish({ settings: { ...settings, priest_signature: url } }, 'Đã cập nhật chữ ký'); }
+    catch { toast.err('Không đọc được ảnh'); }
   }
+  async function removeLogo() { if (await confirmDialog('Gỡ logo giáo xứ? Có thể tải lại sau.')) saveParish({ logo_url: null }, 'Đã gỡ logo'); }
+  async function removeSig() { if (await confirmDialog('Gỡ ảnh chữ ký? Chứng chỉ sẽ chỉ in tên người ký.')) saveParish({ settings: { ...settings, priest_signature: null } }, 'Đã gỡ chữ ký'); }
 
-  async function addYear() {
-    if (!newYear.trim()) return;
-    try {
-      await api.post('/school-years', { name: newYear.trim() });
-      setNewYear('');
-      api.get('/school-years').then((r) => setYears(r.data));
-      flash('Đã thêm năm học');
-    } catch (e) { fail(e.response?.data?.error || 'Thêm thất bại'); }
+  async function addYear(e) {
+    e.preventDefault();
+    const name = newYear.trim();
+    if (!name) return;
+    if (!/^\d{4}\s*-\s*\d{4}$/.test(name)) { toast.err('Năm học ghi dạng 2026-2027'); return; }
+    if (years.some((y) => y.name.replace(/\s/g, '') === name.replace(/\s/g, ''))) { toast.err('Năm học này đã có'); return; }
+    try { await api.post('/school-years', { name: name.replace(/\s/g, '') }); setNewYear(''); loadYears(); toast('Đã thêm năm học'); }
+    catch (err) { toast.err(err.response?.data?.error || 'Thêm thất bại'); }
   }
-  async function setCurrent(id) {
-    await api.post(`/school-years/${id}/current`, {});
-    api.get('/school-years').then((r) => setYears(r.data));
-    reloadParish();
-    flash('Đã đặt năm học hiện tại');
+  async function setCurrent(y) {
+    if (!(await confirmDialog(`Đặt ${y.name} làm năm học hiện tại?\n\nTrang Điểm số và Lưu trữ sẽ lấy năm này làm năm đang học.`))) return;
+    try { await api.post(`/school-years/${y.id}/current`, {}); loadYears(); reloadParish(); toast(`Năm học hiện tại: ${y.name}`); }
+    catch (err) { toast.err(err.response?.data?.error || 'Chưa đổi được'); }
   }
-  async function delYear(id) {
-    if (!await confirmDialog('Xóa năm học này?')) return;
-    await api.delete(`/school-years/${id}`);
-    api.get('/school-years').then((r) => setYears(r.data));
+  async function delYear(y) {
+    if (!(await confirmDialog(`Xóa năm học ${y.name} khỏi danh sách?\n\nChỉ xóa tên năm học trong danh sách này. Lớp, học viên và điểm của năm đó không bị xóa.`))) return;
+    try { await api.delete(`/school-years/${y.id}`); loadYears(); toast(`Đã xóa ${y.name}`); }
+    catch (err) { toast.err(err.response?.data?.error || 'Xóa thất bại'); }
   }
-
   async function promote() {
-    let cls = [];
-    try { cls = (await api.get('/classes')).data || []; } catch { /* noop */ }
-    const catechism = cls.filter((c) => c.kind !== 'external');
-    if (catechism.length && !catechism.some((c) => c.is_graduation)) {
-      if (!await confirmDialog('Bạn CHƯA gắn nhãn "Lớp tốt nghiệp" cho lớp giáo lý nào.\n\nHệ thống sẽ tự lấy lớp bậc cao nhất làm lớp tốt nghiệp. Nên vào "Lớp học" → sửa lớp cao nhất → bật "Đây là lớp tốt nghiệp" để chính xác.\n\nVẫn tiếp tục?')) return;
-    }
     if (!await confirmDialog(
       'KẾT THÚC NĂM HỌC & LÊN LỚP\n\n' +
       'Chỉ chạy được khi TẤT CẢ các lớp đã được duyệt (GLV chốt lớp → Admin duyệt ở Tổng quan).\n\n' +
@@ -132,218 +136,238 @@ export default function Settings() {
     )) return;
     try {
       const r = await api.post('/promote', {});
-      flash(`Đã lên lớp ${r.data.promoted} học viên` + (r.data.stayed ? `, ${r.data.stayed} em ở lại` : '') + `, ${r.data.graduated} em ra trường.` + (r.data.new_year ? ` Năm học mới: ${r.data.new_year}.` : ''));
-      loadAll();
-      reloadParish();
-    } catch (e) { fail(e.response?.data?.error || 'Lên lớp thất bại'); }
+      toast(`Đã lên lớp ${r.data.promoted} học viên` + (r.data.stayed ? `, ${r.data.stayed} em ở lại` : '') + `, ${r.data.graduated} em ra trường.` + (r.data.new_year ? ` Năm học mới: ${r.data.new_year}.` : ''));
+      loadYears(); reloadParish();
+    } catch (e) { toast.err(e.response?.data?.error || 'Lên lớp thất bại'); }
   }
+
+  async function addAdmin(e) {
+    e.preventDefault();
+    const f = adminForm;
+    if (!f.full_name.trim()) { toast.err('Nhập họ tên quản trị viên'); return; }
+    if (!f.email.trim() || f.password.length < 6) { toast.err('Cần email và mật khẩu tạm tối thiểu 6 ký tự'); return; }
+    setAddingAdmin(true);
+    try {
+      await api.post('/auth/users', { email: f.email.trim(), password: f.password, full_name: f.full_name.trim(), role: 'admin' });
+      setAdminForm({ email: '', password: '', full_name: '' }); setShowPw(false);
+      loadAdmins();
+      toast(`Đã thêm quản trị viên ${f.full_name.trim()}. Gửi email và mật khẩu tạm cho người này để đăng nhập.`);
+    } catch (err) { toast.err(err.response?.data?.error || 'Thêm quản trị viên thất bại'); }
+    finally { setAddingAdmin(false); }
+  }
+  async function demote(a) {
+    if (!(await confirmDialog(`Gỡ quyền quản trị của ${a.full_name || a.email}?\n\nNgười này vẫn đăng nhập được nhưng chỉ còn quyền giáo lý viên (thấy các lớp được phân công).`))) return;
+    try { await api.put(`/auth/users/${a.id}/role`, { role: 'teacher' }); loadAdmins(); toast(`Đã gỡ quyền quản trị của ${a.full_name || a.email}`); }
+    catch (err) { toast.err(err.response?.data?.error || 'Chưa gỡ được quyền'); }
+  }
+  function genPw() {
+    const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+    const pw = Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    setAdminForm((f) => ({ ...f, password: pw })); setShowPw(true);
+  }
+
+  const planExp = parish.plan_expires_at ? new Date(parish.plan_expires_at) : null;
+  const daysLeft = planExp ? Math.ceil((planExp.getTime() - Date.now()) / 86400000) : null;
 
   return (
     <div>
-      <PageHeader title="Cài đặt quản lý" subtitle="Thông tin giáo xứ, giao diện, tùy chọn quản lý và gói dịch vụ." />
-      {msg && <div className="info-box">{msg}</div>}
-      {err && <div className="error">{err}</div>}
-
-      {/* Giáo xứ */}
-      <div className="panel">
-        <div className="card-head"><h2>Thông tin giáo xứ</h2></div>
-        <div className="settings-grid">
-          <div className="field">
-            <label>Tên giáo xứ</label>
-            <input data-tour="parish-name" value={pInfo.name} onChange={(e) => setPInfo({ ...pInfo, name: e.target.value })} />
-          </div>
-          <div className="field">
-            <label>Giáo phận</label>
-            <input value={pInfo.diocese} onChange={(e) => setPInfo({ ...pInfo, diocese: e.target.value })} />
-          </div>
-        </div>
-        <div className="field" style={{ marginTop: 4 }}>
-          <label>Logo giáo xứ</label>
-          <div className="logo-upload">
-            {parish.logo_url ? <img className="logo-preview" src={parish.logo_url} alt="logo" /> : <div className="logo-preview">✝</div>}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <label data-tour="parish-logo" className="btn ghost sm" style={{ cursor: 'pointer' }}>
-                Tải ảnh lên<input type="file" accept="image/*" onChange={uploadLogo} style={{ display: 'none' }} />
-              </label>
-              {parish.logo_url && <button className="btn ghost sm" onClick={() => saveParish({ logo_url: null })}>Xóa logo</button>}
-            </div>
-          </div>
-        </div>
-        <div className="form-section" style={{ marginTop: 14 }}>Chữ ký in trên chứng chỉ</div>
-        <div className="field">
-          <label>Tên người ký (Linh mục quản xứ)</label>
-          <input value={pInfo.priest} onChange={(e) => setPInfo({ ...pInfo, priest: e.target.value })} placeholder="VD: Phêrô Nguyễn Văn An" />
-        </div>
-        <div className="field" style={{ marginTop: 4 }}>
-          <label>Ảnh chữ ký (nền trong, in phía trên tên)</label>
-          <div className="logo-upload">
-            {settings.priest_signature ? <img src={settings.priest_signature} alt="chữ ký" style={{ height: 56, maxWidth: 200, objectFit: 'contain', background: '#fff', borderRadius: 8, padding: 4 }} /> : <div className="muted" style={{ fontSize: 13 }}>Chưa có chữ ký</div>}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <label className="btn ghost sm" style={{ cursor: 'pointer' }}>Tải chữ ký<input type="file" accept="image/*" onChange={uploadSig} style={{ display: 'none' }} /></label>
-              {settings.priest_signature && <button className="btn ghost sm" onClick={() => saveParish({ settings: { ...settings, priest_signature: null } })}>Xóa</button>}
-            </div>
-          </div>
-        </div>
-        <div style={{ marginTop: 8 }}>
-          <button data-tour="parish-save" className="btn" onClick={() => saveParish({ name: pInfo.name, diocese: pInfo.diocese, settings: { ...settings, priest_name: pInfo.priest } })}>Lưu thông tin giáo xứ</button>
-        </div>
+      <PageHeader title="Cài đặt quản lý" subtitle="Thông tin giáo xứ, năm học, cách tính thi đua, gói dịch vụ và quản trị viên." />
+      <div className="stx-tabs" role="tablist" aria-label="Nhóm cài đặt">
+        {TABS.map((t) => (
+          <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} className={`stx-tab${tab === t.key ? ' on' : ''}`} onClick={() => openTab(t.key)}>{t.label}</button>
+        ))}
       </div>
 
-      {/* Giao diện */}
-      <div className="panel">
-        <div className="card-head"><h2>Giao diện</h2></div>
-        <ToggleRow label="Chế độ tối (Night)" on={theme.mode === 'dark'} onClick={() => setMode(theme.mode === 'dark' ? 'light' : 'dark')} />
-        <ToggleRow label="Ảnh nền trang trí (các thẻ chuyển sang dạng kính mờ)" on={!!theme.bgImage} onClick={() => setBgImage(!theme.bgImage)} />
-        <div className="fp-label" style={{ marginTop: 14 }}>Màu chủ đề (theo năm phụng vụ)</div>
-        <div className="swatches">
-          {Object.entries(ACCENTS).map(([k, a]) => (
-            <button key={k} className={`swatch ${theme.accent === k ? 'on' : ''}`} title={a.label}
-              style={{ background: a.p }} onClick={() => setAccent(k)} />
-          ))}
-        </div>
-      </div>
-
-      {/* Tùy chọn quản lý (on/off) */}
-      <div className="panel">
-        <div className="card-head"><h2>Tùy chọn quản lý</h2></div>
-        <ToggleRow label="Quản lý theo năm học giáo lý" on={flag('manage_by_school_year')} onClick={() => toggle('manage_by_school_year')} />
-        {!isFree && <ToggleRow label="Hiện nút kết thúc năm học & lên lớp" on={flag('auto_promote')} onClick={() => toggle('auto_promote')} />}
-      </div>
-
-      {/* Cách tính điểm thi đua (mỗi giáo xứ tự đặt tỷ lệ) */}
-      <RankingWeights settings={settings} onSave={(w) => saveParish({ settings: { ...settings, ranking_weights: w } })} />
-
-      {/* Gói dịch vụ */}
-      <div className="panel">
-        <div className="card-head"><h2>Gói dịch vụ</h2></div>
-        <div className="field" style={{ maxWidth: 280 }}>
-          <label>Gói hiện tại</label>
-          <div style={{ fontWeight: 600, fontSize: 16 }}>
-            {isPro(parish.plan)
-              ? (parish.plan_max_classes ? `Pro — tối đa ${parish.plan_max_classes} lớp` : 'Pro — không giới hạn lớp')
-              : 'Khởi động (miễn phí, 1 lớp)'}
-          </div>
-        </div>
-        <p className="muted" style={{ fontSize: 12 }}>
-          {isPro(parish.plan)
-            ? <>Gói Pro tính theo quy mô số lớp{parish.plan_max_classes ? ` (mức hiện tại: tối đa ${parish.plan_max_classes} lớp)` : ' (mức không giới hạn)'}. Cần thêm lớp / đổi mức: liên hệ tác giả để nâng mức.</>
-            : <>Gói Khởi động chỉ quản lý 1 lớp. Nâng lên Pro (chia mức theo số lớp: nhỏ / vừa / lớn) để mở khóa nhiều lớp + toàn bộ tính năng, liên hệ tác giả để thanh toán (chuyển khoản / VietQR) và được kích hoạt.</>}
-        </p>
-      </div>
-
-      {/* Quản trị viên giáo xứ (Pro) */}
-      {!isFree && (
+      {tab === 'giaoxu' && (
         <div className="panel">
-          <div className="card-head"><h2>Quản trị viên giáo xứ</h2></div>
-          <p className="muted" style={{ marginTop: 0, fontSize: 13 }}>
-            Thêm quản trị viên khác cùng quản lý giáo xứ. Các quản trị viên có <b>quyền ngang nhau</b> (toàn quyền trên giáo xứ). Tính năng gói Pro.
-          </p>
-          <table>
-            <thead><tr><th>Họ tên</th><th>Email đăng nhập</th></tr></thead>
-            <tbody>
-              {admins.map((a) => (
-                <tr key={a.id}>
-                  <td>{a.full_name || '—'}{a.id === user.id && <span className="muted"> (bạn)</span>}</td>
-                  <td className="muted">{a.email}</td>
-                </tr>
-              ))}
-              {admins.length === 0 && <tr><td colSpan={2} className="muted">Chưa có</td></tr>}
-            </tbody>
-          </table>
-          <div className="form-section" style={{ marginTop: 14 }}>Thêm quản trị viên mới</div>
+          <div className="card-head"><h2>Thông tin giáo xứ</h2></div>
           <div className="settings-grid">
-            <div className="field"><label>Họ tên</label>
-              <input value={adminForm.full_name} onChange={(e) => setAdminForm({ ...adminForm, full_name: e.target.value })} placeholder="VD: Giuse Nguyễn Văn A" /></div>
-            <div className="field"><label>Email đăng nhập</label>
-              <input type="email" value={adminForm.email} onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })} /></div>
-            <div className="field"><label>Mật khẩu tạm (≥ 6 ký tự)</label>
-              <input type="text" value={adminForm.password} onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })} placeholder="Người này nên đổi lại sau khi đăng nhập" /></div>
+            <div className="field">
+              <label>Tên giáo xứ</label>
+              <input data-tour="parish-name" value={pInfo.name} onChange={(e) => setPInfo({ ...pInfo, name: e.target.value })} />
+            </div>
+            <div className="field">
+              <label>Giáo phận</label>
+              <input value={pInfo.diocese} onChange={(e) => setPInfo({ ...pInfo, diocese: e.target.value })} />
+            </div>
           </div>
-          <div style={{ marginTop: 8 }}>
-            <button className="btn" onClick={addAdmin} disabled={addingAdmin}>{addingAdmin ? 'Đang thêm…' : '+ Thêm quản trị viên'}</button>
+          <div className="field">
+            <label>Tên người ký trên chứng chỉ (Linh mục quản xứ)</label>
+            <input value={pInfo.priest} onChange={(e) => setPInfo({ ...pInfo, priest: e.target.value })} placeholder="VD: Phêrô Nguyễn Văn An" />
           </div>
-        </div>
-      )}
+          <div className="stx-savebar">
+            <button data-tour="parish-save" className="btn" onClick={saveInfo} disabled={!infoDirty || savingInfo}>{savingInfo ? 'Đang lưu…' : 'Lưu thông tin giáo xứ'}</button>
+            {infoDirty && <span className="stx-dirty">Có thay đổi chưa lưu</span>}
+          </div>
 
-      {/* Tiện ích mở rộng (kho tính năng) */}
-      <div className="panel">
-        <div className="card-head"><h2>Tiện ích mở rộng</h2></div>
-        <p className="muted" style={{ marginTop: 0, fontSize: 13 }}>Các tính năng có thể mua thêm tại Ephata Store. Khi giáo xứ sở hữu, tính năng sẽ hiện cho giáo lý viên dùng.</p>
-        <div className="ext-grid">
-          {features.map((ft) => {
-            const owned = ent.has(ft.key);
-            return (
-              <div key={ft.key} className={`ext-card ${owned ? 'owned' : ''}`}>
-                <div className="ext-head">
-                  <span className="ext-name">{ft.name}</span>
-                  {owned ? <span className="ext-badge on">Đã có</span> : <span className="ext-badge">Chưa có</span>}
+          <div className="stx-media">
+            <div className="stx-media-item">
+              <div className="stx-media-h">Logo giáo xứ</div>
+              <div className="stx-media-row">
+                {parish.logo_url ? <img className="logo-preview" src={parish.logo_url} alt="Logo giáo xứ" /> : <div className="logo-preview">✝</div>}
+                <div className="stx-media-actions">
+                  <label data-tour="parish-logo" className="btn ghost sm" style={{ cursor: 'pointer' }}>
+                    {parish.logo_url ? 'Đổi ảnh' : 'Tải ảnh lên'}<input type="file" accept="image/*" onChange={uploadLogo} style={{ display: 'none' }} />
+                  </label>
+                  {parish.logo_url && <button className="btn ghost sm" onClick={removeLogo}>Gỡ logo</button>}
                 </div>
-                <div className="ext-desc">{ft.description}</div>
-                <div className="ext-meta"><span className="muted">{ft.category}</span>{!owned && <a href="https://ephatastore.com" target="_blank" rel="noopener noreferrer">Mua tại Ephata Store →</a>}</div>
               </div>
-            );
-          })}
-          {features.length === 0 && <div className="muted">Chưa có tiện ích nào trong kho.</div>}
-        </div>
-      </div>
-
-      {/* Năm học */}
-      {flag('manage_by_school_year') && (
-        <div className="panel">
-          <div className="card-head"><h2>Năm học giáo lý</h2></div>
-          <div className="toolbar" style={{ marginBottom: 12 }}>
-            <input value={newYear} onChange={(e) => setNewYear(e.target.value)} placeholder="VD: 2026-2027" style={{ maxWidth: 200 }} />
-            <button className="btn" onClick={addYear}>+ Thêm năm học</button>
+              <p className="stx-hint">Ảnh vuông, nền trong là đẹp nhất. Hiện ở góc trái ứng dụng và trên chứng chỉ. Lưu ngay khi tải lên.</p>
+            </div>
+            <div className="stx-media-item">
+              <div className="stx-media-h">Ảnh chữ ký trên chứng chỉ</div>
+              <div className="stx-media-row">
+                {settings.priest_signature ? <img className="stx-sig" src={settings.priest_signature} alt="Chữ ký" /> : <div className="stx-sig empty">Chưa có chữ ký</div>}
+                <div className="stx-media-actions">
+                  <label className="btn ghost sm" style={{ cursor: 'pointer' }}>{settings.priest_signature ? 'Đổi ảnh' : 'Tải chữ ký'}<input type="file" accept="image/*" onChange={uploadSig} style={{ display: 'none' }} /></label>
+                  {settings.priest_signature && <button className="btn ghost sm" onClick={removeSig}>Gỡ chữ ký</button>}
+                </div>
+              </div>
+              <p className="stx-hint">Ảnh chữ ký nền trong (PNG), in phía trên tên người ký. Lưu ngay khi tải lên.</p>
+            </div>
           </div>
-          <table>
-            <thead><tr><th>Năm học</th><th>Trạng thái</th><th></th></tr></thead>
-            <tbody>
-              {years.map((y) => (
-                <tr key={y.id}>
-                  <td>{y.name}</td>
-                  <td>{y.is_current ? <span className="pct">Hiện tại</span> : <span className="muted">—</span>}</td>
-                  <td style={{ whiteSpace: 'nowrap' }}>
-                    {!y.is_current && <button className="btn ghost sm" onClick={() => setCurrent(y.id)}>Đặt hiện tại</button>}{' '}
-                    <button className="btn danger sm" onClick={() => delYear(y.id)}>Xóa</button>
-                  </td>
-                </tr>
-              ))}
-              {years.length === 0 && <tr><td colSpan={3} className="muted">Chưa có năm học nào</td></tr>}
-            </tbody>
-          </table>
         </div>
       )}
 
-      {/* Lên lớp cuối năm */}
-      {!isFree && flag('auto_promote') && (
-        <div className="panel">
-          <div className="card-head"><h2>Kết thúc năm học & lên lớp</h2></div>
-          <p className="muted" style={{ marginTop: 0 }}>
-            Tạo bộ lớp mới cho năm sau (sao chép các lớp bật <b>Tự động lên lớp</b>), chuyển học viên lên bậc kế tiếp
-            theo <b>thứ tự lớp</b> đã đặt ở trang Lớp học, điểm bắt đầu lại. Học viên lớp cao nhất ra trường.
-            Dữ liệu năm hiện tại được đóng băng, tra cứu ở tab <span className="link" onClick={() => navigate('/archive')}>Lưu trữ</span>.
-          </p>
-          <button className="btn" onClick={promote}><IconUpload className="bi" />Lên lớp cho cả giáo xứ</button>
-        </div>
+      {tab === 'namhoc' && (
+        <>
+          <div className="panel">
+            <div className="card-head"><h2>Năm học giáo lý</h2></div>
+            <ToggleRow label="Quản lý theo năm học" desc="Bật để có danh sách năm học bên dưới và chọn năm học hiện tại. Trang Điểm số, Lưu trữ dùng năm hiện tại này."
+              on={flag('manage_by_school_year')} onClick={() => toggle('manage_by_school_year')} />
+            {flag('manage_by_school_year') && (
+              <>
+                <div className="stx-years">
+                  {years.map((y) => (
+                    <div className={`stx-year${y.is_current ? ' cur' : ''}`} key={y.id}>
+                      <span className="stx-year-name">{y.name}</span>
+                      {y.is_current ? <span className="tag-chip tone-green">Năm hiện tại</span> : (
+                        <span className="stx-year-actions">
+                          <button className="btn ghost sm" onClick={() => setCurrent(y)}>Đặt làm hiện tại</button>
+                          <button type="button" className="stx-del" onClick={() => delYear(y)} title={`Xóa ${y.name} khỏi danh sách`} aria-label={`Xóa năm học ${y.name}`}><TrashIcon /></button>
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {years.length === 0 && <p className="muted" style={{ margin: 0 }}>Chưa có năm học nào.</p>}
+                </div>
+                <form className="stx-addyear" onSubmit={addYear}>
+                  <input value={newYear} onChange={(e) => setNewYear(e.target.value)} placeholder="VD: 2027-2028" aria-label="Năm học mới" />
+                  <button className="btn ghost" type="submit" disabled={!newYear.trim()}>Thêm năm học</button>
+                </form>
+              </>
+            )}
+          </div>
+
+          {!isFree && (
+            <div className="panel">
+              <div className="card-head"><h2>Kết thúc năm học và lên lớp</h2></div>
+              <ToggleRow label="Cho phép kết thúc năm học" desc='Tắt để ẩn thao tác này ở đây và ở menu ⋯ trang Điểm số (tránh bấm nhầm giữa năm).'
+                on={flag('auto_promote')} onClick={() => toggle('auto_promote')} />
+              {flag('auto_promote') && (
+                <>
+                  <p className="muted stx-p">
+                    Tạo bộ lớp mới cho năm sau (sao chép các lớp bật <b>Tự động lên lớp</b>), chuyển học viên lên bậc kế tiếp
+                    theo <b>thứ tự lớp</b> ở trang Lớp học, điểm bắt đầu lại. Học viên lớp cao nhất ra trường.
+                    Dữ liệu năm hiện tại được giữ nguyên ở <span className="link" onClick={() => navigate('/archive')}>Lưu trữ</span>.
+                  </p>
+                  <button className="btn" onClick={promote}><IconUpload className="bi" />Lên lớp cho cả giáo xứ</button>
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="panel">
+            <div className="card-head"><h2>Dữ liệu năm cũ</h2></div>
+            <p className="muted stx-p">Học viên đã ra trường và dữ liệu các năm đã kết thúc nằm ở trang Lưu trữ (xem theo năm, tải về, xóa).</p>
+            <button className="btn ghost" onClick={() => navigate('/archive')}><IconArchive className="bi" />Mở Lưu trữ</button>
+          </div>
+        </>
       )}
 
-      {/* Lưu trữ */}
-      <div className="panel">
-        <div className="card-head"><h2>Dữ liệu năm cũ</h2></div>
-        <p className="muted" style={{ marginTop: 0 }}>Học viên đã ra trường và toàn bộ dữ liệu các năm đã kết thúc được lưu ở tab Lưu trữ (xem theo năm, tải về, xóa).</p>
-        <button className="btn ghost" onClick={() => navigate('/archive')}><IconArchive className="bi" />Mở tab Lưu trữ</button>
-      </div>
-    </div>
-  );
-}
+      {tab === 'thidua' && (
+        <RankingWeights settings={settings} onSave={(w) => saveParish({ settings: { ...settings, ranking_weights: w } }, 'Đã lưu cách tính điểm thi đua')} />
+      )}
 
-function ToggleRow({ label, on, onClick }) {
-  return (
-    <div className="toggle-row">
-      <span>{label}</span>
-      <button className={`switch ${on ? 'on' : ''}`} onClick={onClick} role="switch" aria-checked={on}>
-        <span className="knob" />
-      </button>
+      {tab === 'goi' && (
+        <>
+          <div className="panel">
+            <div className="card-head"><h2>Gói dịch vụ</h2></div>
+            <div className="stx-plan">
+              <div>
+                <div className="stx-plan-name">{isFree ? 'Khởi động (miễn phí, 1 lớp)' : `Pro · ${parish.plan_max_classes ? `tối đa ${parish.plan_max_classes} lớp` : 'không giới hạn lớp'}`}</div>
+                <div className="stx-plan-sub">
+                  {isFree ? 'Nâng lên Pro để quản lý nhiều lớp, thêm giáo lý viên và mở mọi tính năng.'
+                    : planExp ? (daysLeft > 0 ? <>Hạn đến <b>{viDate(parish.plan_expires_at)}</b>, còn {daysLeft} ngày</> : <span className="stx-warn">Đã hết hạn ngày {viDate(parish.plan_expires_at)}</span>)
+                      : 'Không giới hạn thời gian'}
+                </div>
+              </div>
+              <button className="btn" onClick={() => setPricing(true)}>{isFree ? 'Xem các gói' : 'Gia hạn hoặc đổi mức'}</button>
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="card-head"><h2>Quản trị viên giáo xứ</h2></div>
+            {isFree ? (
+              <p className="muted stx-p">Thêm quản trị viên khác cùng quản lý giáo xứ là tính năng của gói Pro.</p>
+            ) : (
+              <>
+                <p className="muted stx-p">Các quản trị viên có <b>quyền ngang nhau</b> trên giáo xứ. Muốn thêm giáo lý viên thì vào trang Giáo lý viên.</p>
+                <div className="stx-admins">
+                  {admins.map((a) => (
+                    <div className="stx-admin" key={a.id}>
+                      <div className="stx-admin-who"><b>{a.full_name || 'Chưa đặt tên'}</b>{a.id === user.id && <span className="muted"> (bạn)</span>}<span className="muted stx-admin-mail">{a.email}</span></div>
+                      {a.id !== user.id && <button className="btn ghost sm" onClick={() => demote(a)}>Gỡ quyền quản trị</button>}
+                    </div>
+                  ))}
+                  {admins.length === 0 && <p className="muted" style={{ margin: 0 }}>Đang tải…</p>}
+                </div>
+                <form onSubmit={addAdmin}>
+                  <div className="form-section" style={{ marginTop: 16 }}>Thêm quản trị viên</div>
+                  <div className="settings-grid">
+                    <div className="field"><label>Họ tên</label>
+                      <input value={adminForm.full_name} onChange={(e) => setAdminForm({ ...adminForm, full_name: e.target.value })} placeholder="VD: Giuse Nguyễn Văn A" autoComplete="off" /></div>
+                    <div className="field"><label>Email đăng nhập</label>
+                      <input type="email" value={adminForm.email} onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })} autoComplete="off" /></div>
+                    <div className="field"><label>Mật khẩu tạm (tối thiểu 6 ký tự)</label>
+                      <div className="stx-pw">
+                        <input type={showPw ? 'text' : 'password'} value={adminForm.password} onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })} autoComplete="new-password" placeholder="Người này nên đổi sau khi đăng nhập" />
+                        <button type="button" className="btn ghost sm" onClick={() => setShowPw(!showPw)}>{showPw ? 'Ẩn' : 'Hiện'}</button>
+                        <button type="button" className="btn ghost sm" onClick={genPw}>Tạo ngẫu nhiên</button>
+                      </div>
+                    </div>
+                  </div>
+                  <button className="btn" type="submit" disabled={addingAdmin}>{addingAdmin ? 'Đang thêm…' : 'Thêm quản trị viên'}</button>
+                </form>
+              </>
+            )}
+          </div>
+
+          <div className="panel">
+            <div className="card-head"><h2>Tiện ích mở rộng</h2></div>
+            <p className="muted stx-p">Tính năng thêm tại Ephata Store. Khi giáo xứ có, tính năng hiện cho cả giáo lý viên dùng.</p>
+            <div className="ext-grid">
+              {features.map((ft) => {
+                const inPro = !isFree && PRO_INCLUDED.includes(ft.key);
+                const owned = ent.has(ft.key);
+                return (
+                  <div key={ft.key} className={`ext-card ${owned ? 'owned' : ''}`}>
+                    <div className="ext-head">
+                      <span className="ext-name">{ft.name}</span>
+                      {inPro ? <span className="ext-badge on">Có trong gói Pro</span> : owned ? <span className="ext-badge on">Đã có</span> : <span className="ext-badge">Chưa có</span>}
+                    </div>
+                    <div className="ext-desc">{ft.description}</div>
+                    <div className="ext-meta"><span className="muted">{ft.category}</span>{!owned && <a href="https://ephatastore.com" target="_blank" rel="noopener noreferrer">Xem tại Ephata Store</a>}</div>
+                  </div>
+                );
+              })}
+              {features.length === 0 && <div className="muted">Chưa có tiện ích nào.</div>}
+            </div>
+          </div>
+        </>
+      )}
+
+      {pricing && <PricingModal current={parish.plan} onClose={() => { setPricing(false); reloadParish(); }} />}
     </div>
   );
 }

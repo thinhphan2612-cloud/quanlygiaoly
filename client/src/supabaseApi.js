@@ -252,6 +252,13 @@ async function handle(method, rawUrl, body = {}) {
       if (data?.error) return fail(400, data.error);
       return ok(data);
     }
+    if (seg[0] === 'auth' && seg[1] === 'users' && seg[2] && seg[3] === 'role' && method === 'put') {
+      if (!['admin', 'teacher'].includes(body.role)) return fail(400, 'Vai trò không hợp lệ');
+      if (seg[2] === meId()) return fail(400, 'Không thể tự đổi vai trò của chính mình');
+      const { data, error } = await supabase.from('profiles').update({ role: body.role }).eq('id', seg[2]).eq('parish_id', pid).select().single();
+      if (error) return fail(400, error.message);
+      return ok(data);
+    }
     if (seg[0] === 'auth' && seg[1] === 'users' && seg[2] && method === 'put') {
       const patch = {};
       for (const k of ['full_name', 'saint_name', 'birth_date', 'address', 'area', 'glv_level', 'occupation', 'phone'])

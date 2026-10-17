@@ -311,7 +311,7 @@ const ROUTE = {
   tongquan: '/', hocvien: '/students', nhaphangloat: '/students', lophoc: '/classes', giaolyvien: '/teachers',
   diemdanh: '/attendance', diemso: '/grades', dethi: '/exams', chungchi: '/certificates', trabai: '/random',
   game: '/games', store: '/store', thuchi: '/audit', xetduyet: '/classes', luutru: '/archive', thongbao: '/notify',
-  caidat: '/settings', goi: '/settings', giahan: '/settings',
+  caidat: '/settings', goi: '/settings#goi', giahan: '/settings#goi',
 };
 const SUGGEST = ['điểm danh', 'thi online', 'chứng chỉ', 'lên lớp', 'nhập Excel', 'gia hạn'];
 

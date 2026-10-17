@@ -265,7 +265,7 @@ export default function Grades() {
   return (
     <div>
       <PageHeader title="Điểm số" subtitle="Nhập điểm theo cột điểm của từng lớp, xem điểm trung bình và thứ hạng.">
-        {isAdmin && isCurrent && !isFree && (
+        {isAdmin && isCurrent && !isFree && parish?.settings?.auto_promote !== false && (
           <span data-tour="grades-endyear" title="Thao tác cho cả giáo xứ">
             <RowMenu label="Thao tác cho cả giáo xứ" items={[{ label: 'Kết thúc năm học, lên lớp…', onClick: endYear }]} />
           </span>

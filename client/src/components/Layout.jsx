@@ -16,6 +16,7 @@ import InstallGuide from './InstallGuide.jsx';
 import PricingModal from './PricingModal.jsx';
 import { toast } from '../lib/toast';
 import TourRunner from './TourRunner.jsx';
+import ThemeModal from './ThemeModal.jsx';
 import {
   IconHome, IconStudents, IconClass, IconCheck, IconGrades,
   IconDice, IconGame, IconTeacher, IconLogout, IconBell, IconMoney, IconEditImage, IconArchive, IconCert, IconStore, IconExam, IconExt, IconGuide,
@@ -82,6 +83,7 @@ export default function Layout({ children }) {
   const [navOpen, setNavOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [installOpen, setInstallOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
   const [installBarHidden, setInstallBarHidden] = useState(() => { try { return localStorage.getItem('hideInstallBar') === '1'; } catch { return false; } });
   const showInstallBar = !installBarHidden && !isStandalone();
   const [pricing, setPricing] = useState(false);
@@ -313,6 +315,7 @@ export default function Layout({ children }) {
                       <button className="user-menu-item" onClick={() => navigate('/settings')}><IconSliders /> Cài đặt quản lý</button>
                     )}
                     <button className="user-menu-item" onClick={() => { setMenuOpen(false); window.open('https://ephatastore.com', '_blank', 'noopener'); }}><IconStore /> <span style={{ flex: 1 }}>Đăng nhập Ephata Store</span><IconExt style={{ width: 15, height: 15, opacity: .6 }} /></button>
+                    <button className="user-menu-item" onClick={() => { setMenuOpen(false); setThemeOpen(true); }}><IconSliders /> Giao diện (chế độ tối, màu)</button>
                     <button className="user-menu-item" onClick={() => { setMenuOpen(false); setInstallOpen(true); }}>Cài đặt ứng dụng</button>
                     <button className="user-menu-item" onClick={() => { setMenuOpen(false); setPwModal(true); }}><IconKey /> Đổi mật khẩu</button>
                     <button className="user-menu-item danger" onClick={handleLogout}><IconLogout /> Đăng xuất</button>
@@ -354,6 +357,7 @@ export default function Layout({ children }) {
 
       {pricing && <PricingModal current={plan} onClose={() => setPricing(false)} />}
       {installOpen && <InstallGuide onClose={() => setInstallOpen(false)} />}
+      {themeOpen && <ThemeModal onClose={() => setThemeOpen(false)} />}
 
       {/* Khóa khi gói Pro đã hết hạn: chặn toàn ứng dụng cho tới khi gia hạn */}
       {expired && !sa && (
