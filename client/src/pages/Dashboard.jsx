@@ -1,5 +1,5 @@
 import { useEffect, useState, Fragment } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { useParish } from '../parish.jsx';
@@ -346,7 +346,9 @@ export default function Dashboard() {
       }).catch(() => { setLbClasses([]); setLbClass(''); });
     }).catch(() => toast.err('Không tải được số liệu tổng quan')).finally(() => setSwitching(false));
   }
-  useEffect(() => { loadDash(); }, []);
+  const [searchParams] = useSearchParams();
+  // ?year= (từ trang Lưu trữ: xem Tổng quan của năm đó)
+  useEffect(() => { loadDash(searchParams.get('year') || undefined); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const rev = useRealtime(['grades', 'attendance', 'students', 'classes', 'class_teachers']);
   useEffect(() => { if (rev) loadDash(year); }, [rev]);
 
