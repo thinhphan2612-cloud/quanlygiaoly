@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { viError } from '../lib/viError';
+import { toast } from '../lib/toast';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const lsKey = (code) => `exam:${code}`;
@@ -146,7 +147,7 @@ export default function ExamTake() {
       if (missing.length) {
         setShowMissing(true);
         const nums = missing.map((q) => displayQs.indexOf(q) + 1);
-        alert(`Còn ${missing.length} câu chưa làm: câu ${nums.join(', ')}.\nVui lòng làm hết trước khi nộp.`);
+        toast.err(`Còn ${missing.length} câu chưa làm: câu ${nums.join(', ')}.\nVui lòng làm hết trước khi nộp.`);
         const first = document.getElementById('q-' + missing[0].id); first && first.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return null;
       }
@@ -158,7 +159,7 @@ export default function ExamTake() {
       if (error) throw error;
       setScoreData(data); setSubmitted(true); localStorage.removeItem(lsKey(code));
       return data;
-    } catch (e) { submittingRef.current = false; if (!auto) alert(e.message ? viError(e.message) : 'Nộp bài thất bại'); return null; }
+    } catch (e) { submittingRef.current = false; if (!auto) toast.err(e.message ? viError(e.message) : 'Nộp bài thất bại'); return null; }
   }
   async function loadReview() { const { data } = await supabase.rpc('exam_review', { p_attempt_id: attempt.id }); if (data && !data.error) setReview(data); }
 

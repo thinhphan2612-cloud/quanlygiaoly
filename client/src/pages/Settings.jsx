@@ -7,6 +7,7 @@ import { isPro } from '../lib/plans';
 import { useEntitlements } from '../entitlements.jsx';
 import { useParish } from '../parish.jsx';
 import { fileToDataUrl, fileToDataUrlWide } from '../lib/img';
+import { IconArchive, IconUpload } from '../components/Icons.jsx';
 
 // Trang cài đặt quản lý của admin: giáo xứ, năm học, lên lớp cuối năm,
 // tùy chọn bật/tắt, danh sách học viên đã ra trường.
@@ -72,6 +73,7 @@ export default function Settings() {
 
   function setAccent(a) { const t = { ...theme, accent: a }; applyTheme(t); setTheme(t); }
   function setMode(m) { const t = { ...theme, mode: m }; applyTheme(t); setTheme(t); }
+  function setBgImage(on) { const t = { ...theme, bgImage: on }; applyTheme(t); setTheme(t); }
   async function uploadLogo(e) {
     const file = e.target.files?.[0]; if (!file) return;
     try { const url = await fileToDataUrl(file); await saveParish({ logo_url: url }); }
@@ -109,7 +111,7 @@ export default function Settings() {
     try { cls = (await api.get('/classes')).data || []; } catch { /* noop */ }
     const catechism = cls.filter((c) => c.kind !== 'external');
     if (catechism.length && !catechism.some((c) => c.is_graduation)) {
-      if (!confirm('Bạn CHƯA gắn nhãn "🎓 Lớp tốt nghiệp" cho lớp giáo lý nào.\n\nHệ thống sẽ tự lấy lớp bậc cao nhất làm lớp tốt nghiệp. Nên vào "Lớp học" → sửa lớp cao nhất → bật "Đây là lớp tốt nghiệp" để chính xác.\n\nVẫn tiếp tục?')) return;
+      if (!confirm('Bạn CHƯA gắn nhãn "Lớp tốt nghiệp" cho lớp giáo lý nào.\n\nHệ thống sẽ tự lấy lớp bậc cao nhất làm lớp tốt nghiệp. Nên vào "Lớp học" → sửa lớp cao nhất → bật "Đây là lớp tốt nghiệp" để chính xác.\n\nVẫn tiếp tục?')) return;
     }
     if (!confirm(
       'KẾT THÚC NĂM HỌC & LÊN LỚP\n\n' +
@@ -182,6 +184,7 @@ export default function Settings() {
       <div className="panel">
         <div className="card-head"><h2>Giao diện</h2></div>
         <ToggleRow label="Chế độ tối (Night)" on={theme.mode === 'dark'} onClick={() => setMode(theme.mode === 'dark' ? 'light' : 'dark')} />
+        <ToggleRow label="Ảnh nền trang trí (các thẻ chuyển sang dạng kính mờ)" on={!!theme.bgImage} onClick={() => setBgImage(!theme.bgImage)} />
         <div className="fp-label" style={{ marginTop: 14 }}>Màu chủ đề (theo năm phụng vụ)</div>
         <div className="swatches">
           {Object.entries(ACCENTS).map(([k, a]) => (
@@ -308,7 +311,7 @@ export default function Settings() {
             theo <b>thứ tự lớp</b> đã đặt ở trang Lớp học, điểm bắt đầu lại. Học viên lớp cao nhất ra trường.
             Dữ liệu năm hiện tại được đóng băng, tra cứu ở tab <span className="link" onClick={() => navigate('/archive')}>Lưu trữ</span>.
           </p>
-          <button className="btn" onClick={promote}>⬆ Lên lớp cho cả giáo xứ</button>
+          <button className="btn" onClick={promote}><IconUpload className="bi" />Lên lớp cho cả giáo xứ</button>
         </div>
       )}
 
@@ -316,7 +319,7 @@ export default function Settings() {
       <div className="panel">
         <div className="card-head"><h2>Dữ liệu năm cũ</h2></div>
         <p className="muted" style={{ marginTop: 0 }}>Học viên đã ra trường và toàn bộ dữ liệu các năm đã kết thúc được lưu ở tab Lưu trữ (xem theo năm, tải về, xóa).</p>
-        <button className="btn ghost" onClick={() => navigate('/archive')}>📦 Mở tab Lưu trữ</button>
+        <button className="btn ghost" onClick={() => navigate('/archive')}><IconArchive className="bi" />Mở tab Lưu trữ</button>
       </div>
     </div>
   );

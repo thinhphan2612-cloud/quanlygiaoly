@@ -5,6 +5,8 @@ import { viError } from '../lib/viError';
 import { supabase } from '../supabase';
 import { printCert, certPageHtml, BUILTIN_FRAMES, CERT_ORIENT } from '../lib/certTemplates';
 import { fileToPngBlob } from '../lib/img';
+import { IconPrinter, IconSave } from '../components/Icons.jsx';
+import { toast } from '../lib/toast';
 
 const TYPES = [
   { key: 'marriage', label: 'Giáo Lý Hôn Nhân' },
@@ -118,7 +120,7 @@ export default function Certificates() {
         await loadFrames();
       }
       setMsg('Đã lưu vị trí cho khung này.'); setTimeout(() => setMsg(''), 3000);
-    } catch (e) { alert(e.response?.data?.error || 'Lưu vị trí thất bại'); }
+    } catch (e) { toast.err(e.response?.data?.error || 'Lưu vị trí thất bại'); }
     finally { setSavingInset(false); }
   }
   // HTML xem trước (1 tờ) — cập nhật theo loại/khung/lề/nội dung.
@@ -135,7 +137,7 @@ export default function Certificates() {
 
   async function uploadFrame(file) {
     if (!file || !parish?.id) return;
-    if (customCount >= 2) { alert('Mỗi loại chỉ được thêm tối đa 2 khung tùy chỉnh (chưa tính khung mặc định).'); return; }
+    if (customCount >= 2) { toast.err('Mỗi loại chỉ được thêm tối đa 2 khung tùy chỉnh (chưa tính khung mặc định).'); return; }
     setFrameBusy(true);
     try {
       const blob = await fileToPngBlob(file, 2000);
@@ -147,7 +149,7 @@ export default function Certificates() {
       await loadFrames();
       setSelFrame(pub);
     } catch (e) {
-      alert('Tải khung thất bại: ' + viError(e.message || e) + '\n(Đã chạy migration cert_frames & tạo bucket "cert-frames" chưa?)');
+      toast.err('Tải khung thất bại: ' + viError(e.message || e) + '\n(Đã chạy migration cert_frames & tạo bucket "cert-frames" chưa?)');
     } finally { setFrameBusy(false); }
   }
   async function delFrame(f) {
@@ -157,7 +159,7 @@ export default function Certificates() {
       const p = (f.url || '').split('/cert-frames/')[1];
       if (p) await supabase.storage.from('cert-frames').remove([decodeURIComponent(p)]).catch(() => {});
       await loadFrames();
-    } catch (e) { alert('Không xoá được: ' + viError(e.message || e)); }
+    } catch (e) { toast.err('Không xoá được: ' + viError(e.message || e)); }
   }
 
   const [msg, setMsg] = useState('');
@@ -181,7 +183,7 @@ export default function Certificates() {
 
   async function issue() {
     const sel = students.filter((s) => picked.includes(s.id));
-    if (!sel.length) { alert('Chưa chọn học viên nào'); return; }
+    if (!sel.length) { toast.err('Chưa chọn học viên nào'); return; }
     const issueDate = extra.issue_date || todayStr();
     const parishForCert = { ...parish, priest_name: priestName, priest_signature: parish?.settings?.priest_signature };
     const ex = isMerit
@@ -228,7 +230,7 @@ export default function Certificates() {
                 {isAdmin && customCount < 2 && (
                   <label style={{ width: (CERT_ORIENT[kind] || 'portrait') === 'landscape' ? 132 : 86, height: (CERT_ORIENT[kind] || 'portrait') === 'landscape' ? 94 : 122, border: '1px dashed var(--border,#94a3b8)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', cursor: 'pointer', color: 'var(--muted,#64748b)', fontSize: 12 }}>
                     <input type="file" accept="image/*" hidden disabled={frameBusy} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; uploadFrame(f); }} />
-                    <span>{frameBusy ? '⏳ Đang tải…' : <>＋<br />Thêm khung</>}</span>
+                    <span>{frameBusy ? 'Đang tải…' : <>＋<br />Thêm khung</>}</span>
                   </label>
                 )}
               </div>
@@ -252,7 +254,7 @@ export default function Certificates() {
                         onChange={(e) => setInsetDraft((d) => ({ ...d, [k]: Number(e.target.value) || 0 }))} style={{ width: 88 }} />
                     </div>
                   ))}
-                  <button className="btn ghost sm" onClick={saveInset} disabled={savingInset} style={{ marginTop: 4 }}>{savingInset ? 'Đang lưu…' : '💾 Lưu vị trí cho khung này'}</button>
+                  <button className="btn ghost sm" onClick={saveInset} disabled={savingInset} style={{ marginTop: 4 }}>{savingInset ? 'Đang lưu…' : <><IconSave className="bi" />Lưu vị trí cho khung này</>}</button>
                   <p className="muted" style={{ fontSize: 11, marginTop: 6 }}>Lưu để mọi GLV in ra khớp{selFrameObj?.builtin ? ' (áp cho khung mặc định của giáo xứ bạn)' : ''}.</p>
                 </div>
               </div>
@@ -322,7 +324,7 @@ export default function Certificates() {
         )}
 
         <div style={{ marginTop: 16 }}>
-          <button className="btn" onClick={issue} disabled={!picked.length}>🖨 Xuất {picked.length > 1 ? `${picked.length} tờ` : 'chứng chỉ'} (PDF)</button>
+          <button className="btn" onClick={issue} disabled={!picked.length}><IconPrinter className="bi" />Xuất {picked.length > 1 ? `${picked.length} tờ` : 'chứng chỉ'} (PDF)</button>
           {msg && <div className="info-box" style={{ marginTop: 8 }}>{msg}</div>}
           <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>Chọn "Lưu thành PDF" trong hộp thoại in. Mỗi học viên một trang.</p>
         </div>

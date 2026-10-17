@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import api from '../api';
 import { exportXlsx, exportPdf, exportXlsxMulti, exportPdfMulti, STT_COL, ATT_LABEL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 import Avatar from '../components/Avatar.jsx';
+import { IconDownload, IconPrinter, IconSliders } from '../components/Icons.jsx';
+import { pickClass, rememberClass } from '../lib/lastClass';
+import { toast } from '../lib/toast';
 
 // Ngày dạng YYYY-MM-DD theo giờ ĐỊA PHƯƠNG (không dùng toISOString vì lệch múi giờ).
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -58,6 +61,9 @@ export default function Attendance() {
 
   useEffect(() => { api.get('/classes').then((r) => setClasses(r.data)); }, []);
   useEffect(() => { api.get('/parish').then((r) => setParish(r.data)).catch(() => {}); }, []);
+  // Mở trang là chọn sẵn lớp (lớp đã chọn lần trước, hoặc lớp đầu tiên).
+  useEffect(() => { if (!classId && classes.length) setClassId(pickClass(classes)); }, [classes]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { rememberClass(classId); }, [classId]);
   const cls = classes.find((c) => c.id === classId) || {};
   const className = cls.name || '';
   const range = mode === 'week' ? weekRange(date) : mode === 'month' ? monthRange(date) : null;
@@ -83,13 +89,13 @@ export default function Attendance() {
           <button className={mode === 'week' ? 'on' : ''} onClick={() => setMode('week')}>Tuần</button>
           <button className={mode === 'month' ? 'on' : ''} onClick={() => setMode('month')}>Tháng</button>
         </div>
-        <button className="btn ghost" style={{ marginLeft: 'auto' }} disabled={!classId} onClick={() => setReport(true)}>⬇ Xuất báo cáo</button>
+        <button className="btn ghost" style={{ marginLeft: 'auto' }} disabled={!classId} onClick={() => setReport(true)}><IconDownload className="bi" />Xuất báo cáo</button>
       </div>
 
       {report && <ReportModal classId={classId} cls={cls} parish={parish} defaultRange={range || monthRange(date)} onClose={() => setReport(false)} />}
 
       {!classId ? (
-        <div className="panel"><p className="muted">Hãy chọn lớp để điểm danh.</p></div>
+        <div className="panel"><p className="muted">{classes.length ? 'Hãy chọn lớp để điểm danh.' : 'Chưa có lớp nào. Vào mục Lớp học để tạo lớp trước.'}</p></div>
       ) : tab === 'giaoly' ? (
         mode === 'day'
           ? <GiaoLyDay classId={classId} date={date} cls={cls} parish={parish} />
@@ -117,13 +123,14 @@ function GiaoLyDay({ classId, date, cls, parish }) {
   const setRowNote = (id, note) => { setRows((rs) => rs.map((r) => (r.id === id ? { ...r, note } : r))); setSaved(false); };
   const markAll = (status) => { setRows((rs) => rs.map((r) => ({ ...r, status }))); setSaved(false); };
   const allPresent = rows.length > 0 && rows.every((r) => r.status === 'present');
+  const count = (k) => rows.filter((r) => (r.status || null) === k).length;
   async function save() {
     try {
       // Gửi status thật (null khi bỏ trạng thái) -> backend xóa bản ghi ngày đó cho những em bị bỏ.
       await api.post('/attendance', { date, records: rows.map((r) => ({ student_id: r.id, status: r.status || null, note: r.note || '' })) });
       setSaved(true);
     } catch (e) {
-      alert(e.response?.data?.error || 'Lưu điểm danh thất bại');
+      toast.err(e.response?.data?.error || 'Lưu điểm danh thất bại');
     }
   }
   const attColumns = [
@@ -136,23 +143,31 @@ function GiaoLyDay({ classId, date, cls, parish }) {
 
   if (rows.length === 0) return <div className="panel"><p className="muted">Lớp chưa có học viên.</p></div>;
   return (
-    <div className="panel">
-      <div className="toolbar" style={{ marginTop: 0 }}>
-        <button className="btn ghost" onClick={() => markAll(allPresent ? null : 'present')}>{allPresent ? '↩ Bỏ đánh dấu tất cả' : 'Đánh dấu tất cả có mặt'}</button>
-        <button className="btn ghost" onClick={() => exportXlsx({ filename: `diem-danh-${fileSlug(className)}-${date}.xlsx`, sheetName: 'Điểm danh', ...meta })}>⬇ Excel</button>
-        <button className="btn ghost" onClick={() => exportPdf(meta)}>🖨 PDF</button>
+    <div className="panel att-panel">
+      <div className="att-summary">
+        <span className="att-chip present">Có mặt <b>{count('present')}</b></span>
+        <span className="att-chip late">Trễ <b>{count('late')}</b></span>
+        <span className="att-chip absent">Vắng <b>{count('absent')}</b></span>
+        <span className="att-chip excused">Có phép <b>{count('excused')}</b></span>
+        <span className="att-chip none">Chưa điểm danh <b>{count(null)}</b></span>
+        <span className="muted" style={{ marginLeft: 'auto', fontSize: 13 }}>Sĩ số {rows.length}</span>
       </div>
-      <table>
+      <div className="toolbar" style={{ marginTop: 0 }}>
+        <button className="btn ghost" onClick={() => markAll(allPresent ? null : 'present')}>{allPresent ? 'Bỏ đánh dấu tất cả' : 'Đánh dấu tất cả có mặt'}</button>
+        <button className="btn ghost" onClick={() => exportXlsx({ filename: `diem-danh-${fileSlug(className)}-${date}.xlsx`, sheetName: 'Điểm danh', ...meta })}><IconDownload className="bi" />Excel</button>
+        <button className="btn ghost" onClick={() => exportPdf(meta)}><IconPrinter className="bi" />PDF</button>
+      </div>
+      <table className="att-table">
         <thead><tr><th>Tên thánh</th><th>Họ tên</th><th>Trạng thái</th></tr></thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.id}>
-              <td>{r.saint_name || '—'}</td>
-              <td><div className="stu-cell"><Avatar url={r.avatar_url} name={r.full_name} size={30} /><span>{r.full_name}</span></div></td>
+              <td className="att-saint">{r.saint_name || '—'}</td>
+              <td><div className="stu-cell"><Avatar url={r.avatar_url} name={r.full_name} size={30} /><span>{r.saint_name && <span className="att-saint-inline">{r.saint_name} </span>}{r.full_name}</span></div></td>
               <td>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                <div className="att-status">
                   {STATUSES.map((s) => (
-                    <button key={s.key} className={`btn sm ${r.status === s.key ? '' : 'ghost'}`} onClick={() => setStatus(r.id, r.status === s.key ? null : s.key)}>{s.label}</button>
+                    <button key={s.key} className={`att-btn ${s.key} ${r.status === s.key ? 'on' : ''}`} onClick={() => setStatus(r.id, r.status === s.key ? null : s.key)}>{s.label}</button>
                   ))}
                   {r.status === 'excused' && (
                     <input className="excuse-note" value={r.note || ''} onChange={(e) => setRowNote(r.id, e.target.value)} placeholder="Lý do nghỉ phép..." />
@@ -163,9 +178,9 @@ function GiaoLyDay({ classId, date, cls, parish }) {
           ))}
         </tbody>
       </table>
-      <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className="att-savebar">
         <button className="btn" onClick={save}>Lưu điểm danh</button>
-        {saved && <span style={{ color: 'var(--success)' }}>✓ Đã lưu</span>}
+        {saved ? <span style={{ color: 'var(--success)' }}>✓ Đã lưu</span> : <span className="muted" style={{ fontSize: 13 }}>Nhớ bấm Lưu sau khi điểm danh xong</span>}
       </div>
     </div>
   );
@@ -208,8 +223,8 @@ function GiaoLyStats({ classId, range, mode }) {
             <div className="stat-mini"><div className="lbl">Sĩ số</div><div className="num">{data.students.length}</div></div>
           </div>
           <div className="rank-grid">
-            <RankList title="🌟 Chuyên cần (đi học ≥ 80%)" tone="good" rows={diligent} emptyText="Chưa có bạn nào đạt ≥ 80%" />
-            <RankList title="⚠ Cần nhắc nhở (đi học < 50%)" tone="warn" rows={remind} emptyText="Không có bạn nào cần nhắc 👍" />
+            <RankList title="Chuyên cần (đi học ≥ 80%)" tone="good" rows={diligent} emptyText="Chưa có bạn nào đạt ≥ 80%" />
+            <RankList title="Cần nhắc nhở (đi học < 50%)" tone="warn" rows={remind} emptyText="Không có bạn nào cần nhắc" />
           </div>
         </>
       )}
@@ -285,13 +300,13 @@ function ThiengDay({ classId, date }) {
         <span className="muted">Đánh dấu việc thiêng liêng ngày {date.split('-').reverse().join('/')}</span>
         <div style={{ display: 'flex', gap: 8 }}>
           {tasks.length > 0 && rows.length > 0 && (
-            <button className="btn ghost" onClick={() => markAll(!allChecked)}>{allChecked ? '↩ Bỏ chọn tất cả' : '✓ Chọn tất cả'}</button>
+            <button className="btn ghost" onClick={() => markAll(!allChecked)}>{allChecked ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}</button>
           )}
-          <button className="btn ghost" onClick={() => setGear(true)}>⚙ Quản lý việc</button>
+          <button className="btn ghost" onClick={() => setGear(true)}><IconSliders className="bi" />Quản lý việc</button>
         </div>
       </div>
       {tasks.length === 0 ? (
-        <p className="muted">Chưa có việc thiêng liêng nào. Bấm "⚙ Quản lý việc" để thêm (Đi lễ, Đọc kinh...).</p>
+        <p className="muted">Chưa có việc thiêng liêng nào. Bấm "Quản lý việc" để thêm (Đi lễ, Đọc kinh...).</p>
       ) : rows.length === 0 ? (
         <p className="muted">Lớp chưa có học viên.</p>
       ) : (
@@ -369,8 +384,8 @@ function ThiengStats({ classId, range }) {
       <div className="stats-bar"><span className="muted">{ddmm(range.from)} – {ddmm(range.to)} · {total} ngày có ghi nhận</span></div>
       {tasks.length > 0 && total > 0 && (
         <div className="rank-grid">
-          <RankList title="🌟 Siêng năng (làm ≥ 80%)" tone="good" rows={siengNang} emptyText="Chưa có bạn nào đạt ≥ 80%" />
-          <RankList title="⚠ Cần nhắc nhở (làm < 50%)" tone="warn" rows={canNhac} emptyText="Không có bạn nào cần nhắc 👍" />
+          <RankList title="Siêng năng (làm ≥ 80%)" tone="good" rows={siengNang} emptyText="Chưa có bạn nào đạt ≥ 80%" />
+          <RankList title="Cần nhắc nhở (làm < 50%)" tone="warn" rows={canNhac} emptyText="Không có bạn nào cần nhắc" />
         </div>
       )}
       {tasks.length === 0 ? <p className="muted">Chưa có việc thiêng liêng nào.</p> : (
@@ -503,8 +518,8 @@ function ReportModal({ classId, cls, parish, defaultRange, onClose }) {
         {err && <div className="error">{err}</div>}
         <div className="modal-actions">
           <button className="btn ghost" onClick={onClose}>Hủy</button>
-          <button className="btn ghost" disabled={busy} onClick={() => buildAndExport('pdf')}>🖨 PDF</button>
-          <button className="btn" disabled={busy} onClick={() => buildAndExport('xlsx')}>{busy ? 'Đang xuất...' : '⬇ Excel'}</button>
+          <button className="btn ghost" disabled={busy} onClick={() => buildAndExport('pdf')}><IconPrinter className="bi" />PDF</button>
+          <button className="btn" disabled={busy} onClick={() => buildAndExport('xlsx')}>{busy ? 'Đang xuất...' : <><IconDownload className="bi" />Excel</>}</button>
         </div>
       </div>
     </div>

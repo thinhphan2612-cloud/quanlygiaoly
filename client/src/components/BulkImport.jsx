@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import api from '../api';
 import { COLUMNS, parseStudents, parseAoa, templateAoa } from '../lib/parseStudents';
+import { IconDownload, IconUpload } from './Icons.jsx';
+import { viDate } from '../lib/date';
 
 export default function BulkImport({ classes, onClose, onDone }) {
   const [text, setText] = useState('');
@@ -88,8 +90,8 @@ export default function BulkImport({ classes, onClose, onDone }) {
         </div>
 
         <div className="toolbar" style={{ marginBottom: 12 }}>
-          <button className="btn ghost" onClick={downloadTemplate}>⬇ Tải form mẫu (Excel)</button>
-          <button className="btn ghost" onClick={() => fileRef.current?.click()}>📄 Tải lên Excel / CSV</button>
+          <button className="btn ghost" onClick={downloadTemplate}><IconDownload className="bi" />Tải form mẫu (Excel)</button>
+          <button className="btn ghost" onClick={() => fileRef.current?.click()}><IconUpload className="bi" />Tải lên Excel / CSV</button>
           <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv,text/csv" onChange={onFile} style={{ display: 'none' }} />
           <div className="grow" />
           <select value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 200 }}>
@@ -123,12 +125,12 @@ export default function BulkImport({ classes, onClose, onDone }) {
                     <tr key={i} style={{ opacity: r._valid ? 1 : 0.45 }}>
                       <td>{r.saint_name || '—'}</td>
                       <td>{r.full_name || <span style={{ color: 'var(--danger)' }}>(thiếu)</span>}</td>
-                      <td>{r.birth_date || '—'}</td>
+                      <td>{viDate(r.birth_date) || '—'}</td>
                       <td>{r.gender || '—'}</td>
                       <td>{dad(r) || '—'}</td>
                       <td>{mom(r) || '—'}</td>
                       <td>{r.father_phone || r.mother_phone || r.student_phone || '—'}</td>
-                      <td>{[r.baptism_date, r.first_communion_date, r.confirmation_date].map((d) => d || '–').join(' / ')}</td>
+                      <td>{[r.baptism_date, r.first_communion_date, r.confirmation_date].map((d) => viDate(d) || '–').join(' / ')}</td>
                       <td>{r.address || '—'}</td>
                     </tr>
                   ))}

@@ -11,6 +11,10 @@ import Avatar from '../components/Avatar.jsx';
 import { byViName } from '../lib/viName';
 import { exportXlsx, exportSubtitle, fileSlug, STT_COL } from '../lib/exportUtils';
 import { FIELDS } from '../lib/parseStudents';
+import { IconDownload, IconFlag, IconGradCap, IconLock, IconMegaphone, IconSliders, IconTrend } from '../components/Icons.jsx';
+import { viDate } from '../lib/date';
+import RowMenu from '../components/RowMenu.jsx';
+import { toast } from '../lib/toast';
 
 const empty = {
   mode: 'new', name: '', year: '', room: '', schedule: '', promotes: true, kind: 'catechism', is_graduation: false, teachers: [],
@@ -19,9 +23,9 @@ const empty = {
 const SCHEDULES = ['Sáng', 'Chiều', 'Tối'];
 const SAC_RANK = { none: 0, baptism: 1, ruoc_le: 2, them_suc: 3 }; // Rửa tội -> Rước lễ -> Thêm Sức
 const REVIEW_BADGE = {
-  submitted: ['⏳ Chờ duyệt', '#fef9c3', '#854d0e'],
-  approved: ['✓ Đã duyệt', '#dcfce7', '#15803d'],
-  revision: ['↩ Cần xem lại', '#fee2e2', '#b91c1c'],
+  submitted: ['Chờ duyệt', '#fef9c3', '#854d0e'],
+  approved: ['Đã duyệt', '#dcfce7', '#15803d'],
+  revision: ['Cần xem lại', '#fee2e2', '#b91c1c'],
 };
 function reviewBadge(status) {
   const v = REVIEW_BADGE[status];
@@ -76,13 +80,13 @@ export default function Classes() {
     try {
       await api.put('/parish', { settings: { ...(parish?.settings || {}), promotion_open: open } });
       reloadParish();
-    } catch (e) { alert(e.response?.data?.error || 'Không đổi được trạng thái kỳ xét'); }
+    } catch (e) { toast.err(e.response?.data?.error || 'Không đổi được trạng thái kỳ xét'); }
   }
   // GLV rút lại yêu cầu đã gửi (khi Admin chưa duyệt).
   async function cancelReview(c) {
     if (!confirm(`Hủy gửi duyệt lớp "${c.name}"? Lớp sẽ được rút khỏi danh sách chờ của Admin.`)) return;
     try { await api.delete(`/class-review/${c.id}`); loadReviews(); }
-    catch (e) { alert(e.response?.data?.error || 'Hủy gửi thất bại'); }
+    catch (e) { toast.err(e.response?.data?.error || 'Hủy gửi thất bại'); }
   }
   useEffect(() => {
     load();
@@ -282,7 +286,7 @@ export default function Classes() {
       };
     });
     try { await api.post('/class-review', { class_id: m.cls.id, decisions: m.decisions, details }); setReviewModal(null); loadReviews(); load(); }
-    catch (e) { alert(e.response?.data?.error || 'Gửi thất bại'); }
+    catch (e) { toast.err(e.response?.data?.error || 'Gửi thất bại'); }
   }
 
   // ---- xem & chỉnh danh sách học viên của 1 lớp ----
@@ -319,7 +323,7 @@ export default function Classes() {
   async function removeStudent(s) { if (!confirm(`Xóa học viên "${s.full_name}"?`)) return; await api.delete(`/students/${s.id}`); reloadDetail(); }
   async function saveStudent() {
     try { await api.put(`/students/${stEdit.id}`, stEdit); setStEdit(null); reloadDetail(); }
-    catch (e) { alert(e.response?.data?.error || 'Lưu thất bại'); }
+    catch (e) { toast.err(e.response?.data?.error || 'Lưu thất bại'); }
   }
   async function doMove() {
     await api.post('/students/move', { ids: mv.ids, class_id: mv.dest });
@@ -329,7 +333,7 @@ export default function Classes() {
     if (!ids.length || !confirm('Trả các em đã chọn về lớp cũ (trước khi gộp)?')) return;
     const r = await api.post('/students/return', { ids });
     setDetail((d) => (d ? { ...d, picked: [] } : d)); reloadDetail();
-    if (!r.data.returned) alert('Các em này không có lớp cũ để trả về.');
+    if (!r.data.returned) toast('Các em này không có lớp cũ để trả về.');
   }
   async function openHist(c) {
     setHist({ cls: c, rows: null });
@@ -345,7 +349,7 @@ export default function Classes() {
   })();
 
   const showActions = isAdmin || isTeacher;
-  const colCount = 6 + (showActions ? 1 : 0);
+  const colCount = 5 + (showActions ? 1 : 0);
   // Danh sách hiển thị: catechism xếp theo thứ tự lớp (cao nhất trên cùng — khớp "Cài đặt thứ tự lớp")
   const shown = classes.filter((c) => (c.kind || 'catechism') === tab)
     .slice().sort((a, b) => (tab === 'catechism' ? (b.order_index || 0) - (a.order_index || 0) : 0));
@@ -360,10 +364,10 @@ export default function Classes() {
         return (
         <div className="toolbar">
           {!reached && <button className="btn" onClick={openCreate}>+ Thêm lớp</button>}
-          {!isFree && <button className="btn ghost" onClick={openOrder} disabled={classes.length < 2}>⚙ Cài đặt lớp học</button>}
+          {!isFree && <button className="btn ghost" onClick={openOrder} disabled={classes.length < 2}><IconSliders className="bi" />Cài đặt lớp học</button>}
           {!isFree && (
             <button className={`btn ${promotionOpen ? 'danger' : ''} ghost`} onClick={togglePromotion} title="Mở để các lớp giáo lý trong năm gửi kết quả lên lớp / ở lại cho bạn duyệt">
-              {promotionOpen ? '🔒 Đóng kỳ xét lên lớp' : '📢 Mở kỳ xét lên lớp'}
+              {promotionOpen ? <><IconLock className="bi" />Đóng kỳ xét lên lớp</> : <><IconMegaphone className="bi" />Mở kỳ xét lên lớp</>}
             </button>
           )}
           {!isFree && promotionOpen && <span className="muted" style={{ fontSize: 12, alignSelf: 'center' }}>Đang mở, các lớp giáo lý trong năm có thể gửi kết quả để bạn duyệt.</span>}
@@ -387,7 +391,7 @@ export default function Classes() {
         <table>
           <thead>
             <tr>
-              <th>Tên lớp</th><th>Niên khóa</th><th>Phòng</th><th>Thời gian</th>
+              <th>Tên lớp</th><th>Niên khóa</th><th>Phòng · Lịch học</th>
               <th>Giáo lý viên</th><th>Sĩ số</th>{showActions && <th></th>}
             </tr>
           </thead>
@@ -397,28 +401,33 @@ export default function Classes() {
                 <td>
                   <span className="link-name" onClick={() => openDetail(c)}>{c.name}</span>
                   {c.merged && <span className="tag-chip merged" style={{ marginLeft: 6 }}>● lớp gộp</span>}
-                  {c.is_graduation && <span className="tag-chip" style={{ marginLeft: 6, background: '#dcfce7', color: '#15803d' }}>🎓 lớp tốt nghiệp</span>}
+                  {c.is_graduation && <span className="tag-chip" style={{ marginLeft: 6, background: '#dcfce7', color: '#15803d' }}><IconGradCap className="bi" style={{ width: 13, height: 13, marginRight: 3 }} />lớp tốt nghiệp</span>}
                   {reviewBadge(rev2[c.id]?.status)}
                 </td>
                 <td>{c.year || '—'}</td>
-                <td>{c.room || '—'}</td>
-                <td>{c.schedule || '—'}</td>
+                <td>{[c.room, c.schedule].filter(Boolean).join(' · ') || '—'}</td>
                 <td>{c.teacher_name || <span className="muted">Chưa phân công</span>}</td>
                 <td>{c.student_count}</td>
                 {showActions && (
-                  <td style={{ whiteSpace: 'nowrap' }}>
-                    <button className="btn ghost sm" onClick={() => openSac(c)}>✝ Ghi bí tích</button>{' '}
+                  <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
+                    {!isAdmin && <><button className="btn ghost sm" onClick={() => openSac(c)}>Ghi bí tích</button>{' '}</>}
                     {(() => {
                       const st = rev2[c.id]?.status;
                       const canSubmit = c.kind === 'external' || promotionOpen; // chính quy: chờ Admin mở cổng
                       if (st === 'approved') return null;
-                      if (st === 'submitted') return <><button className="btn ghost sm" onClick={() => cancelReview(c)}>↩ Hủy gửi</button>{' '}</>;
-                      if (canSubmit) return <><button className="btn ghost sm" onClick={() => openReview(c)}>{st === 'revision' ? '🏁 Gửi lại' : '🏁 Kết thúc lớp'}</button>{' '}</>;
+                      if (st === 'submitted') return <><button className="btn ghost sm" onClick={() => cancelReview(c)}>Hủy gửi</button>{' '}</>;
+                      if (canSubmit) return <><button className="btn ghost sm" onClick={() => openReview(c)}><IconFlag className="bi" />{st === 'revision' ? 'Gửi lại' : 'Kết thúc lớp'}</button>{' '}</>;
                       return null;
                     })()}
-                    {isAdmin && <><button className="btn ghost sm" onClick={() => setAddExisting(c)}>+ HV có sẵn</button>{' '}
+                    {isAdmin && <>
                       <button className="btn ghost sm" onClick={() => openEdit(c)}>Sửa</button>{' '}
-                      <button className="btn danger sm" onClick={() => remove(c)}>Xóa</button></>}
+                      <RowMenu items={[
+                        { label: 'Ghi bí tích cho lớp', onClick: () => openSac(c) },
+                        { label: 'Thêm học viên có sẵn', onClick: () => setAddExisting(c) },
+                        { label: 'Xem danh sách lớp', onClick: () => openDetail(c) },
+                        { label: 'Xóa lớp', onClick: () => remove(c), danger: true },
+                      ]} />
+                    </>}
                   </td>
                 )}
               </tr>
@@ -429,7 +438,7 @@ export default function Classes() {
       </div>
       {tab === 'catechism' && (
         <p className="muted" style={{ fontSize: 13, marginTop: -4 }}>
-          🎓 <b>Lớp tốt nghiệp</b>: học viên lớp này sẽ <b>ra trường</b> khi bấm "Kết thúc năm học". Gán nhãn ở nút <b>Sửa</b> của lớp bậc cao nhất; chưa gán thì hệ thống tự lấy lớp trên cùng.
+          <IconGradCap className="bi" /><b>Lớp tốt nghiệp</b>: học viên lớp này sẽ <b>ra trường</b> khi bấm "Kết thúc năm học". Gán nhãn ở nút <b>Sửa</b> của lớp bậc cao nhất; chưa gán thì hệ thống tự lấy lớp trên cùng.
         </p>
       )}
 
@@ -439,9 +448,9 @@ export default function Classes() {
           <div className="card-head">
             <h2>Danh sách lớp {detail.cls.name} {detail.cls.merged && <span className="tag-chip merged">● lớp gộp</span>}</h2>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <button className="btn ghost sm" onClick={() => setSortAbc((v) => !v)}>{sortAbc ? '✓ Đang xếp A→Z (theo tên)' : '↕ Sắp xếp A→Z'}</button>
-              <button className="btn ghost sm" onClick={exportClassXlsx} disabled={!detail.students?.length}>⬇ Xuất Excel</button>
-              <button className="btn ghost sm" onClick={() => openHist(detail.cls)}>📈 Lịch sử lớp</button>
+              <button className="btn ghost sm" onClick={() => setSortAbc((v) => !v)}>{sortAbc ? 'Đang xếp A→Z (theo tên)' : 'Sắp xếp A→Z'}</button>
+              <button className="btn ghost sm" onClick={exportClassXlsx} disabled={!detail.students?.length}><IconDownload className="bi" />Xuất Excel</button>
+              <button className="btn ghost sm" onClick={() => openHist(detail.cls)}><IconTrend className="bi" />Lịch sử lớp</button>
               <span className="link" onClick={() => setDetail(null)}>Đóng ✕</span>
             </div>
           </div>
@@ -467,7 +476,7 @@ export default function Classes() {
                       <td>{s.saint_name || '—'}</td>
                       <td><div className="stu-cell"><Avatar url={s.avatar_url} name={s.full_name} size={28} /><span className="link-name" onClick={() => navigate(`/students/${s.id}`)}>{s.full_name}</span></div></td>
                       <td>{s.position ? <span className="role-chip">{s.position}</span> : <span className="muted">—</span>}</td>
-                      <td>{s.birth_date || '—'}</td>
+                      <td>{viDate(s.birth_date) || '—'}</td>
                       <td>{s.father_phone || s.mother_phone || s.parent_phone || '—'}</td>
                       <td style={{ whiteSpace: 'nowrap' }}>
                         <button className="btn ghost sm" onClick={() => setStEdit({ ...s, class_id: s.class_id || '' })}>Sửa</button>{' '}
@@ -682,7 +691,7 @@ export default function Classes() {
             <h2>Cài đặt thứ tự lớp</h2>
             <p className="muted" style={{ marginTop: 0 }}>
               Sắp xếp bậc lớp cho việc lên lớp cuối năm. <b>Trên cùng là lớp cao nhất</b> (thường là lớp tốt nghiệp, ra trường khi lên lớp),
-              dưới cùng là lớp nhỏ nhất. Đánh dấu "🎓 lớp tốt nghiệp" ở nút <b>Sửa</b> của lớp cao nhất.
+              dưới cùng là lớp nhỏ nhất. Đánh dấu "lớp tốt nghiệp" ở nút <b>Sửa</b> của lớp cao nhất.
             </p>
             <div className="order-list">
               {orderList.map((c, i) => (
@@ -760,17 +769,17 @@ export default function Classes() {
       {reviewModal && (
         <div className="modal-backdrop" onClick={() => setReviewModal(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>🏁 Kết thúc lớp: {reviewModal.cls.name}</h2>
+            <h2><IconFlag className="h-ic" />Kết thúc lớp: {reviewModal.cls.name}</h2>
             <p className="muted" style={{ marginTop: -6, fontSize: 13 }}>
               {reviewModal.kind === 'external'
                 ? 'Chọn kết quả từng em rồi gửi Admin duyệt. Khi Admin duyệt, lớp sẽ đóng & chuyển vào Lưu trữ.'
                 : 'Chọn em nào lên lớp / ở lại rồi gửi Admin duyệt. Việc lên lớp chỉ thực hiện khi Admin "Kết thúc năm học".'}
             </p>
             {reviewModal.existing?.status === 'revision' && reviewModal.existing.admin_note && (
-              <div className="note-box err">↩ Admin yêu cầu xem lại: {reviewModal.existing.admin_note}</div>
+              <div className="note-box err">Admin yêu cầu xem lại: {reviewModal.existing.admin_note}</div>
             )}
             {reviewModal.existing?.status === 'submitted' && (
-              <div className="note-box">⏳ Đã gửi, đang chờ Admin duyệt. Bạn có thể chỉnh và gửi lại.</div>
+              <div className="note-box">Đã gửi, đang chờ Admin duyệt. Bạn có thể chỉnh và gửi lại.</div>
             )}
             <div className="fp-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>{reviewModal.students?.length || 0} học viên</span>

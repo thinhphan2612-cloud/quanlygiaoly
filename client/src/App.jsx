@@ -25,6 +25,7 @@ import Guide from './pages/Guide.jsx';
 import { isSuperAdmin } from './lib/superadmin';
 import { useParish } from './parish.jsx';
 import { isPro } from './lib/plans';
+import Toaster from './components/Toaster.jsx';
 
 // Bắt link mời / đặt lại mật khẩu (đọc hash trước khi Supabase xoá) — buộc đặt mật khẩu.
 const INVITE_LINK = typeof window !== 'undefined' && /type=(invite|recovery)/i.test(window.location.hash);
@@ -60,6 +61,8 @@ function Home() {
 
 export default function App() {
   return (
+    <>
+    <Toaster />
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Login initialMode="register" />} />
@@ -85,5 +88,6 @@ export default function App() {
       <Route path="/notify" element={<Protected><RequirePro><Notify /></RequirePro></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

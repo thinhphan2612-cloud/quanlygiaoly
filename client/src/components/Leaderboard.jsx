@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import Avatar from './Avatar.jsx';
+import { IconTrophy } from './Icons.jsx';
 
 const round1 = (n) => Math.round(n * 10) / 10;
 const MEDAL = ['🥇', '🥈', '🥉'];
@@ -113,7 +114,7 @@ export default function Leaderboard({ classId, range, className, onClose }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal wide lb-modal" onClick={(e) => e.stopPropagation()}>
         <div className="lb-hero">
-          <div className="lb-hero-title">🏆 Bảng xếp hạng thi đua</div>
+          <div className="lb-hero-title"><IconTrophy className="bi" style={{ width: 20, height: 20, verticalAlign: -3 }} />Bảng xếp hạng thi đua</div>
           <div className="lb-hero-sub">{className} · {range.from.slice(8, 10)}/{range.from.slice(5, 7)} – {range.to.slice(8, 10)}/{range.to.slice(5, 7)}</div>
         </div>
         <LeaderboardTable classId={classId} range={range} />

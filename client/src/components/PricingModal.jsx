@@ -5,6 +5,8 @@ import { viError } from '../lib/viError';
 import { useAuth } from '../auth.jsx';
 import { useParish } from '../parish.jsx';
 import { sendContactMessage } from '../lib/contact';
+import { IconStar } from './Icons.jsx';
+import { toast } from '../lib/toast';
 
 const vnd = (n) => (Number(n) || 0).toLocaleString('vi-VN') + 'đ';
 
@@ -70,7 +72,7 @@ export default function PricingModal({ current = 'free', onClose }) {
         try {
           const rr = await api.get('/upgrade/code-remaining?code=' + encodeURIComponent(c));
           if (rr.data && rr.data.kind === 'pro_free' && rr.data.active) {
-            hint = 'Đây là mã nâng Pro miễn phí. Bấm “← Quay lại” rồi nhập ở ô “🎁 Có mã khuyến mãi?”.';
+            hint = 'Đây là mã nâng Pro miễn phí. Bấm “← Quay lại” rồi nhập ở ô “Có mã khuyến mãi?”.';
           }
         } catch { /* bỏ qua */ }
         setCodeMsg(hint);
@@ -80,12 +82,12 @@ export default function PricingModal({ current = 'free', onClose }) {
   }
 
   async function sendContact() {
-    if (!msg.trim()) { alert('Vui lòng nhập lời nhắn'); return; }
+    if (!msg.trim()) { toast.err('Vui lòng nhập lời nhắn'); return; }
     setBusy(true);
     try {
       await sendContactMessage({ user, parish, message: msg, context: 'Nâng cấp: ' + (tier?.label || 'Giáo xứ lớn') });
       setSent(true);
-    } catch (e) { alert(viError(e.response?.data?.error || e.message)); }
+    } catch (e) { toast.err(viError(e.response?.data?.error || e.message)); }
     finally { setBusy(false); }
   }
 
@@ -95,7 +97,7 @@ export default function PricingModal({ current = 'free', onClose }) {
       // Chỉ gửi mã khi đã áp dụng hợp lệ (disc). Tránh dính mã sai/không hợp lệ vào đơn.
       const r = await api.post('/upgrade/order', { tier_id: tier.id, code: disc ? code.trim() : null });
       setOrder(r.data); setStep('qr');
-    } catch (e) { alert(e.response?.data?.error || 'Không tạo được đơn'); }
+    } catch (e) { toast.err(e.response?.data?.error || 'Không tạo được đơn'); }
     finally { setBusy(false); }
   }
 
@@ -130,7 +132,7 @@ export default function PricingModal({ current = 'free', onClose }) {
             </div>
 
             <div className="price-cheap">
-              <span className="pcheap-emoji">💡</span>
+              <IconStar className="pcheap-emoji" style={{ width: 24, height: 24, color: 'var(--primary)' }} />
               <div className="pcheap-body">
                 <div className="pcheap-big">Tính ra chỉ hơn <b>20.000đ</b> mỗi lớp mỗi tháng</div>
                 <div className="pcheap-sub">Rẻ hơn một ly cà phê, cho cả lớp dùng trọn vẹn mọi tính năng suốt tháng. Ví dụ gói vừa 2.900.000đ cho 12 lớp một niên khóa.</div>
@@ -173,7 +175,7 @@ export default function PricingModal({ current = 'free', onClose }) {
             </div>
 
             <div style={{ marginTop: 16, background: 'var(--primary-soft)', border: '1px dashed var(--primary)', borderRadius: 12, padding: '12px 14px' }}>
-              <div className="fp-label" style={{ marginBottom: 6 }}>🎁 Có mã khuyến mãi? (nâng Pro miễn phí)</div>
+              <div className="fp-label" style={{ marginBottom: 6 }}>Có mã khuyến mãi? (nâng Pro miễn phí)</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <input value={redeemCode} onChange={(e) => setRedeemCode(e.target.value.toUpperCase())} placeholder="Nhập mã, vd BACKTOSCHOOL" style={{ flex: 1, minWidth: 180 }} />
                 <button className="btn" onClick={redeemFree} disabled={redeeming || !redeemCode.trim()}>{redeeming ? 'Đang áp dụng…' : 'Áp dụng mã'}</button>

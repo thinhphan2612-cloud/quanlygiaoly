@@ -1,4 +1,4 @@
-// Quản lý giao diện: sáng/tối + màu nhấn theo năm phụng vụ. Lưu ở localStorage.
+// Quản lý giao diện: sáng/tối + màu nhấn theo năm phụng vụ + ảnh nền (mặc định tắt). Lưu ở localStorage.
 const KEY = 'ui_theme';
 
 // Màu nhấn — gồm mặc định + các màu phụng vụ Công giáo
@@ -12,16 +12,23 @@ export const ACCENTS = {
 };
 
 export function loadTheme() {
-  try { return { mode: 'light', accent: 'blue', ...(JSON.parse(localStorage.getItem(KEY)) || {}) }; }
-  catch { return { mode: 'light', accent: 'blue' }; }
+  try { return { mode: 'light', accent: 'blue', bgImage: false, ...(JSON.parse(localStorage.getItem(KEY)) || {}) }; }
+  catch { return { mode: 'light', accent: 'blue', bgImage: false }; }
 }
+
+// Nền nhạt của màu nhấn: chế độ tối dùng màu nhấn trong suốt (nền sáng sẽ chói trên nền tối).
+const tint = (hex, alpha) => {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+};
 
 export function applyTheme(t) {
   const root = document.documentElement;
   root.dataset.theme = t.mode === 'dark' ? 'dark' : 'light';
+  root.dataset.bg = t.bgImage ? 'image' : 'plain';
   const a = ACCENTS[t.accent] || ACCENTS.blue;
   root.style.setProperty('--primary', a.p);
   root.style.setProperty('--primary-dark', a.d);
-  root.style.setProperty('--primary-soft', a.s);
-  localStorage.setItem(KEY, JSON.stringify({ mode: t.mode, accent: t.accent }));
+  root.style.setProperty('--primary-soft', t.mode === 'dark' ? tint(a.p, 0.2) : a.s);
+  localStorage.setItem(KEY, JSON.stringify({ mode: t.mode, accent: t.accent, bgImage: !!t.bgImage }));
 }

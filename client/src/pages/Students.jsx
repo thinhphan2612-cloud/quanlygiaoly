@@ -10,6 +10,9 @@ import StudentForm from '../components/StudentForm.jsx';
 import { byViName } from '../lib/viName';
 import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 import { getPref, setPref } from '../lib/prefs';
+import { IconColumns, IconDownload, IconFilter, IconPrinter, IconUpload } from '../components/Icons.jsx';
+import { viDate } from '../lib/date';
+import { toast } from '../lib/toast';
 
 const empty = {
   full_name: '', saint_name: '', birth_date: '', gender: '',
@@ -58,7 +61,7 @@ const dash = <span className="muted">—</span>;
 const DISPLAY_COLS = [
   { key: 'saint', exp: ['Tên thánh'], label: 'Tên thánh', render: (s) => s.saint_name || dash },
   { key: 'position', exp: ['Chức vụ'], label: 'Chức vụ', render: (s) => (s.position ? <span className="role-chip">{s.position}</span> : dash) },
-  { key: 'birth', exp: ['Ngày sinh'], label: 'Ngày sinh', render: (s) => s.birth_date || dash },
+  { key: 'birth', exp: ['Ngày sinh'], label: 'Ngày sinh', render: (s) => viDate(s.birth_date) || dash },
   { key: 'gender', exp: ['Giới tính'], label: 'Giới tính', render: (s) => s.gender || dash },
   { key: 'class', exp: ['Lớp'], label: 'Lớp', render: (s) => s.class_name || <span className="muted">Chưa xếp lớp</span> },
   { key: 'parents', exp: ['Họ tên cha', 'SĐT cha', 'Họ tên mẹ', 'SĐT mẹ'], label: 'Phụ huynh', render: (s) => {
@@ -72,9 +75,9 @@ const DISPLAY_COLS = [
   } },
   { key: 'godparent', exp: ['Người đỡ đầu'], label: 'Người đỡ đầu', render: (s) => s.godparent_name || dash },
   { key: 'student_phone', exp: ['SĐT học sinh'], label: 'SĐT học viên', render: (s) => s.student_phone || dash },
-  { key: 'baptism', exp: ['Rửa tội'], label: 'Ngày Rửa tội', render: (s) => s.baptism_date || dash },
-  { key: 'communion', exp: ['Rước lễ'], label: 'Ngày Rước lễ', render: (s) => s.first_communion_date || dash },
-  { key: 'confirmation', exp: ['Thêm sức'], label: 'Ngày Thêm sức', render: (s) => s.confirmation_date || dash },
+  { key: 'baptism', exp: ['Rửa tội'], label: 'Ngày Rửa tội', render: (s) => viDate(s.baptism_date) || dash },
+  { key: 'communion', exp: ['Rước lễ'], label: 'Ngày Rước lễ', render: (s) => viDate(s.first_communion_date) || dash },
+  { key: 'confirmation', exp: ['Thêm sức'], label: 'Ngày Thêm sức', render: (s) => viDate(s.confirmation_date) || dash },
   { key: 'address', exp: ['Địa chỉ'], label: 'Địa chỉ', render: (s) => s.address || dash },
   { key: 'notes', exp: ['Ghi chú'], label: 'Ghi chú', render: (s) => s.notes || dash },
 ];
@@ -212,13 +215,13 @@ export default function Students() {
       <div className="toolbar">
         <input className="grow stu-search" placeholder="Tìm theo tên..." value={search} onChange={(e) => setSearch(e.target.value)} />
         <button className={`btn ghost ${activeCount ? 'has-badge' : ''}`} onClick={() => setShowFilter((v) => !v)}>
-          🔽 Lọc / Sắp xếp{activeCount ? ` (${activeCount})` : ''}
+          <IconFilter className="bi" />Lọc / Sắp xếp{activeCount ? ` (${activeCount})` : ''}
         </button>
-        <button className="btn ghost" onClick={() => setShowCols((v) => !v)}>☷ Cột hiển thị</button>
-        <button className="btn ghost" onClick={() => setBulkOpen(true)}>⬆ Nhập hàng loạt</button>
+        <button className="btn ghost" onClick={() => setShowCols((v) => !v)}><IconColumns className="bi" />Cột hiển thị</button>
+        <button className="btn ghost" onClick={() => setBulkOpen(true)}><IconUpload className="bi" />Nhập hàng loạt</button>
         <button className="btn ghost" disabled={filtered.length === 0}
-          onClick={() => exportXlsx({ filename: `${exportName}.xlsx`, sheetName: 'Học viên', ...exportMeta })}>⬇ Excel</button>
-        <button className="btn ghost" disabled={filtered.length === 0} onClick={() => exportPdf(exportMeta)}>🖨 PDF</button>
+          onClick={() => exportXlsx({ filename: `${exportName}.xlsx`, sheetName: 'Học viên', ...exportMeta })}><IconDownload className="bi" />Excel</button>
+        <button className="btn ghost" disabled={filtered.length === 0} onClick={() => exportPdf(exportMeta)}><IconPrinter className="bi" />PDF</button>
         <button className="btn" onClick={openCreate}>+ Thêm học viên</button>
       </div>
 
@@ -342,7 +345,7 @@ export default function Students() {
           onDone={(res) => {
             setBulkOpen(false);
             load();
-            alert(`Đã nhập ${res.count} học viên` + (res.skipped ? `, bỏ qua ${res.skipped} dòng thiếu họ tên` : ''));
+            toast(`Đã nhập ${res.count} học viên` + (res.skipped ? `, bỏ qua ${res.skipped} dòng thiếu họ tên` : ''));
           }}
         />
       )}

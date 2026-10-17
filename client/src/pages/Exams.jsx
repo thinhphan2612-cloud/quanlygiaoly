@@ -3,6 +3,8 @@ import api from '../api';
 import QRCode from 'qrcode';
 import { exportXlsx, fileSlug } from '../lib/exportUtils';
 import { printExamPaper } from '../lib/examPaper';
+import { IconAlert, IconClock, IconDice, IconDownload, IconPlus, IconPrinter, IconRefresh } from '../components/Icons.jsx';
+import { toast } from '../lib/toast';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const KINDS = [{ v: '15p', l: '15 phút' }, { v: '1tiet', l: '1 tiết' }, { v: 'hocky', l: 'Học kỳ' }, { v: 'khac', l: 'Khác' }];
@@ -155,7 +157,7 @@ function ExamBuilder({ classes, onDone, onCancel }) {
                   </select>
                 </div>
                 <div className="field" style={{ flex: '0 0 100px' }}><label>Số câu bốc</label><input type="number" min="1" value={n} onChange={(e) => setN(e.target.value)} /></div>
-                <div className="field" style={{ flex: '1 1 auto' }}><button className="btn ghost" style={{ width: '100%' }} onClick={pickRandom}>🎲 Bốc ngẫu nhiên</button></div>
+                <div className="field" style={{ flex: '1 1 auto' }}><button className="btn ghost" style={{ width: '100%' }} onClick={pickRandom}><IconDice className="bi" />Bốc ngẫu nhiên</button></div>
                 <div className="field" style={{ flex: '1 1 auto' }}><button className="btn ghost" style={{ width: '100%' }} onClick={clearTopic}>Bỏ chọn cấp này</button></div>
               </div>
               <div className="pick-list" style={{ maxHeight: '52vh' }}>
@@ -171,7 +173,7 @@ function ExamBuilder({ classes, onDone, onCancel }) {
         ) : (
           <>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-              <button className="btn ghost sm" onClick={() => setEditing({ text: '', options: ['', ''], correct: 0 })}>➕ Thêm câu tự soạn</button>
+              <button className="btn ghost sm" onClick={() => setEditing({ text: '', options: ['', ''], correct: 0 })}><IconPlus className="bi" />Thêm câu tự soạn</button>
             </div>
             {pickedList.length === 0 ? (
               <p className="muted">Chưa có câu nào. Sang tab <b>Ngân hàng câu hỏi</b> để bốc, hoặc bấm "Thêm câu tự soạn". Câu nào cũng sửa / xoá được trước khi tạo đề.</p>
@@ -223,8 +225,8 @@ function QuestionEditor({ init, onSave, onClose }) {
   }
   function save() {
     const opts = options.map((s) => s.trim()).filter(Boolean);
-    if (!text.trim()) return alert('Nhập nội dung câu hỏi');
-    if (opts.length < 2) return alert('Cần ít nhất 2 đáp án');
+    if (!text.trim()) return toast.err('Nhập nội dung câu hỏi');
+    if (opts.length < 2) return toast.err('Cần ít nhất 2 đáp án');
     onSave({ id: init.id, text: text.trim(), options: opts, correct: Math.min(correct, opts.length - 1), custom: true });
   }
   return (
@@ -310,7 +312,7 @@ function ExamRoom({ examId, onBack }) {
   async function setStatus(status) { await api.post(`/exams/${examId}/status`, { status }); load(); }
   async function saveGrades() {
     try { const { data } = await api.post(`/exams/${examId}/save-grades`, {}); setSavedMsg(`Đã lưu ${data.saved} điểm vào bảng điểm lớp.`); }
-    catch (e) { alert(e.response?.data?.error || 'Lưu điểm thất bại'); }
+    catch (e) { toast.err(e.response?.data?.error || 'Lưu điểm thất bại'); }
   }
   if (!exam) return <div className="muted">Đang tải…</div>;
 
@@ -327,8 +329,8 @@ function ExamRoom({ examId, onBack }) {
       <p className="muted" style={{ marginTop: -6 }}>Lớp: <b>{exam.class_name || '—'}</b> · {kindLabel(exam.kind)} (×{exam.weight}) · {exam.questions?.length || 0} câu · {exam.duration_min ? `${exam.duration_min} phút` : 'không giới hạn giờ'}</p>
       {(exam.questions?.length > 0) && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-          <button className="btn ghost sm" onClick={() => printExamPaper(exam, 'student')}>🖨 In đề (học viên)</button>
-          <button className="btn ghost sm" onClick={() => printExamPaper(exam, 'key')}>🖨 In đáp án (GLV)</button>
+          <button className="btn ghost sm" onClick={() => printExamPaper(exam, 'student')}><IconPrinter className="bi" />In đề (học viên)</button>
+          <button className="btn ghost sm" onClick={() => printExamPaper(exam, 'key')}><IconPrinter className="bi" />In đáp án (GLV)</button>
           <span className="muted" style={{ fontSize: 12, alignSelf: 'center' }}>Chọn "Lưu thành PDF" trong hộp thoại in để tải về in giấy.</span>
         </div>
       )}
@@ -344,14 +346,14 @@ function ExamRoom({ examId, onBack }) {
             <div className="muted" style={{ fontSize: 12, wordBreak: 'break-all' }}>{link}</div>
             {exam.status === 'started' && timeLeft != null && (
               <div className={`room-timer ${timeLeft <= 60000 ? 'low' : ''}`}>
-                {timeLeft > 0 ? <>⏱ Còn lại <b>{fmt(timeLeft)}</b></> : '⏱ Đã hết giờ'}
+                {timeLeft > 0 ? <><IconClock className="bi" />Còn lại <b>{fmt(timeLeft)}</b></> : <><IconClock className="bi" />Đã hết giờ</>}
               </div>
             )}
             <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
               {exam.status === 'draft' && <button className="btn" onClick={() => setStatus('waiting')}>Mở phòng chờ</button>}
               {exam.status === 'waiting' && <button className="btn" onClick={() => setStatus('started')}>▶ Bắt đầu thi</button>}
               {exam.status === 'started' && <button className="btn danger" onClick={() => { if (confirm('Kết thúc & đóng phòng thi?')) setStatus('closed'); }}>■ Kết thúc</button>}
-              {exam.status === 'closed' && <button className="btn" onClick={() => setStatus('started')}>↻ Mở thi lại (cho em vắng)</button>}
+              {exam.status === 'closed' && <button className="btn" onClick={() => setStatus('started')}><IconRefresh className="bi" />Mở thi lại (cho em vắng)</button>}
             </div>
             {exam.status === 'waiting' && <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>Các em quét QR, chọn tên và chờ. Bấm "Bắt đầu thi" khi đủ.</p>}
             {exam.status === 'closed' && <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>Bấm "Mở thi lại" để em vắng buổi thi vào làm; điểm sẽ được gộp vào cùng cột điểm cũ.</p>}
@@ -363,7 +365,7 @@ function ExamRoom({ examId, onBack }) {
             <div className="card-head"><h2 style={{ margin: 0 }}>Học viên ({attempts.length})</h2>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <span className="muted" style={{ fontSize: 13 }}>Đã nộp {submitted.length}</span>
-                {submitted.length > 0 && <button className="btn ghost sm" onClick={exportResults}>⬇ Excel</button>}
+                {submitted.length > 0 && <button className="btn ghost sm" onClick={exportResults}><IconDownload className="bi" />Excel</button>}
               </div>
             </div>
             <div className="table-scroll" style={{ maxHeight: 320 }}><table>
@@ -371,7 +373,7 @@ function ExamRoom({ examId, onBack }) {
               <tbody>
                 {attempts.map((a) => (
                   <tr key={a.id} className={a.status === 'submitted' ? 'click-row' : ''} onClick={() => a.status === 'submitted' && setReviewing(a)}>
-                    <td>{a.student_name}{a.leave_count > 0 && <span title="Số lần rời màn hình thi" style={{ color: '#dc2626', fontWeight: 700, fontSize: 12 }}> ⚠{a.leave_count}</span>}{a.status === 'submitted' && <span className="muted" style={{ fontSize: 11 }}> · xem lại</span>}</td>
+                    <td>{a.student_name}{a.leave_count > 0 && <span title="Số lần rời màn hình thi" style={{ color: '#dc2626', fontWeight: 700, fontSize: 12 }}> <IconAlert className="bi" style={{ width: 13, height: 13, marginRight: 2 }} />{a.leave_count}</span>}{a.status === 'submitted' && <span className="muted" style={{ fontSize: 11 }}> · xem lại</span>}</td>
                     <td>{a.status === 'submitted' ? <span className="tag-chip" style={{ background: '#dcfce7', color: '#15803d' }}>Đã nộp</span> : <span className="muted">Đang làm</span>}</td>
                     <td style={{ fontWeight: 600 }}>{a.score != null ? a.score : '—'}{a.total ? <span className="muted" style={{ fontSize: 12 }}> ({a.correct_count}/{a.total})</span> : ''}</td>
                   </tr>
@@ -381,7 +383,7 @@ function ExamRoom({ examId, onBack }) {
             </table></div>
             {submitted.length > 0 && (
               <div style={{ marginTop: 12 }}>
-                <button className="btn ghost" onClick={saveGrades}>🔄 Đồng bộ lại điểm sang Điểm số</button>
+                <button className="btn ghost" onClick={saveGrades}><IconRefresh className="bi" />Đồng bộ lại điểm sang Điểm số</button>
                 <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>Điểm tự đồng bộ khi các em nộp; nút này chỉ để đồng bộ lại thủ công khi cần.</p>
                 {savedMsg && <div className="info-box" style={{ marginTop: 8 }}>{savedMsg}</div>}
               </div>

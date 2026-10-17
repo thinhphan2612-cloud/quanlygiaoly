@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import api from '../api';
+import { IconFlag, IconTrophy } from '../components/Icons.jsx';
+import { pickClass, rememberClass } from '../lib/lastClass';
 
 const COLORS = ['#2563eb', '#f59e0b', '#15803d', '#db2777', '#7c3aed', '#0891b2', '#dc2626', '#0ea5e9', '#e0a800', '#16a34a'];
 const initials = (name = '') => { const p = name.trim().split(/\s+/); return ((p[p.length - 2]?.[0] || '') + (p[p.length - 1]?.[0] || '')).toUpperCase() || '?'; };
@@ -19,6 +21,8 @@ export default function RandomPicker() {
   const progRef = useRef({});
 
   useEffect(() => { api.get('/classes').then((r) => setClasses(r.data)); }, []);
+  useEffect(() => { if (!classId && classes.length) setClassId(pickClass(classes)); }, [classes]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { rememberClass(classId); }, [classId]);
   useEffect(() => {
     if (!classId) { setStudents([]); return; }
     api.get(`/students?class_id=${classId}`).then((r) => setStudents(r.data));
@@ -76,7 +80,7 @@ export default function RandomPicker() {
 
   return (
     <div>
-      <h1>Chọn học sinh trả bài: Đường đua 🏁</h1>
+      <h1>Chọn học sinh trả bài</h1>
       <div className="toolbar">
         <select value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 220 }}>
           <option value="">-- Chọn lớp --</option>
@@ -91,12 +95,12 @@ export default function RandomPicker() {
       {classId && (
         <div className="panel">
           {picked && !racing && (
-            <div className="race-winner">🏆 Về đích đầu tiên: <b>{picked.saint_name ? picked.saint_name + ' ' : ''}{picked.full_name}</b></div>
+            <div className="race-winner"><IconTrophy className="bi" />Về đích đầu tiên: <b>{picked.saint_name ? picked.saint_name + ' ' : ''}{picked.full_name}</b></div>
           )}
 
           {runners.length === 0 ? (
             <p className="muted" style={{ textAlign: 'center', padding: 20 }}>
-              {pool.length === 0 ? 'Đã gọi hết học viên trong lớp. Bấm "Đặt lại" để chạy lại từ đầu.' : 'Bấm "🏁 Bắt đầu đua" để bắt đầu.'}
+              {pool.length === 0 ? 'Đã gọi hết học viên trong lớp. Bấm "Đặt lại" để chạy lại từ đầu.' : 'Bấm "Bắt đầu đua" để bắt đầu.'}
             </p>
           ) : (
             <div className="race">
@@ -121,9 +125,9 @@ export default function RandomPicker() {
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginTop: 18 }}>
             <button className="btn" onClick={start} disabled={racing || pool.length === 0}>
-              {racing ? 'Đang đua...' : '🏁 Bắt đầu đua'}
+              {racing ? 'Đang đua...' : <><IconFlag className="bi" />Bắt đầu đua</>}
             </button>
-            {picked && !racing && <button className="btn warning" onClick={notLearned}>✗ Chưa thuộc bài</button>}
+            {picked && !racing && <button className="btn warning" onClick={notLearned}>Chưa thuộc bài</button>}
             <button className="btn ghost" onClick={reset} disabled={racing}>Đặt lại</button>
           </div>
           {note && <p className="picker-note">{note}</p>}

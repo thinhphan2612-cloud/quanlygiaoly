@@ -6,6 +6,9 @@ import { useRealtime } from '../realtime.jsx';
 import { isPro } from '../lib/plans';
 import { byViName } from '../lib/viName';
 import { exportXlsx, exportPdf, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
+import { IconDownload, IconFlag, IconList, IconPrinter, IconSliders } from '../components/Icons.jsx';
+import { pickClass, rememberClass } from '../lib/lastClass';
+import { toast } from '../lib/toast';
 
 const round1 = (n) => Math.round(n * 10) / 10;
 
@@ -62,6 +65,12 @@ export default function Grades() {
     if (year === currentYear) setClasses(activeClasses);
     else api.get(`/archive-classes?year=${encodeURIComponent(year)}`).then((r) => setClasses(r.data)).catch(() => setClasses([]));
   }, [year, currentYear, activeClasses]);
+  // Năm học hiện tại: mở trang là chọn sẵn lớp (lớp trên URL, lớp đã chọn lần trước, hoặc lớp đầu tiên).
+  // Đặt SAU effect đổi năm ở trên: effect đó xóa lớp đang chọn, effect này chạy sau nên chọn lại được.
+  useEffect(() => {
+    if (!classId && isCurrent && classes.length) setClassId(pickClass(classes, searchParams.get('class')));
+  }, [classes, isCurrent, year]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (isCurrent) rememberClass(classId); }, [classId, isCurrent]);
   function load() {
     if (!classId) { setData({ students: [], columns: [], scores: {} }); return; }
     const url = isCurrent ? `/grades-class?class_id=${classId}` : `/archive-class?class_id=${classId}`;
@@ -70,7 +79,7 @@ export default function Grades() {
   async function endYear() {
     const catechism = (classes || []).filter((c) => c.kind !== 'external');
     if (catechism.length && !catechism.some((c) => c.is_graduation)) {
-      if (!confirm('Bạn CHƯA gắn nhãn "🎓 Lớp tốt nghiệp" cho lớp giáo lý nào.\n\nHệ thống sẽ tự lấy lớp bậc cao nhất làm lớp tốt nghiệp. Nên vào "Lớp học" → sửa lớp cao nhất → bật "Đây là lớp tốt nghiệp" để chính xác.\n\nVẫn tiếp tục?')) return;
+      if (!confirm('Bạn CHƯA gắn nhãn "Lớp tốt nghiệp" cho lớp giáo lý nào.\n\nHệ thống sẽ tự lấy lớp bậc cao nhất làm lớp tốt nghiệp. Nên vào "Lớp học" → sửa lớp cao nhất → bật "Đây là lớp tốt nghiệp" để chính xác.\n\nVẫn tiếp tục?')) return;
     }
     if (!confirm(
       'KẾT THÚC NĂM HỌC & LÊN LỚP\n\n' +
@@ -81,10 +90,10 @@ export default function Grades() {
     )) return;
     try {
       const r = await api.post('/promote', {});
-      alert(`Đã lên lớp ${r.data.promoted} học viên` + (r.data.stayed ? `, ${r.data.stayed} em ở lại` : '') + `, ${r.data.graduated} em ra trường.` + (r.data.new_year ? ` Năm học mới: ${r.data.new_year}.` : ''));
+      toast(`Đã lên lớp ${r.data.promoted} học viên` + (r.data.stayed ? `, ${r.data.stayed} em ở lại` : '') + `, ${r.data.graduated} em ra trường.` + (r.data.new_year ? ` Năm học mới: ${r.data.new_year}.` : ''));
       setClassId('');
       api.get('/classes').then((res) => setClasses(res.data));
-    } catch (e) { alert(e.response?.data?.error || 'Lên lớp thất bại'); }
+    } catch (e) { toast.err(e.response?.data?.error || 'Lên lớp thất bại'); }
   }
   useEffect(() => { load(); }, [classId]);
   const rev = useRealtime(['grades', 'grade_columns', 'students']);
@@ -154,10 +163,13 @@ export default function Grades() {
 
   return (
     <div>
-      <h1>Điểm số</h1>
+      <div className="att-head">
+        <h1 style={{ margin: 0 }}>Điểm số</h1>
+        {isAdmin && isCurrent && !isFree && <button className="btn ghost sm" onClick={endYear} title="Chuyển cả giáo xứ sang năm học mới (làm một lần vào cuối năm)"><IconFlag className="bi" />Kết thúc năm học</button>}
+      </div>
       <div className="toolbar">
         {yearList.length > 1 && (
-          <select value={year} onChange={(e) => setYear(e.target.value)} style={{ width: 150 }}>
+          <select value={year} onChange={(e) => setYear(e.target.value)} style={{ width: 180 }}>
             {yearList.map((y) => <option key={y} value={y}>Năm {y}{y === currentYear ? ' (nay)' : ''}</option>)}
           </select>
         )}
@@ -165,14 +177,19 @@ export default function Grades() {
           <option value="">-- Chọn lớp --</option>
           {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        {isAdmin && isCurrent && !isFree && <button className="btn ghost" onClick={endYear}>🏁 Kết thúc năm học</button>}
         {classId && (
           <>
-            {isCurrent && <button className="btn ghost" onClick={() => setGear(true)}>⚙ Cột điểm</button>}
-            <button className="btn ghost" onClick={() => setOverview(true)} disabled={columns.length === 0}>📋 Tổng quát</button>
-            <button className="btn ghost" onClick={() => exportSheet('excel')} disabled={columns.length === 0}>⬇ Excel</button>
-            <button className="btn ghost" onClick={() => exportSheet('pdf')} disabled={columns.length === 0}>🖨 PDF</button>
-            <div className="fp-inline" style={{ marginLeft: 'auto' }}>
+            {isCurrent && <button className="btn ghost" onClick={() => setGear(true)}><IconSliders className="bi" />Cột điểm</button>}
+            <button className="btn ghost" onClick={() => setOverview(true)} disabled={columns.length === 0}><IconList className="bi" />Tổng quát</button>
+            <button className="btn ghost" onClick={() => exportSheet('excel')} disabled={columns.length === 0}><IconDownload className="bi" />Excel</button>
+            <button className="btn ghost" onClick={() => exportSheet('pdf')} disabled={columns.length === 0}><IconPrinter className="bi" />PDF</button>
+          </>
+        )}
+      </div>
+      {classId && columns.length > 0 && (
+        <div className="toolbar grade-filters">
+          <>
+            <div className="fp-inline">
               <span className="muted" style={{ fontSize: 13 }}>Lọc TB:</span>
               <select value={gf.op} onChange={(e) => setGf({ ...gf, op: e.target.value })} style={{ minWidth: 130 }}>
                 <option value="">Không lọc</option>
@@ -189,13 +206,13 @@ export default function Grades() {
               <input type="checkbox" checked={sortByRank} onChange={(e) => setSortByRank(e.target.checked)} /><span>Sắp xếp theo thứ hạng</span>
             </label>
           </>
-        )}
-      </div>
+        </div>
+      )}
 
       {!classId ? (
         <div className="panel"><p className="muted">Hãy chọn lớp để nhập điểm.</p></div>
       ) : columns.length === 0 ? (
-        <div className="panel"><p className="muted">{isCurrent ? 'Lớp chưa có cột điểm nào. Bấm "⚙ Cột điểm" để tạo (Kiểm tra 15\', Thi HK1...).' : 'Lớp này không có cột điểm trong năm học đã chọn.'}</p></div>
+        <div className="panel"><p className="muted">{isCurrent ? 'Lớp chưa có cột điểm nào. Bấm "Cột điểm" để tạo (Kiểm tra 15\', Thi HK1...).' : 'Lớp này không có cột điểm trong năm học đã chọn.'}</p></div>
       ) : students.length === 0 ? (
         <div className="panel"><p className="muted">Lớp chưa có học viên.</p></div>
       ) : (

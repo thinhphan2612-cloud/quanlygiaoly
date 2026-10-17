@@ -5,10 +5,12 @@ import { useAuth } from '../auth.jsx';
 import { useRealtime } from '../realtime.jsx';
 import SacramentBadge, { SACRAMENTS } from '../components/SacramentBadge.jsx';
 import StudentForm from '../components/StudentForm.jsx';
-import { IconEditImage } from '../components/Icons.jsx';
+import { IconEdit, IconEditImage, IconPrinter } from '../components/Icons.jsx';
 import { fileToDataUrl } from '../lib/img';
 import { ATT_LABEL } from '../lib/exportUtils';
 import { exportCertificate } from '../lib/certificate';
+import { viDate } from '../lib/date';
+import { toast } from '../lib/toast';
 
 const initials = (name = '') => { const p = name.trim().split(/\s+/); return ((p[p.length - 2]?.[0] || '') + (p[p.length - 1]?.[0] || '')).toUpperCase() || '?'; };
 const ATT_TONE = { present: 'ic-present', absent: 'ic-absent', late: 'ic-late', excused: 'ic-excused' };
@@ -55,7 +57,7 @@ export default function StudentProfile() {
   const fatherFull = [s.father_saint, s.father_name].filter(Boolean).join(' ') || s.parent_name || '—';
   const motherFull = [s.mother_saint, s.mother_name].filter(Boolean).join(' ') || '—';
   const info = [
-    ['Ngày sinh', dash(s.birth_date)],
+    ['Ngày sinh', dash(viDate(s.birth_date))],
     ['Giới tính', dash(s.gender)],
     ['Cha', fatherFull],
     ['SĐT cha', dash(s.father_phone || s.parent_phone)],
@@ -63,15 +65,15 @@ export default function StudentProfile() {
     ['SĐT mẹ', dash(s.mother_phone)],
     ['Người đỡ đầu', dash(s.godparent_name)],
     ['SĐT học sinh', dash(s.student_phone)],
-    ['Ngày rửa tội', dash(s.baptism_date)],
-    ['Ngày rước lễ', dash(s.first_communion_date)],
-    ['Ngày thêm sức', dash(s.confirmation_date)],
+    ['Ngày rửa tội', dash(viDate(s.baptism_date))],
+    ['Ngày rước lễ', dash(viDate(s.first_communion_date))],
+    ['Ngày thêm sức', dash(viDate(s.confirmation_date))],
     ['Địa chỉ', dash(s.address)],
   ];
 
   async function save() {
     try { await api.put(`/students/${id}`, edit); setEdit(null); load(); }
-    catch (e) { alert(e.response?.data?.error || 'Lưu thất bại'); }
+    catch (e) { toast.err(e.response?.data?.error || 'Lưu thất bại'); }
   }
 
   return (
@@ -99,7 +101,7 @@ export default function StudentProfile() {
             <span className="tag-chip muted">{SACRAMENTS[s.sacrament]?.label || 'Chưa nhận bí tích'}</span>
           </div>
         </div>
-        {canEdit && <button className="btn" onClick={() => setEdit({ ...s })}>✏ Sửa thông tin</button>}
+        {canEdit && <button className="btn" onClick={() => setEdit({ ...s })}><IconEdit className="bi" />Sửa thông tin</button>}
       </div>
 
       {/* Chỉ số nhanh */}
@@ -121,7 +123,7 @@ export default function StudentProfile() {
             {Array.isArray(s.certificates) && s.certificates.length > 0 && (
               <div className="info-row" style={{ marginTop: 8 }}>
                 <span className="info-k">Chứng chỉ / khóa</span>
-                <span className="info-v">{s.certificates.map((c) => c.name + (c.date ? ` (${c.date})` : '')).join('; ')}</span>
+                <span className="info-v">{s.certificates.map((c) => c.name + (c.date ? ` (${viDate(c.date)})` : '')).join('; ')}</span>
               </div>
             )}
             {s.notes && <div className="info-row" style={{ marginTop: 8 }}><span className="info-k">Ghi chú</span><span className="info-v">{s.notes}</span></div>}
@@ -168,9 +170,9 @@ export default function StudentProfile() {
                 <p className="muted" style={{ margin: 0 }}>Em chưa nhận bí tích nào.</p>
               ) : (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {sacRank >= 1 && <button className="btn ghost" onClick={() => exportCertificate({ parish, student: s, kind: 'baptism' })}>💧 Rửa tội</button>}
-                  {sacRank >= 2 && <button className="btn ghost" onClick={() => exportCertificate({ parish, student: s, kind: 'ruoc_le' })}>🕯️ Rước lễ</button>}
-                  {sacRank >= 3 && <button className="btn ghost" onClick={() => exportCertificate({ parish, student: s, kind: 'them_suc' })}>🕊️ Thêm Sức</button>}
+                  {sacRank >= 1 && <button className="btn ghost" onClick={() => exportCertificate({ parish, student: s, kind: 'baptism' })}><IconPrinter className="bi" />Rửa tội</button>}
+                  {sacRank >= 2 && <button className="btn ghost" onClick={() => exportCertificate({ parish, student: s, kind: 'ruoc_le' })}><IconPrinter className="bi" />Rước lễ</button>}
+                  {sacRank >= 3 && <button className="btn ghost" onClick={() => exportCertificate({ parish, student: s, kind: 'them_suc' })}><IconPrinter className="bi" />Thêm Sức</button>}
                 </div>
               )}
               <p className="muted" style={{ fontSize: 12, marginTop: 10, marginBottom: 0 }}>Mở hộp thoại in → chọn "Lưu thành PDF". Mẫu tạm, sẽ thay bằng mẫu chuẩn của giáo xứ sau.</p>

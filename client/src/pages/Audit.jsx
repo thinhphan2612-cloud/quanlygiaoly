@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { exportXlsx, exportPdf, STT_COL, fileSlug } from '../lib/exportUtils';
+import { IconDownload, IconPrinter } from '../components/Icons.jsx';
+import { viDate } from '../lib/date';
+import { toast } from '../lib/toast';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (Number(n) || 0).toLocaleString('vi-VN');
@@ -57,7 +60,7 @@ export default function Audit() {
   async function remove(t) {
     if (!confirm('Xóa khoản này?')) return;
     try { await api.delete(`/transactions/${t.id}`); load(); }
-    catch (e) { alert(e.response?.data?.error || 'Không xóa được (khoản của lớp, admin chỉ xem).'); }
+    catch (e) { toast.err(e.response?.data?.error || 'Không xóa được (khoản của lớp, admin chỉ xem).'); }
   }
   // Admin không sửa/xóa khoản thuộc lớp
   const canDelete = (t) => !isAdmin || !t.class_id;
@@ -154,15 +157,15 @@ export default function Audit() {
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           )}
-          <button className="btn ghost" disabled={shown.length === 0} onClick={() => exportXlsx({ filename: `thu-chi-${fileSlug(subLabel)}.xlsx`, sheetName: 'Thu chi', ...meta })}>⬇ Excel</button>
-          <button className="btn ghost" disabled={shown.length === 0} onClick={() => exportPdf(meta)}>🖨 PDF</button>
+          <button className="btn ghost" disabled={shown.length === 0} onClick={() => exportXlsx({ filename: `thu-chi-${fileSlug(subLabel)}.xlsx`, sheetName: 'Thu chi', ...meta })}><IconDownload className="bi" />Excel</button>
+          <button className="btn ghost" disabled={shown.length === 0} onClick={() => exportPdf(meta)}><IconPrinter className="bi" />PDF</button>
         </div>
         <table>
           <thead><tr><th>Ngày</th><th>Nội dung</th><th>Lớp</th><th style={{ textAlign: 'right' }}>Thu</th><th style={{ textAlign: 'right' }}>Chi</th><th></th></tr></thead>
           <tbody>
             {shown.map((t) => (
               <tr key={t.id}>
-                <td>{t.date}</td>
+                <td>{viDate(t.date)}</td>
                 <td>{t.content}{t.note ? <span className="muted"> · {t.note}</span> : ''}</td>
                 <td>{t.class_name || <span className="muted">Chung</span>}</td>
                 <td style={{ textAlign: 'right', color: 'var(--success)' }}>{t.type === 'thu' ? fmt(t.amount) : ''}</td>

@@ -79,3 +79,74 @@ export const IconEditImage = (p) => (
     <path d="M19 13.4l2.2 1.4-4.4 6.5-2.4.5.3-2.4z" />
   </svg>
 );
+
+// ---- Icon cho nút / tiêu đề (thay emoji để hiển thị giống nhau trên mọi máy) ----
+export const IconFilter = (p) => (
+  <svg {...base} {...p}><path d="M4 5h16l-6 7.5V19l-4 1.5v-8Z" /></svg>
+);
+export const IconUpload = (p) => (
+  <svg {...base} {...p}><path d="M12 15V4" /><path d="m7 9 5-5 5 5" /><path d="M5 20h14" /></svg>
+);
+export const IconDownload = (p) => (
+  <svg {...base} {...p}><path d="M12 4v11" /><path d="m7 10 5 5 5-5" /><path d="M5 20h14" /></svg>
+);
+export const IconPrinter = (p) => (
+  <svg {...base} {...p}><path d="M6.5 9V3.5h11V9" /><path d="M6.5 17H4.5A1.5 1.5 0 0 1 3 15.5v-5A1.5 1.5 0 0 1 4.5 9h15a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5h-2" /><rect x="6.5" y="13.5" width="11" height="7" rx="1" /></svg>
+);
+export const IconColumns = (p) => (
+  <svg {...base} {...p}><rect x="3.5" y="4.5" width="17" height="15" rx="2" /><path d="M9.5 4.5v15" /><path d="M14.5 4.5v15" /></svg>
+);
+export const IconSliders = (p) => (
+  <svg {...base} {...p}><path d="M4 6h9" /><path d="M17 6h3" /><circle cx="15" cy="6" r="2" /><path d="M4 12h3" /><path d="M11 12h9" /><circle cx="9" cy="12" r="2" /><path d="M4 18h11" /><path d="M19 18h1" /><circle cx="17" cy="18" r="2" /></svg>
+);
+export const IconMegaphone = (p) => (
+  <svg {...base} {...p}><path d="M4 10v4a1 1 0 0 0 1 1h2l6 4V5L7 9H5a1 1 0 0 0-1 1Z" /><path d="M16.5 9a3.5 3.5 0 0 1 0 6" /></svg>
+);
+export const IconLock = (p) => (
+  <svg {...base} {...p}><rect x="5" y="11" width="14" height="9.5" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+);
+export const IconTrend = (p) => (
+  <svg {...base} {...p}><path d="M4 19.5h16" /><path d="m5 15 4-4 3 3 6-6" /><path d="M15 8h3v3" /></svg>
+);
+export const IconList = (p) => (
+  <svg {...base} {...p}><rect x="5.5" y="4.5" width="13" height="16" rx="2" /><path d="M9 4.5V3h6v1.5" /><path d="M9 10h6" /><path d="M9 14h6" /><path d="M9 18h3" /></svg>
+);
+export const IconRefresh = (p) => (
+  <svg {...base} {...p}><path d="M20 12a8 8 0 1 1-2.3-5.6" /><path d="M20 4v4.5h-4.5" /></svg>
+);
+export const IconSave = (p) => (
+  <svg {...base} {...p}><path d="M5 4h11l3 3v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1Z" /><path d="M8 4v5h7V4" /><path d="M8 20v-6h8v6" /></svg>
+);
+export const IconPlus = (p) => (
+  <svg {...base} {...p}><path d="M12 5v14" /><path d="M5 12h14" /></svg>
+);
+export const IconEdit = (p) => (
+  <svg {...base} {...p}><path d="M4 20h4L19 9l-4-4L4 16Z" /><path d="m13.5 6.5 4 4" /></svg>
+);
+export const IconChat = (p) => (
+  <svg {...base} {...p}><path d="M5 19V6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7a2.5 2.5 0 0 1-2.5 2.5H8.5Z" /></svg>
+);
+export const IconKey = (p) => (
+  <svg {...base} {...p}><circle cx="8" cy="15" r="3.5" /><path d="M10.5 12.5 19 4" /><path d="m16 7 2.5 2.5" /><path d="m13.5 9.5 2 2" /></svg>
+);
+export const IconAlert = (p) => (
+  <svg {...base} {...p}><path d="M12 4 2.8 19.5h18.4Z" /><path d="M12 10v4" /><circle cx="12" cy="16.8" r=".6" fill="currentColor" /></svg>
+);
+export const IconTrophy = (p) => (
+  <svg {...base} {...p}><path d="M8 4h8v5a4 4 0 0 1-8 0Z" /><path d="M8 6H5.5a2.5 2.5 0 0 0 2.6 4" /><path d="M16 6h2.5a2.5 2.5 0 0 1-2.6 4" /><path d="M12 13v4" /><path d="M8.5 20.5h7" /><path d="M10 17h4v3.5h-4z" /></svg>
+);
+export const IconFlag = (p) => (
+  <svg {...base} {...p}><path d="M5 21V4" /><path d="M5 4h11l-2 4 2 4H5" /></svg>
+);
+export const IconGradCap = (p) => (
+  <svg {...base} {...p}><path d="m2.5 9 9.5-4.5L21.5 9 12 13.5Z" /><path d="M6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11" /><path d="M21.5 9v5" /></svg>
+);
+export const IconStar = (p) => (
+  <svg {...base} {...p}><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9Z" /></svg>
+);
+export const IconClock = (p) => (
+  <svg {...base} {...p}><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></svg>
+);
+export const IconCopy = (p) => (
+  <svg {...base} {...p}><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2" /><path d="M15.5 8.5V6A1.5 1.5 0 0 0 14 4.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5" /></svg>
+);

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import { IconExt } from '../components/Icons.jsx';
+import { toast } from '../lib/toast';
 
 const STORE_URL = 'https://ephatastore.com';
 
@@ -56,7 +57,7 @@ export default function Games() {
   async function removeMine(g) {
     if (!confirm(`Gỡ liên kết "${g.title}" khỏi kho game của bạn?`)) return;
     try { await api.delete(`/user-games/${g.id}`); loadAll(); }
-    catch (e) { alert(e.response?.data?.error || 'Thất bại'); }
+    catch (e) { toast.err(e.response?.data?.error || 'Thất bại'); }
   }
 
   function card(g, onRemove) {

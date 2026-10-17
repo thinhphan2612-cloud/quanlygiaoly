@@ -4,6 +4,7 @@ import api from '../api';
 import { useAuth } from '../auth.jsx';
 import { exportXlsx, exportXlsxMulti, exportPdf, STT_COL, exportSubtitle, fileSlug } from '../lib/exportUtils';
 import { SACRAMENTS } from '../components/SacramentBadge.jsx';
+import { IconDownload, IconGradCap, IconPrinter } from '../components/Icons.jsx';
 
 // Tính điểm TB có trọng số cho 1 học viên từ cột điểm + điểm số
 function avgOf(columns, rowScores) {
@@ -127,7 +128,7 @@ export default function Archive() {
                 <span className="muted" style={{ fontSize: 13 }}>· {y.classes} lớp · {y.students} học viên</span>
               </button>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn ghost sm" onClick={() => downloadYear(y.year)}>⬇ Tải về (Excel)</button>
+                <button className="btn ghost sm" onClick={() => downloadYear(y.year)}><IconDownload className="bi" />Tải về (Excel)</button>
               </div>
             </div>
             {open === y.year && (
@@ -148,7 +149,7 @@ export default function Archive() {
 
       <div className="panel" style={{ marginTop: 18 }}>
         <div className="card-head" style={{ gap: 12, flexWrap: 'wrap' }}>
-          <h2 style={{ margin: 0 }}>🎓 Học sinh đã ra trường ({grads.length})</h2>
+          <h2 style={{ margin: 0 }}><IconGradCap className="h-ic" />Học sinh đã ra trường ({grads.length})</h2>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <select value={gradYear} onChange={(e) => setGradYear(e.target.value)}>
               <option value="">Tất cả niên khóa</option>
@@ -203,8 +204,8 @@ export default function Archive() {
             <h2>{detail.class?.name} <span className="muted" style={{ fontSize: 14 }}>· năm {detail.class?.year || '—'}</span></h2>
             <div className="toolbar" style={{ marginBottom: 12 }}>
               <input className="grow" placeholder="Tìm theo tên..." value={search} onChange={(e) => setSearch(e.target.value)} />
-              <button className="btn ghost" disabled={!detail.students.length} onClick={() => exportXlsx({ filename: `bang-diem-${fileSlug(detail.class?.name)}.xlsx`, sheetName: 'Bảng điểm', ...detailExport })}>⬇ Excel</button>
-              <button className="btn ghost" disabled={!detail.students.length} onClick={() => exportPdf({ ...detailExport, align: 'center' })}>🖨 PDF</button>
+              <button className="btn ghost" disabled={!detail.students.length} onClick={() => exportXlsx({ filename: `bang-diem-${fileSlug(detail.class?.name)}.xlsx`, sheetName: 'Bảng điểm', ...detailExport })}><IconDownload className="bi" />Excel</button>
+              <button className="btn ghost" disabled={!detail.students.length} onClick={() => exportPdf({ ...detailExport, align: 'center' })}><IconPrinter className="bi" />PDF</button>
             </div>
             <div style={{ maxHeight: '60vh', overflow: 'auto' }}>
               <table>

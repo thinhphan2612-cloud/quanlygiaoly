@@ -7,7 +7,8 @@ import { useRealtime } from '../realtime.jsx';
 import Donut from '../components/Donut.jsx';
 import { LeaderboardTable } from '../components/Leaderboard.jsx';
 import Avatar from '../components/Avatar.jsx';
-import { IconStudents, IconClass, IconTeacher } from '../components/Icons.jsx';
+import { IconCheck, IconClass, IconDice, IconFlag, IconGradCap, IconGrades, IconList, IconStudents, IconTeacher, IconTrophy } from '../components/Icons.jsx';
+import { toast } from '../lib/toast';
 
 const PALETTE = ['#2563eb', '#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#f43f5e', '#14b8a6', '#0ea5e9'];
 
@@ -23,6 +24,7 @@ function WeeklyChart({ data }) {
   const x = (i) => pad + i * bw + bw / 2;
   const y = (r) => H - pad - (r / 100) * (H - pad * 2);
   const pts = data.map((d, i) => `${x(i)},${y(d.rate)}`).join(' ');
+  const barW = Math.min(bw * 0.56, 40); // ít tuần thì cột vẫn gọn
   return (
     <div className="table-scroll">
       <svg viewBox={`0 0 ${W} ${H}`} className="week-chart" style={{ width: '100%', minWidth: 480 }}>
@@ -34,7 +36,7 @@ function WeeklyChart({ data }) {
         ))}
         {data.map((d, i) => (
           <g key={i}>
-            <rect x={x(i) - bw * 0.28} y={y(d.rate)} width={bw * 0.56} height={H - pad - y(d.rate)} rx="4" fill="var(--primary)" opacity="0.18" />
+            <rect x={x(i) - barW / 2} y={y(d.rate)} width={barW} height={H - pad - y(d.rate)} rx="4" fill="var(--primary)" opacity="0.18" />
             <text x={x(i)} y={y(d.rate) - 6} fontSize="11" fill="var(--primary)" textAnchor="middle" fontWeight="600">{d.rate}%</text>
             <text x={x(i)} y={H - pad + 15} fontSize="10" fill="var(--muted)" textAnchor="middle">{d.label}</text>
           </g>
@@ -94,13 +96,13 @@ function ClassReviews() {
   async function approve(r) {
     if (!confirm(`Duyệt lớp "${r.class_name}"?` + (r.kind === 'external' ? '\nLớp giáo lý ngoại thường sẽ được đóng & chuyển vào Lưu trữ ngay.' : ''))) return;
     try { await api.post('/review-approve', { id: r.review_id }); load(); }
-    catch (e) { alert(e.response?.data?.error || 'Thất bại'); }
+    catch (e) { toast.err(e.response?.data?.error || 'Thất bại'); }
   }
   async function revise(r) {
     const note = prompt('Ghi chú gửi lại GLV (nêu rõ cần chỉnh gì):', '');
     if (note === null) return;
     try { await api.post('/review-revision', { id: r.review_id, note }); load(); }
-    catch (e) { alert(e.response?.data?.error || 'Thất bại'); }
+    catch (e) { toast.err(e.response?.data?.error || 'Thất bại'); }
   }
   const renderRows = (list) => list.map((r) => {
     const d = Object.values(r.decisions || {});
@@ -116,7 +118,7 @@ function ClassReviews() {
             {has ? (
               <span className="link-name" onClick={() => toggle(r.class_id)}>{open[r.class_id] ? '▾ ' : '▸ '}{r.class_name}</span>
             ) : r.class_name}
-            {r.is_graduation && ' 🎓'}
+            {r.is_graduation && <IconGradCap className="bi" style={{ width: 14, height: 14, marginLeft: 4 }} />}
           </td>
           <td className="muted">{r.kind === 'external' ? 'Ngoại thường' : 'Trong năm'}</td>
           <td>{has ? <span className="link" onClick={() => toggle(r.class_id)}>{summary}</span> : summary}</td>
@@ -152,7 +154,7 @@ function ClassReviews() {
       {catActive && (
         <>
           <div className="card-head">
-            <h2>📋 Lớp giáo lý trong năm chờ duyệt (cuối năm)</h2>
+            <h2><IconList className="h-ic" />Lớp giáo lý trong năm chờ duyệt (cuối năm)</h2>
             <span className="muted" style={{ fontSize: 13 }}>{approved}/{total} lớp đã duyệt</span>
           </div>
           {renderTable(cat)}
@@ -164,7 +166,7 @@ function ClassReviews() {
       {ext.length > 0 && (
         <div style={{ marginTop: catActive ? 20 : 0 }}>
           <div className="card-head">
-            <h2>🎓 Lớp giáo lý ngoại thường chờ duyệt</h2>
+            <h2><IconGradCap className="h-ic" />Lớp giáo lý ngoại thường chờ duyệt</h2>
             <span className="muted" style={{ fontSize: 13 }}>Duyệt riêng · không ảnh hưởng kết thúc năm học</span>
           </div>
           {renderTable(ext)}
@@ -196,10 +198,10 @@ function ClassReviewsGLV() {
   };
   return (
     <div className="panel" style={{ marginBottom: 18 }}>
-      <div className="card-head"><h2>🏁 Chốt lớp cuối năm</h2></div>
+      <div className="card-head"><h2><IconFlag className="h-ic" />Chốt lớp cuối năm</h2></div>
       {promotionOpen && (
         <div className="info-box" style={{ marginBottom: 10 }}>
-          📢 Ban giáo lý đã <b>mở kỳ xét lên lớp</b>. Vào <b>Lớp học</b> → bấm <b>🏁 Kết thúc lớp</b> để gửi kết quả (lên lớp / ở lại) cho từng lớp giáo lý trong năm của bạn.
+          Ban giáo lý đã <b>mở kỳ xét lên lớp</b>. Vào <b>Lớp học</b> → bấm <b>Kết thúc lớp</b> để gửi kết quả (lên lớp / ở lại) cho từng lớp giáo lý trong năm của bạn.
         </div>
       )}
       <div className="table-scroll"><table>
@@ -208,12 +210,12 @@ function ClassReviewsGLV() {
           {relevant.map((r) => (
             <Fragment key={r.class_id}>
               <tr>
-                <td>{r.class_name}{r.is_graduation && ' 🎓'}</td>
+                <td>{r.class_name}{r.is_graduation && <IconGradCap className="bi" style={{ width: 14, height: 14, marginLeft: 4 }} />}</td>
                 <td className="muted">{r.kind === 'external' ? 'Ngoại thường' : 'Trong năm'}</td>
                 <td>{statusChip(r)}</td>
               </tr>
               {r.status === 'revision' && r.admin_note && (
-                <tr><td colSpan={3}><div className="note-box err" style={{ margin: '2px 0 6px' }}>↩ Admin yêu cầu xem lại: {r.admin_note}</div></td></tr>
+                <tr><td colSpan={3}><div className="note-box err" style={{ margin: '2px 0 6px' }}>Admin yêu cầu xem lại: {r.admin_note}</div></td></tr>
               )}
             </Fragment>
           ))}
@@ -242,7 +244,8 @@ export default function Dashboard() {
       const url = (!yr || yr === r.data.currentYear) ? '/classes' : `/archive-classes?year=${encodeURIComponent(yr)}`;
       api.get(url).then((cr) => {
         setLbClasses(cr.data);
-        setLbClass((prev) => (cr.data.some((c) => c.id === prev) ? prev : (cr.data[0]?.id || '')));
+        const hasStu = new Set((r.data.classAverages || []).filter((c) => c.count > 0).map((c) => c.id));
+        setLbClass((prev) => (cr.data.some((c) => c.id === prev) ? prev : ((cr.data.find((c) => hasStu.has(c.id)) || cr.data[0])?.id || '')));
       }).catch(() => { setLbClasses([]); setLbClass(''); });
     });
   }
@@ -292,6 +295,15 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {isCurrent && (
+        <div className="quick-actions">
+          <button onClick={() => navigate('/attendance')}><IconCheck /><span><b>Điểm danh</b><small>Ghi có mặt / vắng buổi học</small></span></button>
+          <button onClick={() => navigate('/grades')}><IconGrades /><span><b>Nhập điểm</b><small>Cập nhật bảng điểm lớp</small></span></button>
+          <button onClick={() => navigate('/random')}><IconDice /><span><b>Chọn trả bài</b><small>Bốc thăm học viên lên trả bài</small></span></button>
+          <button onClick={() => navigate('/students')}><IconStudents /><span><b>Học viên</b><small>Tra cứu, thêm, sửa hồ sơ</small></span></button>
+        </div>
+      )}
+
       {isAdmin ? <ClassReviews /> : <ClassReviewsGLV />}
 
       {/* Biểu đồ điểm danh theo tuần */}
@@ -303,7 +315,7 @@ export default function Dashboard() {
       {/* Bảng xếp hạng thi đua */}
       <div className="panel" style={{ marginBottom: 18 }}>
         <div className="card-head">
-          <h2>🏆 Bảng xếp hạng thi đua{!isCurrent && <span className="muted" style={{ fontSize: 14, fontWeight: 400 }}> · năm {year}</span>}</h2>
+          <h2><IconTrophy className="h-ic" />Bảng xếp hạng thi đua{!isCurrent && <span className="muted" style={{ fontSize: 14, fontWeight: 400 }}> · năm {year}</span>}</h2>
           {isCurrent && (
             <select value={lbPeriod} onChange={(e) => setLbPeriod(e.target.value)} style={{ width: 150 }}>
               <option value="all">Toàn bộ</option>
@@ -357,7 +369,7 @@ export default function Dashboard() {
 
           {/* Kết quả theo lớp */}
           <div className="panel">
-            <div className="card-head"><h2>Kết quả theo lớp</h2></div>
+            <div className="card-head"><h2>Kết quả theo lớp</h2><span className="muted" style={{ fontSize: 12 }}>Điểm TB · Chuyên cần</span></div>
             <div className="perf">
               {classAverages.map((c, i) => {
                 const pct = c.avg != null ? Math.min((c.avg / 10) * 100, 100) : 0;
@@ -365,10 +377,12 @@ export default function Dashboard() {
                 return (
                   <div className="item click-row" key={c.id} onClick={() => navigate(`/grades?class=${c.id}`)}>
                     <div className="cls">{c.name}<span className="cls-sub">{c.count} HV</span></div>
-                    <div className="track">
-                      <div className="fill" style={{ width: `${pct}%`, background: color }}>{c.avg ?? '—'}</div>
-                    </div>
-                    <div className="score">{c.rate != null ? <span className="cc-chip">CC {c.rate}%</span> : <span className="muted">—</span>}</div>
+                    {c.avg != null ? (
+                      <div className="track" title="Điểm trung bình của lớp">
+                        <div className="fill" style={{ width: `${pct}%`, background: color }}>{c.avg}</div>
+                      </div>
+                    ) : <div className="track-empty">Chưa có điểm</div>}
+                    <div className="score">{c.rate != null ? <span className="cc-chip" title="Tỷ lệ chuyên cần">CC {c.rate}%</span> : <span className="muted" style={{ fontSize: 12 }}>Chưa điểm danh</span>}</div>
                   </div>
                 );
               })}
@@ -399,22 +413,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Thẻ hành động nhanh */}
-          <div className="panel" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ background: 'linear-gradient(160deg, #2563eb, #3b82f6)', color: '#fff', padding: 22 }}>
-              <div style={{ fontSize: 30 }}>🎲</div>
-              <div style={{ fontWeight: 600, margin: '10px 0 4px' }}>Chọn ngẫu nhiên trả bài</div>
-              <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 14 }}>
-                Bốc thăm học sinh lên trả bài một cách công bằng.
-              </div>
-              <button
-                onClick={() => navigate('/random')}
-                style={{ background: '#fff', color: 'var(--primary)', border: 'none', padding: '9px 16px', borderRadius: 10, fontWeight: 600, cursor: 'pointer' }}
-              >
-                Bắt đầu
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

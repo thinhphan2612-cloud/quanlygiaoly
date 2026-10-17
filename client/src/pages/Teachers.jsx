@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import { useAuth } from '../auth.jsx';
+import { toast } from '../lib/toast';
 
 const emptyCreate = { email: '', password: '', full_name: '' };
 
@@ -52,7 +53,7 @@ export default function Teachers() {
   async function remove(u) {
     if (!confirm(`Xóa tài khoản "${u.full_name}"? Giáo lý viên sẽ mất quyền truy cập.`)) return;
     try { await api.delete(`/auth/users/${u.id}`); load(); }
-    catch (err) { alert(err.response?.data?.error || 'Xóa thất bại'); }
+    catch (err) { toast.err(err.response?.data?.error || 'Xóa thất bại'); }
   }
 
   return (

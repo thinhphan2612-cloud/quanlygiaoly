@@ -216,13 +216,16 @@ async function handle(method, rawUrl, body = {}) {
         supabase.from('profiles')
           .select('id, full_name, role, email, saint_name, birth_date, address, area, glv_level, occupation, phone')
           .order('full_name'),
-        supabase.from('class_teachers').select('teacher_id, is_primary, classes(name)'),
+        supabase.from('class_teachers').select('teacher_id, is_primary, classes(name, graduated)'),
       ]);
       if (error) return fail(400, error.message);
       const classesByTeacher = {};
+      // Chỉ lớp đang hoạt động: lớp năm cũ (đã kết thúc năm học) vẫn giữ phân công nên trước đây tên lớp bị lặp.
       (cts || []).forEach((ct) => {
-        if (ct.classes?.name) (classesByTeacher[ct.teacher_id] = classesByTeacher[ct.teacher_id] || [])
-          .push(ct.classes.name + (ct.is_primary ? ' (chính)' : ''));
+        if (!ct.classes?.name || ct.classes.graduated) return;
+        const list = (classesByTeacher[ct.teacher_id] = classesByTeacher[ct.teacher_id] || []);
+        const label = ct.classes.name + (ct.is_primary ? ' (chính)' : '');
+        if (!list.includes(label)) list.push(label);
       });
       return ok((data || []).map((u) => ({ ...u, username: u.email || '', classes: classesByTeacher[u.id] || [] })));
     }

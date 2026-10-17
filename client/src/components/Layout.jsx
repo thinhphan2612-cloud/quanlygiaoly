@@ -14,28 +14,31 @@ import { isStandalone } from '../lib/pwa';
 import { useAdminCounts } from '../lib/adminCounts';
 import InstallGuide from './InstallGuide.jsx';
 import PricingModal from './PricingModal.jsx';
+import { toast } from '../lib/toast';
 import {
   IconHome, IconStudents, IconClass, IconCheck, IconGrades,
   IconDice, IconGame, IconTeacher, IconLogout, IconBell, IconMoney, IconEditImage, IconArchive, IconCert, IconStore, IconExam, IconExt, IconGuide,
+  IconChat, IconSliders, IconKey, IconClock, IconLock, IconAlert, IconCopy,
 } from './Icons.jsx';
 
+// group: nhóm hiển thị trên sidebar ('' = không có tiêu đề nhóm). Thứ tự trong mảng = thứ tự hiện.
 const nav = [
-  { to: '/', label: 'Tổng quan', Icon: IconHome, end: true },
-  { to: '/students', label: 'Học viên', Icon: IconStudents },
-  { to: '/teachers', label: 'Giáo lý viên', Icon: IconTeacher, adminOnly: true, proOnly: true },
-  { to: '/classes', label: 'Lớp học', Icon: IconClass },
-  { to: '/attendance', label: 'Điểm danh', Icon: IconCheck },
-  { to: '/grades', label: 'Điểm số', Icon: IconGrades },
-  { to: '/certificates', label: 'Chứng chỉ', Icon: IconCert, adminOnly: true, proOnly: true },
-  { to: '/exams', label: 'Đề thi', Icon: IconExam, proOnly: true },
-  { to: '/random', label: 'Chọn trả bài', Icon: IconDice },
-  { to: '/games', label: 'Game học', Icon: IconGame },
-  { to: '/store', label: 'Ephata Store', Icon: IconStore },
-  { to: '/audit', label: 'Thu chi', Icon: IconMoney, proOnly: true },
-  { to: '/archive', label: 'Lưu trữ', Icon: IconArchive, adminOnly: true, proOnly: true },
-  { to: '/guide', label: 'Hướng dẫn sử dụng', Icon: IconGuide },
-  { to: '/notify', label: 'Gửi thông báo', Icon: IconBell, adminOnly: true, proOnly: true },
-  { to: '/admin', label: 'Quản trị hệ thống', Icon: IconMoney, superOnly: true },
+  { to: '/', label: 'Tổng quan', Icon: IconHome, end: true, group: '' },
+  { to: '/attendance', label: 'Điểm danh', Icon: IconCheck, group: 'Hằng ngày' },
+  { to: '/grades', label: 'Điểm số', Icon: IconGrades, group: 'Hằng ngày' },
+  { to: '/random', label: 'Chọn trả bài', Icon: IconDice, group: 'Hằng ngày' },
+  { to: '/students', label: 'Học viên', Icon: IconStudents, group: 'Quản lý' },
+  { to: '/classes', label: 'Lớp học', Icon: IconClass, group: 'Quản lý' },
+  { to: '/teachers', label: 'Giáo lý viên', Icon: IconTeacher, adminOnly: true, proOnly: true, group: 'Quản lý' },
+  { to: '/exams', label: 'Đề thi', Icon: IconExam, proOnly: true, group: 'Thi & chứng chỉ' },
+  { to: '/certificates', label: 'Chứng chỉ', Icon: IconCert, adminOnly: true, proOnly: true, group: 'Thi & chứng chỉ' },
+  { to: '/archive', label: 'Lưu trữ', Icon: IconArchive, adminOnly: true, proOnly: true, group: 'Thi & chứng chỉ' },
+  { to: '/audit', label: 'Thu chi', Icon: IconMoney, proOnly: true, group: 'Giáo xứ' },
+  { to: '/notify', label: 'Gửi thông báo', Icon: IconBell, adminOnly: true, proOnly: true, group: 'Giáo xứ' },
+  { to: '/games', label: 'Game học', Icon: IconGame, group: 'Khác' },
+  { to: '/store', label: 'Ephata Store', Icon: IconStore, group: 'Khác' },
+  { to: '/guide', label: 'Hướng dẫn sử dụng', Icon: IconGuide, group: 'Khác' },
+  { to: '/admin', label: 'Quản trị hệ thống', Icon: IconMoney, superOnly: true, group: '' },
 ];
 
 // Lối tắt cuộn tới từng mục trong trang /admin (chỉ super-admin), chia nhóm theo đúng thứ tự trên trang.
@@ -201,10 +204,13 @@ export default function Layout({ children }) {
           )}
         </div>
         <nav>
-          {nav.filter((n) => (sa ? n.superOnly : !n.superOnly && (!n.adminOnly || user?.role === 'admin') && !(n.proOnly && !pro))).map(({ to, label, Icon, end }) => (
-            <NavLink key={to} to={to} end={end} className={({ isActive }) => (isActive ? 'active' : '')}>
-              <Icon /><span>{label}</span>
-            </NavLink>
+          {nav.filter((n) => (sa ? n.superOnly : !n.superOnly && (!n.adminOnly || user?.role === 'admin') && !(n.proOnly && !pro))).map(({ to, label, Icon, end, group }, i, arr) => (
+            <div key={to} style={{ display: 'contents' }}>
+              {group && group !== arr[i - 1]?.group && <div className="nav-group-title">{group}</div>}
+              <NavLink to={to} end={end} className={({ isActive }) => (isActive ? 'active' : '')}>
+                <Icon /><span>{label}</span>
+              </NavLink>
+            </div>
           ))}
           {sa && (
             <div className="admin-subnav">
@@ -225,24 +231,19 @@ export default function Layout({ children }) {
         <div className="side-foot">
         {(sa || user?.role === 'teacher') ? null : !pro ? (
           <div className="upgrade-card" onClick={() => setPricing(true)}>
-            <div className="emoji">🚀</div>
             <div className="t">Bạn đang dùng gói Khởi động. Nâng lên Pro để mở khóa toàn bộ.</div>
             <button className="btn-w">Nâng cấp Pro</button>
           </div>
         ) : (
-          <div className="side-card plan-card">
-            <div className="pc-badge">✦ Gói {planName(plan)}</div>
-            <div className="pc-feats">
-              <div>✓ {parish?.plan_max_classes ? `Tối đa ${parish.plan_max_classes} lớp` : 'Không giới hạn lớp'} &amp; nhiều giáo lý viên</div>
-              <div>✓ Điểm danh · điểm số · thi đua</div>
-              <div>✓ Chứng chỉ · lưu trữ · game</div>
-            </div>
-            <button className="btn-w" onClick={() => setPricing(true)}>Xem gói &amp; nâng cấp</button>
-          </div>
+          <button className="plan-mini" onClick={() => setPricing(true)} title="Xem gói và nâng cấp">
+            <span className="pm-badge">{planName(plan).toUpperCase()}</span>
+            <span className="pm-text">{parish?.plan_max_classes ? `Tối đa ${parish.plan_max_classes} lớp` : 'Không giới hạn lớp'}</span>
+            <span className="pm-link">Xem gói</span>
+          </button>
         )}
-        <button className="feedback-link" onClick={() => setFeedback(true)}>💬 Góp ý / liên hệ tác giả</button>
+        <button className="feedback-link" onClick={() => setFeedback(true)}><IconChat /> Góp ý / liên hệ tác giả</button>
         <a className="zalo-link" href="https://zalo.me/0964013126" target="_blank" rel="noopener noreferrer">
-          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="11" fill="#0068FF" /><text x="24" y="32" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-style="italic" font-size="18" fill="#fff">Zalo</text></svg>
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="11" fill="#0068FF" /><text x="24" y="32" textAnchor="middle" fontFamily="Arial,Helvetica,sans-serif" fontWeight="700" fontStyle="italic" fontSize="18" fill="#fff">Zalo</text></svg>
           <span>Zalo hỗ trợ</span>
         </a>
         </div>
@@ -256,7 +257,7 @@ export default function Layout({ children }) {
             {parish?.logo_url ? <img className="logo-img" src={parish.logo_url} alt="logo" /> : <span className="logo">✝</span>} {parishName}
           </div>
           <div className="greeting">
-            <div className="hi">Xin chào, {user?.full_name} 👋</div>
+            <div className="hi">Xin chào, {user?.full_name}</div>
             <div className="sub">Chúc bạn một buổi dạy giáo lý tốt lành</div>
           </div>
           <div className="spacer" />
@@ -274,7 +275,7 @@ export default function Layout({ children }) {
                   {notifs.length === 0 && <div className="notif-empty">Chưa có thông báo</div>}
                   {notifs.map((n) => (
                     <div key={n.id} className={`notif-item ${n.type === 'absence' ? 'absence' : ''}`}>
-                      <div className="nt">{n.type === 'absence' ? '⚠ ' : ''}{n.title}</div>
+                      <div className="nt">{n.type === 'absence' && <IconAlert className="bi" />}{n.title}</div>
                       <div className="nc">{n.content}</div>
                       <div className="nd">{timeVi(n.created_at)}</div>
                     </div>
@@ -322,11 +323,11 @@ export default function Layout({ children }) {
 
                   <div className="ac-actions">
                     {user?.role === 'admin' && (
-                      <button className="user-menu-item" onClick={() => navigate('/settings')}>⚙ Cài đặt quản lý</button>
+                      <button className="user-menu-item" onClick={() => navigate('/settings')}><IconSliders /> Cài đặt quản lý</button>
                     )}
                     <button className="user-menu-item" onClick={() => { setMenuOpen(false); window.open('https://ephatastore.com', '_blank', 'noopener'); }}><IconStore /> <span style={{ flex: 1 }}>Đăng nhập Ephata Store</span><IconExt style={{ width: 15, height: 15, opacity: .6 }} /></button>
                     <button className="user-menu-item" onClick={() => { setMenuOpen(false); setInstallOpen(true); }}>Cài đặt ứng dụng</button>
-                    <button className="user-menu-item" onClick={() => { setMenuOpen(false); setPwModal(true); }}>🔑 Đổi mật khẩu</button>
+                    <button className="user-menu-item" onClick={() => { setMenuOpen(false); setPwModal(true); }}><IconKey /> Đổi mật khẩu</button>
                     <button className="user-menu-item danger" onClick={handleLogout}><IconLogout /> Đăng xuất</button>
                   </div>
                   <div className="ac-foot">https://www.giaoly.com.vn</div>
@@ -341,7 +342,7 @@ export default function Layout({ children }) {
           </div>
         )}
         <main className="content">
-          {showInstallBar && (
+          {showInstallBar && location.pathname === '/' && (
             <div className="renew-bar" style={{ background: '#eff6ff', borderColor: '#bfdbfe', color: '#1e3a8a' }}>
               <div className="rb-text">Cài <b>Giáo Lý Số</b> thành ứng dụng trên máy để mở nhanh như app riêng, không cần gõ lại đường link.</div>
               <button className="btn sm" onClick={() => setInstallOpen(true)}>Xem cách cài</button>
@@ -350,7 +351,7 @@ export default function Layout({ children }) {
           )}
           {expSoon && !renewBarClosed && !sa && (
             <div className="renew-bar">
-              <span className="rb-ic">⏰</span>
+              <span className="rb-ic"><IconClock /></span>
               <div className="rb-text">
                 Gói Pro của giáo xứ sẽ <b>hết hạn sau {daysLeft} ngày</b> (đến {fmtD(planExp)}).
                 Vui lòng gia hạn để không gián đoạn và <b>tránh mất dữ liệu</b>. Nên tải sao lưu dữ liệu để an toàn.
@@ -370,17 +371,17 @@ export default function Layout({ children }) {
       {expired && !sa && (
         <div className="lock-overlay">
           <div className="lock-card">
-            <div className="lock-ic">🔒</div>
+            <div className="lock-ic"><IconLock width="40" height="40" /></div>
             <h2>Gói Pro đã hết hạn</h2>
             <p>Gói Pro của giáo xứ đã hết hạn vào <b>{fmtD(planExp)}</b>. Ứng dụng tạm khóa cho tới khi gia hạn.</p>
             <div className="lock-warn">
-              ⚠️ Để bảo đảm an toàn, dữ liệu của giáo xứ sẽ được <b>xóa sau 30 ngày</b> kể từ ngày hết hạn
+              Để bảo đảm an toàn, dữ liệu của giáo xứ sẽ được <b>xóa sau 30 ngày</b> kể từ ngày hết hạn
               (dự kiến từ <b>{purgeDate}</b>) nếu không gia hạn. Vui lòng gia hạn hoặc liên hệ hỗ trợ để sao lưu dữ liệu.
             </div>
             {canRenew
               ? <button className="btn" onClick={() => setPricing(true)}>Gia hạn ngay</button>
               : <p className="muted" style={{ margin: 0 }}>Vui lòng liên hệ Cha sở / quản trị viên của giáo xứ để gia hạn.</p>}
-            <button className="lock-help" onClick={() => setFeedback(true)}>💬 Liên hệ hỗ trợ / sao lưu dữ liệu</button>
+            <button className="lock-help" onClick={() => setFeedback(true)}>Liên hệ hỗ trợ / sao lưu dữ liệu</button>
           </div>
         </div>
       )}
@@ -394,7 +395,7 @@ export default function Layout({ children }) {
               onClick={() => { setPromoOpen(false); setPricing(true); }} />
             <div className="promo-code">
               <span>Mã ưu đãi: <b>GIAOLYSO50</b></span>
-              <button className="btn sm" onClick={copyPromo}>{promoCopied ? '✓ Đã sao chép' : '📋 Sao chép mã'}</button>
+              <button className="btn sm" onClick={copyPromo}>{promoCopied ? '✓ Đã sao chép' : <><IconCopy className="bi" />Sao chép mã</>}</button>
             </div>
           </div>
         </div>
@@ -411,12 +412,12 @@ function FeedbackModal({ user, parish, onClose }) {
   const [busy, setBusy] = useState(false);
 
   async function send() {
-    if (!msg.trim()) { alert('Vui lòng nhập nội dung'); return; }
+    if (!msg.trim()) { toast.err('Vui lòng nhập nội dung'); return; }
     setBusy(true);
     try {
       await sendContactMessage({ user, parish, message: msg, context: 'Góp ý' });
       setSent(true);
-    } catch (e) { alert(viError(e.response?.data?.error || e.message)); }
+    } catch (e) { toast.err(viError(e.response?.data?.error || e.message)); }
     finally { setBusy(false); }
   }
 
@@ -434,7 +435,7 @@ function FeedbackModal({ user, parish, onClose }) {
           </>
         )}
         <div className="modal-actions" style={{ justifyContent: 'space-between' }}>
-          <a className="btn ghost" href="https://ephatastore.com" target="_blank" rel="noopener noreferrer">🌐 Ephata Store</a>
+          <a className="btn ghost btn-ext" href="https://ephatastore.com" target="_blank" rel="noopener noreferrer">Ephata Store <IconExt /></a>
           <span style={{ display: 'flex', gap: 8 }}>
             <button className="btn ghost" onClick={onClose}>Đóng</button>
             {!sent && <button className="btn" disabled={busy} onClick={send}>{busy ? 'Đang gửi…' : 'Gửi'}</button>}
