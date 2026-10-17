@@ -322,8 +322,8 @@ export default function Settings() {
                   ))}
                   {admins.length === 0 && <p className="muted" style={{ margin: 0 }}>Đang tải…</p>}
                 </div>
-                <form onSubmit={addAdmin}>
-                  <div className="form-section" style={{ marginTop: 16 }}>Thêm quản trị viên</div>
+                <form className="stx-sub" onSubmit={addAdmin}>
+                  <div className="stx-sub-h">Thêm quản trị viên</div>
                   <div className="settings-grid">
                     <div className="field"><label>Họ tên</label>
                       <input value={adminForm.full_name} onChange={(e) => setAdminForm({ ...adminForm, full_name: e.target.value })} placeholder="VD: Giuse Nguyễn Văn A" autoComplete="off" /></div>
