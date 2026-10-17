@@ -77,7 +77,7 @@ export const TOURS = [
     steps: [
       { route: '/grades', target: 'grades-class', title: 'Chọn lớp', body: 'Chọn lớp cần nhập điểm.' },
       { route: '/grades', target: 'grades-cols', title: 'Cột điểm', body: 'Tạo các cột điểm như "Kiểm tra 15 phút", "Thi học kỳ 1" kèm hệ số. Mỗi lớp có bộ cột riêng.' },
-      { route: '/grades', target: 'grades-table', title: 'Nhập điểm', body: 'Gõ điểm vào từng ô. Điểm được lưu ngay khi bạn rời khỏi ô (lưu thật). Điểm trung bình và thứ hạng tự tính.', missingText: 'Lớp này chưa có cột điểm hoặc chưa có học viên nên chưa hiện bảng điểm. Tạo cột điểm trước rồi làm lại bài này.' },
+      { route: '/grades', target: 'grades-table', title: 'Nhập điểm', body: 'Gõ điểm vào từng ô rồi bấm Enter để xuống em kế tiếp. Điểm được lưu ngay khi rời khỏi ô (lưu thật). Điểm trung bình và thứ hạng tự tính.', missingText: 'Lớp này chưa có cột điểm hoặc chưa có học viên nên chưa hiện bảng điểm. Tạo cột điểm trước rồi làm lại bài này.' },
       { route: '/grades', target: 'grades-export', title: 'Xuất bảng điểm', body: 'Xuất ra Excel hoặc PDF để in hoặc gửi ban giáo lý.' },
     ],
   },
@@ -110,7 +110,7 @@ export const TOURS = [
     steps: [
       { route: '/classes', target: 'class-promotion', title: 'Mở kỳ xét lên lớp', body: 'Cuối năm, bấm "Mở kỳ xét lên lớp" để giáo lý viên gửi kết quả lên lớp / ở lại của từng em. Bài tập này chỉ xem, không cần bấm.' },
       { route: '/', target: 'dash-reviews', title: 'Duyệt kết quả', body: 'Kết quả giáo lý viên gửi lên hiện ở trang Tổng quan để bạn duyệt hoặc trả lại.', missingText: 'Hiện chưa có lớp nào gửi kết quả nên mục duyệt chưa hiện. Bấm Tiếp để xem bước cuối.' },
-      { route: '/grades', target: 'grades-endyear', title: 'Kết thúc năm học', body: 'Khi mọi lớp đã được duyệt, bấm "Kết thúc năm học" để chuyển cả giáo xứ sang năm mới. Chỉ làm một lần mỗi năm, đừng bấm khi đang tập.' },
+      { route: '/grades', target: 'grades-endyear', title: 'Kết thúc năm học', body: 'Khi mọi lớp đã được duyệt, bấm nút ⋯ này rồi chọn "Kết thúc năm học, lên lớp" để chuyển cả giáo xứ sang năm mới. Chỉ làm một lần mỗi năm, đừng bấm khi đang tập.' },
     ],
   },
 ];
