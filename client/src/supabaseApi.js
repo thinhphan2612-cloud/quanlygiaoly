@@ -587,6 +587,13 @@ async function handle(method, rawUrl, body = {}) {
       if (error) return fail(400, error.message);
       return ok(data);
     }
+    if (seg[0] === 'spiritual-tasks' && seg[1] && method === 'put') {
+      const name = String(body.name || '').trim();
+      if (!name) return fail(400, 'Tên việc không được để trống');
+      const { error } = await supabase.from('spiritual_tasks').update({ name }).eq('id', seg[1]);
+      if (error) return fail(400, error.message);
+      return ok({ ok: true });
+    }
     if (seg[0] === 'spiritual-tasks' && seg[1] && method === 'delete') {
       const { error } = await supabase.from('spiritual_tasks').delete().eq('id', seg[1]);
       if (error) return fail(400, error.message);

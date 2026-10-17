@@ -10,6 +10,7 @@ import { fileToDataUrl, fileToDataUrlWide } from '../lib/img';
 import { IconArchive, IconUpload } from '../components/Icons.jsx';
 import { confirmDialog } from '../lib/confirm';
 import PageHeader from '../components/PageHeader.jsx';
+import { DEFAULT_RANKING, RANKING_PARTS, rankingWeights, rankingPoints } from '../lib/ranking';
 
 // Trang cài đặt quản lý của admin: giáo xứ, năm học, lên lớp cuối năm,
 // tùy chọn bật/tắt, danh sách học viên đã ra trường.
@@ -57,6 +58,12 @@ export default function Settings() {
   useEffect(() => { loadAll(); }, []);
   // Đồng bộ ô nhập tên/giáo phận khi tải xong thông tin giáo xứ
   useEffect(() => { if (parish) setPInfo({ name: parish.name || '', diocese: parish.diocese || '', priest: parish.settings?.priest_name || '' }); }, [parish?.id]);
+
+  // Mở từ link "Đổi cách tính" ở bảng xếp hạng: cuộn tới đúng mục
+  useEffect(() => {
+    if (!parish || window.location.hash !== '#thi-dua') return;
+    setTimeout(() => document.getElementById('thi-dua')?.scrollIntoView({ block: 'start' }), 50);
+  }, [parish?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (user?.role !== 'admin') return <div className="muted">Chỉ quản trị viên được truy cập cài đặt.</div>;
   if (!parish) return <div className="muted">Đang tải...</div>;
@@ -203,6 +210,9 @@ export default function Settings() {
         {!isFree && <ToggleRow label="Hiện nút kết thúc năm học & lên lớp" on={flag('auto_promote')} onClick={() => toggle('auto_promote')} />}
       </div>
 
+      {/* Cách tính điểm thi đua (mỗi giáo xứ tự đặt tỷ lệ) */}
+      <RankingWeights settings={settings} onSave={(w) => saveParish({ settings: { ...settings, ranking_weights: w } })} />
+
       {/* Gói dịch vụ */}
       <div className="panel">
         <div className="card-head"><h2>Gói dịch vụ</h2></div>
@@ -334,6 +344,53 @@ function ToggleRow({ label, on, onClick }) {
       <button className={`switch ${on ? 'on' : ''}`} onClick={onClick} role="switch" aria-checked={on}>
         <span className="knob" />
       </button>
+    </div>
+  );
+}
+
+// Tỷ lệ điểm thi đua của giáo xứ: 3 phần, tổng 100%. Lưu ở settings.ranking_weights.
+function RankingWeights({ settings, onSave }) {
+  const cur = rankingWeights(settings);
+  const [w, setW] = useState(cur);
+  const [saving, setSaving] = useState(false);
+  const curKey = JSON.stringify(cur);
+  useEffect(() => { setW(cur); }, [curKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const num = (v) => Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+  const sum = RANKING_PARTS.reduce((a, p) => a + num(w[p.key]), 0);
+  const clean = Object.fromEntries(RANKING_PARTS.map((p) => [p.key, num(w[p.key])]));
+  const changed = JSON.stringify(clean) !== curKey;
+  const isDefault = RANKING_PARTS.every((p) => clean[p.key] === DEFAULT_RANKING[p.key]);
+  const sample = { tb: 8, rate: 90, tl: 70 };
+
+  async function save() {
+    setSaving(true);
+    try { await onSave(clean); } finally { setSaving(false); }
+  }
+
+  return (
+    <div className="panel" id="thi-dua">
+      <div className="card-head"><h2>Cách tính điểm thi đua</h2></div>
+      <p className="muted rw-sub">Điểm thi đua (thang 100) dùng để xếp hạng ở bảng thi đua. Mỗi giáo xứ tự đặt tỷ lệ cho 3 phần, tổng phải đúng 100%. Đặt 0% nếu không muốn tính phần đó.</p>
+      <div className="rw-grid">
+        {RANKING_PARTS.map((p) => (
+          <label className="rw-item" key={p.key}>
+            <span className="rw-label">{p.label}</span>
+            <span className="rw-input"><input type="number" inputMode="numeric" min="0" max="100" step="5" value={w[p.key]}
+              onChange={(e) => setW({ ...w, [p.key]: e.target.value })} aria-label={`Tỷ lệ ${p.label}`} /><span>%</span></span>
+            <span className="rw-hint">{p.hint}</span>
+          </label>
+        ))}
+      </div>
+      <div className="rw-foot">
+        <div className={`rw-sum${sum === 100 ? ' ok' : ' bad'}`}>
+          Tổng: <b>{sum}%</b>{sum !== 100 && <span> · cần đúng 100% (đang {sum < 100 ? `thiếu ${100 - sum}` : `thừa ${sum - 100}`}%)</span>}
+        </div>
+        {sum === 100 && <div className="rw-example muted">Ví dụ: em có điểm TB 8, chuyên cần 90%, việc thiêng liêng 70% được <b>{rankingPoints(sample, clean)}</b> điểm thi đua.</div>}
+      </div>
+      <div className="rw-actions">
+        <button className="btn" onClick={save} disabled={sum !== 100 || !changed || saving}>{saving ? 'Đang lưu…' : 'Lưu cách tính'}</button>
+        {!isDefault && <button className="btn ghost" onClick={() => setW(DEFAULT_RANKING)}>Về mặc định 50 / 30 / 20</button>}
+      </div>
     </div>
   );
 }

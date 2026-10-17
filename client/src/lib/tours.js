@@ -64,10 +64,10 @@ export const TOURS = [
     desc: 'Việc làm mỗi buổi: chọn lớp, đánh dấu từng em rồi lưu.',
     steps: [
       { route: '/attendance', target: 'att-class', title: 'Chọn lớp', body: 'Chọn lớp cần điểm danh. Lần sau mở trang sẽ tự chọn sẵn lớp này.' },
-      { route: '/attendance', target: 'att-date', title: 'Chọn ngày', body: 'Mặc định là hôm nay. Đổi ngày nếu điểm danh bù cho buổi trước.' },
-      { route: '/attendance', target: 'att-status', title: 'Đánh dấu từng em', body: 'Bấm Có mặt, Trễ, Vắng không phép hoặc Vắng có phép. Bấm lại lần nữa để bỏ chọn. Có nút "Đánh dấu tất cả có mặt" ở phía trên cho nhanh.', missingText: 'Lớp này chưa có học viên nên chưa có gì để điểm danh. Bấm Tiếp để xem bước sau.' },
+      { route: '/attendance', target: 'att-date', title: 'Chọn ngày', body: 'Mặc định là hôm nay. Bấm ‹ › để lùi hoặc tiến một tuần khi điểm danh bù buổi trước.' },
+      { route: '/attendance', target: 'att-status', title: 'Đánh dấu từng em', body: 'Bấm Có mặt, Trễ, Vắng (không phép) hoặc Có phép. Bấm lại lần nữa để bỏ chọn. Có nút "Đánh dấu tất cả có mặt" ở phía trên cho nhanh.', missingText: 'Lớp này chưa có học viên nên chưa có gì để điểm danh. Bấm Tiếp để xem bước sau.' },
       { route: '/attendance', target: 'att-summary', title: 'Xem tổng kết', body: 'Dòng tổng kết cập nhật ngay khi bạn bấm, dễ đối chiếu sĩ số.' },
-      { route: '/attendance', target: 'att-save', title: 'Lưu điểm danh', body: 'Bấm "Lưu điểm danh" để ghi lại. Thao tác này lưu thật. Nếu chỉ đang tập thì không cần bấm.' },
+      { route: '/attendance', target: 'att-save', title: 'Tự động lưu', body: 'Điểm danh được tự lưu ngay sau mỗi lần bấm, dòng này cho biết đã lưu lúc mấy giờ. Trong lúc làm bài tập, thay đổi không được lưu nên bạn cứ bấm thử.' },
     ],
   },
   {

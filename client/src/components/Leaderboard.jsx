@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { useAuth } from '../auth.jsx';
+import { useParish } from '../parish.jsx';
+import { rankingWeights, rankingPoints, rankingFormula } from '../lib/ranking';
 import Avatar from './Avatar.jsx';
 import { IconTrophy } from './Icons.jsx';
 
@@ -10,11 +13,14 @@ const MEDAL = ['🥇', '🥈', '🥉'];
 // Nội dung bảng xếp hạng (tái dùng: nhúng ở Tổng quan hoặc trong modal).
 export function LeaderboardTable({ classId, range }) {
   const navigate = useNavigate();
-  const [rows, setRows] = useState(null);
+  const { user } = useAuth();
+  const { parish } = useParish();
+  const weights = rankingWeights(parish?.settings); // tỷ lệ thi đua riêng của giáo xứ
+  const [raw, setRaw] = useState(null);
   const [sort, setSort] = useState({ key: 'points', dir: 'desc' });
 
   useEffect(() => {
-    if (!classId) { setRows([]); return; }
+    if (!classId) { setRaw([]); return; }
     let alive = true;
     (async () => {
       const [gc, ar, sr, tasksRes] = await Promise.all([
@@ -37,14 +43,15 @@ export function LeaderboardTable({ classId, range }) {
         const counted = a.present + a.absent + a.late; // vắng có phép không tính
         const rate = counted ? Math.round((a.present / counted) * 100) : 0;
         const tl = spPossible ? (spDone / spPossible) * 100 : 0;
-        const points = Math.round((tb != null ? (tb / 10) * 100 : 0) * 0.5 + rate * 0.3 + tl * 0.2);
-        return { id: s.id, name: (s.saint_name ? s.saint_name + ' ' : '') + s.full_name, avatar_url: s.avatar_url, tb, present: a.present, absent: a.absent, late: a.late, excused: a.excused || 0, rate, sp: spDone, spPossible, points };
+        return { id: s.id, name: (s.saint_name ? s.saint_name + ' ' : '') + s.full_name, avatar_url: s.avatar_url, tb, present: a.present, absent: a.absent, late: a.late, excused: a.excused || 0, rate, tl, sp: spDone, spPossible };
       });
-      setRows(merged);
+      setRaw(merged);
     })();
     return () => { alive = false; };
   }, [classId, range.from, range.to]);
 
+  // Điểm thi đua tính lúc hiển thị để đổi tỷ lệ ở Cài đặt là áp dụng ngay
+  const rows = raw ? raw.map((r) => ({ ...r, points: rankingPoints(r, weights) })) : null;
   const ranking = rows ? [...rows].sort((a, b) => b.points - a.points) : [];
   const medalRank = {}; ranking.forEach((r, i) => { if (i < 3) medalRank[r.id] = i; });
 
@@ -103,7 +110,8 @@ export function LeaderboardTable({ classId, range }) {
           </tbody>
         </table>
       </div>
-      <p className="muted" style={{ fontSize: 11, marginTop: 8 }}>Điểm thi đua = Học tập 50% + Chuyên cần 30% + Việc thiêng liêng 20% (thang 100). Bấm tiêu đề cột để sắp xếp.</p>
+      <p className="muted lb-formula">Điểm thi đua = {rankingFormula(weights)} (thang 100). Bấm tiêu đề cột để sắp xếp.
+        {user?.role === 'admin' && <button type="button" className="lb-formula-link" onClick={() => navigate('/settings#thi-dua')}>Đổi cách tính</button>}</p>
     </>
   );
 }

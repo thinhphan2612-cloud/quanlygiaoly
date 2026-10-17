@@ -1,26 +1,34 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '../api';
-import { exportXlsx, exportPdf, exportXlsxMulti, exportPdfMulti, STT_COL, ATT_LABEL, fileSlug, exportSubtitle } from '../lib/exportUtils';
+import { exportXlsxMulti, exportPdfMulti, STT_COL, fileSlug, exportSubtitle } from '../lib/exportUtils';
 import Avatar from '../components/Avatar.jsx';
 import { IconDownload, IconPrinter, IconSliders } from '../components/Icons.jsx';
 import { pickClass, rememberClass } from '../lib/lastClass';
 import { toast } from '../lib/toast';
 import { SkeletonTable } from '../components/Skeleton.jsx';
 import { confirmDialog } from '../lib/confirm';
+import { byViName } from '../lib/viName';
+import { useActiveTour } from '../lib/tour';
 import PageHeader from '../components/PageHeader.jsx';
 
 // Ngày dạng YYYY-MM-DD theo giờ ĐỊA PHƯƠNG (không dùng toISOString vì lệch múi giờ).
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const today = () => ymd(new Date());
+const addDays = (s, n) => { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + n); return ymd(d); };
+const WEEKDAY = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+const weekdayOf = (s) => WEEKDAY[new Date(s + 'T00:00:00').getDay()];
+// Nhãn ngắn dùng thống nhất cho nút, chip tổng hợp và bảng thống kê
 const STATUSES = [
-  { key: 'present', label: 'Có mặt' },
-  { key: 'late', label: 'Trễ' },
-  { key: 'absent', label: 'Vắng không phép' },
-  { key: 'excused', label: 'Vắng có phép' },
+  { key: 'present', label: 'Có mặt', short: 'Có', code: 'C', title: 'Có mặt' },
+  { key: 'late', label: 'Trễ', short: 'Trễ', code: 'T', title: 'Đi trễ' },
+  { key: 'absent', label: 'Vắng', short: 'Vắng', code: 'V', title: 'Vắng không phép' },
+  { key: 'excused', label: 'Có phép', short: 'Phép', code: 'P', title: 'Vắng có phép' },
 ];
-const ICON = { present: '✓', absent: '✗', late: '⏱', excused: '✚' };
-const ICON_CLASS = { present: 'ic-present', absent: 'ic-absent', late: 'ic-late', excused: 'ic-excused' };
+const ST = Object.fromEntries(STATUSES.map((s) => [s.key, s]));
 const ddmm = (d) => d.slice(8, 10) + '/' + d.slice(5, 7);
+const ddmy = (d) => d.split('-').reverse().join('/');
+const nameOf = (s) => (s.saint_name ? s.saint_name + ' ' : '') + s.full_name;
+const hhmm = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
 // Khoảng tuần (CN -> T7) và tháng của một ngày
 function weekRange(dateStr) {
@@ -34,6 +42,65 @@ function monthRange(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
   return { from, to: ymd(last) };
+}
+
+/* Tự lưu: gom thay đổi, lưu sau ~0,8 giây; đổi lớp/ngày hoặc rời trang thì lưu ngay phần đang chờ. */
+function useAutoSave(saveFn, key, paused) {
+  const [st, setSt] = useState({ s: 'idle', at: null });
+  const timer = useRef(null);
+  const pending = useRef(null);
+  const failed = useRef(null);
+  const busy = useRef(false);
+  const chain = useRef(Promise.resolve());
+  const keyRef = useRef(key);
+  const fnRef = useRef(saveFn);
+  fnRef.current = saveFn;
+
+  function run(payload) {
+    const k = keyRef.current;
+    chain.current = chain.current.then(async () => {
+      busy.current = true;
+      if (keyRef.current === k) setSt((x) => ({ ...x, s: 'saving' }));
+      try {
+        await fnRef.current(payload);
+        failed.current = null;
+        if (keyRef.current === k) setSt({ s: 'saved', at: new Date() });
+      } catch (e) {
+        failed.current = payload;
+        if (keyRef.current === k) setSt({ s: 'error', at: null });
+        toast.err('Chưa lưu được điểm danh. Kiểm tra kết nối rồi bấm "Thử lại".');
+      } finally { busy.current = false; }
+    });
+  }
+  function flush() {
+    clearTimeout(timer.current);
+    if (pending.current) { const p = pending.current; pending.current = null; run(p); }
+  }
+  function schedule(payload) {
+    if (paused) return;
+    pending.current = payload;
+    setSt((x) => ({ ...x, s: 'pending' }));
+    clearTimeout(timer.current);
+    timer.current = setTimeout(flush, 800);
+  }
+  const retry = () => { if (failed.current) run(failed.current); };
+  // Đổi lớp/ngày: lưu ngay phần đang chờ của lớp/ngày cũ rồi mới chuyển
+  useEffect(() => { keyRef.current = key; setSt({ s: 'idle', at: null }); return () => flush(); }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Rời trang khi còn thay đổi chưa lưu: trình duyệt hỏi lại
+  useEffect(() => {
+    const h = (e) => { if (pending.current || busy.current || failed.current) { flush(); e.preventDefault(); e.returnValue = ''; } };
+    window.addEventListener('beforeunload', h);
+    return () => window.removeEventListener('beforeunload', h);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return { st, schedule, retry };
+}
+
+function SaveStatus({ st, onRetry, practicing, idleText }) {
+  if (practicing) return <span className="atx-save warn">Đang làm bài tập: thay đổi trên trang này không được lưu</span>;
+  if (st.s === 'error') return <span className="atx-save err">Chưa lưu được <button type="button" className="atx-link" onClick={onRetry}>Thử lại</button></span>;
+  if (st.s === 'pending' || st.s === 'saving') return <span className="atx-save">Đang lưu…</span>;
+  if (st.s === 'saved') return <span className="atx-save ok">Đã lưu lúc {hhmm(st.at)}</span>;
+  return <span className="atx-save">{idleText}</span>;
 }
 
 // Danh sách xếp hạng (chuyên cần nhất / cần nhắc nhở)
@@ -58,7 +125,7 @@ export default function Attendance() {
   const [classes, setClasses] = useState([]);
   const [classId, setClassId] = useState('');
   const [date, setDate] = useState(today());
-  const [mode, setMode] = useState('day'); // day | week | month
+  const [mode, setMode] = useState('day'); // day (điểm danh) | week | month (thống kê)
   const [parish, setParish] = useState(null);
   const [report, setReport] = useState(false); // modal xuất báo cáo tổng hợp
 
@@ -70,262 +137,282 @@ export default function Attendance() {
   const cls = classes.find((c) => c.id === classId) || {};
   const className = cls.name || '';
   const range = mode === 'week' ? weekRange(date) : mode === 'month' ? monthRange(date) : null;
+  const isToday = date === today();
 
   return (
     <div>
       <PageHeader title="Điểm danh" subtitle="Ghi nhận có mặt, đi trễ, vắng của từng buổi học và việc thiêng liêng.">
         <div className="seg">
-          <button className={tab === 'giaoly' ? 'on' : ''} onClick={() => { setTab('giaoly'); setMode('day'); }}>Giáo lý</button>
-          <button className={tab === 'thieng' ? 'on' : ''} onClick={() => { setTab('thieng'); setMode('day'); }}>Việc Thiêng liêng</button>
+          <button className={tab === 'giaoly' ? 'on' : ''} onClick={() => setTab('giaoly')}>Giáo lý</button>
+          <button className={tab === 'thieng' ? 'on' : ''} onClick={() => setTab('thieng')}>Việc thiêng liêng</button>
         </div>
       </PageHeader>
 
-      <div className="toolbar">
-        <select data-tour="att-class" value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 200 }}>
+      <div className="toolbar atx-toolbar">
+        <select data-tour="att-class" value={classId} onChange={(e) => setClassId(e.target.value)} className="atx-class">
           <option value="">-- Chọn lớp --</option>
           {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <input data-tour="att-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ width: 170 }} />
-        <div className="seg sm">
-          <button className={mode === 'day' ? 'on' : ''} onClick={() => setMode('day')}>Ngày</button>
-          <button className={mode === 'week' ? 'on' : ''} onClick={() => setMode('week')}>Tuần</button>
-          <button className={mode === 'month' ? 'on' : ''} onClick={() => setMode('month')}>Tháng</button>
+        <div className="atx-datenav" data-tour="att-date">
+          <button type="button" className="atx-step" onClick={() => setDate(addDays(date, -7))} title="Lùi 1 tuần" aria-label="Lùi 1 tuần">‹</button>
+          <input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} aria-label="Ngày điểm danh" />
+          <button type="button" className="atx-step" onClick={() => setDate(addDays(date, 7))} title="Tiến 1 tuần" aria-label="Tiến 1 tuần">›</button>
+          {!isToday && <button type="button" className="btn ghost sm" onClick={() => setDate(today())}>Hôm nay</button>}
         </div>
-        <button className="btn ghost" style={{ marginLeft: 'auto' }} disabled={!classId} onClick={() => setReport(true)}><IconDownload className="bi" />Xuất báo cáo</button>
+        <div className="seg sm atx-view" role="group" aria-label="Chế độ xem">
+          <button className={mode === 'day' ? 'on' : ''} onClick={() => setMode('day')}>Điểm danh</button>
+          <button className={mode !== 'day' ? 'on' : ''} onClick={() => mode === 'day' && setMode('week')}>Thống kê</button>
+        </div>
+        <button className="btn ghost atx-report" disabled={!classId} onClick={() => setReport(true)}><IconDownload className="bi" />Xuất báo cáo</button>
       </div>
 
-      {report && <ReportModal classId={classId} cls={cls} parish={parish} defaultRange={range || monthRange(date)} onClose={() => setReport(false)} />}
+      {report && <ReportModal classId={classId} cls={cls} parish={parish} defaultRange={range || { from: date, to: date }} onClose={() => setReport(false)} />}
 
       {!classId ? (
         <div className="panel"><p className="muted">{classes.length ? 'Hãy chọn lớp để điểm danh.' : 'Chưa có lớp nào. Vào mục Lớp học để tạo lớp trước.'}</p></div>
-      ) : tab === 'giaoly' ? (
-        mode === 'day'
-          ? <GiaoLyDay classId={classId} date={date} cls={cls} parish={parish} />
-          : <GiaoLyStats classId={classId} range={range} mode={mode} className={className} />
+      ) : mode === 'day' ? (
+        tab === 'giaoly'
+          ? <GiaoLyDay classId={classId} date={date} />
+          : <ThiengDay classId={classId} date={date} />
       ) : (
-        mode === 'day'
-          ? <ThiengDay classId={classId} date={date} />
-          : <ThiengStats classId={classId} range={range} className={className} />
+        <div className="panel">
+          <div className="stats-bar atx-statsbar">
+            <div className="seg sm" role="group" aria-label="Khoảng thống kê">
+              <button className={mode === 'week' ? 'on' : ''} onClick={() => setMode('week')}>Tuần</button>
+              <button className={mode === 'month' ? 'on' : ''} onClick={() => setMode('month')}>Tháng</button>
+            </div>
+            <span className="muted">{mode === 'week' ? 'Tuần' : 'Tháng'} {ddmm(range.from)} đến {ddmm(range.to)}</span>
+          </div>
+          {tab === 'giaoly'
+            ? <GiaoLyStats classId={classId} range={range} />
+            : <ThiengStats classId={classId} range={range} />}
+        </div>
       )}
     </div>
   );
 }
 
-/* ---------------- GIÁO LÝ: điểm danh theo ngày ---------------- */
-function GiaoLyDay({ classId, date, cls, parish }) {
-  const className = cls?.name || '';
+/* ---------------- GIÁO LÝ: điểm danh theo ngày (tự lưu) ---------------- */
+function GiaoLyDay({ classId, date }) {
   const [rows, setRows] = useState([]);
   const [loadedKey, setLoadedKey] = useState(''); // lớp + ngày đã tải xong
-  const [saved, setSaved] = useState(false);
-  useEffect(() => {
-    const key = `${classId}|${date}`;
+  const key = `${classId}|${date}`;
+  const tour = useActiveTour();
+  const practicing = !!tour;
+  const { st, schedule, retry } = useAutoSave(
+    (p) => api.post('/attendance', { date: p.date, records: p.rows.map((r) => ({ student_id: r.id, status: r.status || null, note: r.note || '' })) }),
+    key, practicing,
+  );
+  function load() {
     api.get(`/attendance?class_id=${classId}&date=${date}`).then((r) => { setRows(r.data); setLoadedKey(key); });
-    setSaved(false);
-  }, [classId, date]);
+  }
+  useEffect(load, [classId, date]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Hết bài tập: bỏ các thay đổi khi tập, tải lại dữ liệu thật
+  const wasPracticing = useRef(practicing);
+  useEffect(() => { if (wasPracticing.current && !practicing) load(); wasPracticing.current = practicing; }, [practicing]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const setStatus = (id, status) => { setRows((rs) => rs.map((r) => (r.id === id ? { ...r, status } : r))); setSaved(false); };
-  const setRowNote = (id, note) => { setRows((rs) => rs.map((r) => (r.id === id ? { ...r, note } : r))); setSaved(false); };
-  const markAll = (status) => { setRows((rs) => rs.map((r) => ({ ...r, status }))); setSaved(false); };
+  function update(fn) {
+    setRows((rs) => { const next = fn(rs); schedule({ date, rows: next }); return next; });
+  }
+  const setStatus = (id, status) => update((rs) => rs.map((r) => (r.id === id ? { ...r, status } : r)));
+  const setRowNote = (id, note) => update((rs) => rs.map((r) => (r.id === id ? { ...r, note } : r)));
   const allPresent = rows.length > 0 && rows.every((r) => r.status === 'present');
-  const count = (k) => rows.filter((r) => (r.status || null) === k).length;
-  async function save() {
-    try {
-      // Gửi status thật (null khi bỏ trạng thái) -> backend xóa bản ghi ngày đó cho những em bị bỏ.
-      await api.post('/attendance', { date, records: rows.map((r) => ({ student_id: r.id, status: r.status || null, note: r.note || '' })) });
-      setSaved(true);
-    } catch (e) {
-      toast.err(e.response?.data?.error || 'Lưu điểm danh thất bại');
+  async function markAll() {
+    if (allPresent) {
+      if (!(await confirmDialog('Bỏ đánh dấu cả lớp? Điểm danh ngày này của cả lớp sẽ bị xóa.'))) return;
+      update((rs) => rs.map((r) => ({ ...r, status: null })));
+    } else {
+      update((rs) => rs.map((r) => ({ ...r, status: r.status || 'present' })));
     }
   }
-  const attColumns = [
-    STT_COL,
-    { label: 'Tên thánh', get: (r) => r.saint_name || '', width: 14 },
-    { label: 'Họ và tên', get: (r) => r.full_name, width: 24 },
-    { label: 'Trạng thái', get: (r) => ATT_LABEL[r.status] || 'Chưa điểm danh', width: 16 },
-  ];
-  const meta = { title: 'Phiếu điểm danh', subtitle: exportSubtitle({ parish, cls, extra: [`Ngày: ${date.split('-').reverse().join('/')}`] }), columns: attColumns, rows };
+  const count = (k) => rows.filter((r) => (r.status || null) === k).length;
+  const notYet = count(null);
 
-  if (loadedKey !== `${classId}|${date}`) return <div className="panel"><SkeletonTable rows={6} cols={3} /></div>;
+  if (loadedKey !== key) return <div className="panel"><SkeletonTable rows={6} cols={3} /></div>;
   if (rows.length === 0) return <div className="panel"><p className="muted">Lớp chưa có học viên.</p></div>;
   return (
-    <div className="panel att-panel">
-      <div data-tour="att-summary" className="att-summary">
-        <span className="att-chip present">Có mặt <b>{count('present')}</b></span>
-        <span className="att-chip late">Trễ <b>{count('late')}</b></span>
-        <span className="att-chip absent">Vắng <b>{count('absent')}</b></span>
-        <span className="att-chip excused">Có phép <b>{count('excused')}</b></span>
-        <span className="att-chip none">Chưa điểm danh <b>{count(null)}</b></span>
-        <span className="muted" style={{ marginLeft: 'auto', fontSize: 13 }}>Sĩ số {rows.length}</span>
+    <div className="panel atx-panel">
+      <div className="atx-head">
+        <div className="atx-day"><b>{weekdayOf(date)}, {ddmy(date)}</b><span className="muted"> · Sĩ số {rows.length}</span></div>
+        <div data-tour="att-summary" className="atx-sum">
+          {STATUSES.map((s) => <span key={s.key} className={`atx-chip ${s.key}`} title={s.title}>{s.label} <b>{count(s.key)}</b></span>)}
+          <span className={`atx-chip none${notYet ? ' warn' : ''}`}>Chưa điểm danh <b>{notYet}</b></span>
+        </div>
       </div>
-      <div className="toolbar" style={{ marginTop: 0 }}>
-        <button className="btn ghost" onClick={() => markAll(allPresent ? null : 'present')}>{allPresent ? 'Bỏ đánh dấu tất cả' : 'Đánh dấu tất cả có mặt'}</button>
-        <button className="btn ghost" onClick={() => exportXlsx({ filename: `diem-danh-${fileSlug(className)}-${date}.xlsx`, sheetName: 'Điểm danh', ...meta })}><IconDownload className="bi" />Excel</button>
-        <button className="btn ghost" onClick={() => exportPdf(meta)}><IconPrinter className="bi" />PDF</button>
+      {(allPresent || notYet > 0) && (
+        <div className="atx-actions">
+          <button className="btn ghost sm" onClick={markAll}>
+            {allPresent ? 'Bỏ đánh dấu cả lớp' : notYet === rows.length ? 'Đánh dấu tất cả có mặt' : `Các em còn lại có mặt (${notYet})`}
+          </button>
+        </div>
+      )}
+      <div className="atx-list" data-tour="att-status">
+        {rows.map((r) => (
+          <div className={`atx-row${r.status ? ' ' + r.status : ''}`} key={r.id}>
+            <div className="atx-who">
+              <Avatar url={r.avatar_url} name={r.full_name} size={30} />
+              <span className="atx-name">{r.saint_name && <small>{r.saint_name}</small>}<span>{r.full_name}</span></span>
+            </div>
+            <div className="atx-btns" role="group" aria-label={`Trạng thái của ${r.full_name}`}>
+              {STATUSES.map((s) => (
+                <button key={s.key} type="button" title={s.title} aria-pressed={r.status === s.key}
+                  className={`atx-btn ${s.key}${r.status === s.key ? ' on' : ''}`}
+                  onClick={() => setStatus(r.id, r.status === s.key ? null : s.key)}>
+                  <span className="lg">{s.label}</span><span className="sm">{s.short}</span>
+                </button>
+              ))}
+            </div>
+            {r.status === 'excused' && (
+              <input className="atx-note" value={r.note || ''} onChange={(e) => setRowNote(r.id, e.target.value)} placeholder="Lý do nghỉ phép (không bắt buộc)" />
+            )}
+          </div>
+        ))}
       </div>
-      <table className="att-table">
-        <thead><tr><th>Tên thánh</th><th>Họ tên</th><th>Trạng thái</th></tr></thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.id}>
-              <td className="att-saint">{r.saint_name || '—'}</td>
-              <td><div className="stu-cell"><Avatar url={r.avatar_url} name={r.full_name} size={30} /><span>{r.saint_name && <span className="att-saint-inline">{r.saint_name} </span>}{r.full_name}</span></div></td>
-              <td>
-                <div data-tour="att-status" className="att-status">
-                  {STATUSES.map((s) => (
-                    <button key={s.key} className={`att-btn ${s.key} ${r.status === s.key ? 'on' : ''}`} onClick={() => setStatus(r.id, r.status === s.key ? null : s.key)}>{s.label}</button>
-                  ))}
-                  {r.status === 'excused' && (
-                    <input className="excuse-note" value={r.note || ''} onChange={(e) => setRowNote(r.id, e.target.value)} placeholder="Lý do nghỉ phép..." />
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="att-savebar">
-        <button data-tour="att-save" className="btn" onClick={save}>Lưu điểm danh</button>
-        {saved ? <span style={{ color: 'var(--success)' }}>✓ Đã lưu</span> : <span className="muted" style={{ fontSize: 13 }}>Nhớ bấm Lưu sau khi điểm danh xong</span>}
+      <div className="atx-savebar" data-tour="att-save">
+        <SaveStatus st={st} onRetry={retry} practicing={practicing} idleText="Bấm chọn trạng thái, điểm danh tự lưu" />
       </div>
     </div>
   );
 }
 
 /* ---------------- GIÁO LÝ: thống kê tuần/tháng ---------------- */
-function GiaoLyStats({ classId, range, mode }) {
-  const [data, setData] = useState({ dates: [], students: [] });
+function GiaoLyStats({ classId, range }) {
+  const [data, setData] = useState(null);
   const [byDiligence, setByDiligence] = useState(false);
   useEffect(() => {
+    setData(null);
     api.get(`/attendance-range?class_id=${classId}&from=${range.from}&to=${range.to}`).then((r) => setData(r.data));
   }, [classId, range.from, range.to]);
+  if (!data) return <SkeletonTable rows={5} cols={4} />;
 
   const total = data.dates.length;
-  let students = [...data.students];
-  if (byDiligence) students.sort((a, b) => b.present - a.present);
-  else students.sort((a, b) => a.full_name.localeCompare(b.full_name, 'vi'));
-
-  const nameOf = (s) => (s.saint_name ? s.saint_name + ' ' : '') + s.full_name;
   // Vắng có phép (excused) không tính vào tỷ lệ chuyên cần
   const rateA = (s) => { const c = s.present + s.absent + s.late; return c ? s.present / c : 0; };
-  const avgRate = data.students.length
-    ? Math.round((100 * data.students.reduce((a, s) => a + rateA(s), 0)) / data.students.length) : 0;
+  const pct = (s) => { const c = s.present + s.absent + s.late; return c ? Math.round((100 * s.present) / c) : null; };
+  const students = [...data.students].sort((a, b) => (byDiligence ? rateA(b) - rateA(a) || byViName(a, b) : byViName(a, b)));
+  const avgRate = data.students.length ? Math.round((100 * data.students.reduce((a, s) => a + rateA(s), 0)) / data.students.length) : 0;
   const diligent = [...data.students].filter((s) => rateA(s) >= 0.8).sort((a, b) => b.present - a.present)
     .slice(0, 5).map((s) => ({ name: nameOf(s), detail: `${s.present}/${total}` }));
   const remind = [...data.students].filter((s) => rateA(s) < 0.5).sort((a, b) => b.absent - a.absent)
     .slice(0, 5).map((s) => ({ name: nameOf(s), detail: `vắng ${s.absent}/${total}` }));
 
+  if (total === 0) return <p className="muted">Chưa có buổi điểm danh nào trong khoảng này.</p>;
   return (
-    <div className="panel">
-      <div className="stats-bar">
-        <span className="muted">{mode === 'week' ? 'Tuần' : 'Tháng'}: {ddmm(range.from)} – {ddmm(range.to)} · {total} buổi đã điểm danh</span>
-        <label className="fp-chk"><input type="checkbox" checked={byDiligence} onChange={(e) => setByDiligence(e.target.checked)} /><span>Sắp xếp chuyên cần</span></label>
+    <>
+      <div className="stat-cards">
+        <div className="stat-mini"><div className="lbl">Buổi đã điểm danh</div><div className="num">{total}</div></div>
+        <div className="stat-mini"><div className="lbl">Tỷ lệ đi học trung bình</div><div className="num">{avgRate}%</div></div>
+        <div className="stat-mini"><div className="lbl">Sĩ số</div><div className="num">{data.students.length}</div></div>
       </div>
-      {total > 0 && (
-        <>
-          <div className="stat-cards">
-            <div className="stat-mini"><div className="lbl">Buổi đã điểm danh</div><div className="num">{total}</div></div>
-            <div className="stat-mini"><div className="lbl">Tỷ lệ đi học TB lớp</div><div className="num">{avgRate}%</div></div>
-            <div className="stat-mini"><div className="lbl">Sĩ số</div><div className="num">{data.students.length}</div></div>
-          </div>
-          <div className="rank-grid">
-            <RankList title="Chuyên cần (đi học ≥ 80%)" tone="good" rows={diligent} emptyText="Chưa có bạn nào đạt ≥ 80%" />
-            <RankList title="Cần nhắc nhở (đi học < 50%)" tone="warn" rows={remind} emptyText="Không có bạn nào cần nhắc" />
-          </div>
-        </>
-      )}
-      {total === 0 ? <p className="muted">Chưa có buổi điểm danh nào trong khoảng này.</p> : (
-        <div className="table-scroll">
-          <table className="grid-att">
-            <thead>
-              <tr><th>Học viên</th>{data.dates.map((d) => <th key={d} className="col-day">{ddmm(d)}</th>)}<th>Thống kê</th></tr>
-            </thead>
-            <tbody>
-              {students.map((s) => (
+      <div className="rank-grid">
+        <RankList title="Chuyên cần (đi học từ 80%)" tone="good" rows={diligent} emptyText="Chưa có em nào đạt từ 80%" />
+        <RankList title="Cần nhắc nhở (đi học dưới 50%)" tone="warn" rows={remind} emptyText="Không có em nào cần nhắc" />
+      </div>
+      <div className="atx-gridbar">
+        <div className="atx-legend">{STATUSES.map((s) => <span key={s.key}><i className={`atx-code ${s.key}`}>{s.code}</i>{s.title}</span>)}</div>
+        <label className="fp-chk"><input type="checkbox" checked={byDiligence} onChange={(e) => setByDiligence(e.target.checked)} /><span>Xếp theo chuyên cần</span></label>
+      </div>
+      <div className="table-scroll">
+        <table className="grid-att atx-grid">
+          <thead>
+            <tr><th className="sticky-col">Học viên</th>{data.dates.map((d) => <th key={d} className="col-day">{ddmm(d)}</th>)}<th>Có mặt</th><th>Tỷ lệ</th></tr>
+          </thead>
+          <tbody>
+            {students.map((s) => {
+              const p = pct(s);
+              return (
                 <tr key={s.id}>
-                  <td>{s.saint_name ? s.saint_name + ' ' : ''}{s.full_name}</td>
+                  <td className="sticky-col"><span className="atx-name">{s.saint_name && <small>{s.saint_name}</small>}<span>{s.full_name}</span></span></td>
                   {data.dates.map((d) => (
                     <td key={d} className="col-day">
-                      {s.byDate[d] ? <span className={`att-ic ${ICON_CLASS[s.byDate[d]]}`}>{ICON[s.byDate[d]]}</span> : <span className="muted">·</span>}
+                      {s.byDate[d] ? <i className={`atx-code ${s.byDate[d]}`} title={ST[s.byDate[d]]?.title}>{ST[s.byDate[d]]?.code}</i> : <span className="atx-dot">·</span>}
                     </td>
                   ))}
                   <td><b>{s.present}</b><span className="muted">/{total}</span></td>
+                  <td className={p != null && p < 50 ? 'atx-low' : ''}>{p == null ? <span className="atx-dot">·</span> : `${p}%`}</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
-/* ---------------- VIỆC THIÊNG LIÊNG: theo ngày ---------------- */
+/* ---------------- VIỆC THIÊNG LIÊNG: theo ngày (tự lưu) ---------------- */
 function ThiengDay({ classId, date }) {
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState(null);
   const [rows, setRows] = useState([]);
-  const [saved, setSaved] = useState(false);
+  const [loadedKey, setLoadedKey] = useState('');
+  const [recorded, setRecorded] = useState(false); // ngày này đã có ghi nhận chưa
   const [gear, setGear] = useState(false);
-  const [newTask, setNewTask] = useState('');
-
-  function loadTasks() { api.get('/spiritual-tasks').then((r) => setTasks(r.data)); }
-  useEffect(() => { loadTasks(); }, []);
-  useEffect(() => {
-    api.get(`/spiritual?class_id=${classId}&date=${date}`).then((r) => setRows(r.data));
-    setSaved(false);
-  }, [classId, date]);
-
-  const toggle = (sid, tid) => {
-    setRows((rs) => rs.map((r) => (r.id === sid ? { ...r, done: { ...r.done, [tid]: !r.done[tid] } } : r)));
-    setSaved(false);
-  };
-  const allChecked = rows.length > 0 && tasks.length > 0 && rows.every((r) => tasks.every((t) => r.done[t.id]));
-  function markAll(val) {
-    setRows((rs) => rs.map((r) => ({ ...r, done: Object.fromEntries(tasks.map((t) => [t.id, val])) })));
-    setSaved(false);
-  }
-  async function save() {
+  const key = `${classId}|${date}`;
+  const tour = useActiveTour();
+  const practicing = !!tour;
+  const { st, schedule, retry } = useAutoSave(async (p) => {
     const records = [];
-    rows.forEach((r) => tasks.forEach((t) => records.push({ student_id: r.id, task_id: t.id, done: !!r.done[t.id] })));
-    await api.post('/spiritual', { date, records });
-    setSaved(true);
-  }
-  async function addTask() {
-    if (!newTask.trim()) return;
-    await api.post('/spiritual-tasks', { name: newTask.trim(), order_index: tasks.length });
-    setNewTask(''); loadTasks();
-  }
-  async function delTask(id) {
-    if (!await confirmDialog('Xóa việc thiêng liêng này? Các bản ghi liên quan cũng bị xóa.')) return;
-    await api.delete(`/spiritual-tasks/${id}`); loadTasks();
-  }
+    p.rows.forEach((r) => p.tasks.forEach((t) => records.push({ student_id: r.id, task_id: t.id, done: !!r.done[t.id] })));
+    await api.post('/spiritual', { date: p.date, records });
+  }, key, practicing);
 
+  function loadTasks() { api.get('/spiritual-tasks').then((r) => setTasks(r.data)).catch(() => setTasks([])); }
+  function load() {
+    api.get(`/spiritual?class_id=${classId}&date=${date}`).then((r) => {
+      setRows(r.data); setLoadedKey(key);
+      setRecorded((r.data || []).some((x) => Object.keys(x.done || {}).length > 0));
+    });
+  }
+  useEffect(() => { loadTasks(); }, []);
+  useEffect(load, [classId, date]); // eslint-disable-line react-hooks/exhaustive-deps
+  const wasPracticing = useRef(practicing);
+  useEffect(() => { if (wasPracticing.current && !practicing) load(); wasPracticing.current = practicing; }, [practicing]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function update(fn) {
+    setRows((rs) => { const next = fn(rs); schedule({ date, tasks: tasks || [], rows: next }); return next; });
+    if (!practicing) setRecorded(true);
+  }
+  const toggle = (sid, tid) => update((rs) => rs.map((r) => (r.id === sid ? { ...r, done: { ...r.done, [tid]: !r.done[tid] } } : r)));
+  const colAll = (tid) => rows.length > 0 && rows.every((r) => r.done[tid]);
+  const toggleCol = (tid) => { const v = !colAll(tid); update((rs) => rs.map((r) => ({ ...r, done: { ...r.done, [tid]: v } }))); };
+
+  if (tasks === null || loadedKey !== key) return <div className="panel"><SkeletonTable rows={6} cols={3} /></div>;
   return (
-    <div className="panel">
-      <div className="toolbar" style={{ marginTop: 0, justifyContent: 'space-between' }}>
-        <span className="muted">Đánh dấu việc thiêng liêng ngày {date.split('-').reverse().join('/')}</span>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {tasks.length > 0 && rows.length > 0 && (
-            <button className="btn ghost" onClick={() => markAll(!allChecked)}>{allChecked ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}</button>
-          )}
-          <button className="btn ghost" onClick={() => setGear(true)}><IconSliders className="bi" />Quản lý việc</button>
+    <div className="panel atx-panel">
+      <div className="atx-head">
+        <div className="atx-day"><b>{weekdayOf(date)}, {ddmy(date)}</b>
+          {tasks.length > 0 && rows.length > 0 && <span className={`atx-rec${recorded ? ' ok' : ''}`}>{recorded ? 'Đã ghi nhận' : 'Chưa ghi nhận ngày này'}</span>}
         </div>
+        <button className="btn ghost sm" onClick={() => setGear(true)}><IconSliders className="bi" />Quản lý việc</button>
       </div>
       {tasks.length === 0 ? (
-        <p className="muted">Chưa có việc thiêng liêng nào. Bấm "Quản lý việc" để thêm (Đi lễ, Đọc kinh...).</p>
+        <p className="muted">Chưa có việc thiêng liêng nào. Bấm "Quản lý việc" để thêm (Dự lễ, Đọc kinh…).</p>
       ) : rows.length === 0 ? (
         <p className="muted">Lớp chưa có học viên.</p>
       ) : (
         <>
           <div className="table-scroll">
-            <table>
-              <thead><tr><th>Học viên</th>{tasks.map((t) => <th key={t.id} style={{ textAlign: 'center' }}>{t.name}</th>)}</tr></thead>
+            <table className="atx-tl">
+              <thead>
+                <tr>
+                  <th className="sticky-col">Học viên</th>
+                  {tasks.map((t) => (
+                    <th key={t.id}>
+                      <label className="atx-colhead" title={`Đánh dấu "${t.name}" cho cả lớp`}>
+                        <input type="checkbox" className="big-check" checked={colAll(t.id)} onChange={() => toggleCol(t.id)} />
+                        <span>{t.name}</span>
+                      </label>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.id}>
-                    <td>{r.saint_name ? r.saint_name + ' ' : ''}{r.full_name}</td>
+                    <td className="sticky-col"><span className="atx-name">{r.saint_name && <small>{r.saint_name}</small>}<span>{r.full_name}</span></span></td>
                     {tasks.map((t) => (
-                      <td key={t.id} style={{ textAlign: 'center' }}>
-                        <input type="checkbox" className="big-check" checked={!!r.done[t.id]} onChange={() => toggle(r.id, t.id)} />
+                      <td key={t.id}>
+                        <input type="checkbox" className="big-check" checked={!!r.done[t.id]} onChange={() => toggle(r.id, t.id)} aria-label={`${t.name}: ${r.full_name}`} />
                       </td>
                     ))}
                   </tr>
@@ -333,33 +420,63 @@ function ThiengDay({ classId, date }) {
               </tbody>
             </table>
           </div>
-          <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button className="btn" onClick={save}>Lưu</button>
-            {saved && <span style={{ color: 'var(--success)' }}>✓ Đã lưu</span>}
+          <div className="atx-savebar">
+            <SaveStatus st={st} onRetry={retry} practicing={practicing} idleText="Tích ô việc đã làm, tự lưu. Tích ô ở tiêu đề để chọn cả lớp." />
           </div>
         </>
       )}
+      {gear && <TaskManager tasks={tasks} onChange={loadTasks} onClose={() => setGear(false)} />}
+    </div>
+  );
+}
 
-      {gear && (
-        <div className="modal-backdrop" onClick={() => setGear(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Quản lý việc thiêng liêng</h2>
-            <div className="toolbar" style={{ marginTop: 0 }}>
-              <input className="grow" value={newTask} onChange={(e) => setNewTask(e.target.value)} placeholder="VD: Đi lễ, Đọc kinh, Xưng tội..." />
-              <button className="btn" onClick={addTask}>+ Thêm</button>
+/* Danh mục việc thiêng liêng: dùng chung cả giáo xứ (quản trị viên và giáo lý viên đều chỉnh được) */
+function TaskManager({ tasks, onChange, onClose }) {
+  const [name, setName] = useState('');
+  const [busy, setBusy] = useState(false);
+  async function add(e) {
+    e.preventDefault();
+    const n = name.trim();
+    if (!n) return;
+    setBusy(true);
+    try { await api.post('/spiritual-tasks', { name: n, order_index: tasks.length }); setName(''); onChange(); toast(`Đã thêm "${n}"`); }
+    catch (err) { toast.err(err.response?.data?.error || 'Chưa thêm được'); }
+    finally { setBusy(false); }
+  }
+  async function rename(t, input) {
+    const n = input.value.trim();
+    if (n === t.name) return;
+    if (!n) { input.value = t.name; toast.err('Tên việc không được để trống'); return; }
+    try { await api.put(`/spiritual-tasks/${t.id}`, { name: n }); onChange(); toast('Đã đổi tên'); }
+    catch (err) { input.value = t.name; toast.err(err.response?.data?.error || 'Chưa đổi được tên'); }
+  }
+  async function del(t) {
+    if (!(await confirmDialog(`Xóa việc "${t.name}"?\n\nViệc này dùng chung cho MỌI LỚP trong giáo xứ. Xóa sẽ mất toàn bộ dữ liệu đã ghi nhận của việc này ở tất cả các lớp.`))) return;
+    try { await api.delete(`/spiritual-tasks/${t.id}`); onChange(); toast(`Đã xóa "${t.name}"`); }
+    catch (err) { toast.err(err.response?.data?.error || 'Chưa xóa được'); }
+  }
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="atxTaskT">
+        <h2 id="atxTaskT">Việc thiêng liêng của giáo xứ</h2>
+        <p className="muted atx-tm-sub">Danh sách dùng chung cho mọi lớp trong giáo xứ. Sửa tên rồi bấm ra ngoài là tự lưu.</p>
+        <div className="atx-tm-list">
+          {tasks.map((t) => (
+            <div className="atx-tm-row" key={t.id}>
+              <input defaultValue={t.name} aria-label="Tên việc" onBlur={(e) => rename(t, e.target)} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />
+              <button type="button" className="atx-del" onClick={() => del(t)} title={`Xóa "${t.name}"`} aria-label={`Xóa ${t.name}`}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
+              </button>
             </div>
-            <table>
-              <tbody>
-                {tasks.map((t) => (
-                  <tr key={t.id}><td>{t.name}</td><td style={{ textAlign: 'right' }}><button className="btn danger sm" onClick={() => delTask(t.id)}>Xóa</button></td></tr>
-                ))}
-                {tasks.length === 0 && <tr><td className="muted">Chưa có việc nào</td></tr>}
-              </tbody>
-            </table>
-            <div className="modal-actions"><button className="btn ghost" onClick={() => setGear(false)}>Đóng</button></div>
-          </div>
+          ))}
+          {tasks.length === 0 && <p className="muted" style={{ margin: '4px 0' }}>Chưa có việc nào.</p>}
         </div>
-      )}
+        <form className="atx-tm-add" onSubmit={add}>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="VD: Dự lễ Chúa nhật, Đọc kinh, Xưng tội" aria-label="Tên việc thiêng liêng" />
+          <button className="btn" type="submit" disabled={busy || !name.trim()}>{busy ? 'Đang thêm…' : 'Thêm'}</button>
+        </form>
+        <div className="modal-actions"><button className="btn ghost" onClick={onClose}>Xong</button></div>
+      </div>
     </div>
   );
 }
@@ -367,15 +484,16 @@ function ThiengDay({ classId, date }) {
 /* ---------------- VIỆC THIÊNG LIÊNG: thống kê tuần/tháng ---------------- */
 function ThiengStats({ classId, range }) {
   const [tasks, setTasks] = useState([]);
-  const [data, setData] = useState({ dates: [], students: [] });
+  const [data, setData] = useState(null);
   useEffect(() => { api.get('/spiritual-tasks').then((r) => setTasks(r.data)); }, []);
   useEffect(() => {
+    setData(null);
     api.get(`/spiritual-range?class_id=${classId}&from=${range.from}&to=${range.to}`).then((r) => setData(r.data));
   }, [classId, range.from, range.to]);
+  if (!data) return <SkeletonTable rows={5} cols={4} />;
 
   const total = data.dates.length;
-  const students = [...data.students].sort((a, b) => a.full_name.localeCompare(b.full_name, 'vi'));
-  const nameOf = (s) => (s.saint_name ? s.saint_name + ' ' : '') + s.full_name;
+  const students = [...data.students].sort((a, b) => byViName(a, b));
   const totalPossible = total * tasks.length;
   const doneOf = (s) => tasks.reduce((a, t) => a + (s.counts[t.id] || 0), 0);
   const rateT = (s) => (totalPossible ? doneOf(s) / totalPossible : 0);
@@ -384,37 +502,38 @@ function ThiengStats({ classId, range }) {
   const canNhac = [...data.students].filter((s) => rateT(s) < 0.5).sort((a, b) => doneOf(a) - doneOf(b))
     .slice(0, 5).map((s) => ({ name: nameOf(s), detail: `${doneOf(s)}/${totalPossible}` }));
 
+  if (tasks.length === 0) return <p className="muted">Chưa có việc thiêng liêng nào.</p>;
+  if (total === 0) return <p className="muted">Chưa có ngày nào ghi nhận việc thiêng liêng trong khoảng này.</p>;
   return (
-    <div className="panel">
-      <div className="stats-bar"><span className="muted">{ddmm(range.from)} – {ddmm(range.to)} · {total} ngày có ghi nhận</span></div>
-      {tasks.length > 0 && total > 0 && (
-        <div className="rank-grid">
-          <RankList title="Siêng năng (làm ≥ 80%)" tone="good" rows={siengNang} emptyText="Chưa có bạn nào đạt ≥ 80%" />
-          <RankList title="Cần nhắc nhở (làm < 50%)" tone="warn" rows={canNhac} emptyText="Không có bạn nào cần nhắc" />
-        </div>
-      )}
-      {tasks.length === 0 ? <p className="muted">Chưa có việc thiêng liêng nào.</p> : (
-        <div className="table-scroll">
-          <table>
-            <thead><tr><th>Học viên</th>{tasks.map((t) => <th key={t.id} style={{ textAlign: 'center' }}>{t.name}</th>)}</tr></thead>
-            <tbody>
-              {students.map((s) => (
+    <>
+      <p className="muted" style={{ margin: '0 0 12px', fontSize: 13.5 }}>{total} ngày có ghi nhận</p>
+      <div className="rank-grid">
+        <RankList title="Siêng năng (làm từ 80%)" tone="good" rows={siengNang} emptyText="Chưa có em nào đạt từ 80%" />
+        <RankList title="Cần nhắc nhở (làm dưới 50%)" tone="warn" rows={canNhac} emptyText="Không có em nào cần nhắc" />
+      </div>
+      <div className="table-scroll">
+        <table className="atx-tl">
+          <thead><tr><th className="sticky-col">Học viên</th>{tasks.map((t) => <th key={t.id}>{t.name}</th>)}<th>Tỷ lệ</th></tr></thead>
+          <tbody>
+            {students.map((s) => {
+              const p = totalPossible ? Math.round(100 * rateT(s)) : null;
+              return (
                 <tr key={s.id}>
-                  <td>{s.saint_name ? s.saint_name + ' ' : ''}{s.full_name}</td>
-                  {tasks.map((t) => <td key={t.id} style={{ textAlign: 'center' }}><b>{s.counts[t.id] || 0}</b><span className="muted">/{total}</span></td>)}
+                  <td className="sticky-col"><span className="atx-name">{s.saint_name && <small>{s.saint_name}</small>}<span>{s.full_name}</span></span></td>
+                  {tasks.map((t) => <td key={t.id}><b>{s.counts[t.id] || 0}</b><span className="muted">/{total}</span></td>)}
+                  <td className={p != null && p < 50 ? 'atx-low' : ''}>{p == null ? '' : `${p}%`}</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
 /* ---------------- XUẤT BÁO CÁO TỔNG HỢP (Giáo lý + Việc Thiêng liêng) ---------------- */
 const GLCODE = { present: '+', late: 'T', absent: 'V', excused: 'P' };
-const ddmy = (d) => d.split('-').reverse().join('/');
 
 function ReportModal({ classId, cls, parish, defaultRange, onClose }) {
   const [from, setFrom] = useState(defaultRange.from);
