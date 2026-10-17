@@ -83,7 +83,7 @@ export default function RandomPicker() {
     <div>
       <PageHeader title="Chọn học sinh trả bài" subtitle="Bốc thăm ngẫu nhiên học viên lên trả bài bằng một cuộc đua vui nhộn." />
       <div className="toolbar">
-        <select value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 220 }}>
+        <select data-tour="random-class" value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 220 }}>
           <option value="">-- Chọn lớp --</option>
           {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
@@ -125,10 +125,10 @@ export default function RandomPicker() {
           )}
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginTop: 18 }}>
-            <button className="btn" onClick={start} disabled={racing || pool.length === 0}>
+            <button data-tour="random-start" className="btn" onClick={start} disabled={racing || pool.length === 0}>
               {racing ? 'Đang đua...' : <><IconFlag className="bi" />Bắt đầu đua</>}
             </button>
-            {picked && !racing && <button className="btn warning" onClick={notLearned}>Chưa thuộc bài</button>}
+            {picked && !racing && <button data-tour="random-notlearned" className="btn warning" onClick={notLearned}>Chưa thuộc bài</button>}
             <button className="btn ghost" onClick={reset} disabled={racing}>Đặt lại</button>
           </div>
           {note && <p className="picker-note">{note}</p>}

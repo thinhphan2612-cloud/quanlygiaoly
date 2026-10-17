@@ -36,7 +36,7 @@ export default function Exams() {
   return (
     <div>
       <PageHeader title="Đề thi & thi online" subtitle="Soạn đề trắc nghiệm, mở phòng thi online cho học viên và chấm điểm tự động.">
-        <button className="btn" onClick={() => setView('build')}>+ Tạo đề</button>
+        <button data-tour="exam-add" className="btn" onClick={() => setView('build')}>+ Tạo đề</button>
       </PageHeader>
       <div className="panel">
         {!loaded ? <SkeletonTable rows={3} cols={6} /> : exams.length === 0 ? <p className="muted">Chưa có đề thi nào. Bấm "Tạo đề" để soạn đề trắc nghiệm cho học viên thi online.</p> : (
@@ -125,8 +125,8 @@ function ExamBuilder({ classes, onDone, onCancel }) {
 
       <div className="panel">
         <div className="row">
-          <div className="field" style={{ flex: 2 }}><label>Tên đề *</label><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="VD: Kiểm tra 15 phút Bài 5" /></div>
-          <div className="field" style={{ flex: 1 }}><label>Lớp thi *</label>
+          <div className="field" style={{ flex: 2 }}><label>Tên đề *</label><input data-tour="exam-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="VD: Kiểm tra 15 phút Bài 5" /></div>
+          <div data-tour="exam-class" className="field" style={{ flex: 1 }}><label>Lớp thi *</label>
             <select value={classId} onChange={(e) => setClassId(e.target.value)}>
               <option value="">Chọn lớp</option>
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -162,7 +162,7 @@ function ExamBuilder({ classes, onDone, onCancel }) {
                   </select>
                 </div>
                 <div className="field" style={{ flex: '0 0 100px' }}><label>Số câu bốc</label><input type="number" min="1" value={n} onChange={(e) => setN(e.target.value)} /></div>
-                <div className="field" style={{ flex: '1 1 auto' }}><button className="btn ghost" style={{ width: '100%' }} onClick={pickRandom}><IconDice className="bi" />Bốc ngẫu nhiên</button></div>
+                <div className="field" style={{ flex: '1 1 auto' }}><button data-tour="exam-random" className="btn ghost" style={{ width: '100%' }} onClick={pickRandom}><IconDice className="bi" />Bốc ngẫu nhiên</button></div>
                 <div className="field" style={{ flex: '1 1 auto' }}><button className="btn ghost" style={{ width: '100%' }} onClick={clearTopic}>Bỏ chọn cấp này</button></div>
               </div>
               <div className="pick-list" style={{ maxHeight: '52vh' }}>
@@ -209,7 +209,7 @@ function ExamBuilder({ classes, onDone, onCancel }) {
       {err && <div className="error">{err}</div>}
       <div className="modal-actions">
         <button className="btn ghost" onClick={onCancel}>Huỷ</button>
-        <button className="btn" onClick={save} disabled={saving}>{saving ? 'Đang tạo…' : `Tạo đề (${pickedList.length} câu)`}</button>
+        <button data-tour="exam-save" className="btn" onClick={save} disabled={saving}>{saving ? 'Đang tạo…' : `Tạo đề (${pickedList.length} câu)`}</button>
       </div>
 
       {editing && <QuestionEditor init={editing} onSave={saveQuestion} onClose={() => setEditing(null)} />}

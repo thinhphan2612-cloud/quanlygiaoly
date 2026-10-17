@@ -217,12 +217,12 @@ export default function Students() {
     <div>
       <PageHeader title="Quản lý học viên" subtitle="Hồ sơ học viên của giáo xứ: tìm, lọc, nhập từ Excel và xuất danh sách." />
       <div className="toolbar">
-        <input className="grow stu-search" placeholder="Tìm theo tên..." value={search} onChange={(e) => setSearch(e.target.value)} />
-        <button className={`btn ghost ${activeCount ? 'has-badge' : ''}`} onClick={() => setShowFilter((v) => !v)}>
+        <input data-tour="stu-search" className="grow stu-search" placeholder="Tìm theo tên..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <button data-tour="stu-filter" className={`btn ghost ${activeCount ? 'has-badge' : ''}`} onClick={() => setShowFilter((v) => !v)}>
           <IconFilter className="bi" />Lọc / Sắp xếp{activeCount ? ` (${activeCount})` : ''}
         </button>
-        <button className="btn ghost" onClick={() => setShowCols((v) => !v)}><IconColumns className="bi" />Cột hiển thị</button>
-        <button className="btn ghost" onClick={() => setBulkOpen(true)}><IconUpload className="bi" />Nhập hàng loạt</button>
+        <button data-tour="stu-cols" className="btn ghost" onClick={() => setShowCols((v) => !v)}><IconColumns className="bi" />Cột hiển thị</button>
+        <button data-tour="stu-import" className="btn ghost" onClick={() => setBulkOpen(true)}><IconUpload className="bi" />Nhập hàng loạt</button>
         <button className="btn ghost" disabled={filtered.length === 0}
           onClick={() => exportXlsx({ filename: `${exportName}.xlsx`, sheetName: 'Học viên', ...exportMeta })}><IconDownload className="bi" />Excel</button>
         <button className="btn ghost" disabled={filtered.length === 0} onClick={() => exportPdf(exportMeta)}><IconPrinter className="bi" />PDF</button>
@@ -316,7 +316,7 @@ export default function Students() {
             {filtered.map((s) => (
               <tr key={s.id}>
                 {beforeName.map((c) => <td key={c.key}>{c.render(s)}</td>)}
-                <td><div className="stu-cell"><Avatar url={s.avatar_url} name={s.full_name} size={30} /><span className="link-name" onClick={() => navigate(`/students/${s.id}`)}>{s.full_name}</span><SacramentBadge value={s.sacrament} /></div></td>
+                <td><div className="stu-cell"><Avatar url={s.avatar_url} name={s.full_name} size={30} /><span data-tour="stu-name" className="link-name" onClick={() => navigate(`/students/${s.id}`)}>{s.full_name}</span><SacramentBadge value={s.sacrament} /></div></td>
                 {afterName.map((c) => <td key={c.key}>{c.render(s)}</td>)}
                 <td style={{ whiteSpace: 'nowrap' }}>
                   <button className="btn ghost sm" onClick={() => openEdit(s)}>Sửa</button>{' '}

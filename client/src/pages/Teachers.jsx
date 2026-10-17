@@ -63,7 +63,7 @@ export default function Teachers() {
   return (
     <div>
       <PageHeader title="Quản lý giáo lý viên" subtitle="Tài khoản đăng nhập của giáo lý viên và lớp mỗi người phụ trách.">
-        <button className="btn" onClick={openCreate}>+ Thêm giáo lý viên</button>
+        <button data-tour="teacher-add" className="btn" onClick={openCreate}>+ Thêm giáo lý viên</button>
       </PageHeader>
 
       <div className="panel">
@@ -101,12 +101,12 @@ export default function Teachers() {
             <h2>Thêm giáo lý viên</h2>
             <p className="muted" style={{ marginTop: 0, fontSize: 13 }}>Tạo tài khoản đăng nhập cho giáo lý viên. Họ dùng email + mật khẩu này để đăng nhập.</p>
             <div className="field"><label>Họ tên *</label><input value={modal.full_name} onChange={set('full_name')} autoFocus /></div>
-            <div className="field"><label>Email đăng nhập *</label><input type="email" value={modal.email} onChange={set('email')} placeholder="glv@email.com" /></div>
+            <div className="field"><label>Email đăng nhập *</label><input data-tour="teacher-form-email" type="email" value={modal.email} onChange={set('email')} placeholder="glv@email.com" /></div>
             <div className="field"><label>Mật khẩu * (tối thiểu 6 ký tự)</label><input type="password" value={modal.password} onChange={set('password')} /></div>
             {error && <div className="error">{error}</div>}
             <div className="modal-actions">
               <button className="btn ghost" onClick={() => setModal(null)}>Hủy</button>
-              <button className="btn" onClick={save} disabled={saving}>{saving ? 'Đang tạo...' : 'Tạo tài khoản'}</button>
+              <button data-tour="teacher-form-save" className="btn" onClick={save} disabled={saving}>{saving ? 'Đang tạo...' : 'Tạo tài khoản'}</button>
             </div>
           </div>
         </div>

@@ -90,11 +90,11 @@ export default function BulkImport({ classes, onClose, onDone }) {
         </div>
 
         <div className="toolbar" style={{ marginBottom: 12 }}>
-          <button className="btn ghost" onClick={downloadTemplate}><IconDownload className="bi" />Tải form mẫu (Excel)</button>
-          <button className="btn ghost" onClick={() => fileRef.current?.click()}><IconUpload className="bi" />Tải lên Excel / CSV</button>
+          <button data-tour="import-template" className="btn ghost" onClick={downloadTemplate}><IconDownload className="bi" />Tải form mẫu (Excel)</button>
+          <button data-tour="import-upload" className="btn ghost" onClick={() => fileRef.current?.click()}><IconUpload className="bi" />Tải lên Excel / CSV</button>
           <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv,text/csv" onChange={onFile} style={{ display: 'none' }} />
           <div className="grow" />
-          <select value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 200 }}>
+          <select data-tour="import-class" value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 200 }}>
             <option value="">Xếp vào lớp... (tùy chọn)</option>
             {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
@@ -143,7 +143,7 @@ export default function BulkImport({ classes, onClose, onDone }) {
         {error && <div className="error">{error}</div>}
         <div className="modal-actions">
           <button className="btn ghost" onClick={onClose}>Hủy</button>
-          <button className="btn" onClick={doImport} disabled={saving || validCount === 0}>
+          <button data-tour="import-confirm" className="btn" onClick={doImport} disabled={saving || validCount === 0}>
             {saving ? 'Đang nhập...' : `Nhập ${validCount} học viên`}
           </button>
         </div>

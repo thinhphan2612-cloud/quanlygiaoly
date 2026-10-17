@@ -153,7 +153,7 @@ function ClassReviews() {
     </div>
   );
   return (
-    <div className="panel" style={{ marginBottom: 18 }}>
+    <div data-tour="dash-reviews" className="panel" style={{ marginBottom: 18 }}>
       {catActive && (
         <>
           <div className="card-head">

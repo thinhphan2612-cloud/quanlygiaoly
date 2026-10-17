@@ -15,6 +15,7 @@ import { useAdminCounts } from '../lib/adminCounts';
 import InstallGuide from './InstallGuide.jsx';
 import PricingModal from './PricingModal.jsx';
 import { toast } from '../lib/toast';
+import TourRunner from './TourRunner.jsx';
 import {
   IconHome, IconStudents, IconClass, IconCheck, IconGrades,
   IconDice, IconGame, IconTeacher, IconLogout, IconBell, IconMoney, IconEditImage, IconArchive, IconCert, IconStore, IconExam, IconExt, IconGuide,
@@ -362,6 +363,7 @@ export default function Layout({ children }) {
           )}
           {children}
         </main>
+        <TourRunner />
       </div>
 
       {pricing && <PricingModal current={plan} onClose={() => setPricing(false)} />}

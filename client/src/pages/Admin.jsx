@@ -1210,7 +1210,7 @@ function LoadMonitor() {
 
   if (err && /function .*load_stats.* does not exist|Could not find the function/i.test(err)) {
     return (
-      <div className="panel mini-card" id="sec-load" style={{ borderLeftColor: '#a8641b' }}>
+      <div className="panel mini-card" id="sec-load">
         <div className="mini-head"><b>Giám sát thi online</b></div>
         <div className="mini-sub">Chưa cài. Chạy <code>supabase/migration_load_monitor.sql</code> để bật đèn báo.</div>
       </div>
@@ -1218,7 +1218,7 @@ function LoadMonitor() {
   }
 
   return (
-    <div className="panel mini-card" id="sec-load" style={{ borderLeftColor: color }}
+    <div className="panel mini-card" id="sec-load"
       title={`Ngưỡng: vàng ${MON.takersWarn} / đỏ ${MON.takersRed} em, độ trễ vàng ${MON.latWarn}ms / đỏ ${MON.latRed}ms. Cảnh báo nền tự gửi qua chuông khi vượt ngưỡng đỏ.`}>
       <div className="mini-head">
         <span className="mini-dot" style={{ background: color }} />

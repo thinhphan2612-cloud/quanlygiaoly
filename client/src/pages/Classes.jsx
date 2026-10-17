@@ -367,10 +367,10 @@ export default function Classes() {
         const reached = maxClasses != null && classes.length >= maxClasses;
         return (
         <div className="toolbar">
-          {!reached && <button className="btn" onClick={openCreate}>+ Thêm lớp</button>}
+          {!reached && <button data-tour="class-add" className="btn" onClick={openCreate}>+ Thêm lớp</button>}
           {!isFree && <button className="btn ghost" onClick={openOrder} disabled={classes.length < 2}><IconSliders className="bi" />Cài đặt lớp học</button>}
           {!isFree && (
-            <button className={`btn ${promotionOpen ? 'danger' : ''} ghost`} onClick={togglePromotion} title="Mở để các lớp giáo lý trong năm gửi kết quả lên lớp / ở lại cho bạn duyệt">
+            <button data-tour="class-promotion" className={`btn ${promotionOpen ? 'danger' : ''} ghost`} onClick={togglePromotion} title="Mở để các lớp giáo lý trong năm gửi kết quả lên lớp / ở lại cho bạn duyệt">
               {promotionOpen ? <><IconLock className="bi" />Đóng kỳ xét lên lớp</> : <><IconMegaphone className="bi" />Mở kỳ xét lên lớp</>}
             </button>
           )}
@@ -577,7 +577,7 @@ export default function Classes() {
               <div>
                 <div className="field">
                   <label>Tên lớp *</label>
-                  <input value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} placeholder="VD: Khai tâm 1" />
+                  <input data-tour="class-form-name" value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} placeholder="VD: Khai tâm 1" />
                 </div>
                 <div className="grid-2">
                   <div className="field">
@@ -676,7 +676,7 @@ export default function Classes() {
             {error && <div className="error">{error}</div>}
             <div className="modal-actions">
               <button className="btn ghost" onClick={() => setModal(null)}>Hủy</button>
-              <button className="btn" onClick={save}>Lưu</button>
+              <button data-tour="class-form-save" className="btn" onClick={save}>Lưu</button>
             </div>
           </div>
         </div>

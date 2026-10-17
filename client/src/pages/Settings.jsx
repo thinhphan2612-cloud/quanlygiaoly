@@ -143,7 +143,7 @@ export default function Settings() {
         <div className="settings-grid">
           <div className="field">
             <label>Tên giáo xứ</label>
-            <input value={pInfo.name} onChange={(e) => setPInfo({ ...pInfo, name: e.target.value })} />
+            <input data-tour="parish-name" value={pInfo.name} onChange={(e) => setPInfo({ ...pInfo, name: e.target.value })} />
           </div>
           <div className="field">
             <label>Giáo phận</label>
@@ -155,7 +155,7 @@ export default function Settings() {
           <div className="logo-upload">
             {parish.logo_url ? <img className="logo-preview" src={parish.logo_url} alt="logo" /> : <div className="logo-preview">✝</div>}
             <div style={{ display: 'flex', gap: 8 }}>
-              <label className="btn ghost sm" style={{ cursor: 'pointer' }}>
+              <label data-tour="parish-logo" className="btn ghost sm" style={{ cursor: 'pointer' }}>
                 Tải ảnh lên<input type="file" accept="image/*" onChange={uploadLogo} style={{ display: 'none' }} />
               </label>
               {parish.logo_url && <button className="btn ghost sm" onClick={() => saveParish({ logo_url: null })}>Xóa logo</button>}
@@ -178,7 +178,7 @@ export default function Settings() {
           </div>
         </div>
         <div style={{ marginTop: 8 }}>
-          <button className="btn" onClick={() => saveParish({ name: pInfo.name, diocese: pInfo.diocese, settings: { ...settings, priest_name: pInfo.priest } })}>Lưu thông tin giáo xứ</button>
+          <button data-tour="parish-save" className="btn" onClick={() => saveParish({ name: pInfo.name, diocese: pInfo.diocese, settings: { ...settings, priest_name: pInfo.priest } })}>Lưu thông tin giáo xứ</button>
         </div>
       </div>
 

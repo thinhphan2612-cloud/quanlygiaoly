@@ -169,7 +169,7 @@ export default function Grades() {
   return (
     <div>
       <PageHeader title="Điểm số" subtitle="Nhập điểm theo cột điểm của từng lớp, xem điểm trung bình và thứ hạng.">
-        {isAdmin && isCurrent && !isFree && <button className="btn ghost sm" onClick={endYear} title="Chuyển cả giáo xứ sang năm học mới (làm một lần vào cuối năm)"><IconFlag className="bi" />Kết thúc năm học</button>}
+        {isAdmin && isCurrent && !isFree && <button data-tour="grades-endyear" className="btn ghost sm" onClick={endYear} title="Chuyển cả giáo xứ sang năm học mới (làm một lần vào cuối năm)"><IconFlag className="bi" />Kết thúc năm học</button>}
       </PageHeader>
       <div className="toolbar">
         {yearList.length > 1 && (
@@ -177,15 +177,15 @@ export default function Grades() {
             {yearList.map((y) => <option key={y} value={y}>Năm {y}{y === currentYear ? ' (nay)' : ''}</option>)}
           </select>
         )}
-        <select value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 220 }}>
+        <select data-tour="grades-class" value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 220 }}>
           <option value="">-- Chọn lớp --</option>
           {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         {classId && (
           <>
-            {isCurrent && <button className="btn ghost" onClick={() => setGear(true)}><IconSliders className="bi" />Cột điểm</button>}
+            {isCurrent && <button data-tour="grades-cols" className="btn ghost" onClick={() => setGear(true)}><IconSliders className="bi" />Cột điểm</button>}
             <button className="btn ghost" onClick={() => setOverview(true)} disabled={columns.length === 0}><IconList className="bi" />Tổng quát</button>
-            <button className="btn ghost" onClick={() => exportSheet('excel')} disabled={columns.length === 0}><IconDownload className="bi" />Excel</button>
+            <button data-tour="grades-export" className="btn ghost" onClick={() => exportSheet('excel')} disabled={columns.length === 0}><IconDownload className="bi" />Excel</button>
             <button className="btn ghost" onClick={() => exportSheet('pdf')} disabled={columns.length === 0}><IconPrinter className="bi" />PDF</button>
           </>
         )}
@@ -225,7 +225,7 @@ export default function Grades() {
         <div className="panel">
           <p className="muted" style={{ marginTop: 0, fontSize: 12 }}>{isCurrent ? 'Nhập điểm trực tiếp vào ô, tự lưu khi bấm ra ngoài.' : `Đang xem điểm năm học ${year} (đã lưu trữ chỉ đọc).`}</p>
           <div className="table-scroll">
-            <table className="grade-table">
+            <table data-tour="grades-table" className="grade-table">
               <thead>
                 <tr>
                   <th className="sticky-col">Học viên</th>

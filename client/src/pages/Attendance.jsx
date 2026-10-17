@@ -81,11 +81,11 @@ export default function Attendance() {
       </PageHeader>
 
       <div className="toolbar">
-        <select value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 200 }}>
+        <select data-tour="att-class" value={classId} onChange={(e) => setClassId(e.target.value)} style={{ width: 200 }}>
           <option value="">-- Chọn lớp --</option>
           {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ width: 170 }} />
+        <input data-tour="att-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ width: 170 }} />
         <div className="seg sm">
           <button className={mode === 'day' ? 'on' : ''} onClick={() => setMode('day')}>Ngày</button>
           <button className={mode === 'week' ? 'on' : ''} onClick={() => setMode('week')}>Tuần</button>
@@ -149,7 +149,7 @@ function GiaoLyDay({ classId, date, cls, parish }) {
   if (rows.length === 0) return <div className="panel"><p className="muted">Lớp chưa có học viên.</p></div>;
   return (
     <div className="panel att-panel">
-      <div className="att-summary">
+      <div data-tour="att-summary" className="att-summary">
         <span className="att-chip present">Có mặt <b>{count('present')}</b></span>
         <span className="att-chip late">Trễ <b>{count('late')}</b></span>
         <span className="att-chip absent">Vắng <b>{count('absent')}</b></span>
@@ -170,7 +170,7 @@ function GiaoLyDay({ classId, date, cls, parish }) {
               <td className="att-saint">{r.saint_name || '—'}</td>
               <td><div className="stu-cell"><Avatar url={r.avatar_url} name={r.full_name} size={30} /><span>{r.saint_name && <span className="att-saint-inline">{r.saint_name} </span>}{r.full_name}</span></div></td>
               <td>
-                <div className="att-status">
+                <div data-tour="att-status" className="att-status">
                   {STATUSES.map((s) => (
                     <button key={s.key} className={`att-btn ${s.key} ${r.status === s.key ? 'on' : ''}`} onClick={() => setStatus(r.id, r.status === s.key ? null : s.key)}>{s.label}</button>
                   ))}
@@ -184,7 +184,7 @@ function GiaoLyDay({ classId, date, cls, parish }) {
         </tbody>
       </table>
       <div className="att-savebar">
-        <button className="btn" onClick={save}>Lưu điểm danh</button>
+        <button data-tour="att-save" className="btn" onClick={save}>Lưu điểm danh</button>
         {saved ? <span style={{ color: 'var(--success)' }}>✓ Đã lưu</span> : <span className="muted" style={{ fontSize: 13 }}>Nhớ bấm Lưu sau khi điểm danh xong</span>}
       </div>
     </div>

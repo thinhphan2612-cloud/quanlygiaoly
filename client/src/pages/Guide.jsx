@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { IconSearch } from '../components/Icons.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import { useAuth } from '../auth.jsx';
+import { useParish } from '../parish.jsx';
+import { isPro } from '../lib/plans';
+import { TOURS, TOUR_GROUPS } from '../lib/tours';
+import { startTour, useToursDone } from '../lib/tour';
 
 // Bỏ dấu tiếng Việt để tìm kiếm không dấu.
 const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
@@ -286,22 +292,117 @@ const GUIDE = [
   },
 ];
 
+// Nhóm mục lục (cùng cách chia với menu bên trái) và thứ tự hiển thị.
+const GROUPS = [
+  { title: 'Bắt đầu', ids: ['batdau', 'tongquan'] },
+  { title: 'Hằng ngày', ids: ['diemdanh', 'diemso', 'trabai'] },
+  { title: 'Quản lý', ids: ['hocvien', 'nhaphangloat', 'lophoc', 'giaolyvien'] },
+  { title: 'Thi & chứng chỉ', ids: ['dethi', 'chungchi', 'xetduyet', 'luutru'] },
+  { title: 'Giáo xứ', ids: ['thuchi', 'thongbao'] },
+  { title: 'Khác', ids: ['game', 'store'] },
+  { title: 'Tài khoản & gói', ids: ['caidat', 'goi', 'giahan'] },
+];
+const GROUP_OF = Object.fromEntries(GROUPS.flatMap((g) => g.ids.map((id) => [id, g.title])));
+// Mục nào chưa xếp nhóm thì đứng cuối, không bị mất.
+const ORDERED = [...GROUPS.flatMap((g) => g.ids.map((id) => GUIDE.find((x) => x.id === id)).filter(Boolean)),
+  ...GUIDE.filter((x) => !GROUP_OF[x.id])];
+// Trang tương ứng của từng mục (nút "Mở trang").
+const ROUTE = {
+  tongquan: '/', hocvien: '/students', nhaphangloat: '/students', lophoc: '/classes', giaolyvien: '/teachers',
+  diemdanh: '/attendance', diemso: '/grades', dethi: '/exams', chungchi: '/certificates', trabai: '/random',
+  game: '/games', store: '/store', thuchi: '/audit', xetduyet: '/classes', luutru: '/archive', thongbao: '/notify',
+  caidat: '/settings', goi: '/settings', giahan: '/settings',
+};
+const SUGGEST = ['điểm danh', 'thi online', 'chứng chỉ', 'lên lớp', 'nhập Excel', 'gia hạn'];
+
 function Badge({ children, tone }) {
   return <span className={`gd-badge ${tone || ''}`}>{children}</span>;
 }
 
+// Tab "Bài tập thực hành": danh sách bài theo vai trò, tiến độ lưu theo tài khoản.
+function Practice({ isTeacher, pro }) {
+  const done = useToursDone();
+  const list = TOURS.filter((t) => !isTeacher || t.roles.includes('teacher'));
+  const doneCount = list.filter((t) => done.includes(t.id)).length;
+  const nextId = list.find((t) => !done.includes(t.id) && (!t.pro || pro))?.id;
+  let no = 0;
+  return (
+    <div className="ex-wrap">
+      <div className="panel ex-progress">
+        <div className="ex-progress-top">
+          <div>
+            <div className="ex-progress-title">Đã hoàn thành {doneCount}/{list.length} bài</div>
+            <div className="muted" style={{ fontSize: 13 }}>
+              Mỗi bài mở đúng trang thật và tô sáng từng chỗ cần thao tác. Bước nào ghi dữ liệu thật sẽ được nhắc trước, bạn tự quyết có bấm Lưu hay không.
+            </div>
+          </div>
+          {nextId && <button className="btn" onClick={() => startTour(nextId)}>{doneCount ? 'Làm bài tiếp theo' : 'Bắt đầu bài đầu tiên'}</button>}
+        </div>
+        <div className="ex-bar"><span style={{ width: `${list.length ? (doneCount / list.length) * 100 : 0}%` }} /></div>
+      </div>
+
+      {TOUR_GROUPS.map((g) => {
+        const items = list.filter((t) => t.group === g);
+        if (!items.length) return null;
+        return (
+          <div key={g} className="ex-group">
+            <h2 className="ex-group-title">{g}</h2>
+            <div className="ex-grid">
+              {items.map((t) => {
+                no += 1;
+                const isDone = done.includes(t.id);
+                const locked = t.pro && !pro;
+                return (
+                  <div key={t.id} className={`ex-card${t.id === nextId ? ' next' : ''}`}>
+                    <div className="ex-top">
+                      <span className={`ex-no${isDone ? ' done' : ''}`}>{isDone ? '✓' : no}</span>
+                      {t.id === nextId && <span className="tag-chip tone-indigo">Nên làm tiếp</span>}
+                      {isDone && <span className="tag-chip tone-green">Đã xong</span>}
+                      {locked && <span className="tag-chip tone-gray">Cần gói Pro</span>}
+                    </div>
+                    <h3>{t.title}</h3>
+                    <p>{t.desc}</p>
+                    <div className="ex-foot">
+                      <span className="muted">{t.steps.length} bước · khoảng {t.minutes} phút</span>
+                      <button className={`btn sm${isDone ? ' ghost' : ''}`} disabled={locked} onClick={() => startTour(t.id)}>{isDone ? 'Làm lại' : 'Bắt đầu'}</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Guide() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { parish } = useParish();
+  const isTeacher = user?.role === 'teacher';
+  const pro = isPro(parish?.plan || 'free');
+  const [showAdmin, setShowAdmin] = useState(false); // GLV: xem thêm mục chỉ dành cho quản trị
+  const [tab, setTab] = useState(() => { try { return localStorage.getItem('guide_tab') || 'practice'; } catch { return 'practice'; } });
+  function pickTab(t) { setTab(t); try { localStorage.setItem('guide_tab', t); } catch { /* bỏ qua */ } }
   const [q, setQ] = useState('');
-  const [activeId, setActiveId] = useState(GUIDE[0].id);
+  const [activeId, setActiveId] = useState(ORDERED[0].id);
   const nq = norm(q.trim());
 
+  // GLV mặc định chỉ thấy mục dành cho mình.
+  const base = useMemo(() => ORDERED.filter((s) => !isTeacher || showAdmin || s.roles.includes('teacher')), [isTeacher, showAdmin]);
+  const hiddenAdmin = isTeacher && !showAdmin ? ORDERED.length - base.length : 0;
+  // Có quyền mở trang của mục không (vai trò + gói).
+  const canOpen = (s) => ROUTE[s.id] && (!isTeacher || s.roles.includes('teacher')) && (!s.pro || pro);
+
   const filtered = useMemo(() => {
-    if (!nq) return GUIDE;
-    return GUIDE.filter((s) => {
+    if (!nq) return base;
+    return base.filter((s) => {
       const hay = norm([s.title, s.tags, s.summary, ...(s.steps || []), ...(s.tips || [])].join(' '));
       return nq.split(/\s+/).every((w) => hay.includes(w));
     });
-  }, [nq]);
+  }, [nq, base]);
 
   // Nếu mục đang chọn không còn trong kết quả lọc, chuyển về mục đầu tiên.
   useEffect(() => {
@@ -321,7 +422,7 @@ export default function Guide() {
     }, { rootMargin: '-90px 0px -65% 0px', threshold: 0 });
     els.forEach((el) => obs.observe(el));
     return () => obs.disconnect();
-  }, [filtered]);
+  }, [filtered, tab]);
 
   const jump = (id) => {
     setActiveId(id);
@@ -331,32 +432,48 @@ export default function Guide() {
   return (
     <div className="guide-wrap">
       <div className="guide-head">
-        <PageHeader title="Hướng dẫn sử dụng" subtitle={<>Giới thiệu các chức năng và quy trình vận hành của Giáo Lý Số. Mục có nhãn <b>PRO</b> là tính năng của gói Pro. Gõ từ khóa để tìm nhanh (không cần dấu).</>} />
-        <div className="guide-search">
-          <IconSearch />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm chức năng… vd: điểm danh, thi online, chứng chỉ, lên lớp" autoFocus />
-          {q && <button className="gd-clear" onClick={() => setQ('')} aria-label="Xóa">✕</button>}
+        <PageHeader title="Hướng dẫn sử dụng" subtitle={tab === 'practice'
+          ? 'Làm bài tập ngay trên trang thật để nắm nhanh cách dùng hệ thống. Mỗi bài chỉ mất 1 đến 3 phút.'
+          : <>Giới thiệu các chức năng và quy trình vận hành của Giáo Lý Số. Mục có nhãn <b>PRO</b> là tính năng của gói Pro. Gõ từ khóa để tìm nhanh (không cần dấu).</>} />
+        <div className="seg guide-tabs">
+          <button className={tab === 'practice' ? 'on' : ''} onClick={() => pickTab('practice')}>Bài tập thực hành</button>
+          <button className={tab === 'lookup' ? 'on' : ''} onClick={() => pickTab('lookup')}>Tra cứu chức năng</button>
         </div>
+        {tab === 'lookup' && <div className="guide-search">
+          <IconSearch />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm chức năng… vd: điểm danh, thi online, chứng chỉ, lên lớp" />
+          {q && <button className="gd-clear" onClick={() => setQ('')} aria-label="Xóa">✕</button>}
+        </div>}
       </div>
 
+      {tab === 'practice' ? <Practice isTeacher={isTeacher} pro={pro} /> : (
       <div className="guide-body">
         <aside className="guide-toc">
           <div className="gd-toc-title">Mục lục</div>
-          {(nq ? filtered : GUIDE).map((s) => (
-            <button key={s.id} className={activeId === s.id ? 'active' : ''} onClick={() => jump(s.id)}>{s.title}</button>
+          {filtered.map((s, i) => (
+            <div key={s.id} style={{ display: 'contents' }}>
+              {GROUP_OF[s.id] && GROUP_OF[s.id] !== GROUP_OF[filtered[i - 1]?.id] && <div className="gd-toc-group">{GROUP_OF[s.id]}</div>}
+              <button className={activeId === s.id ? 'active' : ''} onClick={() => jump(s.id)}>{s.title}</button>
+            </div>
           ))}
+          {hiddenAdmin > 0 && <button className="gd-toc-more" onClick={() => setShowAdmin(true)}>+ {hiddenAdmin} mục dành cho quản trị</button>}
           {nq && filtered.length === 0 && <div className="muted" style={{ fontSize: 13, padding: '6px 4px' }}>Không có kết quả</div>}
         </aside>
 
         <div className="guide-main">
           {nq && (
             <div className="muted" style={{ marginBottom: 12, fontSize: 13.5 }}>
-              {filtered.length > 0 ? `Tìm thấy ${filtered.length} mục cho “${q}”.` : `Không tìm thấy mục nào cho “${q}”. Thử từ khóa khác như “điểm”, “thi”, “lớp”, “gói”.`}
+              {filtered.length > 0 ? `Tìm thấy ${filtered.length} mục cho “${q}”.` : (
+                <>
+                  Không tìm thấy mục nào cho “{q}”. Thử:{' '}
+                  {SUGGEST.map((w) => <button key={w} className="gd-suggest" onClick={() => setQ(w)}>{w}</button>)}
+                </>
+              )}
             </div>
           )}
 
           {filtered.map((s) => (
-            <section className={`gd-card${activeId === s.id ? ' active' : ''}`} id={'gd-' + s.id} key={s.id}>
+            <section className="gd-card" id={'gd-' + s.id} key={s.id}>
               <div className="gd-card-head">
                 <h2>{s.title}</h2>
                 <span className="gd-badges">
@@ -365,6 +482,7 @@ export default function Guide() {
                     : <Badge>Quản trị &amp; GLV</Badge>}
                   {s.pro && <Badge tone="pro">PRO</Badge>}
                 </span>
+                {canOpen(s) && <button className="btn ghost sm" onClick={() => navigate(ROUTE[s.id])}>Mở trang →</button>}
               </div>
               <p className="gd-summary">{ui(s.summary)}</p>
               {s.steps?.length > 0 && (
@@ -380,10 +498,11 @@ export default function Guide() {
           ))}
 
           <div className="gd-foot">
-            Cần hỗ trợ thêm? Dùng “💬 Góp ý / liên hệ tác giả” ở thanh bên, hoặc Zalo <b>0964 013 126</b>.
+            Cần hỗ trợ thêm? Dùng “Góp ý / liên hệ tác giả” ở thanh bên, hoặc Zalo <b>0964 013 126</b>.
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
