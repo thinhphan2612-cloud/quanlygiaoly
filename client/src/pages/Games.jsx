@@ -30,6 +30,7 @@ export default function Games() {
   const [playing, setPlaying] = useState(null); // game đang chơi (iframe)
   const [loading, setLoading] = useState(true);
   const [swReady, setSwReady] = useState(false);
+  const [swSlow, setSwSlow] = useState(false); // chờ quá lâu -> hiện cách xử lý thay vì "Đang chuẩn bị" mãi
 
   function loadAll() {
     Promise.all([
@@ -42,18 +43,20 @@ export default function Games() {
   // Service Worker (sw.js, có proxy game) phải đang điều khiển trang thì iframe /game-proxy/ mới chạy.
   // Hỏi thử /game-proxy/__ping: nếu SW chưa điều khiển trang hoặc là bản cũ không có proxy,
   // request ra mạng và nhận về index.html của app thay vì 'ok' -> chờ SW mới kích hoạt rồi thử lại.
+  // Tải lại cứng (Ctrl+F5) làm trang KHÔNG được SW điều khiển dù SW đang chạy -> nhờ SW nhận trang (message 'claim').
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return undefined;
+    const slow = setTimeout(() => setSwSlow(true), 4000);
+    if (!('serviceWorker' in navigator)) return () => clearTimeout(slow);
     let live = true;
     const check = () => fetch('/game-proxy/__ping', { cache: 'no-store' })
-      .then((r) => r.text()).then((t) => { if (live && t === 'ok') setSwReady(true); })
-      .catch(() => {});
+      .then((r) => r.text()).then((t) => { const ok = t === 'ok'; if (live && ok) setSwReady(true); return ok; })
+      .catch(() => false);
     navigator.serviceWorker.addEventListener('controllerchange', check);
     navigator.serviceWorker.register('/sw.js')
-      .then((reg) => reg.update().catch(() => {}))
-      .catch(() => {})
-      .then(check);
-    return () => { live = false; navigator.serviceWorker.removeEventListener('controllerchange', check); };
+      .then((reg) => reg.update().catch(() => {}).then(() => reg))
+      .then(async (reg) => { if (!(await check())) reg.active?.postMessage('claim'); })
+      .catch(() => {});
+    return () => { live = false; clearTimeout(slow); navigator.serviceWorker.removeEventListener('controllerchange', check); };
   }, []);
 
   async function removeMine(g) {
@@ -123,7 +126,20 @@ export default function Games() {
               </div>
             </div>
             {gameRel(playing) != null && !swReady
-              ? <div className="game-frame" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span className="muted">Đang chuẩn bị game…</span></div>
+              ? (
+                <div className="game-frame game-wait">
+                  {!swSlow ? <span className="muted">Đang chuẩn bị game…</span> : (
+                    <>
+                      <p>Trình duyệt chưa sẵn sàng chạy game trong khung này.</p>
+                      <p className="muted" style={{ fontSize: 13 }}>Thường do vừa tải lại trang bằng Ctrl+F5. Bấm "Tải lại trang", hoặc mở game ở tab mới.</p>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+                        <button className="btn" onClick={() => window.location.reload()}>Tải lại trang</button>
+                        <a className="btn ghost btn-ext" href={frameSrc(playing)} target="_blank" rel="noopener noreferrer">Mở game ở tab mới <IconExt /></a>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )
               : <iframe className="game-frame" src={frameSrc(playing)} title={playing.title} allow="fullscreen; autoplay; gamepad" />}
           </div>
         </div>

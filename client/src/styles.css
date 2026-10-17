@@ -1164,6 +1164,10 @@ body { background: #f4f5f7; }
   .page-head .ph-actions { width: 100%; }
 }
 
+/* Khung game: chờ / không chạy được trong khung */
+.game-wait { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 24px; }
+.game-wait p { margin: 0; }
+
 /* Trang Quản trị trên điện thoại: ô việc cần xử lý 2 cột, bộ lọc full-width, bảng chuyển thành thẻ */
 @media (max-width: 640px) {
   .admin-todo { grid-template-columns: repeat(2, 1fr); gap: 8px; }

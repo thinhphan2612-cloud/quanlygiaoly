@@ -17,6 +17,9 @@ const mimeOf = (p) => MIME[(p.split('.').pop() || '').toLowerCase()] || 'applica
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+// Trang chưa được SW điều khiển (thường do tải lại cứng Ctrl+F5 / Shift+F5) nhờ SW nhận quyền ngay,
+// không phải bắt người dùng tải lại trang.
+self.addEventListener('message', (e) => { if (e.data === 'claim') e.waitUntil(self.clients.claim()); });
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (url.origin !== self.location.origin || !url.pathname.startsWith('/game-proxy/')) return;
