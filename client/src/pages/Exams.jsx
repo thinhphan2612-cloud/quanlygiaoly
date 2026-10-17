@@ -3,80 +3,159 @@ import api from '../api';
 import QRCode from 'qrcode';
 import { exportXlsx, fileSlug } from '../lib/exportUtils';
 import { printExamPaper } from '../lib/examPaper';
-import { IconAlert, IconClock, IconDice, IconDownload, IconPlus, IconPrinter, IconRefresh } from '../components/Icons.jsx';
+import { IconAlert, IconClock, IconCopy, IconDice, IconDownload, IconPlus, IconPrinter, IconRefresh } from '../components/Icons.jsx';
 import { toast } from '../lib/toast';
 import { SkeletonTable } from '../components/Skeleton.jsx';
 import { confirmDialog } from '../lib/confirm';
 import PageHeader from '../components/PageHeader.jsx';
+import RowMenu from '../components/RowMenu.jsx';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
-const KINDS = [{ v: '15p', l: '15 phút' }, { v: '1tiet', l: '1 tiết' }, { v: 'hocky', l: 'Học kỳ' }, { v: 'khac', l: 'Khác' }];
+const KINDS = [{ v: '15p', l: '15 phút', dur: 15 }, { v: '1tiet', l: '1 tiết', dur: 45 }, { v: 'hocky', l: 'Học kỳ', dur: 60 }, { v: 'khac', l: 'Khác' }];
 const kindLabel = (k) => (KINDS.find((x) => x.v === k) || { l: k }).l;
+const kindDur = (k) => KINDS.find((x) => x.v === k)?.dur;
 const EXAM_BASE = (typeof window !== 'undefined' ? window.location.origin : '') + '/exam/';
 const ST = {
   draft: ['Nháp', 'gray'], waiting: ['Phòng chờ', 'yellow'],
   started: ['Đang thi', 'green'], closed: ['Đã đóng', 'indigo'],
 };
+const NA = <span className="muted">–</span>;
 function badge(s) { const v = ST[s] || ST.draft; return <span className={`tag-chip tone-${v[1]}`}>{v[0]}</span>; }
 const fmt = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+// Bỏ dấu để tìm kiếm
+const fold = (v) => String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+const errMsg = (e, d) => e?.response?.data?.error || d;
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
+}
 
 export default function Exams() {
   const [view, setView] = useState('list'); // list | build | room
   const [exams, setExams] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [current, setCurrent] = useState(null);
+  const [draft, setDraft] = useState(null);   // { mode: 'new' | 'edit' | 'copy', exam? }
   const [classes, setClasses] = useState([]);
+  const [fClass, setFClass] = useState('');
+  const [fStatus, setFStatus] = useState('');
   function load() { api.get('/exams').then((r) => setExams(r.data)).catch(() => setExams([])).finally(() => setLoaded(true)); }
   useEffect(() => { load(); api.get('/classes').then((r) => setClasses(r.data)).catch(() => {}); }, []);
-  async function del(e) { if (!await confirmDialog(`Xoá đề "${e.title}"? Mất luôn các bài đã nộp.`)) return; await api.delete(`/exams/${e.id}`); load(); }
 
-  if (view === 'build') return <ExamBuilder classes={classes} onCancel={() => setView('list')} onDone={(id) => { load(); setCurrent(id); setView('room'); }} />;
+  async function del(e) {
+    const msg = `Xóa đề "${e.title}"?`
+      + (e.joined ? `\n\nBài làm của ${e.joined} em sẽ mất, không xem lại được nữa.` : '')
+      + (e.grade_column_id ? '\n\nCột điểm của đề ở trang Điểm số vẫn giữ nguyên (muốn bỏ thì xóa cột ở đó).' : '');
+    if (!await confirmDialog(msg)) return;
+    try { await api.delete(`/exams/${e.id}`); toast(`Đã xóa đề "${e.title}"`); load(); }
+    catch (err) { toast.err(errMsg(err, 'Xóa đề thất bại')); }
+  }
+  async function openBuilder(mode, e) {
+    if (mode === 'new') { setDraft({ mode }); setView('build'); return; }
+    try { const { data } = await api.get(`/exams/${e.id}`); setDraft({ mode, exam: data }); setView('build'); }
+    catch (err) { toast.err(errMsg(err, 'Không tải được đề')); }
+  }
+
+  if (view === 'build') {
+    return <ExamBuilder classes={classes} draft={draft} onCancel={() => setView('list')}
+      onDone={(id) => { load(); setCurrent(id); setView('room'); }} />;
+  }
   if (view === 'room' && current) return <ExamRoom examId={current} onBack={() => { load(); setCurrent(null); setView('list'); }} />;
+
+  const counts = exams.reduce((m, e) => { m[e.status] = (m[e.status] || 0) + 1; return m; }, {});
+  const shown = exams.filter((e) => (!fClass || e.class_id === fClass) && (!fStatus || e.status === fStatus));
+  const examClasses = classes.filter((c) => exams.some((e) => e.class_id === c.id));
 
   return (
     <div>
       <PageHeader title="Đề thi & thi online" subtitle="Soạn đề trắc nghiệm, mở phòng thi online cho học viên và chấm điểm tự động.">
-        <button data-tour="exam-add" className="btn" onClick={() => setView('build')}>+ Tạo đề</button>
+        <button data-tour="exam-add" className="btn" onClick={() => openBuilder('new')}>+ Tạo đề</button>
       </PageHeader>
+
+      {exams.length > 0 && (
+        <div className="exx-filters">
+          {examClasses.length > 1 && (
+            <select value={fClass} onChange={(e) => setFClass(e.target.value)} aria-label="Lọc theo lớp">
+              <option value="">Tất cả lớp</option>
+              {examClasses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          )}
+          <div className="exx-chips">
+            <button type="button" className={`exx-chip${!fStatus ? ' on' : ''}`} onClick={() => setFStatus('')}>Tất cả <b>{exams.length}</b></button>
+            {Object.keys(ST).filter((s) => counts[s]).map((s) => (
+              <button key={s} type="button" className={`exx-chip${fStatus === s ? ' on' : ''}`} onClick={() => setFStatus(fStatus === s ? '' : s)}>{ST[s][0]} <b>{counts[s]}</b></button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="panel">
         {!loaded ? <SkeletonTable rows={3} cols={6} /> : exams.length === 0 ? <p className="muted">Chưa có đề thi nào. Bấm "Tạo đề" để soạn đề trắc nghiệm cho học viên thi online.</p> : (
-          <div className="table-scroll"><table>
-            <thead><tr><th>Đề</th><th>Lớp</th><th>Loại (hệ số)</th><th>Câu</th><th>Trạng thái</th><th>Nộp</th><th></th></tr></thead>
-            <tbody>{exams.map((e) => (
-              <tr key={e.id}>
-                <td><span className="link-name" onClick={() => { setCurrent(e.id); setView('room'); }}>{e.title}</span></td>
-                <td className="muted">{e.class_name || '—'}</td>
-                <td>{kindLabel(e.kind)} (×{e.weight})</td>
-                <td>{e.num_questions}</td>
-                <td>{badge(e.status)}</td>
-                <td>{e.submitted}/{e.joined}</td>
-                <td style={{ whiteSpace: 'nowrap' }}>
-                  <button className="btn ghost sm" onClick={() => { setCurrent(e.id); setView('room'); }}>Phòng thi</button>{' '}
-                  <button className="btn danger sm" onClick={() => del(e)}>Xoá</button>
-                </td>
-              </tr>))}</tbody>
-          </table></div>
+          <table className="exx-table">
+            <thead><tr><th>Đề</th><th>Lớp</th><th>Câu</th><th>Trạng thái</th><th>Đã nộp</th><th></th></tr></thead>
+            <tbody>
+              {shown.map((e) => {
+                const editable = e.status === 'draft' && !e.joined;
+                return (
+                  <tr key={e.id}>
+                    <td className="exx-c-name">
+                      <span className="link-name" onClick={() => { setCurrent(e.id); setView('room'); }}>{e.title}</span>
+                      <small className="muted">{kindLabel(e.kind)} · hệ số {e.weight}{e.duration_min ? ` · làm bài ${e.duration_min} phút` : ''}</small>
+                    </td>
+                    <td data-label="Lớp">{e.class_name || <span className="muted">Chưa gán lớp</span>}</td>
+                    <td data-label="Số câu">{e.num_questions}</td>
+                    <td data-label="Trạng thái">{badge(e.status)}</td>
+                    <td data-label="Đã nộp">{e.joined ? `${e.submitted}/${e.joined}` : NA}</td>
+                    <td className="exx-c-act">
+                      <button className="btn ghost sm" onClick={() => { setCurrent(e.id); setView('room'); }}>Phòng thi</button>
+                      <RowMenu items={[
+                        editable && { label: 'Sửa đề', onClick: () => openBuilder('edit', e) },
+                        { label: 'Nhân bản (dùng cho lớp khác)', onClick: () => openBuilder('copy', e) },
+                        { label: 'Xóa đề…', danger: true, onClick: () => del(e) },
+                      ]} />
+                    </td>
+                  </tr>
+                );
+              })}
+              {shown.length === 0 && <tr className="exx-empty"><td colSpan={6} className="muted">Không có đề nào khớp bộ lọc.</td></tr>}
+            </tbody>
+          </table>
         )}
       </div>
     </div>
   );
 }
 
-/* ---------------- Soạn đề ---------------- */
-function ExamBuilder({ classes, onDone, onCancel }) {
-  const [title, setTitle] = useState('');
-  const [classId, setClassId] = useState('');
-  const [kind, setKind] = useState('15p');
-  const [weight, setWeight] = useState(1);
-  const [duration, setDuration] = useState(15);
+/* ---------------- Soạn đề (tạo mới / sửa nháp / nhân bản) ---------------- */
+function ExamBuilder({ classes, draft, onDone, onCancel }) {
+  const src = draft?.exam;
+  const mode = draft?.mode || 'new';
+  const init = useMemo(() => {
+    if (!src) return { title: '', classId: '', kind: '15p', weight: 1, duration: 15, picked: {} };
+    const picked = {};
+    (src.questions || []).forEach((q) => { picked[q.id] = { id: q.id, text: q.text, options: q.options, correct: q.correct }; });
+    return {
+      title: mode === 'copy' ? `${src.title} (bản sao)` : src.title,
+      classId: mode === 'copy' ? '' : (src.class_id || ''),
+      kind: src.kind || '15p', weight: src.weight ?? 1, duration: src.duration_min ?? 0, picked,
+    };
+  }, [src, mode]);
+  const [title, setTitle] = useState(init.title);
+  const [classId, setClassId] = useState(init.classId);
+  const [kind, setKind] = useState(init.kind);
+  const [weight, setWeight] = useState(init.weight);
+  const [duration, setDuration] = useState(init.duration);
   const [bank, setBank] = useState(null);      // { topics: [...] }
   const [topicId, setTopicId] = useState('');
   const [n, setN] = useState(10);
-  const [picked, setPicked] = useState({});    // qid -> question
+  const [bq, setBq] = useState('');            // tìm trong ngân hàng
+  const [picked, setPicked] = useState(init.picked); // qid -> question (giữ thứ tự chèn)
   const [err, setErr] = useState('');
   const [saving, setSaving] = useState(false);
+  const busy = useRef(false);
   const [editing, setEditing] = useState(null); // câu đang sửa / thêm mới
-  const [qtab, setQtab] = useState('bank');     // bank | chosen
+  const [qtab, setQtab] = useState(src ? 'chosen' : 'bank'); // bank | chosen
+  const snap = (v) => JSON.stringify([v.title, v.classId, v.kind, String(v.weight), String(v.duration), Object.values(v.picked).map((q) => [q.id, q.text, q.options, q.correct])]);
+  const dirty = snap({ title, classId, kind, weight, duration, picked }) !== snap(init) || (mode === 'copy');
 
   useEffect(() => {
     fetch('/exam-question-bank.json').then((r) => r.json()).then((b) => {
@@ -85,6 +164,8 @@ function ExamBuilder({ classes, onDone, onCancel }) {
   }, []);
 
   const topic = bank?.topics?.find((t) => t.id === topicId);
+  const fq = fold(bq.trim());
+  const bankShown = (topic?.questions || []).filter((q) => !fq || fold(q.text).includes(fq));
   const pickedList = Object.values(picked);
   const isPicked = (q) => !!picked[q.id];
   function toggle(q) { setPicked((p) => { const c = { ...p }; if (c[q.id]) delete c[q.id]; else c[q.id] = { ...q, _topic: topicId }; return c; }); }
@@ -93,7 +174,9 @@ function ExamBuilder({ classes, onDone, onCancel }) {
     const pool = topic.questions.filter((q) => !picked[q.id]);
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
     const add = pool.slice(0, Math.max(0, Number(n) || 0));
+    if (!add.length) { toast.err('Đã chọn hết câu của ngân hàng này'); return; }
     setPicked((p) => { const c = { ...p }; add.forEach((q) => { c[q.id] = { ...q, _topic: topicId }; }); return c; });
+    toast(`Đã thêm ${add.length} câu vào đề`);
   }
   function clearTopic() { setPicked((p) => { const c = { ...p }; (topic?.questions || []).forEach((q) => delete c[q.id]); return c; }); }
   function saveQuestion(q) {
@@ -104,24 +187,45 @@ function ExamBuilder({ classes, onDone, onCancel }) {
     setEditing(null);
   }
   function removeQ(id) { setPicked((p) => { const c = { ...p }; delete c[id]; return c; }); }
+  // Đổi thứ tự câu: dựng lại object theo thứ tự mới (thứ tự chèn = thứ tự câu)
+  function moveQ(i, d) {
+    const list = Object.values(picked); const j = i + d;
+    if (j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    setPicked(Object.fromEntries(list.map((q) => [q.id, q])));
+  }
+  function changeKind(k) {
+    // Gợi ý thời lượng theo loại bài, chỉ khi người dùng chưa tự đổi thời lượng
+    if (String(duration) === String(kindDur(kind) ?? duration) && kindDur(k)) setDuration(kindDur(k));
+    setKind(k);
+  }
+  async function leave() {
+    if (busy.current) return;
+    if (dirty && !(await confirmDialog(mode === 'edit' ? 'Bỏ các thay đổi chưa lưu của đề này?' : 'Bỏ đề đang soạn? Các câu đã chọn sẽ mất.'))) return;
+    onCancel();
+  }
 
   async function save() {
+    if (busy.current) return;
     setErr('');
     if (!title.trim()) return setErr('Nhập tên đề thi');
     if (!classId) return setErr('Chọn lớp thi');
     if (!pickedList.length) return setErr('Chọn ít nhất 1 câu hỏi');
-    setSaving(true);
+    busy.current = true; setSaving(true);
     try {
       const questions = pickedList.map((q) => ({ text: q.text, options: q.options, correct: q.correct }));
-      const { data } = await api.post('/exams', { title: title.trim(), class_id: classId, kind, weight: Number(weight) || 1, duration_min: Number(duration) || null, questions });
-      onDone(data.id);
-    } catch (e) { setErr(e.response?.data?.error || 'Tạo đề thất bại'); setSaving(false); }
+      const payload = { title: title.trim(), class_id: classId, kind, weight: Number(weight) || 1, duration_min: Number(duration) || null, questions };
+      if (mode === 'edit') { await api.put(`/exams/${src.id}`, payload); toast('Đã lưu đề'); onDone(src.id); }
+      else { const { data } = await api.post('/exams', payload); toast(`Đã tạo đề "${payload.title}"`); onDone(data.id); }
+    } catch (e) { setErr(errMsg(e, mode === 'edit' ? 'Lưu đề thất bại' : 'Tạo đề thất bại')); busy.current = false; setSaving(false); }
   }
 
+  const heading = mode === 'edit' ? 'Sửa đề thi' : mode === 'copy' ? 'Nhân bản đề thi' : 'Soạn đề thi';
   return (
     <div>
-      <div className="att-head"><h1 style={{ margin: 0 }}>Soạn đề thi</h1>
-        <button className="btn ghost" onClick={onCancel}>← Quay lại</button></div>
+      <div className="att-head"><h1 style={{ margin: 0 }}>{heading}</h1>
+        <button className="btn ghost" onClick={leave}>← Quay lại</button></div>
+      {mode === 'copy' && <p className="muted exx-sub">Chọn lớp cho bản sao. Đề gốc giữ nguyên.</p>}
 
       <div className="panel">
         <div className="row">
@@ -135,7 +239,7 @@ function ExamBuilder({ classes, onDone, onCancel }) {
         </div>
         <div className="row">
           <div className="field" style={{ flex: 1 }}><label>Loại bài</label>
-            <select value={kind} onChange={(e) => setKind(e.target.value)}>{KINDS.map((k) => <option key={k.v} value={k.v}>{k.l}</option>)}</select>
+            <select value={kind} onChange={(e) => changeKind(e.target.value)}>{KINDS.map((k) => <option key={k.v} value={k.v}>{k.l}</option>)}</select>
           </div>
           <div className="field" style={{ flex: 1 }}><label>Hệ số điểm</label>
             <input type="number" min="1" step="0.5" value={weight} onChange={(e) => setWeight(e.target.value)} />
@@ -165,13 +269,15 @@ function ExamBuilder({ classes, onDone, onCancel }) {
                 <div className="field" style={{ flex: '1 1 auto' }}><button data-tour="exam-random" className="btn ghost" style={{ width: '100%' }} onClick={pickRandom}><IconDice className="bi" />Bốc ngẫu nhiên</button></div>
                 <div className="field" style={{ flex: '1 1 auto' }}><button className="btn ghost" style={{ width: '100%' }} onClick={clearTopic}>Bỏ chọn cấp này</button></div>
               </div>
-              <div className="pick-list" style={{ maxHeight: '52vh' }}>
-                {(topic?.questions || []).map((q) => (
+              <input className="exx-bsearch" type="search" value={bq} onChange={(e) => setBq(e.target.value)} placeholder="Tìm câu hỏi trong ngân hàng này…" aria-label="Tìm câu hỏi" />
+              <div className="pick-list exx-bank" style={{ maxHeight: '52vh' }}>
+                {bankShown.map((q) => (
                   <label key={q.id} className="fp-chk" style={{ alignItems: 'flex-start' }}>
                     <input type="checkbox" checked={isPicked(q)} onChange={() => toggle(q)} style={{ marginTop: 3 }} />
                     <span style={{ fontSize: 13.5 }}>{q.text}</span>
                   </label>
                 ))}
+                {bankShown.length === 0 && <p className="muted">Không có câu nào khớp.</p>}
               </div>
             </>
           )
@@ -181,16 +287,18 @@ function ExamBuilder({ classes, onDone, onCancel }) {
               <button className="btn ghost sm" onClick={() => setEditing({ text: '', options: ['', ''], correct: 0 })}><IconPlus className="bi" />Thêm câu tự soạn</button>
             </div>
             {pickedList.length === 0 ? (
-              <p className="muted">Chưa có câu nào. Sang tab <b>Ngân hàng câu hỏi</b> để bốc, hoặc bấm "Thêm câu tự soạn". Câu nào cũng sửa / xoá được trước khi tạo đề.</p>
+              <p className="muted">Chưa có câu nào. Sang tab <b>Ngân hàng câu hỏi</b> để bốc, hoặc bấm "Thêm câu tự soạn". Câu nào cũng sửa, xóa, đổi thứ tự được trước khi lưu đề.</p>
             ) : (
               <div className="pick-list" style={{ maxHeight: '56vh' }}>
                 {pickedList.map((q, i) => (
                   <div className="rv-q" key={q.id}>
-                    <div className="rv-q-t" style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                      <span style={{ flex: 1, minWidth: 0 }}><b>Câu {i + 1}.</b> {q.text}{q.custom ? <span className="muted" style={{ fontSize: 11 }}> · tự soạn</span> : ''}</span>
-                      <span className="row-links" style={{ whiteSpace: 'nowrap' }}>
+                    <div className="rv-q-t exx-qrow">
+                      <span className="exx-qtext"><b>Câu {i + 1}.</b> {q.text}{q.custom ? <span className="muted" style={{ fontSize: 11 }}> · tự soạn</span> : ''}</span>
+                      <span className="row-links exx-qact">
+                        <button onClick={() => moveQ(i, -1)} disabled={i === 0} title="Đưa lên" aria-label="Đưa lên">↑</button>
+                        <button onClick={() => moveQ(i, 1)} disabled={i === pickedList.length - 1} title="Đưa xuống" aria-label="Đưa xuống">↓</button>
                         <button onClick={() => setEditing(q)}>Sửa</button>
-                        <button className="danger" onClick={() => removeQ(q.id)}>Xoá</button>
+                        <button className="danger" onClick={() => removeQ(q.id)}>Xóa</button>
                       </span>
                     </div>
                     {(q.options || []).map((opt, idx) => (
@@ -208,8 +316,10 @@ function ExamBuilder({ classes, onDone, onCancel }) {
 
       {err && <div className="error">{err}</div>}
       <div className="modal-actions">
-        <button className="btn ghost" onClick={onCancel}>Huỷ</button>
-        <button data-tour="exam-save" className="btn" onClick={save} disabled={saving}>{saving ? 'Đang tạo…' : `Tạo đề (${pickedList.length} câu)`}</button>
+        <button className="btn ghost" onClick={leave} disabled={saving}>Hủy</button>
+        <button data-tour="exam-save" className="btn" onClick={save} disabled={saving}>
+          {saving ? 'Đang lưu…' : mode === 'edit' ? `Lưu đề (${pickedList.length} câu)` : `Tạo đề (${pickedList.length} câu)`}
+        </button>
       </div>
 
       {editing && <QuestionEditor init={editing} onSave={saveQuestion} onClose={() => setEditing(null)} />}
@@ -222,11 +332,16 @@ function QuestionEditor({ init, onSave, onClose }) {
   const [text, setText] = useState(init.text || '');
   const [options, setOptions] = useState(init.options?.length ? [...init.options] : ['', '']);
   const [correct, setCorrect] = useState(init.correct ?? 0);
+  const dirty = text !== (init.text || '') || JSON.stringify(options) !== JSON.stringify(init.options?.length ? init.options : ['', '']) || correct !== (init.correct ?? 0);
   const setOpt = (i, v) => setOptions((o) => o.map((x, j) => (j === i ? v : x)));
   const addOpt = () => setOptions((o) => (o.length < 6 ? [...o, ''] : o));
   function rmOpt(i) {
     setOptions((o) => (o.length <= 2 ? o : o.filter((_, j) => j !== i)));
     setCorrect((c) => (i < c ? c - 1 : i === c ? 0 : c));
+  }
+  async function close() {
+    if (dirty && !(await confirmDialog('Bỏ câu hỏi đang soạn?'))) return;
+    onClose();
   }
   function save() {
     const opts = options.map((s) => s.trim()).filter(Boolean);
@@ -235,7 +350,7 @@ function QuestionEditor({ init, onSave, onClose }) {
     onSave({ id: init.id, text: text.trim(), options: opts, correct: Math.min(correct, opts.length - 1), custom: true });
   }
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={close}>
       <div className="modal wide" onClick={(e) => e.stopPropagation()}>
         <h2 style={{ marginTop: 0 }}>{init.id ? 'Sửa câu hỏi' : 'Thêm câu hỏi'}</h2>
         <div className="field"><label>Nội dung câu hỏi *</label>
@@ -253,7 +368,7 @@ function QuestionEditor({ init, onSave, onClose }) {
         ))}
         {options.length < 6 && <button className="btn ghost sm" type="button" onClick={addOpt} style={{ marginTop: 2 }}>+ Thêm đáp án</button>}
         <div className="modal-actions">
-          <button className="btn ghost" onClick={onClose}>Huỷ</button>
+          <button className="btn ghost" onClick={close}>Hủy</button>
           <button className="btn" onClick={save}>Lưu câu</button>
         </div>
       </div>
@@ -265,9 +380,11 @@ function QuestionEditor({ init, onSave, onClose }) {
 function ExamRoom({ examId, onBack }) {
   const [exam, setExam] = useState(null);
   const [qr, setQr] = useState('');
-  const [savedMsg, setSavedMsg] = useState('');
+  const [roster, setRoster] = useState(null);     // học viên của lớp, để biết em nào chưa vào
   const [reviewing, setReviewing] = useState(null); // attempt đang xem lại
   const [timeLeft, setTimeLeft] = useState(null);    // đồng hồ đếm ngược cho GLV
+  const [projecting, setProjecting] = useState(false);
+  const [busy, setBusy] = useState(false);
   const pollRef = useRef(null);
 
   function exportResults() {
@@ -281,12 +398,12 @@ function ExamRoom({ examId, onBack }) {
       { label: 'Tổng câu', get: (r) => (r.total ?? ''), width: 9 },
       { label: 'Nộp lúc', get: (r) => (r.submitted_at ? new Date(r.submitted_at).toLocaleString('vi-VN') : ''), width: 19 },
       { label: 'Rời MH', get: (r) => (r.leave_count || 0), width: 8 },
-      ...qs.map((q, qi) => ({ label: 'C' + (qi + 1), get: (r) => { const c = r.answers?.[q.id]; return c == null ? '—' : (c === q.correct ? 'Đ' : 'S'); }, width: 5 })),
+      ...qs.map((q, qi) => ({ label: 'C' + (qi + 1), get: (r) => { const c = r.answers?.[q.id]; return c == null ? '' : (c === q.correct ? 'Đ' : 'S'); }, width: 5 })),
     ];
     exportXlsx({
       filename: `ket-qua-${fileSlug(exam.title)}.xlsx`, sheetName: 'Kết quả',
       title: 'KẾT QUẢ THI: ' + exam.title,
-      subtitle: [`Lớp: ${exam.class_name || ''}`, `${kindLabel(exam.kind)} — hệ số ${exam.weight} — ${qs.length} câu`, 'Đ = đúng · S = sai · — = bỏ trống'],
+      subtitle: [`Lớp: ${exam.class_name || ''}`, `${kindLabel(exam.kind)} · hệ số ${exam.weight} · ${qs.length} câu`, 'Đ = đúng · S = sai · ô trống = bỏ trống'],
       columns, rows,
     });
   }
@@ -294,8 +411,12 @@ function ExamRoom({ examId, onBack }) {
   function load() { return api.get(`/exams/${examId}`).then((r) => setExam(r.data)).catch(() => {}); }
   useEffect(() => { load(); }, [examId]);
   useEffect(() => {
-    if (exam?.code) QRCode.toDataURL(EXAM_BASE + exam.code, { width: 240, margin: 1 }).then(setQr).catch(() => {});
+    if (exam?.code) QRCode.toDataURL(EXAM_BASE + exam.code, { width: 480, margin: 1 }).then(setQr).catch(() => {});
   }, [exam?.code]);
+  useEffect(() => {
+    if (!exam?.class_id) return;
+    api.get(`/students?class_id=${exam.class_id}`).then((r) => setRoster(r.data)).catch(() => setRoster(null));
+  }, [exam?.class_id]);
   // Poll bài làm khi phòng đang mở
   useEffect(() => {
     if (!exam) return;
@@ -313,17 +434,46 @@ function ExamRoom({ examId, onBack }) {
     }
     setTimeLeft(null);
   }, [exam?.status, exam?.duration_min, exam?.started_at]);
+  useEffect(() => {
+    if (!projecting) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') setProjecting(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [projecting]);
 
-  async function setStatus(status) { await api.post(`/exams/${examId}/status`, { status }); load(); }
+  async function setStatus(status, okMsg) {
+    if (busy) return;
+    setBusy(true);
+    try { await api.post(`/exams/${examId}/status`, { status }); if (okMsg) toast(okMsg); await load(); }
+    catch (e) { toast.err(errMsg(e, 'Không đổi được trạng thái phòng thi')); }
+    finally { setBusy(false); }
+  }
+  async function start() {
+    if (!attempts.length && !(await confirmDialog('Chưa em nào vào phòng chờ. Vẫn bắt đầu thi?\n\nCác em vào sau vẫn làm bài được.'))) return;
+    setStatus('started', 'Đã bắt đầu thi');
+  }
+  async function finish() {
+    const doing = attempts.filter((a) => a.status !== 'submitted').length;
+    const msg = 'Kết thúc và đóng phòng thi?' + (doing ? `\n\n${doing} em đang làm sẽ bị nộp bài ngay, câu chưa làm tính là sai.` : '');
+    if (await confirmDialog({ message: msg, okText: 'Kết thúc', danger: true })) setStatus('closed', 'Đã đóng phòng thi');
+  }
   async function saveGrades() {
-    try { const { data } = await api.post(`/exams/${examId}/save-grades`, {}); setSavedMsg(`Đã lưu ${data.saved} điểm vào bảng điểm lớp.`); }
-    catch (e) { toast.err(e.response?.data?.error || 'Lưu điểm thất bại'); }
+    try { const { data } = await api.post(`/exams/${examId}/save-grades`, {}); toast(`Đã lưu ${data.saved} điểm vào trang Điểm số`); }
+    catch (e) { toast.err(errMsg(e, 'Lưu điểm thất bại')); }
+  }
+  async function copyLink() {
+    if (await copyText(link)) toast('Đã sao chép link phòng thi'); else toast.err('Không sao chép được, hãy bôi đen link để sao chép');
   }
   if (!exam) return <div className="muted">Đang tải…</div>;
 
   const link = EXAM_BASE + exam.code;
   const attempts = exam.attempts || [];
   const submitted = attempts.filter((a) => a.status === 'submitted');
+  const open = exam.status === 'waiting' || exam.status === 'started';
+  const joinedIds = new Set(attempts.map((a) => a.student_id));
+  const absent = (roster || []).filter((s) => !joinedIds.has(s.id));
+  const scores = submitted.map((a) => Number(a.score)).filter((x) => !Number.isNaN(x));
+  const avg = scores.length ? (scores.reduce((s, x) => s + x, 0) / scores.length) : null;
 
   return (
     <div>
@@ -331,7 +481,7 @@ function ExamRoom({ examId, onBack }) {
         <h1 style={{ margin: 0 }}>{exam.title} {badge(exam.status)}</h1>
         <button className="btn ghost" onClick={onBack}>← Danh sách đề</button>
       </div>
-      <p className="muted" style={{ marginTop: -6 }}>Lớp: <b>{exam.class_name || '—'}</b> · {kindLabel(exam.kind)} (×{exam.weight}) · {exam.questions?.length || 0} câu · {exam.duration_min ? `${exam.duration_min} phút` : 'không giới hạn giờ'}</p>
+      <p className="muted" style={{ marginTop: -6 }}>Lớp: <b>{exam.class_name || 'Chưa gán lớp'}</b> · {kindLabel(exam.kind)} (hệ số {exam.weight}) · {exam.questions?.length || 0} câu · {exam.duration_min ? `làm bài ${exam.duration_min} phút` : 'không giới hạn giờ'}</p>
       {(exam.questions?.length > 0) && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
           <button className="btn ghost sm" onClick={() => printExamPaper(exam, 'student')}><IconPrinter className="bi" />In đề (học viên)</button>
@@ -344,35 +494,52 @@ function ExamRoom({ examId, onBack }) {
         <div className="dash-col">
           <div className="panel" style={{ textAlign: 'center' }}>
             <div className="card-head" style={{ justifyContent: 'center' }}><h2 style={{ margin: 0 }}>Mã dự thi</h2></div>
-            {qr && (exam.status === 'waiting' || exam.status === 'started')
-              ? <img src={qr} alt="QR" style={{ width: 220, height: 220 }} />
-              : <div className="muted" style={{ padding: 30 }}>QR hiện khi mở phòng chờ</div>}
+            {qr && open
+              ? <img src={qr} alt="Mã QR vào phòng thi" style={{ width: 220, height: 220 }} />
+              : <div className="muted" style={{ padding: 30 }}>{exam.status === 'draft' ? 'QR hiện khi mở phòng chờ' : 'Phòng thi đã đóng'}</div>}
             <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 3, margin: '6px 0' }}>{exam.code}</div>
             <div className="muted" style={{ fontSize: 12, wordBreak: 'break-all' }}>{link}</div>
-            {exam.status === 'started' && timeLeft != null && (
-              <div className={`room-timer ${timeLeft <= 60000 ? 'low' : ''}`}>
-                {timeLeft > 0 ? <><IconClock className="bi" />Còn lại <b>{fmt(timeLeft)}</b></> : <><IconClock className="bi" />Đã hết giờ</>}
+            {open && (
+              <div className="exx-roomtools">
+                <button className="btn ghost sm" onClick={copyLink}><IconCopy className="bi" />Sao chép link</button>
+                <button className="btn ghost sm" onClick={() => setProjecting(true)}>Chiếu lên màn hình</button>
               </div>
             )}
+            {exam.status === 'started' && timeLeft != null && (
+              <>
+                <div className={`room-timer ${timeLeft <= 60000 ? 'low' : ''}`}>
+                  {timeLeft > 0 ? <><IconClock className="bi" />Còn khoảng <b>{fmt(timeLeft)}</b></> : <><IconClock className="bi" />Đã hết giờ (tính từ lúc bắt đầu)</>}
+                </div>
+                <p className="muted exx-hint">Giờ làm bài tính riêng cho từng em từ lúc em vào bài, nên em vào muộn vẫn đủ giờ.</p>
+              </>
+            )}
             <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-              {exam.status === 'draft' && <button className="btn" onClick={() => setStatus('waiting')}>Mở phòng chờ</button>}
-              {exam.status === 'waiting' && <button className="btn" onClick={() => setStatus('started')}>▶ Bắt đầu thi</button>}
-              {exam.status === 'started' && <button className="btn danger" onClick={async () => { if (await confirmDialog('Kết thúc & đóng phòng thi?')) setStatus('closed'); }}>■ Kết thúc</button>}
-              {exam.status === 'closed' && <button className="btn" onClick={() => setStatus('started')}><IconRefresh className="bi" />Mở thi lại (cho em vắng)</button>}
+              {exam.status === 'draft' && <button className="btn" disabled={busy} onClick={() => setStatus('waiting', 'Đã mở phòng chờ')}>Mở phòng chờ</button>}
+              {exam.status === 'waiting' && <button className="btn" disabled={busy} onClick={start}>▶ Bắt đầu thi</button>}
+              {exam.status === 'started' && <button className="btn danger" disabled={busy} onClick={finish}>■ Kết thúc</button>}
+              {exam.status === 'closed' && <button className="btn" disabled={busy} onClick={() => setStatus('started', 'Đã mở thi lại')}><IconRefresh className="bi" />Mở thi lại (cho em vắng)</button>}
             </div>
-            {exam.status === 'waiting' && <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>Các em quét QR, chọn tên và chờ. Bấm "Bắt đầu thi" khi đủ.</p>}
-            {exam.status === 'closed' && <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>Bấm "Mở thi lại" để em vắng buổi thi vào làm; điểm sẽ được gộp vào cùng cột điểm cũ.</p>}
+            {exam.status === 'waiting' && <p className="muted exx-hint">Các em quét QR, chọn tên và chờ. Bấm "Bắt đầu thi" khi đủ.</p>}
+            {exam.status === 'closed' && <p className="muted exx-hint">Bấm "Mở thi lại" để em vắng buổi thi vào làm; điểm sẽ được gộp vào cùng cột điểm cũ.</p>}
           </div>
         </div>
 
         <div className="dash-col">
           <div className="panel">
-            <div className="card-head"><h2 style={{ margin: 0 }}>Học viên ({attempts.length})</h2>
+            <div className="card-head"><h2 style={{ margin: 0 }}>Học viên ({attempts.length}{roster ? `/${roster.length}` : ''})</h2>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <span className="muted" style={{ fontSize: 13 }}>Đã nộp {submitted.length}</span>
                 {submitted.length > 0 && <button className="btn ghost sm" onClick={exportResults}><IconDownload className="bi" />Excel</button>}
               </div>
             </div>
+            {avg != null && (
+              <div className="exx-stats">
+                <span>Trung bình <b>{avg.toFixed(1)}</b></span>
+                <span>Cao nhất <b>{Math.max(...scores)}</b></span>
+                <span>Thấp nhất <b>{Math.min(...scores)}</b></span>
+                <span>Dưới 5 <b>{scores.filter((x) => x < 5).length}</b></span>
+              </div>
+            )}
             <div className="table-scroll" style={{ maxHeight: 320 }}><table>
               <thead><tr><th>Tên</th><th>Trạng thái</th><th>Điểm</th></tr></thead>
               <tbody>
@@ -380,22 +547,40 @@ function ExamRoom({ examId, onBack }) {
                   <tr key={a.id} className={a.status === 'submitted' ? 'click-row' : ''} onClick={() => a.status === 'submitted' && setReviewing(a)}>
                     <td>{a.student_name}{a.leave_count > 0 && <span title="Số lần rời màn hình thi" style={{ color: '#dc2626', fontWeight: 700, fontSize: 12 }}> <IconAlert className="bi" style={{ width: 13, height: 13, marginRight: 2 }} />{a.leave_count}</span>}{a.status === 'submitted' && <span className="muted" style={{ fontSize: 11 }}> · xem lại</span>}</td>
                     <td>{a.status === 'submitted' ? <span className="tag-chip tone-green">Đã nộp</span> : <span className="muted">Đang làm</span>}</td>
-                    <td style={{ fontWeight: 600 }}>{a.score != null ? a.score : '—'}{a.total ? <span className="muted" style={{ fontSize: 12 }}> ({a.correct_count}/{a.total})</span> : ''}</td>
+                    <td style={{ fontWeight: 600 }}>{a.score != null ? a.score : NA}{a.total ? <span className="muted" style={{ fontSize: 12 }}> ({a.correct_count}/{a.total})</span> : ''}</td>
                   </tr>
                 ))}
-                {attempts.length === 0 && <tr><td colSpan={3} className="muted">Chưa có em nào vào.</td></tr>}
+                {attempts.length === 0 && <tr><td colSpan={3} className="muted">{exam.status === 'draft' ? 'Mở phòng chờ để các em vào.' : 'Chưa có em nào vào.'}</td></tr>}
               </tbody>
             </table></div>
+            {exam.status !== 'draft' && absent.length > 0 && (
+              <details className="exx-absent">
+                <summary>Chưa vào phòng ({absent.length})</summary>
+                <div>{absent.map((s) => [s.saint_name, s.full_name].filter(Boolean).join(' ')).join(', ')}</div>
+              </details>
+            )}
             {submitted.length > 0 && (
               <div style={{ marginTop: 12 }}>
                 <button className="btn ghost" onClick={saveGrades}><IconRefresh className="bi" />Đồng bộ lại điểm sang Điểm số</button>
                 <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>Điểm tự đồng bộ khi các em nộp; nút này chỉ để đồng bộ lại thủ công khi cần.</p>
-                {savedMsg && <div className="info-box" style={{ marginTop: 8 }}>{savedMsg}</div>}
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {projecting && (
+        <div className="exx-project" onClick={() => setProjecting(false)} role="dialog" aria-modal="true" aria-label="Chiếu mã phòng thi">
+          <div className="exx-project-in" onClick={(e) => e.stopPropagation()}>
+            <div className="exx-project-t">{exam.title}</div>
+            {qr && <img src={qr} alt="Mã QR vào phòng thi" />}
+            <div className="exx-project-code">{exam.code}</div>
+            <div className="exx-project-link">{link}</div>
+            <div className="exx-project-n">{attempts.length}{roster ? `/${roster.length}` : ''} em đã vào phòng</div>
+            <button className="btn ghost" onClick={() => setProjecting(false)}>Đóng (Esc)</button>
+          </div>
+        </div>
+      )}
 
       {reviewing && (
         <div className="modal-backdrop" onClick={() => setReviewing(null)}>

@@ -1377,6 +1377,27 @@ async function handle(method, rawUrl, body = {}) {
       ]);
       return ok({ ...exam, class_name: exam.classes?.name || null, questions: questions || [], attempts: attempts || [] });
     }
+    // Sửa đề: chỉ khi còn Nháp và chưa em nào vào. Câu hỏi: thêm bộ mới rồi mới xóa bộ cũ (lỗi giữa chừng không mất đề).
+    if (seg[0] === 'exams' && seg[1] && !seg[2] && method === 'put') {
+      const qs = Array.isArray(body.questions) ? body.questions : [];
+      if (!body.title || !body.class_id || !qs.length) return fail(400, 'Thiếu tiêu đề / lớp / câu hỏi');
+      const { data: ex } = await supabase.from('exams').select('status').eq('id', seg[1]).maybeSingle();
+      if (!ex) return fail(404, 'Không tìm thấy đề');
+      if (ex.status !== 'draft') return fail(400, 'Chỉ sửa được đề còn ở trạng thái Nháp');
+      const { count } = await supabase.from('exam_attempts').select('id', { count: 'exact', head: true }).eq('exam_id', seg[1]);
+      if (count) return fail(400, 'Đề đã có học viên vào làm, không sửa được nữa');
+      const { error } = await supabase.from('exams').update({
+        title: body.title, class_id: body.class_id, kind: body.kind || '15p', weight: Number(body.weight) || 1,
+        duration_min: body.duration_min ? Number(body.duration_min) : null,
+      }).eq('id', seg[1]);
+      if (error) return fail(400, error.message);
+      const { data: old } = await supabase.from('exam_questions').select('id').eq('exam_id', seg[1]);
+      const rows = qs.map((x, i) => ({ exam_id: seg[1], parish_id: pid, order_index: i, text: x.text, options: x.options, correct: Number(x.correct) || 0 }));
+      const { error: qe } = await supabase.from('exam_questions').insert(rows);
+      if (qe) return fail(400, qe.message);
+      if (old?.length) await supabase.from('exam_questions').delete().in('id', old.map((o) => o.id));
+      return ok({ id: seg[1] });
+    }
     if (seg[0] === 'exams' && seg[1] && !seg[2] && method === 'delete') {
       const { error } = await supabase.from('exams').delete().eq('id', seg[1]);
       if (error) return fail(400, error.message);

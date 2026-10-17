@@ -1651,6 +1651,55 @@ button.gx-stat:hover { border-color: var(--primary); }
   .ntx-who { grid-template-columns: 1fr; }
 }
 
+/* ===== Đề thi (Exams): tiền tố exx- ===== */
+.exx-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.exx-filters select { width: auto; min-width: 160px; }
+.exx-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.exx-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font: inherit; font-size: 12.5px; cursor: pointer; }
+.exx-chip b { color: var(--muted); }
+.exx-chip.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.exx-chip.on b { color: rgba(255, 255, 255, .85); }
+.exx-table td { vertical-align: middle; }
+.exx-c-name > * { display: block; }
+.exx-c-name small { font-size: 12px; margin-top: 2px; }
+.exx-table td.exx-c-act { white-space: nowrap; text-align: right; }
+.exx-c-act > * { vertical-align: middle; margin-left: 4px; }
+.exx-sub { margin: -6px 0 12px; }
+.exx-bsearch { width: 100%; margin-bottom: 8px; }
+.exx-bank .fp-chk { color: var(--text); font-weight: 400; }
+.exx-qrow { display: flex; gap: 8px; align-items: flex-start; }
+.exx-qtext { flex: 1; min-width: 0; }
+.exx-qact { white-space: nowrap; margin-top: 0; }
+.exx-qact button:disabled { color: var(--muted); opacity: .45; cursor: default; text-decoration: none; }
+.exx-roomtools { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+.exx-hint { font-size: 12px; margin: 8px 0 0; }
+.exx-stats { display: flex; gap: 6px 14px; flex-wrap: wrap; margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+.exx-stats b { color: var(--heading); }
+.exx-absent { margin-top: 10px; font-size: 13px; }
+.exx-absent summary { cursor: pointer; color: #c2410c; font-weight: 600; }
+.exx-absent > div { margin-top: 6px; line-height: 1.6; }
+.exx-project { position: fixed; inset: 0; z-index: 1200; background: rgba(15, 23, 42, .92); display: grid; place-items: center; padding: 16px; }
+.exx-project-in { background: #fff; color: #0f172a; border-radius: 20px; padding: 28px 32px; text-align: center; max-width: 92vw; max-height: 94vh; overflow: auto; display: grid; gap: 10px; justify-items: center; }
+.exx-project-t { font-size: clamp(18px, 2.4vw, 28px); font-weight: 700; }
+.exx-project-in img { width: min(48vh, 70vw); height: auto; image-rendering: pixelated; }
+.exx-project-code { font-size: clamp(40px, 8vw, 88px); font-weight: 800; letter-spacing: .12em; line-height: 1; }
+.exx-project-link { font-size: clamp(13px, 1.6vw, 18px); color: #475569; word-break: break-all; }
+.exx-project-n { font-size: 15px; color: #15803d; font-weight: 600; }
+:root[data-theme="dark"] .exx-absent summary { color: #fbbf24; }
+@media (max-width: 640px) {
+  .exx-table thead { display: none; }
+  .exx-table, .exx-table tbody { display: block; }
+  .exx-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; padding: 12px 2px; border-top: 1px solid var(--border); }
+  .exx-table tr:first-child { border-top: 0; }
+  .exx-table td { display: block; padding: 0; border: 0; white-space: normal; }
+  .exx-table td.exx-c-name { grid-column: 1; grid-row: 1; font-size: 15px; }
+  .exx-table td.exx-c-act { grid-column: 2; grid-row: 1; align-self: start; }
+  .exx-table td[data-label] { grid-column: 1 / -1; font-size: 13px; }
+  .exx-table td[data-label]::before { content: attr(data-label) ': '; color: var(--muted); }
+  .exx-table tr.exx-empty { display: block; }
+  .exx-filters select { flex: 1 1 100%; }
+}
+
 /* ===== Hướng dẫn sử dụng (Guide / Wiki) ===== */
 .guide-wrap { max-width: 1100px; margin: 0 auto; }
 .guide-head h1 { margin: 0 0 4px; font-size: 26px; }
