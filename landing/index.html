@@ -71,6 +71,7 @@ h1,h2,h3,h4{color:var(--ink);letter-spacing:-.02em;line-height:1.18;text-wrap:ba
 /* Hero */
 .hero{position:relative;padding:72px 0 96px;overflow:hidden}
 .hero::before{content:"";position:absolute;inset:0;pointer-events:none;background:
+  radial-gradient(520px circle at var(--hx,78%) var(--hy,30%),rgba(221,58,53,.07),transparent 62%),
   radial-gradient(900px 480px at 85% 10%,rgba(221,58,53,.07),transparent 60%),
   radial-gradient(700px 420px at 10% 0%,rgba(160,113,42,.08),transparent 60%)}
 .hero .wrap{position:relative;display:grid;grid-template-columns:1fr 1.1fr;gap:64px;align-items:center}
@@ -86,7 +87,8 @@ h1,h2,h3,h4{color:var(--ink);letter-spacing:-.02em;line-height:1.18;text-wrap:ba
 @media(max-width:560px){.cta-row .btn{flex:1 1 0;padding:0 14px}}
 
 /* Khung ảnh sản phẩm */
-.shot{position:relative}
+.shot{position:relative;perspective:1600px}
+.shot .browser,.shot .phone{will-change:transform}
 .browser{border-radius:14px;background:#fff;border:1px solid var(--line);box-shadow:0 2px 4px rgba(30,25,21,.04),0 30px 70px -20px rgba(30,25,21,.28);overflow:hidden}
 .browser-bar{display:flex;align-items:center;gap:7px;height:34px;padding:0 14px;border-bottom:1px solid var(--line);background:#F7F4EF}
 .browser-bar i{width:10px;height:10px;border-radius:50%;background:#E3DCD1}
@@ -236,6 +238,39 @@ h1,h2,h3,h4{color:var(--ink);letter-spacing:-.02em;line-height:1.18;text-wrap:ba
 .js .reveal.in{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){.js .reveal{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
 
+/* Tương tác chuột: chỉ trên thiết bị có chuột, tắt khi người dùng chọn giảm chuyển động */
+.btn .arr{width:18px;height:18px;transition:transform .2s ease}
+.role,.more-item,.sec-item,.step,.tier,.plan{position:relative;isolation:isolate;transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s ease,border-color .3s ease}
+.role::before,.more-item::before,.sec-item::before,.step::before,.tier::before,.plan::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s ease;
+  background:radial-gradient(280px circle at var(--mx,50%) var(--my,50%),rgba(221,58,53,.08),transparent 65%)}
+.role-ic,.more-item .i,.sec-item .i,.step-n{transition:transform .3s cubic-bezier(.2,.7,.2,1),background .3s ease,color .3s ease}
+.feature .browser{transition:transform .45s cubic-bezier(.2,.7,.2,1),box-shadow .45s ease}
+.feature .browser img{transition:transform .8s cubic-bezier(.2,.7,.2,1);transform-origin:left top}
+.mission img.bg{transition:transform 1.6s cubic-bezier(.2,.7,.2,1)}
+.nav-links a{position:relative}
+.nav-links a::after{content:"";position:absolute;left:0;right:0;bottom:-5px;height:1.5px;border-radius:2px;background:var(--red);transform:scaleX(0);transform-origin:left;transition:transform .25s ease}
+.faq summary{transition:color .2s ease}
+@media(hover:hover) and (pointer:fine){
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 2px 4px rgba(0,0,0,.08),0 12px 26px rgba(221,58,53,.32)}
+  .btn-ghost:hover{border-color:#cfc4b5}
+  .btn:hover .arr{transform:translateX(4px)}
+  .role:hover,.more-item:hover,.sec-item:hover,.step:hover,.tier:hover,.plan:not(.pro):hover{transform:translateY(-4px);border-color:var(--line2);box-shadow:0 22px 44px -22px rgba(30,25,21,.25)}
+  .plan.pro:hover{transform:translateY(-4px);box-shadow:0 34px 70px -26px rgba(30,25,21,.35)}
+  .role:hover::before,.more-item:hover::before,.sec-item:hover::before,.step:hover::before,.tier:hover::before,.plan:hover::before{opacity:1}
+  .role:hover .role-ic{background:var(--red);color:#fff;transform:rotate(-6deg) scale(1.06)}
+  .more-item:hover .i,.sec-item:hover .i{transform:translateY(-2px) scale(1.12)}
+  .step:hover .step-n{background:var(--red);transform:scale(1.08)}
+  .feature .browser:hover{transform:translateY(-6px);box-shadow:0 2px 4px rgba(30,25,21,.04),0 44px 90px -26px rgba(30,25,21,.36)}
+  .feature .browser:hover img{transform:scale(1.025)}
+  .mission:hover img.bg{transform:scale(1.04)}
+  .nav-links a:hover::after{transform:scaleX(1)}
+  .faq summary:hover{color:var(--red)}
+  .ft-col a{transition:color .2s ease}
+}
+@media(prefers-reduced-motion:reduce){
+  .btn,.btn .arr,.role,.more-item,.sec-item,.step,.tier,.plan,.role-ic,.feature .browser,.feature .browser img,.mission img.bg{transition:none!important;transform:none!important}
+}
+
 /* Popup đăng ký / liên hệ / cài ứng dụng */
 .lp-modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px}
 .lp-modal[hidden]{display:none}
@@ -329,7 +364,7 @@ h1,h2,h3,h4{color:var(--ink);letter-spacing:-.02em;line-height:1.18;text-wrap:ba
    <h1>Quản lý giáo lý cả giáo xứ, <span class="accent">gọn trong một ứng dụng</span></h1>
    <p class="hero-sub">Hồ sơ học viên và bí tích, điểm danh, điểm số, thi online, chứng chỉ. Cha xứ và ban giáo lý thấy toàn cảnh, giáo lý viên chỉ cần lo lớp của mình.</p>
    <div class="cta-row">
-    <a class="btn btn-primary btn-lg" id="ctaPrimary" href="#dangky" onclick="openLp('mReg');return false;">Dùng thử miễn phí</a>
+    <a class="btn btn-primary btn-lg" id="ctaPrimary" href="#dangky" onclick="openLp('mReg');return false;">Dùng thử miễn phí<svg class="arr"><use href="#i-arrow"/></svg></a>
     <a class="btn btn-ghost btn-lg" href="#pricing">Xem bảng giá</a>
    </div>
    <div class="hero-meta">
@@ -364,10 +399,10 @@ h1,h2,h3,h4{color:var(--ink);letter-spacing:-.02em;line-height:1.18;text-wrap:ba
    <h2>Mỗi người trong ban giáo lý có đúng phần việc của mình</h2>
    <p>Một hệ thống chung cho cả giáo xứ, dữ liệu đồng bộ giữa cha xứ, ban giáo lý và từng giáo lý viên.</p>
   </div>
-  <div class="roles">
-   <div class="role reveal"><div class="role-ic"><svg class="i"><use href="#i-church"/></svg></div><h3>Cha xứ</h3><p>Nắm tình hình giáo lý của cả giáo xứ qua một trang tổng quan: sĩ số, chuyên cần, kết quả học tập, bí tích của từng em.</p></div>
-   <div class="role reveal"><div class="role-ic"><svg class="i"><use href="#i-team"/></svg></div><h3>Ban giáo lý</h3><p>Mở lớp theo năm học, phân công giáo lý viên, duyệt kết quả cuối năm, cho lên lớp và cấp chứng chỉ.</p></div>
-   <div class="role reveal"><div class="role-ic"><svg class="i"><use href="#i-book"/></svg></div><h3>Giáo lý viên</h3><p>Chỉ thấy lớp mình phụ trách. Điểm danh, nhập điểm, theo dõi từng em ngay trên điện thoại.</p></div>
+  <div class="roles reveal">
+   <div class="role"><div class="role-ic"><svg class="i"><use href="#i-church"/></svg></div><h3>Cha xứ</h3><p>Nắm tình hình giáo lý của cả giáo xứ qua một trang tổng quan: sĩ số, chuyên cần, kết quả học tập, bí tích của từng em.</p></div>
+   <div class="role"><div class="role-ic"><svg class="i"><use href="#i-team"/></svg></div><h3>Ban giáo lý</h3><p>Mở lớp theo năm học, phân công giáo lý viên, duyệt kết quả cuối năm, cho lên lớp và cấp chứng chỉ.</p></div>
+   <div class="role"><div class="role-ic"><svg class="i"><use href="#i-book"/></svg></div><h3>Giáo lý viên</h3><p>Chỉ thấy lớp mình phụ trách. Điểm danh, nhập điểm, theo dõi từng em ngay trên điện thoại.</p></div>
   </div>
  </div>
 </section>
@@ -460,12 +495,12 @@ h1,h2,h3,h4{color:var(--ink);letter-spacing:-.02em;line-height:1.18;text-wrap:ba
    <h2>Dùng được ngay trong buổi chiều đầu tiên</h2>
    <p>Không cần cài đặt, không cần người kỹ thuật. Chỉ cần email và danh sách lớp.</p>
   </div>
-  <div class="steps">
-   <div class="step reveal"><div class="step-n">1</div><h3>Đăng ký bằng email</h3><p>Điền họ tên và email, hệ thống gửi ngay email mời tạo tài khoản cho giáo xứ của bạn.</p></div>
-   <div class="step reveal"><div class="step-n">2</div><h3>Tạo lớp và nhập học viên</h3><p>Mở các lớp của năm học, nhập danh sách học viên từ file Excel hoặc thêm từng em.</p></div>
-   <div class="step reveal"><div class="step-n">3</div><h3>Mời giáo lý viên</h3><p>Với gói Pro, tạo tài khoản cho giáo lý viên và phân lớp. Mỗi người đăng nhập và thấy đúng lớp của mình.</p></div>
+  <div class="steps reveal">
+   <div class="step"><div class="step-n">1</div><h3>Đăng ký bằng email</h3><p>Điền họ tên và email, hệ thống gửi ngay email mời tạo tài khoản cho giáo xứ của bạn.</p></div>
+   <div class="step"><div class="step-n">2</div><h3>Tạo lớp và nhập học viên</h3><p>Mở các lớp của năm học, nhập danh sách học viên từ file Excel hoặc thêm từng em.</p></div>
+   <div class="step"><div class="step-n">3</div><h3>Mời giáo lý viên</h3><p>Với gói Pro, tạo tài khoản cho giáo lý viên và phân lớp. Mỗi người đăng nhập và thấy đúng lớp của mình.</p></div>
   </div>
-  <div class="steps-cta reveal"><a class="btn btn-primary btn-lg" href="#dangky" onclick="openLp('mReg');return false;">Dùng thử miễn phí</a></div>
+  <div class="steps-cta reveal"><a class="btn btn-primary btn-lg" href="#dangky" onclick="openLp('mReg');return false;">Dùng thử miễn phí<svg class="arr"><use href="#i-arrow"/></svg></a></div>
  </div>
 </section>
 
@@ -493,8 +528,8 @@ h1,h2,h3,h4{color:var(--ink);letter-spacing:-.02em;line-height:1.18;text-wrap:ba
    <h2>Bắt đầu miễn phí, nâng cấp khi cả giáo xứ cùng dùng</h2>
    <p>Phí tính cho cả giáo xứ theo niên khóa, theo số lớp thực tế. Không phí ẩn, không giới hạn số giáo lý viên.</p>
   </div>
-  <div class="plans">
-   <div class="plan reveal">
+  <div class="plans reveal">
+   <div class="plan">
     <div class="plan-top"><h3>Khởi động</h3></div>
     <p class="plan-desc">Cho một lớp, hoặc để làm quen với ứng dụng</p>
     <div class="price"><b>Miễn phí</b></div>
@@ -507,7 +542,7 @@ h1,h2,h3,h4{color:var(--ink);letter-spacing:-.02em;line-height:1.18;text-wrap:ba
      <li><svg class="i"><use href="#i-check"/></svg>Xuất Excel, PDF và chọn trả bài</li>
     </ul>
    </div>
-   <div class="plan pro reveal">
+   <div class="plan pro">
     <div class="plan-top"><h3>Pro</h3><span class="badge">Khuyên dùng cho giáo xứ</span></div>
     <p class="plan-desc">Cho cả giáo xứ, nhiều lớp và nhiều giáo lý viên</p>
     <div class="price"><b>từ 1.500.000đ</b><span>/ niên khóa</span></div>
@@ -564,7 +599,7 @@ h1,h2,h3,h4{color:var(--ink);letter-spacing:-.02em;line-height:1.18;text-wrap:ba
    <h2>Dành thời gian cho việc dạy và đồng hành cùng các em</h2>
    <p>Để Giáo Lý Số lo danh sách, điểm danh, điểm số và sổ bí tích. Bắt đầu miễn phí với 1 lớp, nâng cấp khi cả giáo xứ cùng dùng.</p>
    <div class="cta-row">
-    <a class="btn btn-primary btn-lg" id="ctaPrimary2" href="#dangky" onclick="openLp('mReg');return false;">Dùng thử miễn phí</a>
+    <a class="btn btn-primary btn-lg" id="ctaPrimary2" href="#dangky" onclick="openLp('mReg');return false;">Dùng thử miễn phí<svg class="arr"><use href="#i-arrow"/></svg></a>
     <a class="btn btn-ghost btn-lg" href="#lienhe" onclick="openLp('mContact');return false;">Liên hệ tư vấn</a>
    </div>
   </div>
@@ -758,6 +793,27 @@ addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>8),{passiv
 /* Hiện dần khi cuộn tới */
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{rootMargin:'0px 0px -40px 0px'});
 document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* Tương tác chuột (chỉ khi có chuột và không bật giảm chuyển động) */
+(function(){
+ if(!matchMedia('(hover:hover) and (pointer:fine)').matches||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ // Vệt sáng theo con trỏ trên các thẻ
+ const CARDS='.role,.more-item,.sec-item,.step,.tier,.plan';
+ document.addEventListener('pointermove',e=>{const c=e.target.closest&&e.target.closest(CARDS);if(!c)return;
+  const r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px');c.style.setProperty('--my',(e.clientY-r.top)+'px');},{passive:true});
+ // Hero: khung ảnh nghiêng nhẹ, điện thoại trôi lệch, quầng sáng theo chuột
+ const hero=document.querySelector('.hero'),br=hero&&hero.querySelector('.shot .browser'),ph=hero&&hero.querySelector('.shot .phone');
+ if(!hero||!br||innerWidth<961)return;
+ let tx=0,ty=0,cx=0,cy=0,raf=0;
+ function frame(){cx+=(tx-cx)*.08;cy+=(ty-cy)*.08;
+  br.style.transform='rotateY('+(cx*-5).toFixed(2)+'deg) rotateX('+(cy*4).toFixed(2)+'deg)';
+  if(ph)ph.style.transform='translate3d('+(cx*-16).toFixed(1)+'px,'+(cy*-12).toFixed(1)+'px,0)';
+  hero.style.setProperty('--hx',(50+cx*30+28).toFixed(1)+'%');hero.style.setProperty('--hy',(35+cy*30).toFixed(1)+'%');
+  raf=(Math.abs(tx-cx)>.001||Math.abs(ty-cy)>.001)?requestAnimationFrame(frame):0;}
+ function go(){if(!raf)raf=requestAnimationFrame(frame);}
+ hero.addEventListener('pointermove',e=>{const r=hero.getBoundingClientRect();tx=((e.clientX-r.left)/r.width-.5)*2;ty=((e.clientY-r.top)/r.height-.5)*2;go();},{passive:true});
+ hero.addEventListener('pointerleave',()=>{tx=0;ty=0;go();});
+})();
 
 /* Đã đăng nhập app (cookie cờ dùng chung) -> đổi nút thành "Vào ứng dụng" */
 (function(){if(!/(?:^|;\s*)gl_signed_in=1(?:;|$)/.test(document.cookie))return;
