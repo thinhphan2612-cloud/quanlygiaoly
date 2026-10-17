@@ -87,8 +87,8 @@ export const TOURS = [
     desc: 'Bốc thăm ngẫu nhiên bằng cuộc đua vui nhộn, chiếu lên màn hình cho cả lớp xem.',
     steps: [
       { route: '/random', target: 'random-class', title: 'Chọn lớp', body: 'Chọn lớp đang học.' },
-      { route: '/random', target: 'random-start', action: 'click', title: 'Bắt đầu đua', body: 'Bấm "Bắt đầu đua". Em về đích đầu tiên là người lên trả bài.' },
-      { route: '/random', target: 'random-notlearned', wait: 30000, title: 'Ghi nhận chưa thuộc bài', body: 'Nếu em chưa thuộc bài, bấm "Chưa thuộc bài" để ghi nhận. Bấm "Bắt đầu đua" lần nữa để chọn em tiếp theo.' },
+      { route: '/random', target: 'random-start', action: 'click', title: 'Bốc thăm', body: 'Chọn kiểu bốc (Đua, Vòng quay, Lật thẻ, Quay số) rồi bấm nút bốc. Em được chọn hiện to giữa màn hình.' },
+      { route: '/random', target: 'random-notlearned', wait: 30000, title: 'Thuộc hay chưa thuộc', body: 'Bấm "Thuộc bài" hoặc "Chưa thuộc". Em chưa thuộc vẫn có thể được gọi lại. Kết quả hiện ở mục "Lượt gọi hôm nay" (chỉ lưu trên máy này, không ghi vào điểm).' },
     ],
   },
   {
