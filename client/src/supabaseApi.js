@@ -1409,13 +1409,25 @@ async function handle(method, rawUrl, body = {}) {
       if (error) return fail(400, error.message);
       return ok({ ok: true, count: rows.length });
     }
-    // admin xem lịch sử đã gửi
+    // admin xem lịch sử đã gửi (mỗi người nhận một dòng; trang Thông báo gom theo lần gửi)
     if (path === '/notifications/sent' && method === 'get') {
       const { data, error } = await supabase.from('notifications')
-        .select('id, title, content, created_at, read, profiles!notifications_recipient_id_fkey(full_name)')
-        .eq('type', 'admin').order('created_at', { ascending: false }).limit(100);
+        .select('id, title, content, created_at, read, sender_id, recipient_id, recipient:profiles!notifications_recipient_id_fkey(full_name, saint_name), sender:profiles!notifications_sender_id_fkey(full_name)')
+        .eq('type', 'admin').order('created_at', { ascending: false }).limit(1000);
       if (error) return fail(400, error.message);
-      return ok((data || []).map((n) => ({ ...n, recipient_name: n.profiles?.full_name || '' })));
+      return ok((data || []).map(({ recipient, sender, ...n }) => ({
+        ...n,
+        recipient_name: [recipient?.saint_name, recipient?.full_name].filter(Boolean).join(' '),
+        sender_name: sender?.full_name || '',
+      })));
+    }
+    // admin thu hồi một lần gửi: xóa các thông báo theo id (policy chỉ cho admin cùng giáo xứ)
+    if (path === '/notifications/recall' && method === 'post') {
+      const ids = Array.isArray(body.ids) ? body.ids : [];
+      if (!ids.length) return fail(400, 'Không có thông báo để thu hồi');
+      const { error } = await supabase.from('notifications').delete().in('id', ids).eq('type', 'admin');
+      if (error) return fail(400, error.message);
+      return ok({ ok: true, count: ids.length });
     }
 
     // ---------------- kiểm toán thu chi ----------------

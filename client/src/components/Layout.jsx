@@ -12,6 +12,7 @@ import { fileToDataUrl } from '../lib/img';
 import { viError } from '../lib/viError';
 import { isStandalone } from '../lib/pwa';
 import { useAdminCounts } from '../lib/adminCounts';
+import { timeAgo, fullDateTime } from '../lib/date';
 import InstallGuide from './InstallGuide.jsx';
 import PricingModal from './PricingModal.jsx';
 import { toast } from '../lib/toast';
@@ -91,6 +92,7 @@ export default function Layout({ children }) {
   const [pwModal, setPwModal] = useState(false);
   const [notifs, setNotifs] = useState([]);
   const [bellOpen, setBellOpen] = useState(false);
+  const [freshIds, setFreshIds] = useState([]); // tin chưa đọc lúc mở chuông, để tô sáng
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef(null);
   const plan = parish?.plan || 'free';
@@ -117,12 +119,12 @@ export default function Layout({ children }) {
 
   async function openBell() {
     setBellOpen((v) => !v);
+    if (!bellOpen) setFreshIds(notifs.filter((n) => !n.read).map((n) => n.id));
     if (!bellOpen && unread) {
       await api.post('/notifications/read', {}).catch(() => {});
       setNotifs((ns) => ns.map((n) => ({ ...n, read: true })));
     }
   }
-  const timeVi = (s) => new Date(s).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
 
   async function onPickAvatar(e) {
     const file = e.target.files?.[0]; if (!file) return;
@@ -263,10 +265,10 @@ export default function Layout({ children }) {
                   <div className="user-menu-head"><div className="name">Thông báo</div></div>
                   {notifs.length === 0 && <div className="notif-empty">Chưa có thông báo</div>}
                   {notifs.map((n) => (
-                    <div key={n.id} className={`notif-item ${n.type === 'absence' ? 'absence' : ''}`}>
-                      <div className="nt">{n.type === 'absence' && <IconAlert className="bi" />}{n.title}</div>
+                    <div key={n.id} className={`notif-item${n.type === 'absence' || n.type === 'system' ? ' absence' : ''}${freshIds.includes(n.id) ? ' fresh' : ''}`}>
+                      <div className="nt">{(n.type === 'absence' || n.type === 'system') && <IconAlert className="bi" />}{n.title}{freshIds.includes(n.id) && <span className="notif-new">Mới</span>}</div>
                       <div className="nc">{n.content}</div>
-                      <div className="nd">{timeVi(n.created_at)}</div>
+                      <div className="nd" title={fullDateTime(n.created_at)}>{timeAgo(n.created_at)}</div>
                     </div>
                   ))}
                 </div>

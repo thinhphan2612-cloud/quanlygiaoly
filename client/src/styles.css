@@ -1612,6 +1612,45 @@ button.gx-stat:hover { border-color: var(--primary); }
   .tcx-grid { grid-template-columns: 1fr; }
 }
 
+/* ===== Gửi thông báo (Notify): tiền tố ntx- ===== */
+.ntx-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ntx-count { font-weight: 500; font-size: 12px; color: var(--muted); }
+.ntx-count.warn { color: #c2410c; }
+.ntx-clear { border: 0; background: none; padding: 0; font: inherit; font-size: 12.5px; color: var(--primary); cursor: pointer; }
+.ntx-empty { font-size: 13px; padding: 6px 0; }
+.ntx-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.ntx-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font: inherit; font-size: 12.5px; cursor: pointer; }
+.ntx-chip b { font-weight: 700; color: var(--muted); }
+.ntx-chip:hover { border-color: var(--primary); }
+.ntx-chip.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.ntx-chip.on b { color: rgba(255, 255, 255, .85); }
+.ntx-search { width: 100%; margin-bottom: 6px; }
+.ntx-picker { max-height: 280px; overflow-y: auto; }
+.ntx-picker .tp-row { margin: 0; color: var(--text); font-size: 14px; font-weight: 400; }
+.ntx-person { display: inline-flex; flex-direction: column; line-height: 1.3; }
+.ntx-person > span { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ntx-person small { color: var(--muted); font-size: 12px; }
+.ntx-list { display: grid; gap: 10px; }
+.ntx-item { padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; }
+.ntx-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.ntx-head b { color: var(--heading); }
+.ntx-head span { flex: 0 0 auto; font-size: 12px; }
+.ntx-body { margin-top: 4px; font-size: 13.5px; white-space: pre-wrap; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.ntx-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; font-size: 12.5px; color: var(--text); }
+.ntx-bar { width: 64px; height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.ntx-bar span { display: block; height: 100%; background: #16a34a; }
+.ntx-actions { display: flex; gap: 6px; margin-top: 8px; }
+.ntx-recall { color: var(--danger); }
+.ntx-who { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 13px; }
+.ntx-who-h { font-weight: 600; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.ntx-note { font-size: 12px; margin: 10px 0 0; }
+.notif-item .nc { white-space: pre-wrap; word-break: break-word; }
+.notif-item.fresh { background: var(--primary-soft); }
+.notif-item .nt .notif-new { margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: var(--primary); color: #fff; font-size: 10.5px; font-weight: 600; vertical-align: 1px; }
+@media (max-width: 640px) {
+  .ntx-who { grid-template-columns: 1fr; }
+}
+
 /* ===== Hướng dẫn sử dụng (Guide / Wiki) ===== */
 .guide-wrap { max-width: 1100px; margin: 0 auto; }
 .guide-head h1 { margin: 0 0 4px; font-size: 26px; }
